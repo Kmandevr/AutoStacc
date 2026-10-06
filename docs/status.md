@@ -1,0 +1,28 @@
+---
+title: Status
+updated: 2026-10-06
+---
+
+# Status
+
+## Done
+
+- Static site with home, shop and news pages, driven by `data/*.js` (see [log](log.md)).
+
+## Needs the owner's input
+
+All current content is placeholder and must be replaced with real details:
+
+- [ ] Real artist facts for [artist](artist.md): bio, genre, releases, links
+- [ ] Real products, prices and a `checkoutUrl` for each ([shop](shop.md))
+- [ ] Real news posts and tour dates (`data/news.js`, `data/shows.js`)
+- [ ] Real contact email and social links (`data/site.js`)
+- [ ] Newsletter provider and its form endpoint (`newsletterAction` in `data/site.js`)
+- [ ] Real cover art and artist imagery (covers are currently generated gradients)
+- [ ] Confirm the spelling of the name: "Glitches & Stitches" vs "Stiches"
+- [ ] Domain name and hosting choice (see [decisions](decisions.md))
+
+## Ideas, not started
+
+- Embedded music players (SoundCloud, Spotify)
+- Cart with a small backend, if per-item Buy buttons stop being enough

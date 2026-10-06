@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glitches &amp; Stitches</title>
+  <meta name="description" content="Official site of EDM artist Glitches & Stitches: new music, tour dates, updates and digital downloads.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="home">
+  <header id="site-header"></header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <h1 class="glitch" data-text="GLITCHES &amp; STITCHES">GLITCHES &amp; STITCHES</h1>
+        <p>Broken signals. Sewn-up drops.</p>
+        <div class="actions">
+          <a class="btn" href="shop.html">Shop downloads</a>
+          <a class="btn ghost" href="#shows">Tour dates</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Latest</h2>
+          <a href="news.html">All updates &rarr;</a>
+        </div>
+        <div class="news-list" id="latest-news"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Shop</h2>
+          <a href="shop.html">Everything &rarr;</a>
+        </div>
+        <div class="grid" id="featured-products"></div>
+      </div>
+    </section>
+
+    <section class="alt" id="shows">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Shows</h2>
+        </div>
+        <div class="shows" id="show-list"></div>
+      </div>
+    </section>
+
+    <section id="about">
+      <div class="wrap about">
+        <div class="art" aria-hidden="true">G&amp;S</div>
+        <div>
+          <div class="section-head"><h2>About</h2></div>
+          <p>
+            Glitches &amp; Stitches makes bass music out of broken things: corrupted samples, dropped frames,
+            and sounds that weren't supposed to work, cut apart and sewn back together into something you can dance to.
+          </p>
+          <p>
+            Every live set is built from scratch, with visuals glitched in real time. The sample packs and presets in the
+            shop are the actual sounds from those sets.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt newsletter" id="newsletter">
+      <div class="wrap">
+        <div class="section-head" style="justify-content:center"><h2>Stay in the loop</h2></div>
+        <p>New releases, presales and free downloads, straight to your inbox. No spam.</p>
+        <form id="newsletter-form">
+          <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
+          <button class="btn" type="submit">Sign up</button>
+        </form>
+        <div class="form-msg" id="newsletter-msg" role="status"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script src="data/site.js"></script>
+  <script src="data/products.js"></script>
+  <script src="data/news.js"></script>
+  <script src="data/shows.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
