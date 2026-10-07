@@ -8,7 +8,8 @@ updated: 2026-10-07
 
 Newest first.
 
-- 2026-10-07: Moved tasks to GitHub Issues (labels, issue forms, PR template, `github-workflow` skill). Retired `docs/status.md`; its items are issues #4 to #16.
+- 2026-10-07: Naming cleanup: `.area` to `.purpose`, skill `tasks`, workflow `clear-status-on-close`, label cleanup, removed `.github/project-setup.md` (now issue #13).
+- 2026-10-07: Moved tasks to GitHub Issues (labels, issue forms, PR template, `tasks` skill). Retired `docs/status.md`; its items are issues #4 to #16.
 - 2026-10-07: Added Serena (`.mcp.json`, `.serena/project.yml`, `.claude/tools/serena.sh`) and five skills under `.claude/skills/`. `CLAUDE.md` now points to them. No site files changed.
 - 2026-10-07: Made the tooling modular: compact map, lazy `graph.sh`, path-scoped rules, generic `change` workflow, `.claude/README.md`. Slimmed `CLAUDE.md`.
 - 2026-10-07: Added the `site-change` workflow and a Workflow section in `CLAUDE.md`. Syntax-checked only.
