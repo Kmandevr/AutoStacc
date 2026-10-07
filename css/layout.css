@@ -50,9 +50,9 @@
 .nav a:hover { background-size: 100% 1px; }
 .nav a:hover, .nav a.active { color: var(--green); text-shadow: var(--glow); }
 .nav a.active::before { content: "> "; color: var(--purple); }
-/* sound switch (js/sound.js), a terminal-style flag */
+/* sound switch (js/sound.js), a terminal-style flag at the end of the nav */
 .snd {
-  margin-left: 20px;
+  margin-left: -4px;
   background: none;
   border: 0;
   padding: 8px 4px;
@@ -63,9 +63,7 @@
 }
 .snd[aria-pressed="true"] { color: var(--green); text-shadow: var(--glow); }
 .snd:hover { color: var(--green); }
-@media (max-width: 720px) {
-  .snd { margin: 0 4px 0 auto; padding: 10px 6px; font-size: .78rem; }
-}
+
 .nav-toggle {
   display: none;
   background: none;
@@ -77,26 +75,48 @@
   cursor: pointer;
 }
 
-@media (max-width: 720px) {
-  /* phone header: logo, sound switch and a compact menu button all fit from 320px up */
-  .site-header .wrap { height: 56px; gap: 4px; }
-  .logo { font-size: 1.3rem; white-space: nowrap; }
-  .nav-toggle { display: block; min-width: 44px; min-height: 40px; padding: 4px 8px; font-size: 1.05rem; line-height: 1; }
+@media (max-width: 900px) {
+  /* phones and tablets: just the logo and a roomy menu button (the full nav needs ~900px to breathe) */
+  .site-header .wrap { height: 56px; }
+  .logo { font-size: 1.45rem; white-space: nowrap; }
+  .nav-toggle { display: block; min-width: 52px; min-height: 44px; padding: 4px 10px; font-size: 1.15rem; line-height: 1; }
+  /* the menu fills the screen below the header, with big terminal-style rows */
   .nav {
     display: none;
-    position: absolute;
+    /* the header's blur makes it the anchor for fixed children, so size the menu to the screen explicitly */
+    position: fixed;
     top: 56px; left: 0; right: 0;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
     flex-direction: column;
     gap: 0;
-    background: var(--bg-2);
-    border-bottom: 1px solid var(--line);
+    margin: 0;
+    padding: 12px 0 24px;
+    overflow-y: auto;
+    background: var(--bg);
   }
   .nav.open { display: flex; animation: drop .2s var(--snap); }
-  .nav a:hover { background-size: 0 1px; }
-  .nav a { padding: 14px 20px; border-top: 1px solid var(--line); }
+  .nav a {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--display);
+    font-size: 2rem;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+  .nav a::before { content: "> "; color: var(--purple); text-shadow: var(--glow-purple); }
+  .nav a:hover { background-size: 0 1px; color: var(--text); }
+  .nav a.active { color: var(--text); }
+  .nav .snd { margin: 20px 24px 0; padding: 14px 0; text-align: left; font-size: .95rem; }
+  .nav .snd::after { content: " sound effects"; color: var(--green-dim); text-shadow: none; }
+  /* lock scrolling on the root only: hiding overflow on body would break the sticky header */
+  .menu-open { overflow: hidden; }
 }
 @media (max-width: 350px) {
-  .logo { font-size: 1.12rem; letter-spacing: .02em; }
+  .logo { font-size: 1.22rem; letter-spacing: .02em; }
 }
 
 /* ---------- footer ---------- */
