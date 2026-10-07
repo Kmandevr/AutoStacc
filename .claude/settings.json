@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash(.claude/tools/graph.sh:*)",
+      "Bash(.claude/tools/tree.sh:*)",
       "Bash(graphify:*)",
       "Bash(uv tool install graphifyy)"
     ]

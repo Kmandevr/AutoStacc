@@ -4,33 +4,32 @@ Website for the EDM artist **Glitches & Stitches**. It sells digital items (samp
 
 ## Start of every session
 
-Read [docs/index.md](docs/index.md), then [docs/status.md](docs/status.md) for what's pending. The `docs/` folder is the project's memory and an Obsidian vault. Facts about the artist, brand and decisions live there, not in this file.
+Read [docs/status.md](docs/status.md) for what's pending. The `docs/` folder is the project's memory and an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
 
 ## Rules
 
-- Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use what's in `docs/`. If it's missing, ask the user, or mark it as placeholder and add it to `docs/status.md`.
-- Record decisions and new facts in `docs/` before ending a session. Update `docs/status.md` and add a line to `docs/log.md`.
-- Notes use relative markdown links (`[text](other.md)`), not `[[wikilinks]]`, so they render on GitHub. Every note has frontmatter (`title`, `summary`, `updated`).
+- Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and add it to `docs/status.md`.
+- Record decisions and new facts in `docs/` before ending a session (details in `.claude/rules/docs.md`).
 
 ## Site
 
 Static HTML, CSS and JS with no build step and no framework. Keep it that way unless the user decides otherwise.
 
-- All content is data in `data/*.js` (`site`, `products`, `news`, `shows`). Update content there, not in the HTML.
+- All content is data in `data/*.js`. Update content there, not in the HTML.
 - Payments happen on a hosted checkout via each product's `checkoutUrl`. The site never handles card details or download files.
-- Style: dark background, neon pink and cyan, dashed "stitched" borders, glitch title effect. See [docs/brand.md](docs/brand.md).
+- Conventions for scripts, styles and notes load on demand from `.claude/rules/` when you touch those files.
 
 ## Read in layers
 
-Don't read every file. Start at the top and go deeper only when the layer above doesn't answer the question. Don't re-read what is already in your context.
+Don't read every file. Go deeper only when the layer above doesn't answer the question, and don't re-read what's already in context.
 
-1. **Layer 0, the repo map.** The session-start hook prints one line per file (its purpose). That plus this file is enough for orientation and for "which file handles X". Facts about the artist, brand and decisions: read the one `docs/` note named in the map, starting with `docs/status.md`.
-2. **Layer 1, summaries.** Ask the graph instead of opening files: `graphify query "<question>"`, `graphify explain "<name>"`, `graphify affected "<name>"` (what breaks if this changes), `graphify god-nodes`. Add `--budget N` to cap the output. `graphify-out/GRAPH_REPORT.md` is the one-page overview.
-3. **Layer 2, the file.** Open only files layers 0 and 1 named. Use Grep, or Read with `offset`/`limit`, to get just the part you need. Edit only the files the change needs. Use `graphify affected` before touching shared code (`js/util.js`, `css/base.css`).
+1. **Map:** the session-start hook prints the top level (root files and one line per directory). `.claude/tools/tree.sh <dir>` lists one directory's files with their purposes.
+2. **Graph:** `.claude/tools/graph.sh query "<question>"`, `explain "<name>"`, `affected "<name>"` (what breaks if this changes). No args prints the overview. It installs and refreshes Graphify only when called.
+3. **File:** open only files the layers above named, with Grep or Read `offset`/`limit`. Check `affected` before changing shared code.
 
-Keeping the map accurate: every new code file starts with a one-line comment saying what it is for (`//` in JS, `/* */` in CSS, a `<meta name="description">` in HTML), and every note in `docs/` has a `summary:` line in its frontmatter. The map is built from those lines, so a file without one shows up blank.
+## Workflow
 
-Scripts are plain `<script>` tags (no modules, so pages still work from `file://`) and share helpers through `window.GS` from `js/util.js`. Each page loads only the scripts and stylesheets it uses.
+One-file changes: just do them. Changes across areas: run the saved workflow `change` (`args: { task: "..." }`): plan, build in parallel on disjoint files, verify, update docs. It never commits. See `.claude/README.md`.
 
 ## Checking changes
 
