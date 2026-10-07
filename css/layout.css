@@ -18,20 +18,20 @@
 .logo {
   font-family: var(--display);
   letter-spacing: .04em;
-  color: var(--text);
+  color: var(--green);
   text-shadow: var(--glow);
   font-size: 1.6rem;
 }
 .logo span { color: var(--purple); text-shadow: var(--glow-purple); }
 .nav { display: flex; gap: 24px; }
-.nav a { color: var(--muted); font-weight: 500; text-shadow: none; }
-.nav a:hover, .nav a.active { color: var(--text); text-shadow: var(--glow); }
+.nav a { color: var(--green-dim); font-weight: 500; text-shadow: none; }
+.nav a:hover, .nav a.active { color: var(--green); text-shadow: var(--glow); }
 .nav a.active::before { content: "> "; color: var(--purple); }
 .nav-toggle {
   display: none;
   background: none;
   border: 1px solid var(--line);
-  color: var(--text);
+  color: var(--green);
   border-radius: var(--radius);
   padding: 6px 10px;
   font: inherit;
@@ -57,7 +57,7 @@
 .site-footer {
   border-top: 2px dashed var(--line);
   padding: 40px 0;
-  color: var(--muted);
+  color: var(--green-dim);
   font-size: .9rem;
 }
 .site-footer .wrap {
@@ -68,5 +68,5 @@
 }
 .socials { display: flex; gap: 18px; flex-wrap: wrap; }
 .site-footer a { display: inline-block; padding-block: 4px; }
-.socials a { color: var(--muted); text-shadow: none; }
+.socials a { color: var(--green-dim); text-shadow: none; }
 .socials a:hover { color: var(--purple); text-shadow: var(--glow-purple); }

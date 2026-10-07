@@ -12,8 +12,8 @@ The name suggests broken-then-repaired: glitch art meets stitched fabric. The si
 
 Old-school terminal (owner's choice, 2026-10-07): a glowing CRT screen in three colours.
 
-- Black background (`#000`, panels `#0b0812`), phosphor green `#33ff66` for text (dim `#24b350` for secondary text), neon purple `#bf5fff` for links, buttons, tags and dates
-- Soft glow on text, scanlines and darkened screen edges over the page, square corners
+- Black background (`#000`, panels `#0b0812`). White `#f2f2f2` for reading text (light grey `#b8b8c0` for secondary text), phosphor green `#33ff66` for headings, prices and the logo (dim `#24b350` for nav, footer and dates), neon purple `#bf5fff` for links, buttons, tags and show dates
+- Soft glow on green and purple text, scanlines and darkened screen edges over the page, square corners
 - Terminal touches: `$ ` before section titles, `> ` on buttons and the current nav link, a blinking block cursor after the hero tagline
 - Dashed borders as "stitching"
 - Glitch effect on page titles (purple and green offset layers); glitch and cursor stop for reduced-motion users

@@ -16,7 +16,7 @@
   margin: 0 0 18px;
 }
 .hero p {
-  color: var(--text);
+  color: var(--green);
   font-size: clamp(.95rem, 2vw, 1.15rem);
   margin: 0 0 36px;
 }
@@ -59,7 +59,7 @@
   place-items: center;
   font-family: var(--display);
   font-size: 6rem;
-  text-shadow: 3px 0 var(--purple), -3px 0 var(--text);
+  text-shadow: 3px 0 var(--purple), -3px 0 var(--green);
 }
 @media (max-width: 800px) {
   .about { grid-template-columns: 1fr; }
@@ -84,8 +84,8 @@
   color: var(--text);
   font: inherit;
 }
-.newsletter input::placeholder { color: var(--muted); }
-.newsletter input:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-color: var(--text); }
+.newsletter input::placeholder { color: var(--green-dim); }
+.newsletter input:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-color: var(--green); }
 .form-msg { color: var(--purple); text-shadow: var(--glow-purple); margin-top: 14px; min-height: 1.5em; }
 @media (max-width: 480px) {
   .newsletter form { flex-direction: column; }
