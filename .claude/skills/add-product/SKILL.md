@@ -14,6 +14,7 @@ description: Add, edit, remove or feature a shop product in AutoStacc. Use for a
    - `type`: a key of `data/product-types.js`. A new kind of product is a new entry there (label, `maxQuantity`, `preview`).
    - `price`: a number with at most two decimals, in `SITE.currency`; `0` makes it free (claimed into the library).
    - `featured: true`: the home page shows at most 3, in file order. `hue` only colours the generated cover.
+   - Required: `project` (an id in `data/projects.js`). Optional `pacs`: Pac ids from `data/pacs.js` of the same project that the product delivers (the build refuses other projects' Pacs and, for a published product, draft Pacs). See `docs/architecture.md`.
    - Optional: `image` (real artwork, `alt` describing it), `release` (related release id), `tags`, `includes`, `metadata`, `preview: { file, label }` (a clip uploaded in `/admin`; never the paid file).
    - `draft: true` while it's a placeholder: shown as "Coming soon", kept out of search, not buyable. Remove it only when the product, price and files are real.
 4. Run `node scripts/build.js`, then the `seo-check` skill. Removing a published product makes `seo-test.js` ask for a redirect in `_redirects`; the store keeps it as deleted (owners keep their files).

@@ -1,11 +1,13 @@
 // News and updates. Order doesn't matter, newest is shown first. Each published post gets its own page at /news/<id>.
 // `id`: lowercase-hyphenated, the page address. Never change it once published.
 // `summary` is plain text (home page and search description). `body` may contain simple HTML (news page and post page).
+// `project`: optional id of the project the post is from (data/projects.js).
 // `release`: optional id of the release in data/music.js the post is about (linked from the post).
 // `draft: true`: placeholder, not real news. Hidden on the site and kept out of search until it is real.
 window.NEWS = [
   {
     id: "hail-out-now",
+    project: "glitches-and-stitches",
     date: "2025-10-15",
     title: "HAIL is out now",
     tag: "Release",
@@ -15,6 +17,7 @@ window.NEWS = [
   },
   {
     id: "fall-tour-dates",
+    project: "glitches-and-stitches",
     date: "2026-09-18",
     title: "Fall tour dates announced",
     tag: "Tour",
@@ -24,6 +27,7 @@ window.NEWS = [
   },
   {
     id: "frayed-signals-sample-pack",
+    project: "glitches-and-stitches",
     date: "2026-09-02",
     title: "Frayed Signals sample pack drops",
     tag: "Shop",

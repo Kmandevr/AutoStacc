@@ -1,6 +1,7 @@
 // Entry point of the store API (Cloudflare Pages Functions call it for /api/*). Loads config, hands /api/auth/* to
 // Better Auth, checks the origin of state-changing requests, then dispatches to the module that owns the route.
-// Each module (catalog, cart, checkout, orders, payments, entitlements, downloads, account, admin, analytics, dev)
+// Each module (catalog, cart, checkout, orders, payments, entitlements, downloads, account, admin, analytics, projects,
+// polls, dev)
 // exports its own route table; adding a feature is one import and one line below.
 import { loadConfig, ConfigError } from "./lib/config.js";
 import { createRouter } from "./lib/router.js";
@@ -17,8 +18,10 @@ import { routes as account } from "./account/routes.js";
 import { routes as admin } from "./admin/routes.js";
 import { routes as analytics } from "./analytics/routes.js";
 import { routes as dev } from "./dev/routes.js";
+import { routes as projects } from "./projects/routes.js";
+import { routes as polls } from "./polls/routes.js";
 
-const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, admin, analytics, dev]);
+const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, admin, analytics, projects, polls, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

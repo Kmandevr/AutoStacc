@@ -2,6 +2,10 @@
 // structured data and sitemap. After editing anything in data/, run `node scripts/build.js` to regenerate the
 // page heads, the release/product/news pages and sitemap.xml.
 window.SITE = {
+  // The platform the site runs on. Projects (data/projects.js) create the content; AutoStacc sells, delivers and
+  // organizes it. Shown in product credits, the footer and /projects. Vocabulary: docs/autostacc.md.
+  platform: { name: "AutoStacc", tagline: "Stacc it once. Auto handles the rest." },
+  // The home project's name: the site-wide header, page titles and structured data still use it (docs/decisions.md).
   artist: "Glitches & Stitches",
   // Other ways people type the name. Only tells search engines it's the same site (WebSite alternateName); never shown.
   alternateNames: ["Glitches and Stitches"],

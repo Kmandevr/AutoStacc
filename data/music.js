@@ -2,6 +2,7 @@
 // `featured`: the release the home page's Listen section plays.
 // Release fields:
 //   id: lowercase-hyphenated, the page address. Never change it once published.
+//   project: id of the project it belongs to (data/projects.js). Required.
 //   type: "Single", "EP" or "Album". date: YYYY-MM-DD. upc: optional barcode.
 //   description: plain text, only confirmed facts (it is the page's search description too).
 //   artwork: { src, width, height, alt } with alt describing the picture; optional `srcset` lists smaller copies.
@@ -17,6 +18,7 @@ window.MUSIC = {
   releases: [
     {
       id: "hail",
+      project: "glitches-and-stitches",
       title: "HAIL",
       type: "Single",
       date: "2025-10-15",

@@ -1,7 +1,7 @@
 // Admin page shell and catalog tools: checks access (the API answers 404 to non-admins), draws the tabs and the
 // summary, and manages products: pause/resume sales, upload paid files and preview clips, deactivate files.
 // Orders, customers, entitlements and analytics are js/admin-records.js, started by the "gs:admin" event.
-// Needs data/product-types.js and js/util.js.
+// Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
 (function () {
   "use strict";
 
@@ -9,6 +9,9 @@
   const root = $("#admin-app");
   if (!root) return;
   const TYPES = window.PRODUCT_TYPES || {};
+  const PACS = window.PACS || [];
+  const KINDS = window.CONTENT_TYPES || {};
+  const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
   const TABS = [["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"], ["analytics", "Analytics"]];
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
@@ -43,11 +46,13 @@
           <span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span>
           <span class="admin-flags">${p.deleted ? "removed" : p.published ? "published" : "draft"}${p.salesPaused ? " · sales paused" : ""}</span>
           ${p.deleted ? "" : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>`}</div>
-        <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.active ? "" : " · deactivated"}</span>
+        <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.pac_id ? ` · ${escapeHTML(pacTitle(f.pac_id))}` : ""}${f.kind ? ` · ${escapeHTML((KINDS[f.kind] || {}).label || f.kind)}` : ""}${f.active ? "" : " · deactivated"}</span>
           ${f.active ? `<button class="link-btn" type="button" data-remove-file="${escapeHTML(f.id)}">deactivate</button>` : ""}</li>`).join("") || "<li class=\"small-print\">No files yet: buyers would get an empty library entry.</li>"}</ul>
         <form class="admin-upload" data-upload>
           <label class="sr-only" for="f-${escapeHTML(p.id)}">File for ${escapeHTML(p.title)}</label><input id="f-${escapeHTML(p.id)}" type="file" required>
           <label class="sr-only" for="l-${escapeHTML(p.id)}">Label</label><input id="l-${escapeHTML(p.id)}" type="text" placeholder="Label (e.g. WAV stems)" maxlength="120">
+          ${p.pacs.length ? `<label class="sr-only" for="p-${escapeHTML(p.id)}">Pac</label><select id="p-${escapeHTML(p.id)}" data-pac><option value="">No Pac</option>${p.pacs.map((id) => `<option value="${escapeHTML(id)}">${escapeHTML(pacTitle(id))}</option>`).join("")}</select>` : ""}
+          <label class="sr-only" for="k-${escapeHTML(p.id)}">Content type</label><select id="k-${escapeHTML(p.id)}" data-kind><option value="">Type from file name</option>${Object.entries(KINDS).map(([k, t]) => `<option value="${escapeHTML(k)}">${escapeHTML(t.label)}</option>`).join("")}</select>
           <button class="btn" type="submit">Upload file</button><span class="msg" role="status"></span></form>
       </li>`).join("")}</ul>`;
   }
@@ -82,7 +87,10 @@
     } else {
       const id = form.closest("[data-product]").dataset.product;
       const label = $("input[type=text]", form).value;
-      if (await upload(`/api/admin/products/${encodeURIComponent(id)}/files?filename=${encodeURIComponent(file.name)}&label=${encodeURIComponent(label)}`, file, $(".msg", form))) products();
+      const pac = $("[data-pac]", form) ? $("[data-pac]", form).value : "";
+      const kind = $("[data-kind]", form).value;
+      const query = new URLSearchParams({ filename: file.name, label, ...(pac && { pac }), ...(kind && { kind }) });
+      if (await upload(`/api/admin/products/${encodeURIComponent(id)}/files?${query}`, file, $(".msg", form))) products();
     }
     btn.disabled = false;
   });

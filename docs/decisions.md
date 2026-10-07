@@ -6,6 +6,20 @@ updated: 2026-10-07
 
 # Decisions
 
+## 2026-10-07: AutoStacc is the platform, Glitches & Stitches its first project (#46)
+
+The owner set the long-term model: AutoStacc is the business and platform (store, accounts, library, delivery, discovery); projects create the content; Glitches & Stitches is the first project and must not be hard-coded into the core. The store was kept and extended, not rebuilt (owner's instruction): auth, checkout, payments, entitlements, download security and their tests are unchanged.
+
+- **Projects are data** (`data/projects.js`, synced to D1 `projects`). Products, releases and news name their project; projects list the platform `features` they use, so polls and relationships are opt-in per project.
+- **Project → Stacclet → Pac → Asset, each link stored once on the child.** Stacclets and Pacs are content in `data/` (git-reviewed, like products); assets are the uploaded files (`product_files`) with a new `pac_id` and `kind`. A Stacclet groups Pacs and a Pac holds files; they are separate objects, not one generic "collection".
+- **Ownership stays per product.** Products sell Pacs, and download access is still checked on the file's product, so no security path changed. Pac-level ownership (bundles sharing Pacs) waits until bundles exist.
+- **Your Stacc is computed in the browser** from the library API plus the static hierarchy, in one pure model (`js/stacc-model.js`) that both views read; nothing is duplicated per view and the model is unit-tested in Node.
+- **Auto-Stacc reuses the free-claim grant** (source `free`, idempotent per account), run on follow and lazily on each library load, so it needs no queue or cron and never grants paid products.
+- **Selected downloads are sequential signed links**, not a ZIP: no new download path to secure yet.
+- **Generic polls and relationships** live in the platform (`server/polls/`, `scripts/lib/relations.js`) and Glitches & Stitches opts in by feature.
+- **Home page and site-wide identity unchanged for now:** `/` stays the Glitches & Stitches home and `SITE.artist` still drives page titles, because autostacc.com was set up as the artist's official site (SEO decision below) and changing that is a search-identity change for the owner to decide. The platform appears through `/projects`, Your Stacc, product credits ("by <project> · sold by AutoStacc") and the footer.
+Details: [architecture](architecture.md), [autostacc](autostacc.md), [projects](projects.md), [library](library.md).
+
 ## 2026-10-07: Own store on Cloudflare Pages Functions, D1 and R2 (#16)
 
 The owner asked for a real store: accounts, a cart, guest checkout, verified payments, a library of owned products, private downloads, receipts and an admin, while keeping the site static, light and on Cloudflare. This replaces "Hosted checkout instead of our own payments" and the per-product `checkoutUrl`.

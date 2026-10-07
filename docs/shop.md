@@ -6,7 +6,7 @@ updated: 2026-10-07
 
 # Shop
 
-Products are defined in `data/products.js` (fields documented at its top) with their kinds in `data/product-types.js`. They are sold through the site's own store: cart, Stripe Checkout, accounts, library and private downloads. How that works: [store](store.md); switching it on: [store-setup](store-setup.md).
+Products are defined in `data/products.js` (fields documented at its top) with their kinds in `data/product-types.js`. Each names the project that created it (`project`) and may list the Pacs it delivers (`pacs`); the product page shows "Created by" the project, "Sold by" AutoStacc and its Pacs. Model: [architecture](architecture.md). They are sold through the site's own store: cart, Stripe Checkout, accounts, library and private downloads. How that works: [store](store.md); switching it on: [store-setup](store-setup.md).
 
 Every product is still a placeholder (tracked in GitHub issues), so every one is `draft: true`: shown in the shop as "Coming soon", its page (`/shop/<id>`) `noindex`, out of the sitemap, no product structured data, and not buyable (the store treats drafts as unpublished). Remove `draft` once the product, price and files are real.
 
@@ -20,5 +20,7 @@ Every product is still a placeholder (tracked in GitHub issues), so every one is
 | Corrupted Thread EP (Lossless) | music | $7.00 |
 | Static Bloom, Wallpaper Pack | visuals | $3.00 |
 | Live Set VJ Loops | vj-loops | $14.99 |
+
+Placeholder platform content (also `draft: true`): the Frayed Signals Stacclet with MIDI, Samples, Loops and Presets Pacs (`data/stacclets.js`, `data/pacs.js`), taken from the owner's architecture brief; the sample pack delivers the Samples and Loops Pacs (matching its description).
 
 Replace this table with the real catalogue when the owner provides it.

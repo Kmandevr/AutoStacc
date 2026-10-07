@@ -10,16 +10,20 @@
 //   release: optional id of the related release in data/music.js. includes: optional list of what's inside (plain text).
 //   preview: optional { file, label }: an audio clip uploaded in the admin, played from /media/previews/<file>.
 //     Never the paid file itself. metadata: optional facts shown on the product page ({ "Format": "WAV 24-bit" }).
+//   project: id of the project that created it (data/projects.js); shown as "by <name>". Required.
+//   pacs: optional list of Pac ids (data/pacs.js, same project) the product delivers; uploaded files are tagged with them.
 //   draft: true = placeholder, not for sale. Still shown in the shop as "Coming soon", kept out of search and
 //     unbuyable at checkout. Remove it once the product, price and files are real.
 window.PRODUCTS = [
   {
     id: "sample-pack-vol1",
     title: "Frayed Signals — Sample Pack Vol. 1",
+    project: "glitches-and-stitches",
     type: "sample-pack",
     price: 24.99,
     description: "300+ one-shots, glitch loops, bit-crushed vocal chops and stitched-together drum fills. WAV, 24-bit.",
     tags: ["wav", "one-shots", "loops"],
+    pacs: ["frayed-signals-samples", "frayed-signals-loops"],
     hue: 300,
     featured: true,
     draft: true
@@ -27,6 +31,7 @@ window.PRODUCTS = [
   {
     id: "serum-presets",
     title: "Seam Ripper — Serum Preset Bank",
+    project: "glitches-and-stitches",
     type: "presets",
     price: 19.99,
     description: "64 Serum presets: tearing basses, stuttering leads and the signature wobble from the live sets.",
@@ -38,6 +43,7 @@ window.PRODUCTS = [
   {
     id: "stems-patchwork",
     title: "Patchwork (Remix Stems)",
+    project: "glitches-and-stitches",
     type: "stems",
     price: 9.99,
     description: "Full stem set for the single 'Patchwork'. Remix it, flip it, send it back to us.",
@@ -49,6 +55,7 @@ window.PRODUCTS = [
   {
     id: "ep-corrupted-thread",
     title: "Corrupted Thread EP (Lossless)",
+    project: "glitches-and-stitches",
     type: "music",
     price: 7.00,
     description: "The 5-track EP in FLAC and WAV, plus 2 bonus tracks only available here.",
@@ -60,6 +67,7 @@ window.PRODUCTS = [
   {
     id: "wallpapers",
     title: "Static Bloom — Wallpaper Pack",
+    project: "glitches-and-stitches",
     type: "visuals",
     price: 3.00,
     description: "12 phone and desktop wallpapers pulled from the live visuals.",
@@ -71,6 +79,7 @@ window.PRODUCTS = [
   {
     id: "vj-loops",
     title: "Live Set VJ Loops",
+    project: "glitches-and-stitches",
     type: "vj-loops",
     price: 14.99,
     description: "20 seamless 4K glitch loops from the tour visuals, ready for Resolume.",

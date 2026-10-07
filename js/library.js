@@ -1,19 +1,22 @@
-// Library page ("the vault"): everything the visitor owns, from any source, with download buttons. A download asks
-// the store for a fresh 5-minute private link, then follows it. Also redeems the guest key in a receipt link
-// (/library#key=...). Product types come from data/product-types.js, so new kinds show up without changes here.
-// Needs js/util.js.
+// Your Stacc (/library): everything the visitor can use, organized by project → Stacclet → Pac → content type or by
+// content type across everything, with filters, per-file and selected downloads (docs/library.md). Ownership and
+// files come from the store API; structure from data/ via GS.stacc (js/stacc-model.js) and markup from
+// GS.libraryView (js/library-view.js). Each download asks for a fresh 5-minute private link. Also redeems the guest
+// key in a receipt link (/library#key=...). Needs js/util.js, js/stacc-model.js, js/library-view.js and data/projects.js,
+// stacclets.js, pacs.js, content-types.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML, api, track } = window.GS;
   const root = $("#library-app");
   if (!root) return;
-  const TYPES = window.PRODUCT_TYPES || {};
+  const { stacc, libraryView: V } = window.GS;
+  const catalog = { projects: window.PROJECTS || [], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
+  const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
+  const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
   const params = new URLSearchParams(location.search);
-
-  const SOURCES = { purchase: "bought", free: "free", promo: "promo", manual: "gift", bundle: "bundle", subscription: "subscription", replacement: "replacement" };
-  const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : b >= 1024 ? `${Math.round(b / 1024)} KB` : `${b} B`);
+  const state = { view: "projects", filter: { project: "", kind: "", format: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [] };
 
   function banner() {
     const d = params.get("download");
@@ -23,29 +26,20 @@
     return "";
   }
 
-  function item(it) {
-    const type = (TYPES[it.type] || {}).label || it.type;
-    const files = it.files.length
-      ? `<ul class="vault-files">${it.files.map((f) => `<li>
-          <span class="vault-file">${escapeHTML(f.label || f.filename)}<span class="small-print"> ${escapeHTML(f.filename)} · ${size(f.sizeBytes)}</span></span>
-          <button class="btn ghost" type="button" data-download="${escapeHTML(f.id)}" data-product="${escapeHTML(it.productId)}">Download</button>
-        </li>`).join("")}</ul>`
-      : `<p class="small-print">Files are being stitched together. They'll appear here; nothing else to do.</p>`;
-    return `<li class="vault-item">
-      <div class="vault-head">
-        <h2><a href="/shop/${escapeHTML(it.productId)}">${escapeHTML(it.title)}</a></h2>
-        <span class="owned-badge">OWNED</span>
-      </div>
-      <p class="vault-meta"><span class="tag">${escapeHTML(type)}</span> ${it.sources.map((s) => `<span class="vault-source">${escapeHTML(SOURCES[s] || s)}</span>`).join(" ")}</p>
-      ${files}
-    </li>`;
+  function render() {
+    const ctx = { catalog, names, selected: state.selected };
+    const view = state.view === "kinds" ? V.kindView(stacc.byKind(state.assets, catalog, state.filter), ctx) : V.treeView(stacc.tree(state.assets, catalog, state.filter), ctx);
+    const files = state.assets.length ? `${V.toolbar(stacc.facets(state.assets), state, ctx)}${V.selection(state.selected.size)}
+      <div class="stacc-view">${view || `<p class="msg">Nothing matches those filters.</p>`}</div>` : "";
+    const waiting = state.items.filter((it) => !it.files.length);
+    root.querySelector("[data-stacc]").innerHTML = files + V.waiting(waiting) + V.following(state.follows, state.discover, ctx);
   }
 
   async function load() {
     const res = await api("/api/library");
     if (res.status === 401) {
       root.innerHTML = `${banner()}<div class="panel appear"><h2>Locked</h2>
-        <p>Log in to open your library. Bought as a guest? Use the link in your receipt email, or create an account with the email you paid with: your purchases join it automatically.</p>
+        <p>Log in to open Your Stacc. Bought as a guest? Use the link in your receipt email, or create an account with the email you paid with: your purchases join it automatically.</p>
         <div class="actions"><a class="btn" href="/login?next=/library">Log in</a><a class="btn ghost" href="/login?next=/library#signup">Create account</a></div></div>`;
       return;
     }
@@ -55,42 +49,108 @@
       return;
     }
     const { items, signedIn } = res.data;
+    state.items = items;
+    state.assets = stacc.assetsFrom(items, catalog);
     const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
-    root.innerHTML = banner() + guest + (items.length
-      ? `<ul class="vault">${items.map(item).join("")}</ul>`
-      : `<div class="panel appear"><h2>Empty</h2><p>Nothing owned yet. Every piece you buy or claim lands here.</p><div class="actions"><a class="btn" href="/shop">Browse the shop</a></div></div>`);
+    root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing owned yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the shop</a></div></div>`) + `<div data-stacc></div>`;
+    if (signedIn) await discover(new Set(items.map((it) => it.productId)));
+    render();
+  }
+
+  // Published products of followed projects not owned yet (the store decides what's published and what's free).
+  async function discover(owned) {
+    const [projects, products] = await Promise.all([api("/api/projects"), api("/api/products")]);
+    if (!projects.ok || !products.ok) return;
+    state.follows = projects.data.follows;
+    const followed = new Set((state.follows || []).map((f) => f.projectId));
+    state.discover = products.data.products.filter((p) => followed.has(p.projectId) && !owned.has(p.id) && p.available);
+  }
+
+  // Asks for a signed link and starts the download. Returns null on success, or the error message.
+  async function fetchFile(fileId, productId) {
+    const res = await api("/api/downloads", { method: "POST", body: { fileId } });
+    if (!res.ok) return res.status === 401 ? "Your session ended. Log in again." : res.error.message;
+    track("download_request", productId);
+    const a = document.createElement("a");
+    a.href = res.data.url;
+    a.download = res.data.filename || "";
+    document.body.append(a);
+    a.click();
+    a.remove();
+    return null;
+  }
+
+  function note(el, text) {
+    const prior = el.querySelector(":scope > .msg");
+    if (prior) prior.remove();
+    if (!text) return;
+    const msg = document.createElement("p");
+    msg.className = "msg error";
+    msg.setAttribute("role", "alert");
+    msg.textContent = text;
+    el.append(msg);
   }
 
   async function download(btn) {
     btn.disabled = true;
     btn.classList.add("busy");
-    const res = await api("/api/downloads", { method: "POST", body: { fileId: btn.dataset.download } });
+    const error = await fetchFile(btn.dataset.download, btn.dataset.product);
     btn.disabled = false;
     btn.classList.remove("busy");
-    if (res.ok) {
-      track("download_request", btn.dataset.product);
-      sound("blip", btn);
-      location.href = res.data.url;
-      return;
+    sound(error ? "error" : "blip", btn);
+    note(btn.closest("li"), error);
+  }
+
+  // One file after another, a moment apart, so the browser treats each as its own download.
+  async function downloadSelected(btn) {
+    btn.disabled = true;
+    const list = state.assets.filter((a) => state.selected.has(a.id));
+    const status = btn.closest(".stacc-selection");
+    const errors = [];
+    for (const [i, a] of list.entries()) {
+      btn.textContent = `Downloading ${i + 1} of ${list.length}…`;
+      const error = await fetchFile(a.id, a.productId);
+      if (error) errors.push(`${a.name}: ${error}`);
+      await new Promise((r) => setTimeout(r, 700));
     }
-    sound("error");
-    const text = res.status === 0 ? res.error.message : res.status === 401 ? "Your session ended. Log in again." : res.error.message;
-    const prior = btn.closest("li").querySelector(".msg");
-    if (prior) prior.remove();
-    const note = document.createElement("p");
-    note.className = "msg error";
-    note.setAttribute("role", "alert");
-    note.textContent = text;
-    btn.closest("li").append(note);
+    btn.disabled = false;
+    btn.textContent = "Download selected";
+    sound(errors.length ? "error" : "blip", btn);
+    note(status, errors.join(" "));
   }
 
   root.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-download]");
     if (btn && !btn.disabled) download(btn);
+    const sel = e.target.closest("[data-download-selected]");
+    if (sel && !sel.disabled) downloadSelected(sel);
+    const view = e.target.closest("[data-view]");
+    if (view) { state.view = view.dataset.view; render(); }
+    if (e.target.closest("[data-clear-selection]")) { state.selected.clear(); render(); }
     if (e.target.closest("[data-retry]")) load();
   });
 
-  // A receipt link (#key=ord_x.secret): store it as a cookie, take it out of the address bar, then open the vault.
+  // Ticking boxes updates the boxes and the selection bar in place, so keyboard focus stays where it was.
+  function syncSelection() {
+    root.querySelectorAll("[data-select]").forEach((box) => (box.checked = state.selected.has(box.dataset.select)));
+    root.querySelectorAll("[data-select-group]").forEach((box) => (box.checked = box.dataset.selectGroup.split(" ").every((id) => state.selected.has(id))));
+    const bar = root.querySelector(".stacc-selection");
+    if (bar) bar.outerHTML = V.selection(state.selected.size);
+  }
+
+  root.addEventListener("change", (e) => {
+    const t = e.target;
+    const set = (id) => state.selected[t.checked ? "add" : "delete"](id);
+    if (t.matches("[data-select]")) set(t.dataset.select);
+    else if (t.matches("[data-select-group]")) t.dataset.selectGroup.split(" ").forEach(set);
+    if (t.matches("[data-select], [data-select-group]")) return syncSelection();
+    if (!t.matches("[data-filter]")) return;
+    state.filter[t.dataset.filter] = t.value;
+    render();
+    root.querySelector(`[data-filter="${t.dataset.filter}"]`).focus();
+  });
+
+  // A receipt link (#key=ord_x.secret): store it as a cookie, take it out of the address bar, then open the Stacc.
   (async () => {
     const key = new URLSearchParams(location.hash.slice(1)).get("key");
     if (key) {

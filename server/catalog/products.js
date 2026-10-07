@@ -12,6 +12,12 @@ export const getProducts = async (db, ids) => {
 export const listProducts = (db, { includeHidden = false } = {}) =>
   all(db, `SELECT * FROM products ${includeHidden ? "" : "WHERE published = 1 AND deleted_at IS NULL"} ORDER BY featured DESC, title`);
 
+// Visible products of the given projects (follows, Auto-Stacc).
+export const listProjectProducts = async (db, projectIds) => {
+  if (!projectIds.length) return [];
+  return all(db, `SELECT * FROM products WHERE published = 1 AND deleted_at IS NULL AND project_id IN (${projectIds.map(() => "?").join(",")}) ORDER BY title`, ...projectIds);
+};
+
 // Visible in the store: published and not removed from data/.
 export const isVisible = (p) => Boolean(p && p.published && !p.deleted_at);
 // Can be bought right now.
@@ -34,6 +40,8 @@ export function publicProduct(p) {
     releaseId: p.release_id,
     metadata: parseJson(p.metadata, {}),
     featured: Boolean(p.featured),
+    projectId: p.project_id || null,
+    pacs: parseJson(p.pacs, []),
     maxQuantity: p.max_quantity,
     available: isPurchasable(p) || isFree(p),
     free: p.price_cents === 0
