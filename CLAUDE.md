@@ -4,11 +4,11 @@ Website for the EDM artist **Glitches & Stitches**. It sells digital items (samp
 
 ## Start of every session
 
-Read [docs/status.md](docs/status.md) for what's pending. The `docs/` folder is the project's memory and an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
+Tasks and bugs live in GitHub Issues: use the `github-workflow` skill to find, claim and finish work, and don't keep a task list anywhere else. The `docs/` folder holds permanent project knowledge and is an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
 
 ## Rules
 
-- Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and add it to `docs/status.md`.
+- Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and open an issue for it.
 - Record decisions and new facts in `docs/` before ending a session (details in `.claude/rules/docs.md`).
 
 ## Site
@@ -23,9 +23,13 @@ Static HTML, CSS and JS with no build step and no framework. Keep it that way un
 
 Don't read every file. Go deeper only when the layer above doesn't answer the question, and don't re-read what's already in context.
 
-1. **Map:** the session-start hook prints the top level (root files and one line per directory). `.claude/tools/tree.sh <dir>` lists one directory's files with their purposes.
-2. **Graph:** `.claude/tools/graph.sh query "<question>"`, `explain "<name>"`, `affected "<name>"` (what breaks if this changes). No args prints the overview. It installs and refreshes Graphify only when called.
-3. **File:** open only files the layers above named, with Grep or Read `offset`/`limit`. Check `affected` before changing shared code.
+1. **Map:** the session-start hook prints the top level. `.claude/tools/tree.sh <dir>` lists one directory's files with their purposes.
+2. **Skill:** for a repeatable task use its skill (`add-product`, `add-news`, `verify-site`, `accessibility-review`, `release-check`). Skills name the files; don't re-derive them.
+3. **Graphify** for orientation across files: `.claude/tools/graph.sh query "<question>"`, `affected "<name>"`.
+4. **Serena** for symbols: `get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, symbol-level edits. Use it instead of reading a whole file. See `.claude/README.md`.
+5. **File:** open only what the layers above named, with Grep or Read `offset`/`limit`.
+
+Preserve module boundaries: edit only the files a change needs, and leave unrelated modules alone.
 
 ## Workflow
 
@@ -33,8 +37,8 @@ One-file changes: just do them. Changes across areas: run the saved workflow `ch
 
 ## Checking changes
 
-Serve with `python3 -m http.server 8000` and load each page in a headless browser. Confirm there are no console errors, no horizontal overflow at 390px wide, and that the shop filter works.
+Run the `verify-site` skill. Before calling a change ready, run `release-check`.
 
 ## Git
 
-Develop on the branch the session names. Don't open a pull request unless asked.
+Develop on the branch the session names. Don't open a pull request unless asked; when you do, put `Closes #N` in it.
