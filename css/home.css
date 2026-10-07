@@ -85,7 +85,7 @@
   color: var(--text);
   font: inherit;
 }
-.newsletter input:focus { outline: none; border-color: var(--cyan); }
+.newsletter input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-color: var(--cyan); }
 .form-msg { font-family: var(--mono); color: var(--lime); margin-top: 14px; min-height: 1.5em; }
 @media (max-width: 480px) {
   .newsletter form { flex-direction: column; }
