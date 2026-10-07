@@ -34,3 +34,7 @@ Split `js/main.js` and `css/style.css` so a change touches only the files for th
 
 So an agent only reads and edits what a task needs: layer 0 is a repo map printed by the session-start hook (built from each file's own purpose line, so it can't go stale), layer 1 is Graphify queries, layer 2 is the specific file or lines. Rule and conventions are in `CLAUDE.md`.
 
+## 2026-10-07: Saved multi-agent workflow for site changes
+
+`site-change` (`.claude/workflows/site-change.js`) plans, builds in parallel on disjoint files, verifies with a browser check and an adversarial review, then updates docs. Kept to about 5 agents so cost stays modest. It does not commit, so the owner or the session reviews the diff first. Not yet run on a real task.
+

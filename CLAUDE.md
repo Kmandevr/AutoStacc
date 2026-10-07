@@ -32,6 +32,10 @@ Keeping the map accurate: every new code file starts with a one-line comment say
 
 Scripts are plain `<script>` tags (no modules, so pages still work from `file://`) and share helpers through `window.GS` from `js/util.js`. Each page loads only the scripts and stylesheets it uses.
 
+## Workflow
+
+Small, one-file changes: just do them. For a change across areas (data, pages, scripts, styles), run the saved workflow `site-change` with `args: { task: "..." }`. It plans the files first, builds independent items in parallel on disjoint files, verifies in a headless browser plus an adversarial diff review, then updates `docs/`. It never commits; review the diff, then commit and push to the session branch. It is in `.claude/workflows/site-change.js`.
+
 ## Checking changes
 
 Serve with `python3 -m http.server 8000` and load each page in a headless browser. Confirm there are no console errors, no horizontal overflow at 390px wide, and that the shop filter works.
