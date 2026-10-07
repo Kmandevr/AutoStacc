@@ -53,7 +53,7 @@ body::before {
   pointer-events: none;
   background: linear-gradient(transparent, rgba(51,255,102,.04), transparent);
   transform: translateY(-100%);
-  animation: roll 9s linear infinite;
+  animation: roll 9s linear var(--clock, 0s) infinite;
   z-index: 99;
 }
 @keyframes roll { to { transform: translateY(100vh); } }
@@ -90,13 +90,13 @@ img { max-width: 100%; display: block; }
 .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
 
 /* ---------- glitch title ---------- */
-/* powers on like a CRT when the page loads, then twitches in short bursts */
+/* twitches in short bursts; the home hero also powers on like a CRT (css/home.css) */
 .glitch {
   position: relative;
   display: inline-block;
   font-weight: 400;
   line-height: 1;
-  animation: power-on .5s var(--snap) both, glitch-skew 4.2s .8s steps(1) infinite;
+  animation: glitch-skew 4.2s .8s steps(1) infinite;
 }
 @keyframes power-on {
   0% { scale: 1.15 .02; opacity: 0; }
@@ -145,10 +145,40 @@ img { max-width: 100%; display: block; }
   93% { transform: translate(-7px, 0); clip-path: inset(40% 0 30% 0); }
   95% { transform: translate(5px, -1px); clip-path: inset(80% 0 2% 0); }
 }
+/* a quick slice-jitter: card titles on hover, and js/motion.js "zaps" a random visible title now and then */
+@keyframes jitter {
+  0% { transform: translate(-3px, 1px) skewX(-6deg); }
+  30% { transform: translate(3px, -1px); }
+  60% { transform: translate(-1px, 0) skewX(4deg); }
+  100% { transform: none; }
+}
+.zap { animation: jitter .35s steps(1); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   body::before { display: none; }
-  .glitch, .glitch::before, .glitch::after, .cursor::after { animation: none; }
+  .glitch, .glitch::before, .glitch::after, .cursor::after, .zap { animation: none; }
+}
+
+/* ---------- page changes: the header stays put, the page glitches out and the next one slides in ---------- */
+@view-transition { navigation: auto; types: page; }
+html:active-view-transition-type(page)::view-transition-old(root) { animation: page-out .16s steps(3) both; }
+html:active-view-transition-type(page)::view-transition-new(root) { animation: page-in .3s var(--snap) both; }
+@keyframes page-out {
+  0% { opacity: 1; clip-path: inset(0); transform: none; }
+  34% { clip-path: inset(0 0 42% 0); transform: translateX(-8px); }
+  67% { clip-path: inset(36% 0 8% 0); transform: translateX(10px); }
+  100% { opacity: 0; clip-path: inset(48% 0 48% 0); transform: translateX(-4px); }
+}
+@keyframes page-in {
+  0% { opacity: 0; clip-path: inset(46% 0 46% 0); transform: translateX(-12px) skewX(-5deg); }
+  45% { opacity: 1; clip-path: inset(0); transform: translateX(4px) skewX(2deg); }
+  100% { opacity: 1; clip-path: inset(0); transform: none; }
+}
+/* the shop filter cross-fades the grid instead of snapping */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none; }
 }
 
 /* ---------- scroll reveal (js/motion.js adds .motion, .reveal and .in) ---------- */
@@ -171,7 +201,6 @@ img { max-width: 100%; display: block; }
 
 .page-hero {
   padding: 72px 0 40px;
-  border-bottom: 2px dashed var(--line);
 }
 .page-hero h1 { font-size: clamp(2.2rem, 6vw, 4rem); margin: 0 0 10px; }
 .page-hero p { color: var(--muted); margin: 0; }
@@ -243,6 +272,11 @@ section { padding: 80px 0; }
   color: var(--purple);
   text-shadow: var(--glow-purple);
 }
-.alt { background: var(--bg-2); border-top: 2px dashed var(--line); border-bottom: 2px dashed var(--line); }
+/* Pieces fitted together: alternate panels have a small step in their top and bottom edges,
+   like fragments cut from different sources and joined. No seam lines. */
+.alt {
+  background: var(--bg-2);
+  clip-path: polygon(0 10px, 37% 10px, 37% 0, 100% 0, 100% calc(100% - 10px), 68% calc(100% - 10px), 68% 100%, 0 100%);
+}
 
 .empty { color: var(--green-dim); font-family: var(--mono); }
