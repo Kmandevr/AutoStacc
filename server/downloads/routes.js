@@ -7,6 +7,7 @@ import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
 import { signDownload, readDownload } from "./tokens.js";
 import { getFile, safeFilename } from "../storage/buckets.js";
+import { limit } from "../lib/ratelimit.js";
 
 const logEvent = (db, event, f) =>
   run(db, "INSERT INTO download_events (id, event, product_id, file_id, entitlement_id, subject, reason, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -22,6 +23,7 @@ function subjectFor(access, ent) {
 }
 
 async function issue(app) {
+  await limit(app, "download", 40, 60);
   const access = await requireAccess(app);
   const body = await readJson(app.request);
   const fileId = str(body.fileId, "fileId", { max: 40, pattern: /^pf_[a-z2-7]+$/ });

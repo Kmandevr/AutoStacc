@@ -7,6 +7,7 @@ import { getOrder, orderItems, publicOrder } from "./orders.js";
 import { guestOrderIds, checkGuestKey, guestCookie, guestKeysFromRequest } from "./guest.js";
 import { providerByName } from "../payments/index.js";
 import { processPaymentEvent } from "../payments/events.js";
+import { limit } from "../lib/ratelimit.js";
 
 // The order, only for its owner (account or guest key). Everyone else gets the same 404 as a missing order.
 async function ownedOrder(app, orderId) {
@@ -35,6 +36,7 @@ async function one(app, { orderId }) {
 
 // Asks the payment provider (with our secret key) whether a pending order was paid. Safe to call any number of times.
 async function reconcile(app, { orderId }) {
+  await limit(app, "reconcile", 30, 60);
   const order = await ownedOrder(app, orderId);
   if (order.status === "pending" && order.provider_session_id) {
     const provider = providerByName(order.provider);
@@ -53,6 +55,7 @@ async function reconcile(app, { orderId }) {
 
 // The library link in a guest's confirmation email carries an order key; this stores it in the guest cookie.
 async function redeemGuestKey(app) {
+  await limit(app, "guest-key", 10, 300);
   const { key } = await readJson(app.request);
   const order = await checkGuestKey(app, str(key, "key", { max: 120 }));
   if (!order) fail(404, "invalid_key", "That library link has expired or isn't valid. Log in, or create an account with the email you paid with.");

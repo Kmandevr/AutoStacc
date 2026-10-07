@@ -6,6 +6,7 @@ import { requireUser } from "../auth/session.js";
 import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
 import { getProduct, getProducts, isFree, isVisible } from "../catalog/products.js";
+import { limit } from "../lib/ratelimit.js";
 
 async function library(app) {
   const access = await requireAccess(app);
@@ -38,6 +39,7 @@ async function library(app) {
 // Free products: a signed-in customer adds them to their library. One grant per account, however often they click.
 async function claimFree(app) {
   const user = await requireUser(app);
+  await limit(app, "free", 20, 60);
   const body = await readJson(app.request);
   const p = await getProduct(app.db, id(body.productId, "productId"));
   if (!isVisible(p)) fail(404, "not_found", "No product with that id.");

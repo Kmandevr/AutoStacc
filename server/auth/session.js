@@ -21,8 +21,8 @@ export const isAdmin = (app, user) =>
   Boolean(user && user.emailVerified && (user.role === "admin" || app.config.adminEmails.has(String(user.email).toLowerCase())));
 
 export async function requireAdmin(app) {
-  const user = await requireUser(app);
-  // Same answer as a missing route, so the admin API doesn't advertise itself.
+  const user = await currentUser(app);
+  // Same answer as a missing route, for strangers and customers alike, so the admin API doesn't advertise itself.
   if (!isAdmin(app, user)) fail(404, "not_found", "Nothing here.");
   return user;
 }
