@@ -13,13 +13,24 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color .2s, transform .2s;
+  transition: border-color .15s, box-shadow .2s var(--snap), transform .2s var(--snap);
 }
 .alt .card { background: var(--bg); }
-.card:hover, .card:focus-within { border-color: var(--purple); box-shadow: var(--glow-purple); transform: translateY(-3px); }
+.card:hover, .card:focus-within { border-color: var(--purple); box-shadow: 0 0 18px rgba(191,95,255,.35); transform: translateY(-5px); }
+/* on hover the cover's scanlines scroll and its title twitches once */
+.card:hover .cover::after { animation: scan-drift .6s linear infinite; }
+.card:hover .cover span { animation: jitter .35s steps(1); }
+@keyframes scan-drift { to { transform: translateY(6px); } }
+@keyframes jitter {
+  0% { transform: translate(-3px, 1px) skewX(-6deg); }
+  30% { transform: translate(3px, -1px); }
+  60% { transform: translate(-1px, 0) skewX(4deg); }
+  100% { transform: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .card { transition: none; }
   .card:hover, .card:focus-within { transform: none; }
+  .card:hover .cover::after, .card:hover .cover span { animation: none; }
 }
 
 .cover {
@@ -40,7 +51,7 @@
 .cover::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -6px 0 0;
   background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 6px);
 }
 .cover span { position: relative; z-index: 1; }
@@ -77,6 +88,8 @@
   font: inherit;
   font-size: .9rem;
   cursor: pointer;
+  transition: background-color .12s, color .12s, border-color .12s, transform .1s var(--snap);
 }
+.filters button:active { transform: scale(.95); }
 .filters button:hover { color: var(--green); border-color: var(--green); }
 .filters button.active { background: var(--green); color: var(--bg); border-color: var(--green); text-shadow: none; }

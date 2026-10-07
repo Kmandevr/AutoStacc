@@ -21,6 +21,9 @@
   margin: 0 0 36px;
 }
 .hero .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.motion .hero .actions { animation: rise .45s var(--snap) .9s both; }
+/* keep the line's height while the tagline types itself out */
+.hero p[data-type] { min-height: 1.6em; }
 
 /* ---------- shows ---------- */
 .shows { border-top: 2px dashed var(--line); }
