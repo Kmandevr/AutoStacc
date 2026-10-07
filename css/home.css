@@ -51,6 +51,7 @@
   align-items: center;
 }
 .about .art {
+  position: relative;
   aspect-ratio: 1;
   border: 2px dashed var(--purple);
   border-radius: var(--radius);
@@ -61,12 +62,76 @@
   display: grid;
   place-items: center;
   font-family: var(--display);
-  font-size: 6rem;
+  font-size: clamp(5rem, 13vw, 9rem);
   text-shadow: 3px 0 var(--purple), -3px 0 var(--green);
+}
+/* the monogram is torn in half and stitched back together, slightly misaligned */
+.about .art span { position: relative; color: transparent; text-shadow: none; }
+.about .art span::before,
+.about .art span::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--green);
+  text-shadow: 3px 0 var(--purple), var(--glow);
+}
+.about .art span::before { clip-path: inset(0 0 50% 0); transform: translateX(-7px); }
+.about .art span::after { clip-path: inset(50% 0 0 0); transform: translateX(7px); }
+.about .art::after {
+  content: "";
+  position: absolute;
+  left: 14%; right: 14%; top: 50%;
+  border-top: 2px dashed var(--purple);
 }
 @media (max-width: 800px) {
   .about { grid-template-columns: 1fr; }
 }
+
+/* ---------- the loop: steps hang off a stitched seam ---------- */
+.loop-intro { color: var(--muted); margin: 0 0 28px; }
+.loop {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0 0 0 34px;
+  position: relative;
+  max-width: 760px;
+}
+.loop::before {
+  content: "";
+  position: absolute;
+  left: 10px; top: 14px; bottom: 14px;
+  border-left: 2px dashed var(--purple);
+}
+.loop li {
+  counter-increment: step;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 16px;
+  padding: 10px 0;
+}
+.loop li::before {
+  content: "\00d7";
+  position: absolute;
+  left: -34px; top: 8px;
+  width: 22px;
+  text-align: center;
+  color: var(--purple);
+  background: var(--bg-2);
+  font-weight: 700;
+  text-shadow: var(--glow-purple);
+}
+.loop li:last-child::before { content: "\21bb"; }
+.loop strong {
+  min-width: 19ch;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.loop strong::before { content: counter(step, decimal-leading-zero) " "; color: var(--green-dim); text-shadow: none; }
+.loop span { color: var(--muted); }
 
 /* ---------- newsletter ---------- */
 .newsletter { text-align: center; }

@@ -11,7 +11,7 @@
   // css/base.css only hides .reveal items under .motion, so the page stays visible if this script never runs.
   document.documentElement.classList.add("motion");
 
-  const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .newsletter form";
+  const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .loop li, .newsletter form";
   const seen = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
