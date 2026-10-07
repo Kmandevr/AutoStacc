@@ -42,7 +42,7 @@ for (const page of pages) {
 
 // ---------- browser checks ----------
 const server = http.createServer((req, res) => {
-  const p = path.join(root, decodeURIComponent(req.url.split("?")[0]).replace(/\/$/, "/index.html"));
+  const p = path.join(root, decodeURIComponent(req.url.split("?")[0]).replace(/\/$/, "/home.html"));
   if (!p.startsWith(root) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
   const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
   res.writeHead(200, { "Content-Type": types[path.extname(p)] || "application/octet-stream" });
@@ -95,7 +95,7 @@ const server = http.createServer((req, res) => {
           if ((await tab.locator(".card").count()) !== before) problems.push(["FAIL", "shop-filter", "'All' did not restore the full list"]);
         } else problems.push(["WARN", "shop-filter", "fewer than two categories, filter not exercised"]);
       }
-      if (page === "index.html" && width === 1280 && (await tab.locator("#newsletter-form").count())) {
+      if (page === "home.html" && width === 1280 && (await tab.locator("#newsletter-form").count())) {
         await tab.fill("#newsletter-form input[type=email]", "test@example.com");
         await tab.click("#newsletter-form button");
         if (!(await tab.locator("#newsletter-msg").innerText()).trim() && !(await tab.url()).includes("?")) problems.push(["WARN", "newsletter", "submitting showed no message"]);

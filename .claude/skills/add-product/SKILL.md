@@ -15,7 +15,7 @@ description: Add, edit, remove or feature a shop product in AutoStacc. Use for a
    - `checkoutUrl`: a hosted-checkout link, or `""` to show "Coming soon". The site never handles payment or files.
    - `featured: true`: the home page shows at most 3, in file order.
    - `hue`: 0-359, only affects the generated cover: 90-209 gives a green glow, anything else purple.
-4. Run the `verify-site` skill on `shop.html` and `index.html`.
+4. Run the `verify-site` skill on `shop.html` and `home.html`.
 5. If the catalogue changed meaningfully, update `docs/shop.md` and add a line to `docs/log.md`.
 
 Don't touch `data/news.js`, `data/shows.js`, `data/site.js` or any JS/CSS.

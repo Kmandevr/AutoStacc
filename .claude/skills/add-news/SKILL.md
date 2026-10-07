@@ -14,7 +14,7 @@ description: Add, edit or remove a news post (or tour date) in AutoStacc. Use fo
    - `summary` is plain text, shown on the home page. `body` may contain simple HTML, shown on the news page; keep it to `<p>`, `<a>`, `<strong>`, `<em>`, and escape quotes.
    - Reuse an existing `tag` unless the user wants a new one.
    - Shows: `date`, `city`, `venue`, `ticketUrl` (`""` shows "Tickets soon"). Past dates hide automatically.
-4. Run the `verify-site` skill on `news.html` and `index.html`.
+4. Run the `verify-site` skill on `news.html` and `home.html`.
 5. Add a line to `docs/log.md`.
 
 Don't touch `data/products.js`, `data/site.js` or any JS/CSS.
