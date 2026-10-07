@@ -124,9 +124,9 @@ function product(SITE, p, url, release) {
       "@type": "Offer",
       url,
       price: Number(p.price).toFixed(2),
-      priceCurrency: SITE.currency || "USD",
-      // Bought through the hosted checkout; with no checkout link yet it can't be bought.
-      availability: "https://schema.org/" + (isUrl(p.checkoutUrl) ? "InStock" : "OutOfStock"),
+      priceCurrency: p.currency || SITE.currency || "USD",
+      // Sold through the site's own store; drafts never get this far (they publish no Product data).
+      availability: "https://schema.org/" + (p.draft ? "OutOfStock" : "InStock"),
       seller: { "@id": ids(SITE).artist }
     }
   };

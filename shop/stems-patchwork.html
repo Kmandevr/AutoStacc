@@ -53,22 +53,25 @@
     </div>
 
     <section>
-      <div class="wrap product">
+      <div class="wrap product" data-product-page="stems-patchwork">
         <div class="product-art cover tint-purple" aria-hidden="true"><span>Patchwork (Remix Stems)</span></div>
         <div class="product-info">
           <p class="lede">Full stem set for the single 'Patchwork'. Remix it, flip it, send it back to us.</p>
           
+          
           <dl class="facts">
             <dt>Type</dt><dd>Stems</dd>
             <dt>Format</dt><dd>Digital download</dd>
-            <dt>Price</dt><dd class="price">$9.99</dd>
-            <dt>Status</dt><dd>Coming soon</dd>
+            <dt>Price</dt><dd class="price" data-price="stems-patchwork">$9.99</dd>
+            <dt>Status</dt><dd data-status="stems-patchwork">Coming soon</dd>
+            
+            <dt>Tags</dt><dd class="tags"><span class="tag">stems</span> <span class="tag">remix</span></dd>
             
           </dl>
-          <div class="detail-buy">
+          <div class="detail-buy buy" data-buy="stems-patchwork">
             <span class="btn" aria-disabled="true">Coming soon</span>
           </div>
-          <p class="note">Payment and the download are handled by our checkout provider. This site never sees your card details.</p>
+          <p class="note">Checkout runs on Stripe; this site never sees your card. Files land in your <a href="/library">library</a> the moment the payment clears, as private links that expire after a few minutes.</p>
         </div>
       </div>
     </section>
@@ -88,6 +91,7 @@
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/sound.js"></script>
+  <script src="/js/store.js"></script>
   <script src="/js/eggs.js"></script>
   <script src="/js/terminal.js"></script>
   <script src="/js/motion.js"></script>

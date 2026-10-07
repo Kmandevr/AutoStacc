@@ -12,6 +12,8 @@
   const platforms = $("#listen-platforms");
   const releases = (MUSIC.releases || []).filter((r) => !r.draft);
   const release = releases.find((r) => r.id === (player.dataset.release || MUSIC.featured)) || releases[0] || {};
+  // A release page (not the home page's Listen section) counts as a release view (privacy-friendly, js/util.js).
+  if (player.dataset.release && release.id) window.GS.track("release_view", release.id);
 
   // Only well-known players are embedded, so a typo can't load an unrelated page into the site.
   const PLAYERS = ["open.spotify.com", "w.soundcloud.com", "widget.deezer.com", "bandcamp.com", "embed.music.apple.com",

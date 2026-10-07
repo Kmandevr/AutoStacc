@@ -6,15 +6,35 @@ updated: 2026-10-07
 
 # Decisions
 
+## 2026-10-07: Own store on Cloudflare Pages Functions, D1 and R2 (#16)
+
+The owner asked for a real store: accounts, a cart, guest checkout, verified payments, a library of owned products, private downloads, receipts and an admin, while keeping the site static, light and on Cloudflare. This replaces "Hosted checkout instead of our own payments" and the per-product `checkoutUrl`.
+
+- **Same Pages project, code only under `/api/*`:** Pages Functions (`functions/`, code in `server/`) run only for `/api/*` and `/media/previews/*`, so every page is still a static file and the public site is as fast as before. Same origin means first-party cookies and no CORS. Plain module per area (auth, catalog, cart, checkout, payments, orders, entitlements, downloads, storage, email, admin, analytics) with its own route table and a 40-line router instead of a framework.
+- **Better Auth** for accounts: mature, runs on Workers with D1 natively, does hashing, sessions, verification, reset and rate limits; we write no password code. Email verification is required because purchases attach by email (otherwise anyone could sign up with a buyer's email and inherit their files).
+- **Stripe Checkout** (hosted) with server-side prices, signed webhooks through one idempotent, compare-and-set pipeline, and reconciliation through Stripe's API when a webhook is late. The site still never sees card data.
+- **Entitlements separate from orders**, so free claims, promos, manual grants, bundles and subscriptions work the same way, and a guest's purchases are adopted (not copied) when they verify the email.
+- **Downloads:** R2 bindings can't presign URLs without extra S3 credentials, so links are our own HMAC-signed 5-minute tokens, redeemed by the Worker that re-checks session and entitlement and streams from the private bucket. Revocation takes effect immediately, even for issued links.
+- **Catalog content stays in `data/products.js`** (git-reviewed, generates the static pages and search data) and is synced to D1 by a generated `db/catalog.sql`, so the page price and the charged price can't drift. The admin manages what isn't content: sales switch, files, previews, orders, customers, entitlements. Editing titles and prices from the admin would need pages built from the database: later, if wanted.
+- **Brevo behind an email interface**, and a `log` provider for local development.
+- **Analytics as daily counters in D1** (no cookies, IPs or user ids; DNT/GPC respected) rather than a third-party script.
+- **Safe test mode:** a mock payment provider and log mailer that `server/lib/config.js` refuses outside development/test; production refuses test Stripe keys; separate databases and buckets per environment.
+- **Deploy stays one workflow:** the store is provisioned and deployed only when the repo variable `STORE_ENABLED` is `true`; otherwise the deploy is the static site exactly as before, so nothing breaks while keys are missing. Node dependencies (`package.json`) are now needed for the store and its tests; `scripts/` stay dependency-free.
+- **Tests that attack it:** unit, API security (with a fake Stripe API and really signed webhooks) and browser chaos suites, in CI (`store.yml`).
+Details: [store](store.md), [store-setup](store-setup.md), [development](development.md).
+
 ## 2026-10-07: SEO from one generator, home at `/`
 
 The owner asked for complete, honest search visibility so autostacc.com is the clear official home of Glitches & Stitches. Hand-copied head tags on every page couldn't scale to a page per release, product and post, and social previews and non-rendering crawlers need static tags. So `scripts/build.js` (plain Node, no dependencies, committed output, also run by the deploy) generates each page's head block, item pages, structured data and `sitemap.xml` from `data/` (the deploy checks the committed output is current); lists still render in the browser. This replaces "no build step" with "no required build step": the committed files are plain static pages. The home page moved from `/home` to `/` (`index.html`): the root of the domain is the strongest official-site signal and the canonical a search result shows; `/home` 301s there. Links became root-relative clean addresses because nested pages need them and `shop.html` links were redirect hops; local preview is `node scripts/serve.js`, which mimics Cloudflare Pages. Placeholder content is `draft: true`: draft news and tour dates are hidden because they stated invented facts, draft products stay visible as "Coming soon" but out of search. The fake booking email and bare-domain profile links were removed. Tests (`scripts/seo-test.js`, verify-site's rendered-head and crawl checks) run in CI and gate the deploy. Details: [seo](seo.md).
 
 ## 2026-10-06: Static site, no build step
 
-Plain HTML, CSS and JS. Free to host anywhere (GitHub Pages, Netlify, Cloudflare Pages) and easy to edit. Revisit if a cart or accounts are needed.
+Plain HTML, CSS and JS. Free to host anywhere (GitHub Pages, Netlify, Cloudflare Pages) and easy to edit. Revisit if a cart or accounts are needed. (Revisited 2026-10-07: pages stay static; the store adds an API beside them.)
 
 ## 2026-10-06: Hosted checkout instead of our own payments
+
+Superseded by the store decision above (2026-10-07).
+
 
 Selling digital files needs payment and secure delivery. A hosted provider handles both, so the site stays static and never touches card data. Provider not chosen yet (tracked as a GitHub issue).
 

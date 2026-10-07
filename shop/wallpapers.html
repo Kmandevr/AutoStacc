@@ -53,22 +53,25 @@
     </div>
 
     <section>
-      <div class="wrap product">
+      <div class="wrap product" data-product-page="wallpapers">
         <div class="product-art cover tint-purple" aria-hidden="true"><span>Static Bloom</span></div>
         <div class="product-info">
           <p class="lede">12 phone and desktop wallpapers pulled from the live visuals.</p>
           
+          
           <dl class="facts">
             <dt>Type</dt><dd>Visuals</dd>
             <dt>Format</dt><dd>Digital download</dd>
-            <dt>Price</dt><dd class="price">$3.00</dd>
-            <dt>Status</dt><dd>Coming soon</dd>
+            <dt>Price</dt><dd class="price" data-price="wallpapers">$3.00</dd>
+            <dt>Status</dt><dd data-status="wallpapers">Coming soon</dd>
+            
+            <dt>Tags</dt><dd class="tags"><span class="tag">wallpapers</span></dd>
             
           </dl>
-          <div class="detail-buy">
+          <div class="detail-buy buy" data-buy="wallpapers">
             <span class="btn" aria-disabled="true">Coming soon</span>
           </div>
-          <p class="note">Payment and the download are handled by our checkout provider. This site never sees your card details.</p>
+          <p class="note">Checkout runs on Stripe; this site never sees your card. Files land in your <a href="/library">library</a> the moment the payment clears, as private links that expire after a few minutes.</p>
         </div>
       </div>
     </section>
@@ -76,7 +79,7 @@
     <section class="alt">
       <div class="wrap">
         <div class="section-head"><h2>More downloads</h2><a href="/shop">Everything &rarr;</a></div>
-        <ul class="tiles"><li><a class="tile" href="/shop/vj-loops"><span class="tag">Visuals</span><strong>Live Set VJ Loops</strong><span class="price">$14.99</span></a></li></ul>
+        <ul class="tiles"><li><a class="tile" href="/shop/sample-pack-vol1"><span class="tag">Sample Packs</span><strong>Frayed Signals — Sample Pack Vol. 1</strong><span class="price">$24.99</span></a></li><li><a class="tile" href="/shop/serum-presets"><span class="tag">Presets</span><strong>Seam Ripper — Serum Preset Bank</strong><span class="price">$19.99</span></a></li><li><a class="tile" href="/shop/stems-patchwork"><span class="tag">Stems</span><strong>Patchwork (Remix Stems)</strong><span class="price">$9.99</span></a></li></ul>
       </div>
     </section>
 
@@ -88,6 +91,7 @@
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/sound.js"></script>
+  <script src="/js/store.js"></script>
   <script src="/js/eggs.js"></script>
   <script src="/js/terminal.js"></script>
   <script src="/js/motion.js"></script>

@@ -17,7 +17,7 @@ Goal: when someone searches "Glitches & Stitches", search engines have every hon
   - one static page per release (`music/<id>.html` → `/music/<id>`), product (`shop/<id>.html`) and news post (`news/<id>.html`), with breadcrumbs, artwork, related links and structured data. Templates: `scripts/lib/pages.js`; head and JSON-LD: `scripts/lib/head.js`.
   - `sitemap.xml` with every indexable page, and `scripts/public-urls.txt`, the record of every URL ever published.
   - `--check` writes nothing and fails if anything is out of date. Output is committed, so the repo is exactly what goes live; the deploy refuses to publish if it is out of date.
-- Pages stay static HTML on Cloudflare Pages: no server rendering, no Worker, no framework. Lists (shop grid, news, release cards) are still rendered in the browser from `data/`; the head, item pages and sitemap are static so every crawler and link preview sees them.
+- Pages stay static HTML on Cloudflare Pages: no server rendering, no framework. Only the store API (`/api/*`) runs code ([store](store.md)); live price and ownership are added to product pages by script, on top of the static price. Lists (shop grid, news, release cards) are still rendered in the browser from `data/`; the head, item pages and sitemap are static so every crawler and link preview sees them.
 
 ## Addresses
 
@@ -25,7 +25,7 @@ Goal: when someone searches "Glitches & Stitches", search engines have every hon
 - Pages are `/music`, `/shop`, `/news`, `/press`, plus `/music/<id>`, `/shop/<id>`, `/news/<id>`. Cloudflare Pages 308s `/x.html` and `/x/` to `/x`; query strings are covered by the canonical tag.
 - All internal links are root-relative clean addresses, so no internal link goes through a redirect.
 - `_headers` sends `X-Robots-Tag: noindex` on `*.pages.dev` (the project address and every preview deployment), so only autostacc.com gets indexed. The owner's Bulk Redirect also sends `autostacc.pages.dev` to autostacc.com.
-- `robots.txt` allows everything public (including CSS/JS/data, which pages need to render) and blocks `/account`, `/login`, `/admin`, `/checkout`, `/cart`, `/api/`, `/private/` in case they're ever added. It names the sitemap.
+- `robots.txt` allows everything public (including CSS/JS/data, which pages need to render) and blocks the store's private pages and API: `/account`, `/login`, `/library`, `/admin`, `/checkout`, `/cart`, `/api/`, `/private/`. Those pages are also `noindex` with no canonical and stay out of the sitemap (both test suites check this). It names the sitemap.
 - The 404 page is `noindex` and returns a real 404 status.
 
 ## Structured data (schema.org JSON-LD)
@@ -36,7 +36,7 @@ Goal: when someone searches "Glitches & Stitches", search engines have every hon
 | Music, Shop, News | `CollectionPage` with an `ItemList` of the releases, public products or posts, `BreadcrumbList` |
 | Press | `AboutPage` about the artist, plus the full `MusicGroup` |
 | Release | `MusicAlbum` (release type, date, artwork, `MusicRecording` tracks with ISRC and duration, store links), `BreadcrumbList` |
-| Product (not draft) | `ItemPage`, `Product` with `Brand` and an `Offer` (price, currency; `InStock` with a checkout link, otherwise `OutOfStock`) |
+| Product (not draft) | `ItemPage`, `Product` with `Brand` and an `Offer` (price, currency, `InStock`) |
 | News post | `BlogPosting`, `BreadcrumbList` |
 | Shows | `MusicEvent`, added in the browser by `js/shows.js` only for upcoming shows with a ticket link |
 

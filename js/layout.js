@@ -1,8 +1,9 @@
-// Renders the shared header (with skip link) and footer. Needs data/site.js and js/util.js. Structured data is static, from scripts/build.js.
+// Renders the shared header (with skip link, account link and cart count) and footer. Needs data/site.js and js/util.js. Structured data is static, from scripts/build.js.
 (function () {
   "use strict";
 
-  const { $, escapeHTML, isSet } = window.GS;
+  const GS = window.GS;
+  const { $, escapeHTML, isSet } = GS;
   const SITE = window.SITE || {};
 
   const page = document.body.dataset.page;
@@ -15,7 +16,8 @@
     ["/shop", "Shop", "shop"],
     ["/news", "News", "news"],
     ["/#about", "About", "about"],
-    ["/press", "Press", "press"]
+    ["/press", "Press", "press"],
+    ["/account", "Account", "account"]
   ];
   const current = (key) =>
     key === page ? ' class="active" aria-current="page"' : key === section ? ' class="active" aria-current="true"' : "";
@@ -45,6 +47,7 @@
           ${links
             .map(([href, label, key]) => `<a href="${href}"${current(key)}>${label}</a>`)
             .join("")}
+          <a class="cart-link" href="/cart"${current("cart")}>Cart<span class="cart-count" aria-hidden="true"></span><span class="sr-only cart-count-sr"></span></a>
         </nav>
       </div>`;
     const toggle = $(".nav-toggle", header);
@@ -57,6 +60,15 @@
       toggle.textContent = open ? "[×]" : "[≡]";
     };
     toggle.addEventListener("click", () => setOpen(!nav.classList.contains("open")));
+    // Cart size from this browser's cart (js/util.js); updates live when anything is added or removed.
+    const showCount = () => {
+      const n = GS.cart.count();
+      $(".cart-count", header).textContent = n ? `[${n}]` : "";
+      $(".cart-count-sr", header).textContent = n ? `, ${n} item${n === 1 ? "" : "s"}` : "";
+    };
+    showCount();
+    addEventListener("gs:cart", showCount);
+    addEventListener("storage", (e) => e.key === "gs:cart" && showCount());
     nav.addEventListener("click", (e) => {
       if (e.target.tagName === "A") setOpen(false);
     });

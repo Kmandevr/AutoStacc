@@ -53,22 +53,25 @@
     </div>
 
     <section>
-      <div class="wrap product">
+      <div class="wrap product" data-product-page="ep-corrupted-thread">
         <div class="product-art cover tint-purple" aria-hidden="true"><span>Corrupted Thread EP (Lossless)</span></div>
         <div class="product-info">
           <p class="lede">The 5-track EP in FLAC and WAV, plus 2 bonus tracks only available here.</p>
           
+          
           <dl class="facts">
             <dt>Type</dt><dd>Music</dd>
             <dt>Format</dt><dd>Digital download</dd>
-            <dt>Price</dt><dd class="price">$7.00</dd>
-            <dt>Status</dt><dd>Coming soon</dd>
+            <dt>Price</dt><dd class="price" data-price="ep-corrupted-thread">$7.00</dd>
+            <dt>Status</dt><dd data-status="ep-corrupted-thread">Coming soon</dd>
+            
+            <dt>Tags</dt><dd class="tags"><span class="tag">flac</span> <span class="tag">wav</span></dd>
             
           </dl>
-          <div class="detail-buy">
+          <div class="detail-buy buy" data-buy="ep-corrupted-thread">
             <span class="btn" aria-disabled="true">Coming soon</span>
           </div>
-          <p class="note">Payment and the download are handled by our checkout provider. This site never sees your card details.</p>
+          <p class="note">Checkout runs on Stripe; this site never sees your card. Files land in your <a href="/library">library</a> the moment the payment clears, as private links that expire after a few minutes.</p>
         </div>
       </div>
     </section>
@@ -88,6 +91,7 @@
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/sound.js"></script>
+  <script src="/js/store.js"></script>
   <script src="/js/eggs.js"></script>
   <script src="/js/terminal.js"></script>
   <script src="/js/motion.js"></script>

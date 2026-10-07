@@ -1,0 +1,38 @@
+/* Cart and checkout result pages: cart lines, totals, checkout states and the dev-only test payment panel. */
+
+.cart-lines { list-style: none; margin: 0 0 28px; padding: 0; border-top: 1px solid var(--line); max-width: 860px; }
+.cart-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px 18px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cart-what { display: grid; gap: 4px; min-width: 0; }
+.cart-what a { color: var(--green); text-shadow: var(--glow); overflow-wrap: anywhere; }
+.cart-problem { color: var(--purple); text-shadow: var(--glow-purple); font-size: .85rem; }
+.cart-line.has-problem .cart-price { text-decoration: line-through; color: var(--muted); }
+.cart-price { color: var(--green); font-weight: 700; }
+.cart-qty select { min-height: 44px; padding: 6px 10px; background: var(--bg); color: var(--green); border: 1px solid var(--line); font: inherit; }
+.cart-totals { display: grid; grid-template-columns: auto auto; justify-content: space-between; gap: 6px 18px; margin: 0 0 18px; }
+.cart-totals dt { color: var(--muted); }
+.cart-totals dd { margin: 0; text-align: right; }
+.cart-summary { max-width: 860px; }
+
+/* checkout result */
+.checkout-state { display: grid; gap: 14px; }
+.checkout-state .big { font-family: var(--display); font-size: clamp(2.4rem, 8vw, 4.2rem); line-height: 1; margin: 0; color: var(--green); text-shadow: 2px 0 var(--purple), var(--glow); }
+.checkout-state .big.bad { color: var(--purple); text-shadow: -2px 0 var(--green), var(--glow-purple); }
+.order-lines { list-style: none; margin: 0; padding: 0; }
+.order-lines li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.mock-pay { border-color: var(--purple); }
+.mock-pay > h2::before { content: "$ test-mode "; }
+
+@media (max-width: 600px) {
+  .cart-line { grid-template-columns: minmax(0, 1fr) auto; }
+  .cart-price { grid-row: 1; grid-column: 2; }
+  .cart-qty { grid-column: 1; }
+  .cart-qty:empty { display: none; }
+  .cart-line .link-btn { grid-column: 2; justify-self: end; }
+}

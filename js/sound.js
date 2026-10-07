@@ -154,7 +154,11 @@
     // monogram: cracks apart (stuttering), pops at 0.39s, snaps back at 0.78s, settles at 1.3s
     shatter: () => { hiss(0, { freq: 1800, len: 0.25, peak: 0.45, grit: 0.9, chop: 3 }); pluck(note(1), 0.39, { len: 0.15, grit: 0.9 }); pluck(note(3), 0.78, { len: 0.2, grit: 0.5 }); pluck(note(5), 1.3, { len: 0.6, space: 0.9 }); },
     // terminal: unknown command, a crushed and stuttering low buzz
-    error: () => { pluck(note(0) / 2, 0, { len: 0.2, peak: 0.32, grit: 0.9, chop: 1 }); pluck((note(0) / 2) * 1.06, 0.12, { len: 0.25, peak: 0.3, grit: 0.9, chop: 1 }); }
+    error: () => { pluck(note(0) / 2, 0, { len: 0.2, peak: 0.32, grit: 0.9, chop: 1 }); pluck((note(0) / 2) * 1.06, 0.12, { len: 0.25, peak: 0.3, grit: 0.9, chop: 1 }); },
+    // store: a piece added to the cart, two quick rising plucks pulled tight like a stitch
+    stitch: ({ x }) => { hiss(0, { freq: 4600, len: 0.02, peak: 0.16, pan: x, grit: 0.8 }); pluck(note(2), 0.03, { len: 0.12, peak: 0.34, pan: x, grit: 0.6 }); pluck(note(4), 0.1, { len: 0.22, peak: 0.36, pan: x, grit: 0.5 }); },
+    // store: payment confirmed, the chant's "Cinch" note locking in on the root
+    cinch: () => [3, 5, 7].forEach((n, i) => pluck(note(n), i * 0.09, { len: i === 2 ? 0.8 : 0.22, peak: 0.4, space: 0.75, chop: i === 2 ? 2 : 0 }))
   };
 
   const panOf = (el) => {

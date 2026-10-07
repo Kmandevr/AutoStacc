@@ -2,3 +2,6 @@ graphify-out/
 .claude/
 .git/
 .serena/
+node_modules/
+dist/
+.wrangler/
