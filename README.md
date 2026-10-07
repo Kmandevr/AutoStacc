@@ -12,6 +12,12 @@ It is a plain static site (HTML, CSS and JavaScript, with no build step or serve
 | `shop.html` | All products, filterable by category |
 | `news.html` | Every update in full |
 
+## Code layout
+
+- `css/`: `base.css` (every page), `layout.css` (header and footer), `shop.css`, `news.css`, `home.css`
+- `js/`: `util.js` (shared helpers), `layout.js`, `shop.js`, `news.js`, `shows.js`, `newsletter.js`
+- Each page loads only the files it uses. See the table in `CLAUDE.md`.
+
 ## Updating content
 
 All content lives in `data/`. Edit these files; you don't need to touch the HTML.

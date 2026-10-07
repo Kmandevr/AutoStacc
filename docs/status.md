@@ -1,6 +1,6 @@
 ---
 title: Status
-updated: 2026-10-06
+updated: 2026-10-07
 ---
 
 # Status
@@ -8,6 +8,8 @@ updated: 2026-10-06
 ## Done
 
 - Static site with home, shop and news pages, driven by `data/*.js` (see [log](log.md)).
+- Code split into one file per feature, with a task-to-file map in `CLAUDE.md` ([decisions](decisions.md)).
+- Graphify session hook and permissions added. It takes effect in every session once this branch is merged to the default branch.
 
 ## Needs the owner's input
 

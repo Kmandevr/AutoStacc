@@ -16,10 +16,25 @@ Read [docs/index.md](docs/index.md), then [docs/status.md](docs/status.md) for w
 
 Static HTML, CSS and JS with no build step and no framework. Keep it that way unless the user decides otherwise.
 
-- Pages: `index.html`, `shop.html`, `news.html`. Shared header and footer are rendered by `js/main.js`.
 - All content is data in `data/*.js` (`site`, `products`, `news`, `shows`). Update content there, not in the HTML.
 - Payments happen on a hosted checkout via each product's `checkoutUrl`. The site never handles card details or download files.
-- Style is in `css/style.css`: dark background, neon pink and cyan, dashed "stitched" borders, glitch title effect. See [docs/brand.md](docs/brand.md).
+- Style: dark background, neon pink and cyan, dashed "stitched" borders, glitch title effect. See [docs/brand.md](docs/brand.md).
+
+## Where to work
+
+Open only the files for the task. Each page loads only what it needs. Scripts are plain `<script>` tags (no modules, so pages still work from `file://`) and share helpers through `window.GS` from `js/util.js`.
+
+| Task | Files |
+| --- | --- |
+| Change copy, products, news, shows, links | `data/site.js`, `products.js`, `news.js`, `shows.js` |
+| Header, footer, nav | `js/layout.js`, `css/layout.css` |
+| Product cards, shop filter | `js/shop.js`, `css/shop.css` |
+| News list | `js/news.js`, `css/news.css` |
+| Home hero, shows, about, newsletter | `index.html`, `js/shows.js`, `js/newsletter.js`, `css/home.css` |
+| Colours, fonts, buttons, glitch title | `css/base.css` |
+| New page | copy `shop.html` or `news.html`; load `css/base.css`, `css/layout.css`, `js/util.js`, `js/layout.js` plus what it uses |
+
+`graphify-out/GRAPH_REPORT.md` (rebuilt each cloud session by `.claude/hooks/session-start.sh`) maps the code. Query it with `graphify query "<question>"` before reading many files.
 
 ## Checking changes
 
