@@ -1,9 +1,10 @@
 # Crawl rules: all public pages (and the CSS, JS and data they need to render) are open; private areas never are.
-# The site has none of these areas today; the rules keep them out of search if they are ever added.
+# Account and store pages (also noindex) and the store API are never crawled.
 User-agent: *
 Allow: /
 Disallow: /account
 Disallow: /login
+Disallow: /library
 Disallow: /admin
 Disallow: /checkout
 Disallow: /cart

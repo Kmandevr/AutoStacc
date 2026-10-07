@@ -85,7 +85,7 @@ const productCover = (p, eager) => p.image
 const linkButtons = (links) => links.map((l) => `<a class="btn ghost" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>`).join("");
 
 function productTile(p) {
-  return `<li><a class="tile" href="/shop/${esc(p.id)}"><span class="tag">${esc(p.category)}</span><strong>${esc(p.title)}</strong><span class="price">${money(p.price)}</span></a></li>`;
+  return `<li><a class="tile" href="/shop/${esc(p.id)}"><span class="tag">${esc(p.category)}</span><strong>${esc(p.title)}</strong><span class="price">${p.price ? money(p.price) : "Free"}</span></a></li>`;
 }
 
 // ---------- release ----------
@@ -175,15 +175,19 @@ ${related.length ? `
 }
 
 // ---------- product ----------
+// The buy area is a static fallback inside data-buy; js/store.js replaces it with the live control (Add to cart,
+// Get it free, OWNED + library link) from the store API. Drafts stay "Coming soon".
 function productPage(SITE, data, p) {
   const url = abs(SITE, "/shop/" + p.id);
   const crumbs = [["Home", "/"], ["Shop", "/shop"], [p.title, "/shop/" + p.id]];
   const release = data.releases.find((r) => r.id === p.release);
-  const buyable = isUrl(p.checkoutUrl);
-  const more = data.products.filter((x) => x.id !== p.id && x.category === p.category).slice(0, 3);
+  const buyable = !p.draft;
+  const type = data.productTypes[p.type] || {};
+  const price = p.price ? money(p.price) : "Free";
+  const more = data.products.filter((x) => x.id !== p.id && x.type === p.type).slice(0, 3);
   const others = more.length ? more : data.products.filter((x) => x.id !== p.id).slice(0, 3);
   const title = `${p.title}${suffix(SITE)}`;
-  const description = clip(`${p.title}: ${p.description} ${p.category} from ${SITE.artist}, ${money(p.price)}.`);
+  const description = clip(`${p.title}: ${p.description} ${p.category} from ${SITE.artist}, ${price}.`);
   const page = {
     path: "/shop/" + p.id,
     title,
@@ -192,32 +196,43 @@ function productPage(SITE, data, p) {
     index: !p.draft,
     ogType: "product",
     image: p.image,
-    og: { "product:price:amount": Number(p.price).toFixed(2), "product:price:currency": SITE.currency || "USD" },
+    og: { "product:price:amount": Number(p.price).toFixed(2), "product:price:currency": p.currency },
     schema: p.draft ? [] : [
       H.webPage(SITE, { path: "/shop/" + p.id, title, description }, "ItemPage",
         { mainEntity: { "@id": url + "#product" }, breadcrumb: H.breadcrumbs(SITE, crumbs) }),
       H.product(SITE, p, url, release)
     ]
   };
+  const preview = p.preview && type.preview !== "none"
+    ? `<figure class="preview">
+            <figcaption>${esc(p.preview.label || "Preview")}</figcaption>
+            <audio controls preload="none" src="/media/previews/${esc(p.preview.file)}" data-preview="${esc(p.id)}"></audio>
+          </figure>`
+    : "";
+  const facts = Object.entries(p.metadata || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   const main = `${hero(crumbs, esc(p.category), p.title, `by <a href="/">${esc(SITE.artist)}</a>`)}
 
     <section>
-      <div class="wrap product">
+      <div class="wrap product" data-product-page="${esc(p.id)}">
         ${productCover(p, true)}
         <div class="product-info">
           <p class="lede">${esc(p.description)}</p>
-          ${p.preview ? `<p>${esc(p.preview)}</p>` : ""}
+          ${preview}
+          ${(p.includes || []).length ? `<h2 class="included-head">What's inside</h2>
+          <ul class="included">${p.includes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
           <dl class="facts">
             <dt>Type</dt><dd>${esc(p.category)}</dd>
             <dt>Format</dt><dd>Digital download</dd>
-            <dt>Price</dt><dd class="price">${money(p.price)}</dd>
-            <dt>Status</dt><dd>${buyable ? "Available now" : "Coming soon"}</dd>
+            <dt>Price</dt><dd class="price" data-price="${esc(p.id)}">${price}</dd>
+            <dt>Status</dt><dd data-status="${esc(p.id)}">${buyable ? "Available now" : "Coming soon"}</dd>
             ${release ? `<dt>Release</dt><dd><a href="/music/${esc(release.id)}">${esc(release.title)}</a></dd>` : ""}
+            ${(p.tags || []).length ? `<dt>Tags</dt><dd class="tags">${p.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join(" ")}</dd>` : ""}
+            ${facts}
           </dl>
-          <div class="detail-buy">
-            ${buyable ? `<a class="btn" href="${esc(p.checkoutUrl)}" target="_blank" rel="noopener">Buy</a>` : `<span class="btn" aria-disabled="true">Coming soon</span>`}
+          <div class="detail-buy buy" data-buy="${esc(p.id)}">
+            ${buyable ? `<button class="btn" type="button" data-add-to-cart="${esc(p.id)}">Add to cart</button>` : `<span class="btn" aria-disabled="true">Coming soon</span>`}
           </div>
-          <p class="note">Payment and the download are handled by our checkout provider. This site never sees your card details.</p>
+          <p class="note">Checkout runs on Stripe; this site never sees your card. Files land in your <a href="/library">library</a> the moment the payment clears, as private links that expire after a few minutes.</p>
         </div>
       </div>
     </section>
@@ -229,7 +244,7 @@ ${others.length ? `
       </div>
     </section>
 ` : ""}`;
-  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: [], main }) };
+  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/store.js"], main }) };
 }
 
 // ---------- news post ----------

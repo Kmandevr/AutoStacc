@@ -50,6 +50,7 @@
 .nav a:hover { background-size: 100% 1px; }
 .nav a:hover, .nav a.active { color: var(--green); text-shadow: var(--glow); }
 .nav a.active::before { content: "> "; color: var(--purple); }
+.cart-count { margin-left: 4px; color: var(--purple); text-shadow: var(--glow-purple); }
 /* sound switch (js/sound.js), a terminal-style flag at the end of the nav */
 .snd {
   margin-left: -4px;

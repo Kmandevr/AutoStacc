@@ -1,5 +1,7 @@
 // Serves the site locally the way Cloudflare Pages does: /shop serves shop.html, / serves index.html, /shop.html and
 // /shop/ redirect to /shop, _redirects rules apply, unknown addresses get 404.html with a 404 status.
+// The store API isn't here: /api/* answers 503 "store offline", like production when the store is down, so pages
+// show their offline fallbacks. For the store itself run `npm run dev` (scripts/dev.js).
 // Usage: node scripts/serve.js [port]   (default 8000). Also used by the verify-site browser checks.
 const fs = require("fs");
 const path = require("path");
@@ -28,6 +30,10 @@ function createServer(root = path.resolve(__dirname, "..")) {
     const qs = query ? "?" + query : "";
     const rule = rules.find(([from]) => from === p);
     if (rule) return redirect(res, Number(rule[2] || 302), rule[1] + qs);
+    if (p.startsWith("/api/") || p.startsWith("/media/")) {
+      res.writeHead(503, { "Content-Type": "application/json", "Retry-After": "600" });
+      return res.end(JSON.stringify({ error: { code: "store_offline", message: "The store is offline for maintenance. The music isn't." } }));
+    }
     if (PRIVATE.test(p)) return send(res, 404, path.join(root, "404.html"));
     if (p === "/") return send(res, 200, path.join(root, "index.html"));
     if (p.endsWith("/")) return redirect(res, 308, p.replace(/\/+$/, "") + qs);

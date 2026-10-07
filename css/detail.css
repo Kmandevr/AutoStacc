@@ -21,6 +21,13 @@
 .release-info .platforms-label { margin: 28px 0 12px; }
 .detail-buy { margin: 28px 0 12px; }
 .product-info .note { color: var(--muted); font-size: .85rem; }
+.product-info .note a { display: inline-block; padding-block: 2px; }
+.preview { margin: 0 0 22px; }
+.preview figcaption { color: var(--purple); text-shadow: var(--glow-purple); text-transform: uppercase; font-size: .8rem; letter-spacing: .08em; margin-bottom: 8px; }
+.preview audio { width: 100%; }
+.included-head { font-size: 1.6rem; margin: 0 0 8px; }
+.included { margin: 0 0 18px; padding-left: 20px; color: var(--muted); }
+.facts .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .sub-head { margin: 48px 0 0; font-size: clamp(1.8rem, 4vw, 2.4rem); text-transform: uppercase; }
 
 /* ---------- tracklist ---------- */
