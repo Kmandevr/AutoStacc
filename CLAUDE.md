@@ -4,7 +4,7 @@ Website for the EDM artist **Glitches & Stitches**. It sells digital items (samp
 
 ## Start of every session
 
-Tasks and bugs live in GitHub Issues: use the `github-workflow` skill to find, claim and finish work, and don't keep a task list anywhere else. The `docs/` folder holds permanent project knowledge and is an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
+Tasks and bugs live in GitHub Issues: use the `tasks` skill to find, claim and finish work, and don't keep a task list anywhere else. The `docs/` folder holds permanent project knowledge and is an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
 
 ## Rules
 

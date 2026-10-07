@@ -1,5 +1,5 @@
 ---
-name: github-workflow
+name: tasks
 description: How to find, claim, work, report and finish tasks in AutoStacc using GitHub Issues and labels. Use at session start, when picking or being given a task, when you find a bug, and when finishing work. Not needed for pure questions.
 ---
 
@@ -22,7 +22,7 @@ Repo `Kmandevr/AutoStacc`. GitHub MCP tools, each for one job, always with `fiel
 | Status | `status: ready` `status: in progress` `status: review` `status: blocked` | No status label = backlog. Closed = done |
 | Priority | `P0` `P1` `P2` `P3` | No priority label = P2 |
 | Type | `bug` `feature` `improvement` `refactor` `documentation` `chore` | |
-| Area | `area: ui` `shop` `news` `data` `infra`, `accessibility` | Only where useful |
+| Area | `area: ui` `area: shop` `area: news` `area: data` `area: infra` `area: accessibility` | Only where useful |
 
 ## Session start (small queries, only when the task isn't already given)
 
@@ -60,10 +60,10 @@ If the user names a task, use it. If you may choose, take the first that applies
 1. Run `verify-site`; run `release-check` before review. Check each acceptance criterion.
 2. Open a PR using `.github/pull_request_template.md`. Put `Closes #N` in the body so merging closes the issue. One issue per PR where possible.
 3. Swap `status: in progress` for `status: review`. Post one concise comment on the issue with the PR link and the verification result.
-4. Merging closes the issue and `issue-hygiene` removes its status labels. Don't close it yourself before verification passes. If a fix couldn't be verified, say so and leave it in review.
+4. Merging closes the issue and the `clear-status-on-close` workflow removes its status labels. Don't close it yourself before verification passes. If a fix couldn't be verified, say so and leave it in review.
 
 Don't open a PR unless asked (see `CLAUDE.md`).
 
 ## Limits
 
-GitHub Projects boards can't be read or changed from Claude sessions (GraphQL is blocked). The board is a human view built on these labels; labels are the source of state. Setup: `.github/project-setup.md`.
+GitHub Projects boards can't be read or changed from Claude sessions (GraphQL is blocked). The board is a human view built on these labels; labels are the source of state. Setup steps are in issue #13.

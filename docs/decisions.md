@@ -48,5 +48,9 @@ Serena (project-scoped MCP server via `.mcp.json`, JavaScript only) handles symb
 
 ## 2026-10-07: GitHub Issues and labels are the task list
 
-Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only permanent knowledge. State lives in a small label set (status, priority, type, area) because Claude sessions can't read or edit GitHub Projects (GraphQL and user-level APIs are blocked); the Project board, if set up, is a human view over those labels (`.github/project-setup.md`). Sessions claim an issue with `status: in progress` plus a `Claimed: <branch>` comment, earliest claim wins. `docs/status.md` was retired and its open items migrated to issues, so there is one task list. A small workflow clears status labels when an issue closes. Workflow for Claude: `.claude/skills/github-workflow/SKILL.md`.
+Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only permanent knowledge. State lives in a small label set (status, priority, type, area) because Claude sessions can't read or edit GitHub Projects (GraphQL and user-level APIs are blocked); the Project board, if set up, is a human view over those labels (setup steps are in issue #13). Sessions claim an issue with `status: in progress` plus a `Claimed: <branch>` comment, earliest claim wins. `docs/status.md` was retired and its open items migrated to issues, so there is one task list. The `clear-status-on-close` workflow clears status labels when an issue closes. Workflow for Claude: `.claude/skills/tasks/SKILL.md`.
+
+## 2026-10-07: Naming cleanup
+
+Directory descriptions use `.purpose` (not `.area`, which clashed with the `area:` labels) to match the one-line purpose in each file. The task skill is `tasks`, the GitHub workflow is `clear-status-on-close`. The one-time Project setup guide moved into issue #13 instead of a repo file. Labels: removed the unused GitHub defaults (duplicate, invalid, wontfix, good first issue, help wanted, question), renamed `accessibility` to `area: accessibility` so all area labels match.
 
