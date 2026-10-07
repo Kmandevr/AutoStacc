@@ -11,6 +11,22 @@
     radial-gradient(circle at 20% 30%, rgba(191,95,255,.2), transparent 45%),
     radial-gradient(circle at 80% 70%, rgba(51,255,102,.12), transparent 45%);
 }
+/* latest-release line above the title */
+.kicker {
+  display: inline-block;
+  margin-bottom: 22px;
+  padding: 6px 12px;
+  border: 1px solid var(--purple);
+  color: var(--green);
+  text-shadow: var(--glow);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .85rem;
+  box-shadow: 3px -2px 0 rgba(191,95,255,.35);
+  transition: box-shadow .15s var(--snap), border-color .15s;
+}
+.kicker span { color: var(--purple); text-shadow: var(--glow-purple); }
+.kicker:hover { color: var(--green); border-color: var(--green); box-shadow: 0 0 12px rgba(51,255,102,.3); }
 .hero h1 {
   animation: power-on .5s var(--snap) both, glitch-skew 4.2s .8s steps(1) infinite;
   font-size: clamp(3rem, 11vw, 8rem);
@@ -36,6 +52,7 @@
   background: var(--bg-2);
   box-shadow: 4px -3px 0 rgba(191,95,255,.28);
 }
+.player { color-scheme: dark; }
 .player.tall { height: auto; aspect-ratio: 16 / 9; }
 /* shown until a release is linked in data/music.js */
 .player-empty {
