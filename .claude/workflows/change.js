@@ -1,7 +1,7 @@
 export const meta = {
   name: 'change',
   description: 'Plan, build in parallel, verify and document a change to the project, reading only the files each step needs',
-  whenToUse: 'A change that touches more than one area of the project. Pass args: { task: "what to change" }. Small one-file edits do not need it. Project-specific rules and checks come from CLAUDE.md and .claude/rules/, not from this file.',
+  whenToUse: 'A change that touches more than one area of the project. Pass args: { task: "what to change", agents?: { test, review } } (names of subagents to use for verification). Small one-file edits do not need it. Project-specific rules and checks come from CLAUDE.md and .claude/rules/, not from this file.',
   phases: [
     { title: 'Plan', detail: 'one agent maps the task to files using the repo map and Graphify' },
     { title: 'Build', detail: 'one agent per independent work item, disjoint files' },
@@ -12,6 +12,9 @@ export const meta = {
 
 const task = typeof args === 'string' ? args : args && args.task
 if (!task) throw new Error('Pass args: { task: "what to change" }')
+
+// Optional project subagents for the Verify phase: args.agents = { test: '<name>', review: '<name>' }.
+const AGENTS = (args && args.agents) || {}
 
 const READ_RULE =
   'Read in layers (CLAUDE.md): start from the repo map (.claude/tools/tree.sh), use .claude/tools/graph.sh for questions, ' +
@@ -99,7 +102,7 @@ const verify = () =>
       agent(
         'Run the checks described under "Checking changes" in CLAUDE.md and report pass=false with each problem if anything fails. ' +
           'Clean up anything you start (servers, temp files).',
-        { phase: 'Verify', label: 'verify:checks', schema: CHECK }
+        { phase: 'Verify', label: 'verify:checks', schema: CHECK, agentType: AGENTS.test }
       ),
     () =>
       agent(
@@ -107,7 +110,7 @@ const verify = () =>
           'Try to REFUTE that the change is correct and safe. Look for: breaking a rule in CLAUDE.md or .claude/rules/, ' +
           'edits outside the planned files (' + changed.join(', ') + '), a page missing a script or stylesheet it now needs, broken links, ' +
           'a new file without the one-line purpose the repo map needs. Default to pass=false if you are unsure.',
-        { phase: 'Verify', label: 'verify:review', schema: CHECK }
+        { phase: 'Verify', label: 'verify:review', schema: CHECK, agentType: AGENTS.review }
       ),
   ])
 
