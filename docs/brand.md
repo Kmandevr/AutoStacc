@@ -1,13 +1,13 @@
 ---
 title: Brand
-updated: 2026-10-06
+updated: 2026-10-07
 ---
 
 # Brand
 
 The name suggests broken-then-repaired: glitch art meets stitched fabric. The site's look follows from that.
 
-## Visual style (as built in `css/style.css`)
+## Visual style (as built in `css/base.css` and the other files in `css/`)
 
 - Dark background (`#0a0a0f`), neon pink `#ff2fd0`, cyan `#2ff3ff`, lime `#c6ff3d` for prices and dates
 - Dashed borders as "stitching"
