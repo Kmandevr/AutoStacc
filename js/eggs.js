@@ -6,7 +6,7 @@
   const { $ } = window.GS;
   const root = document.documentElement;
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const sound = (name) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: name }));
+  const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
 
   // A small terminal-style message in the corner.
   function toast(html) {
@@ -70,10 +70,10 @@
       clicks++;
       clearTimeout(timer);
       timer = setTimeout(() => (clicks = 0), 1200);
-      sound("zap");
+      sound("zap", art);
       if (clicks < 5) return;
       clicks = 0;
-      sound("tear");
+      sound("shatter", art);
       art.classList.add("shatter");
       setTimeout(() => art.classList.remove("shatter"), 1400);
     });

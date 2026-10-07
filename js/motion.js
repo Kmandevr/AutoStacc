@@ -19,6 +19,9 @@
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
       e.target.classList.add("in");
+      if (e.target.classList.contains("section-head")) {
+        document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name: "reveal", el: e.target } }));
+      }
       seen.unobserve(e.target);
     });
   }, { rootMargin: "0px 0px -8% 0px" });
@@ -44,7 +47,7 @@
     });
     const el = visible[Math.floor(Math.random() * visible.length)];
     if (el && !document.hidden) {
-      document.dispatchEvent(new CustomEvent("gs:sound", { detail: "zap" }));
+      document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name: "zap", el } }));
       el.classList.add("zap");
       el.addEventListener("animationend", () => el.classList.remove("zap"), { once: true });
     }
@@ -65,7 +68,11 @@
     let n = 0;
     setTimeout(function tick() {
       typed.textContent = text.slice(0, ++n);
-      if (text[n - 1] !== " ") document.dispatchEvent(new CustomEvent("gs:sound", { detail: "tick" }));
+      // Each finished word ("Tear." "Stitch." ...) plays the next note up; other letters are soft key clicks.
+      const ch = text[n - 1];
+      const words = (text.slice(0, n).match(/\./g) || []).length;
+      const detail = ch === "." ? { name: "word", n: words - 1 } : "tick";
+      if (ch !== " ") document.dispatchEvent(new CustomEvent("gs:sound", { detail }));
       if (n < text.length) setTimeout(tick, 28 + Math.random() * 36);
     }, Number(el.dataset.type) || 0);
   });
