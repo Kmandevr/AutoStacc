@@ -8,7 +8,7 @@ description: Add, edit, remove or feature a shop product in AutoStacc. Use for a
 **Only `data/products.js` changes.** Cards, the shop filter and the featured strip are generated from it by `js/shop.js`. Do not edit HTML, CSS or scripts for a normal product change.
 
 1. Read the top of `data/products.js` (the comment block and one entry). That file is the source of truth for the fields; don't copy them elsewhere.
-2. Get the facts from the user: title, category, price, description, checkout link. **Never invent** them. For anything missing, ask, or leave a placeholder and add it to `docs/status.md`.
+2. Get the facts from the user: title, category, price, description, checkout link. **Never invent** them. For anything missing, ask, or leave a placeholder and open a GitHub issue for it.
 3. Edit:
    - `id`: unique, lowercase, hyphenated. Don't change an existing id.
    - `category`: reuse an existing category string exactly, since filter buttons are built from the values. A new category is fine, but say so.

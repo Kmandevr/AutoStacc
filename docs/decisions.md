@@ -12,7 +12,7 @@ Plain HTML, CSS and JS. Free to host anywhere (GitHub Pages, Netlify, Cloudflare
 
 ## 2026-10-06: Hosted checkout instead of our own payments
 
-Selling digital files needs payment and secure delivery. A hosted provider handles both, so the site stays static and never touches card data. Provider not chosen yet (see [status](status.md)).
+Selling digital files needs payment and secure delivery. A hosted provider handles both, so the site stays static and never touches card data. Provider not chosen yet (tracked as a GitHub issue).
 
 ## 2026-10-06: Content lives in `data/*.js`
 
@@ -45,4 +45,8 @@ Goal: things used every session stay small; the rest loads on demand. Changes: t
 ## 2026-10-07: Serena for symbol-level code work, Skills for repeatable tasks
 
 Serena (project-scoped MCP server via `.mcp.json`, JavaScript only) handles symbol lookup, references and targeted edits; Graphify stays the project-level map, so the two don't overlap (table in `.claude/README.md`). Serena's file, shell and memory tools are switched off because Claude Code already has them and `docs/` is the memory. Skills in `.claude/skills/` (`verify-site`, `add-product`, `add-news`, `accessibility-review`, `release-check`) hold the repeatable workflows, so `CLAUDE.md` only points to them. No HTML or CSS language server: those files are small and Grep is enough.
+
+## 2026-10-07: GitHub Issues and labels are the task list
+
+Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only permanent knowledge. State lives in a small label set (status, priority, type, area) because Claude sessions can't read or edit GitHub Projects (GraphQL and user-level APIs are blocked); the Project board, if set up, is a human view over those labels (`.github/project-setup.md`). Sessions claim an issue with `status: in progress` plus a `Claimed: <branch>` comment, earliest claim wins. `docs/status.md` was retired and its open items migrated to issues, so there is one task list. A small workflow clears status labels when an issue closes. Workflow for Claude: `.claude/skills/github-workflow/SKILL.md`.
 

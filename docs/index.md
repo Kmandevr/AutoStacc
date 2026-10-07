@@ -10,7 +10,6 @@ Project memory for the website. Open this `docs/` folder as a vault in Obsidian,
 
 ## Notes
 
-- [Status](status.md): what's done, what's pending, open questions
 - [Artist](artist.md): who Glitches & Stitches is (facts only)
 - [Brand](brand.md): visual style and tone of voice
 - [Shop](shop.md): products and how selling works

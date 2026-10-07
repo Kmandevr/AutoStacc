@@ -6,7 +6,7 @@ export const meta = {
     { title: 'Plan', detail: 'one agent maps the task to files using the repo map and Graphify' },
     { title: 'Build', detail: 'one agent per independent work item, disjoint files' },
     { title: 'Verify', detail: 'the project checks and an adversarial diff review in parallel' },
-    { title: 'Docs', detail: 'update status, log and decisions' },
+    { title: 'Docs', detail: 'update log and decisions' },
   ],
 }
 
@@ -128,7 +128,7 @@ phase('Docs')
 if (!problems.length) {
   await agent(
     `The task "${task}" is done and verified (changed: ${changed.join(', ')}). Update docs/: add a dated line to docs/log.md, ` +
-      `tick or add items in docs/status.md (including any facts only the owner can supply: ${(plan.openQuestions || []).join('; ') || 'none'}), ` +
+      `open a GitHub issue (search for duplicates first) for each fact only the owner can supply: ${(plan.openQuestions || []).join('; ') || 'none'}, ` +
       `and add docs/decisions.md only if a real decision was made. Bump \`updated:\` on notes you touch. Do not commit.`,
     { phase: 'Docs', label: 'docs' }
   )
