@@ -8,6 +8,7 @@ Tasks and bugs live in GitHub Issues: use the `tasks` skill to find, claim and f
 
 ## Rules
 
+- For anything creative (copy, artwork, names, release ideas, branding, promotion), follow [docs/identity.md](docs/identity.md). Don't turn it into a generic EDM brand.
 - Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and open an issue for it.
 - Record decisions and new facts in `docs/` before ending a session (details in `.claude/rules/docs.md`).
 
