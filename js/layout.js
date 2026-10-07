@@ -49,8 +49,10 @@
       </div>`;
     const toggle = $(".nav-toggle", header);
     const nav = $(".nav", header);
+    // On phones the menu covers the page below the header; the page behind it doesn't scroll.
     const setOpen = (open) => {
       nav.classList.toggle("open", open);
+      document.documentElement.classList.toggle("menu-open", open);
       toggle.setAttribute("aria-expanded", String(open));
       toggle.textContent = open ? "[×]" : "[≡]";
     };
@@ -59,7 +61,7 @@
       if (e.target.tagName === "A") setOpen(false);
     });
     // Escape closes the open menu and returns focus to its button.
-    document.addEventListener("keydown", (e) => {
+    addEventListener("keydown", (e) => {
       if (e.key === "Escape" && nav.classList.contains("open")) {
         setOpen(false);
         toggle.focus();
