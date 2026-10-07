@@ -33,3 +33,7 @@ Split `js/main.js` and `css/style.css` so a change touches only the files for th
 ## 2026-10-07: GitHub Issues and labels are the task list
 
 Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only permanent knowledge. State lives in a small label set (status, priority, type, area) because Claude sessions can't read or edit GitHub Projects (GraphQL and user-level APIs are blocked); the Project board (set up by the owner, issue #13) is a human view over those labels. Sessions claim an issue with `status: in progress` plus a `Claimed: <branch>` comment, earliest claim wins. `docs/status.md` was retired and its open items migrated to issues, so there is one task list. The `clear-status-on-close` workflow clears status labels when an issue closes. Workflow for Claude: `.claude/skills/tasks/SKILL.md`.
+
+## 2026-10-07: Hosted on Cloudflare Pages, HTTPS from Cloudflare
+
+The domain is on Cloudflare, so the site deploys from this repo with Cloudflare Pages (no build command, output folder `/`). Cloudflare issues and renews the HTTPS certificate for the custom domain itself. Cloudflare Origin Certificates are not used: there is no origin server to install one on, and their private keys never go in this repo.
