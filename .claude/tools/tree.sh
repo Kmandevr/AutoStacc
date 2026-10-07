@@ -15,6 +15,7 @@ purpose() {
     *.css)  sed -n '1s|^/\* *||; 1s| *\*/$||p' "$1" ;;
     *.html) sed -n 's|.*<meta name="description" content="\([^"]*\)".*|\1|p' "$1" | head -1 ;;
     *.md)   sed -n 's|^summary: *||p' "$1" | head -1 ;;
+    _redirects) sed -n '1s|^# *||p' "$1" ;;
   esac
 }
 
