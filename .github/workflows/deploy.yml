@@ -1,4 +1,4 @@
-# Publishes the site to Cloudflare Pages on every push to main. Only the site files are uploaded, not docs/ or .claude/.
+# Publishes the site to Cloudflare Pages on every push to main. Only the site files and _redirects are uploaded, not docs/ or .claude/.
 # Needs repo secrets CLOUDFLARE_API_TOKEN (permission "Cloudflare Pages: Edit") and CLOUDFLARE_ACCOUNT_ID.
 name: Deploy to Cloudflare Pages
 on:
@@ -24,6 +24,7 @@ jobs:
           mkdir dist
           cp *.html dist/
           cp -r css js data dist/
+          cp _redirects dist/
           find dist -name .purpose -delete
       - name: Create the Pages project if it doesn't exist
         run: |

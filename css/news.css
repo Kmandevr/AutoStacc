@@ -1,4 +1,4 @@
-/* News list items. Used by news.html and the latest news on index.html. */
+/* News list items. Used by news.html and the latest news on home.html. */
 
 /* ---------- news ---------- */
 .news-list { display: flex; flex-direction: column; gap: 18px; }

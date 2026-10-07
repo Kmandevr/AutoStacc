@@ -7,11 +7,11 @@
 
   const page = document.body.dataset.page;
   const links = [
-    ["index.html", "Home", "home"],
+    ["home.html", "Home", "home"],
     ["shop.html", "Shop", "shop"],
     ["news.html", "News", "news"],
-    ["index.html#shows", "Shows", "shows"],
-    ["index.html#about", "About", "about"]
+    ["home.html#shows", "Shows", "shows"],
+    ["home.html#about", "About", "about"]
   ];
 
   const header = $("#site-header");
@@ -19,7 +19,7 @@
     header.className = "site-header";
     header.innerHTML = `
       <div class="wrap">
-        <a class="logo" href="index.html">GLITCHES<span>&amp;</span>STITCHES</a>
+        <a class="logo" href="home.html">GLITCHES<span>&amp;</span>STITCHES</a>
         <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
         <nav class="nav" id="nav">
           ${links

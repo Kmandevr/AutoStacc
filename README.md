@@ -8,7 +8,7 @@ It is a plain static site (HTML, CSS and JavaScript, with no build step or serve
 
 | File | What it shows |
 | --- | --- |
-| `index.html` | Hero, latest news, featured products, upcoming shows, about, newsletter signup |
+| `home.html` | Hero, latest news, featured products, upcoming shows, about, newsletter signup |
 | `shop.html` | All products, filterable by category |
 | `news.html` | Every update in full |
 
@@ -40,11 +40,11 @@ Set `newsletterAction` in `data/site.js` to a form endpoint (Buttondown, Mailchi
 
 ## Running locally
 
-Open `index.html` in a browser, or serve the folder:
+Open `home.html` in a browser, or serve the folder:
 
 ```sh
 python3 -m http.server 8000
-# then visit http://localhost:8000
+# then visit http://localhost:8000/home.html
 ```
 
 ## Deploying to Cloudflare Pages
