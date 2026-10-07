@@ -41,6 +41,9 @@ body::after {
 a { color: var(--cyan); text-decoration: none; }
 a:hover { color: var(--pink); }
 
+/* visible keyboard focus on every interactive element */
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
 img { max-width: 100%; display: block; }
 
 .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
@@ -84,6 +87,7 @@ img { max-width: 100%; display: block; }
   92% { transform: translate(-6px, 0); clip-path: inset(40% 0 30% 0); }
 }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .glitch::before, .glitch::after { animation: none; }
 }
 
@@ -112,6 +116,10 @@ img { max-width: 100%; display: block; }
   color: #0a0a0f;
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 var(--cyan);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+  .btn:hover { transform: none; }
 }
 .btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
 .btn.ghost:hover { border-color: var(--cyan); color: var(--text); }

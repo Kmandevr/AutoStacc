@@ -20,7 +20,7 @@
       : `<span class="btn" aria-disabled="true">Coming soon</span>`;
     return `
       <article class="card">
-        <div class="cover" style="${coverStyle(p.hue || 300)}"><span>${escapeHTML(p.title.split(" — ")[0])}</span></div>
+        <div class="cover" style="${coverStyle(p.hue ?? 300)}"><span>${escapeHTML(p.title.split(" — ")[0])}</span></div>
         <div class="card-body">
           <span class="tag">${escapeHTML(p.category)}</span>
           <h3>${escapeHTML(p.title)}</h3>
@@ -50,7 +50,11 @@
     const draw = () => {
       const items = current === "All" ? PRODUCTS : PRODUCTS.filter((p) => p.category === current);
       el.innerHTML = items.length ? items.map(productCard).join("") : `<p class="empty">Nothing here yet.</p>`;
-      filters.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.cat === current));
+      filters.querySelectorAll("button").forEach((b) => {
+        const on = b.dataset.cat === current;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", String(on));
+      });
     };
 
     filters.innerHTML = categories

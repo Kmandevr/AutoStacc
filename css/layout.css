@@ -66,5 +66,6 @@
   flex-wrap: wrap;
 }
 .socials { display: flex; gap: 18px; flex-wrap: wrap; }
+.site-footer a { display: inline-block; padding-block: 4px; }
 .socials a { color: var(--muted); }
 .socials a:hover { color: var(--pink); }
