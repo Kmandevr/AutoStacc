@@ -14,9 +14,7 @@ It is a plain static site (HTML, CSS and JavaScript, with no build step or serve
 
 ## Code layout
 
-- `css/`: `base.css` (every page), `layout.css` (header and footer), `shop.css`, `news.css`, `home.css`
-- `js/`: `util.js` (shared helpers), `layout.js`, `shop.js`, `news.js`, `shows.js`, `newsletter.js`
-- Each page loads only the files it uses. See "Read in layers" in `CLAUDE.md`.
+One file per feature in `css/` and `js/`; each page loads only the ones it uses. Setup for Claude Code is described in `.claude/README.md`.
 
 ## Updating content
 

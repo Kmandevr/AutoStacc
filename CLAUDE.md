@@ -25,8 +25,8 @@ Don't read every file. Go deeper only when the layer above doesn't answer the qu
 
 1. **Map:** the session-start hook prints the top level. `.claude/tools/tree.sh <dir>` lists one directory's files with their purposes.
 2. **Skill:** for a repeatable task use its skill (`add-product`, `add-news`, `verify-site`, `accessibility-review`, `release-check`). Skills name the files; don't re-derive them.
-3. **Graphify** for orientation across files: `.claude/tools/graph.sh query "<question>"`, `affected "<name>"`.
-4. **Serena** for symbols: `get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, symbol-level edits. Use it instead of reading a whole file. See `.claude/README.md`.
+3. **Graphify** for orientation across files: `.claude/tools/graph.sh query "<keywords>"`, `explain "<name>"`, `affected "<name>"`.
+4. **Serena** for symbols in JS, CSS and HTML: `get_symbols_overview`, `find_symbol` (with `include_body`), `find_referencing_symbols`, symbol-level edits. Use it instead of reading a whole file. See `.claude/README.md`.
 5. **File:** open only what the layers above named, with Grep or Read `offset`/`limit`.
 
 Preserve module boundaries: edit only the files a change needs, and leave unrelated modules alone.
