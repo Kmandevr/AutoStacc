@@ -1,5 +1,4 @@
-/* Store and account UI shared by cart, login, account, library, checkout and admin pages: terminal panels, form
-   fields, status messages (ok, error, pending) and disabled/busy buttons. */
+/* Store and account UI (cart, login, account, library, checkout, admin): terminal panels, fields, status messages. */
 
 .panel {
   background: var(--bg-2);

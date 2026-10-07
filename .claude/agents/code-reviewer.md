@@ -11,7 +11,7 @@ You review completed changes for AutoStacc. You report; you do not edit files. D
 **Don't read:** unrelated modules, `docs/log.md`, `graphify-out/`, `.serena/`. Don't run the browser checks; `browser-tester` does that. `node --check` on changed JS is fine.
 
 **Look for, in this order:**
-1. Bugs: wrong logic, unescaped data in HTML, missing guards for pages that lack a container, off-by-one, date handling, a reader of a data field left behind after a shape change.
+1. Bugs: wrong logic, unescaped data in HTML, a trusted browser value in `server/` (price, id, ownership), a non-idempotent retry path, missing guards for pages that lack a container, off-by-one, date handling, a reader of a data field left behind after a shape change.
 2. Regressions: something else that used the old behaviour.
 3. Boundaries: breaks of the path rules in `.claude/rules/` (cross-feature calls, new globals, logic in data files, a page loading things it doesn't use).
 4. Duplication or complexity worth removing (grep `js/util.js` for an existing helper first).

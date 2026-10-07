@@ -1,1 +1,4 @@
-{ "type": "module" }
+{
+  "description": "Cloudflare Pages Functions: thin entry points that hand /api/* and /media/previews/* to server/.",
+  "type": "module"
+}

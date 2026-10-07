@@ -59,6 +59,8 @@ const GS = (function () {
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal: ctrl.signal
       });
+      // No JSON at all means no store API behind this site (a static-only deploy): same as the store being offline.
+      if (!/json/.test(res.headers.get("content-type") || "")) return { ok: false, status: 503, data: {}, error: { code: "store_offline", message: "The store is offline for maintenance." } };
       const data = await res.json().catch(() => ({}));
       return { ok: res.ok, status: res.status, data, error: res.ok ? null : apiError(res.status, data) };
     } catch {

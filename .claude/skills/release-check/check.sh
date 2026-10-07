@@ -18,7 +18,8 @@ for d in graphify-out .serena/cache .serena/logs .serena/memories; do
 done
 [ -z "$(git status --porcelain)" ] && report PASS git-clean "working tree clean" || report WARN uncommitted "$(git status --porcelain | wc -l) uncommitted change(s)"
 
-grep -q 'checkoutUrl: ""' data/products.js && report WARN placeholder "products with empty checkoutUrl (data/products.js)"
+git ls-files --error-unmatch .dev.vars >/dev/null 2>&1 && report FAIL secrets-tracked ".dev.vars is tracked"
+git grep -nE '(sk|rk)_live_[A-Za-z0-9]{8,}|whsec_[A-Za-z0-9]{20,}|xkeysib-[a-f0-9]{20,}' -- ':!*.md' >/dev/null 2>&1 && report FAIL secrets "a live-looking key is committed (git grep for sk_live_/whsec_/xkeysib-)" || report PASS secrets "no keys committed"
 grep -q 'email: ""' data/site.js && report WARN placeholder "no booking email (data/site.js)"
 grep -q "draft: true" data/*.js && report WARN placeholder "draft (placeholder) entries kept out of search (data/)"
 grep -q 'newsletterAction: ""' data/site.js && report WARN placeholder "empty newsletterAction (data/site.js)"

@@ -1,1 +1,4 @@
-{ "type": "module" }
+{
+  "description": "Store API code (ES modules): one folder per area; entry server/app.js.",
+  "type": "module"
+}

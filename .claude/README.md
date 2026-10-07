@@ -4,14 +4,14 @@ Everything here is split into pieces that load only when needed. `tools/`, `hook
 
 | Piece | Loads | Purpose |
 | --- | --- | --- |
-| `hooks/session-start.sh` | every session | Prints the compact repo map into context (small however big the repo gets) and installs Serena so the MCP server starts fast. |
+| `hooks/session-start.sh` | every session | Prints the compact repo map into context (small however big the repo gets), installs Serena so the MCP server starts fast, and runs `npm ci` in the background when a lockfile exists without `node_modules`. |
 | `tools/tree.sh` | on call | Repo map built from each file's own purpose line. `<dir>` expands one directory. A directory's purpose is the first line of its `.purpose` file. |
 | `tools/serena.sh`, `.mcp.json` | when Serena's tools are used | Starts the [Serena](https://github.com/oraios/serena) MCP server for this project. Config is `.serena/project.yml`: JavaScript, HTML and CSS; its file, shell and memory tools are off, so it adds 12 tools, not 29. |
 | `tools/serena-hook.sh` | on Read/Grep, session end | Runs Serena's `remind` hook (a one-time nudge toward symbol tools after repeated Grep/Read) and `cleanup`. Does nothing if Serena isn't installed. |
 | `tools/graph.sh` | on call | Single entry to [Graphify](https://github.com/Graphify-Labs/graphify). Installs it and refreshes the graph only if files changed, so sessions that never need it pay nothing. |
-| `skills/*/SKILL.md` | description every session, body when invoked | Repeatable workflows: `verify-site` (runs `check.js`, with rendered-head SEO checks and an orphan crawl in `seo-browser.js`), `seo-check` (build, SEO tests, review), `add-product`, `add-news`, `add-release`, `accessibility-review`, `release-check` (runs `check.sh`). Skills point at repo files and don't restate the architecture. |
+| `skills/*/SKILL.md` | description every session, body when invoked | Repeatable workflows: `verify-site` (runs `check.js`, with rendered-head SEO checks and an orphan crawl in `seo-browser.js`), `seo-check` (build, SEO tests, review), `add-product`, `add-news`, `add-release`, `accessibility-review`, `store-check` (unit, API security and browser chaos suites for the store), `release-check` (runs `check.sh`). Skills point at repo files and don't restate the architecture. |
 | `skills/tasks` | with the others | How to find, claim, work and finish tasks through GitHub Issues and labels. The only task system; see `.github/` for issue forms, the PR template and the `clear-status-on-close` workflow. |
-| `agents/*.md` | description every session, body in the subagent's own context | Independent specialists that return findings only: `architect` (placement and boundaries), `frontend-reviewer` (UI, brand, responsive), `browser-tester` (real-browser checks), `code-reviewer` (defects), `seo-reviewer` (search visibility, honest metadata). Read-only. |
+| `agents/*.md` | description every session, body in the subagent's own context | Independent specialists that return findings only: `architect` (placement and boundaries), `frontend-reviewer` (UI, brand, responsive), `browser-tester` (real-browser checks), `code-reviewer` (defects), `seo-reviewer` (search visibility, honest metadata), `backend-reviewer` (store API correctness, boundaries, migrations, test coverage), `security-reviewer` (attacks the store diff on paper), `commerce-tester` (runs the store suites and breaks the purchase flow). Read-only. |
 | `rules/*.md` | when matching files are touched | Conventions scoped by `paths:` globs (scripts, styles, notes), so they stay out of context otherwise. |
 | `workflows/change.js` | on call | Multi-agent plan, parallel build, verify, docs. Takes `args: { task, agents? }`. Reads project rules and checks from `CLAUDE.md`, never commits. |
 | `settings.json` | every session | Allow rules for the tools above, hook registration, `MCP_TIMEOUT`. |
@@ -23,7 +23,7 @@ One home per kind of instruction; the others point to it.
 | Kind | Home |
 | --- | --- |
 | Project identity, global rules, how to work | `CLAUDE.md` |
-| Conventions for certain files | `rules/` (`html`, `js`, `css`, `data`, `docs`, `scripts`, `claude`), loaded when matching files are touched |
+| Conventions for certain files | `rules/` (`html`, `js`, `css`, `data`, `docs`, `scripts`, `server`, `tests`, `claude`), loaded when matching files are touched |
 | Repeatable procedures | `skills/` |
 | Independent review and testing, in their own context | `agents/` |
 | Project-wide map and relationships | Graphify through `tools/graph.sh` |

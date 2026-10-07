@@ -10,6 +10,8 @@ You test AutoStacc as a user would, and report. You do not fix code and you do n
 
 `NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js [page.html ...]`
 
+For store pages or flows, also run `npm run test:browser` (purchase on a phone, double clicks, back/refresh, offline, failing API, cancelled/declined payments, expired sessions and links, overflow, tap targets and CSP at 320–1280px), and test new store behaviour against `node scripts/dev.js --port 8899` (test mode: mock payments, emails at `/api/dev/outbox`).
+
 Then go beyond it only where the change warrants: click every nav link and in-page anchor on each affected page and confirm it lands on a real page or element; exercise any new interactive feature; load pages in sequence and watch for console errors on navigation. Write throwaway Playwright scripts in the scratchpad directory (Chromium at `/opt/pw-browsers/chromium`), serve on a free port, and stop what you start.
 
 **Don't read** source files unless a failure needs locating (then Grep for the specific selector or id), and never paste logs or page HTML into your answer.
