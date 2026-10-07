@@ -36,4 +36,4 @@ Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only pe
 
 ## 2026-10-07: Hosted on Cloudflare Pages, HTTPS from Cloudflare
 
-The domain, `autostacc.com`, is on Cloudflare, so the site deploys from this repo with Cloudflare Pages (no build command, output folder `/`). Cloudflare issues and renews the HTTPS certificate for the custom domain itself. Cloudflare Origin Certificates are not used: there is no origin server to install one on, and their private keys never go in this repo.
+The domain, `autostacc.com`, is on Cloudflare, so the site is hosted on Cloudflare Pages (project `autostacc`). It deploys from GitHub Actions (`.github/workflows/deploy.yml`, Wrangler with an API token in repo secrets) rather than Cloudflare's own GitHub connection, which kept looping back to the dashboard during setup. The workflow uploads only the pages, `css/`, `js/` and `data/`, not `docs/` or `.claude/`. Cloudflare issues and renews the HTTPS certificate for the custom domain itself. Cloudflare Origin Certificates are not used: there is no origin server to install one on, and their private keys never go in this repo.
