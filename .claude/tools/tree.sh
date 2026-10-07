@@ -3,7 +3,7 @@
 #   tree.sh          compact top level: root files, then one line per directory
 #   tree.sh <dir>    every file in that directory with its purpose
 #   tree.sh --all    every file in the repo
-# A directory's purpose is the first line of its `.area` file.
+# A directory's purpose is the first line of its `.purpose` file.
 set -euo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 
@@ -27,7 +27,7 @@ case "${1:-}" in
     files | grep -v / | show
     for d in $(git ls-files | grep / | cut -d/ -f1 | sort -u | grep -v '^\.'); do
       n=$(files "$d" | wc -l)
-      printf '%-22s %s\n' "$d/ ($n files)" "$(head -1 "$d/.area" 2>/dev/null)"
+      printf '%-22s %s\n' "$d/ ($n files)" "$(head -1 "$d/.purpose" 2>/dev/null)"
     done
     echo "Expand a directory: .claude/tools/tree.sh <dir>"
     ;;

@@ -1,12 +1,12 @@
 # Closed issues drop their "status: ..." labels so a stale "in progress" never lingers.
-name: Issue hygiene
+name: Clear status labels on close
 on:
   issues:
     types: [closed]
 permissions:
   issues: write
 jobs:
-  clear-status:
+  clear:
     runs-on: ubuntu-latest
     steps:
       - env:
