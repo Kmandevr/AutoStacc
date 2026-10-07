@@ -80,6 +80,7 @@
       input.value = "";
     });
     box.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    input.addEventListener("input", () => emit("gs:sound", "tick"));
     print("G&S terminal v2. type help. esc to close.", "dim");
   }
 
