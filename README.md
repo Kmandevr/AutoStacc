@@ -49,7 +49,12 @@ python3 -m http.server 8000
 
 ## Deploying to Cloudflare Pages
 
-In the Cloudflare dashboard, open **Workers & Pages → Create → Pages → Connect to Git**, pick this repository and the production branch, leave the build command empty and set the output directory to `/`. Then add the domain under **Custom domains**. Cloudflare provides the HTTPS certificate automatically; no certificate or key goes in this repository.
+The live site is deployed by `.github/workflows/deploy.yml` on every push to `main`. One-time setup:
+
+1. In Cloudflare, create an API token (**My Profile → API Tokens → Create Token**, custom token with **Account → Cloudflare Pages → Edit**) and copy your **Account ID** from the dashboard.
+2. In this repository, open **Settings → Secrets and variables → Actions** and add them as `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+3. Run the workflow (**Actions → Deploy to Cloudflare Pages → Run workflow**) or push to `main`.
+4. In Cloudflare, open **Workers & Pages → autostacc → Custom domains** and add the domain. Cloudflare provides the HTTPS certificate automatically; no certificate or key goes in this repository.
 
 ## Deploying to GitHub Pages
 
