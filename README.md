@@ -47,6 +47,10 @@ python3 -m http.server 8000
 # then visit http://localhost:8000
 ```
 
+## Deploying to Cloudflare Pages
+
+In the Cloudflare dashboard, open **Workers & Pages → Create → Pages → Connect to Git**, pick this repository and the production branch, leave the build command empty and set the output directory to `/`. Then add the domain under **Custom domains**. Cloudflare provides the HTTPS certificate automatically; no certificate or key goes in this repository.
+
 ## Deploying to GitHub Pages
 
 In the repository, open **Settings → Pages**, set the source to "Deploy from a branch", and pick the branch and `/ (root)`.
