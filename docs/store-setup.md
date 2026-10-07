@@ -58,7 +58,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 
 Local development needs none of this (mock payments, emails in the database): see [development](development.md). For a Stripe test-mode run before going live, use test keys locally with `PAYMENT_PROVIDER=stripe` in `.dev.vars` and the Stripe CLI (`stripe listen --forward-to localhost:8788/api/webhooks/stripe`).
 
-## What is still needed from you
+## What is still needed from you (issue #44)
 
 - The Cloudflare token permissions and R2 enabled (step 1).
 - Stripe account activation, live keys and the webhook endpoint (step 3).
