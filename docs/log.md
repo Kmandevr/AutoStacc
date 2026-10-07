@@ -8,6 +8,8 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: Fixed #14, #21, #22 and #23: footer links are 24px+ tall, `hue: 0` renders red, a shared cyan `:focus-visible` ring with `aria-pressed` on the shop filters, and reduced motion now also stops card/button motion and smooth scrolling.
+- 2026-10-07: Owner approved all Serena tools (`mcp__serena` in `.claude/settings.json`) and set up the GitHub Project board. Closed #12 and #13.
 - 2026-10-07: Cleanup pass: Serena now covers JS, HTML and CSS and has `remind`/`cleanup` hooks; Serena installs at session start; `graph.sh` only rebuilds when files change; merged seven overlapping tooling entries in `decisions.md` into one; trimmed the README layout list.
 - 2026-10-07: Added four subagents and split the rules into html, js, css, data, docs and claude. Tested each agent headlessly; findings filed as issues #21 to #23.
 - 2026-10-07: Naming cleanup: `.area` to `.purpose`, skill `tasks`, workflow `clear-status-on-close`, label cleanup, removed `.github/project-setup.md` (now issue #13).

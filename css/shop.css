@@ -16,7 +16,11 @@
   transition: border-color .2s, transform .2s;
 }
 .alt .card { background: var(--bg); }
-.card:hover { border-color: var(--pink); transform: translateY(-3px); }
+.card:hover, .card:focus-within { border-color: var(--pink); transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+  .card:hover, .card:focus-within { transform: none; }
+}
 
 .cover {
   aspect-ratio: 1 / 1;
