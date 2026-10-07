@@ -10,7 +10,8 @@ Project memory for the website. Open this `docs/` folder as a vault in Obsidian,
 
 ## Notes
 
-- [Artist](artist.md): who Glitches & Stitches is (facts only)
+- [Identity](identity.md): the project's concept, the loop, sound, visuals and personality (owner-written; follow it for anything creative)
+- [Artist](artist.md): confirmed facts and what is still unknown
 - [Brand](brand.md): visual style and tone of voice
 - [Shop](shop.md): products and how selling works
 - [Decisions](decisions.md): what was chosen and why
