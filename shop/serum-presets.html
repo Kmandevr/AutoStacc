@@ -53,22 +53,25 @@
     </div>
 
     <section>
-      <div class="wrap product">
+      <div class="wrap product" data-product-page="serum-presets">
         <div class="product-art cover tint-green" aria-hidden="true"><span>Seam Ripper</span></div>
         <div class="product-info">
           <p class="lede">64 Serum presets: tearing basses, stuttering leads and the signature wobble from the live sets.</p>
           
+          
           <dl class="facts">
             <dt>Type</dt><dd>Presets</dd>
             <dt>Format</dt><dd>Digital download</dd>
-            <dt>Price</dt><dd class="price">$19.99</dd>
-            <dt>Status</dt><dd>Coming soon</dd>
+            <dt>Price</dt><dd class="price" data-price="serum-presets">$19.99</dd>
+            <dt>Status</dt><dd data-status="serum-presets">Coming soon</dd>
+            
+            <dt>Tags</dt><dd class="tags"><span class="tag">serum</span> <span class="tag">presets</span></dd>
             
           </dl>
-          <div class="detail-buy">
+          <div class="detail-buy buy" data-buy="serum-presets">
             <span class="btn" aria-disabled="true">Coming soon</span>
           </div>
-          <p class="note">Payment and the download are handled by our checkout provider. This site never sees your card details.</p>
+          <p class="note">Checkout runs on Stripe; this site never sees your card. Files land in your <a href="/library">library</a> the moment the payment clears, as private links that expire after a few minutes.</p>
         </div>
       </div>
     </section>
@@ -88,6 +91,7 @@
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/sound.js"></script>
+  <script src="/js/store.js"></script>
   <script src="/js/eggs.js"></script>
   <script src="/js/terminal.js"></script>
   <script src="/js/motion.js"></script>

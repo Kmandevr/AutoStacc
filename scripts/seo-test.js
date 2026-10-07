@@ -35,7 +35,9 @@ const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));
 const metaVal = (head, key) => tags(head, "meta").filter((m) => m.name === key || m.property === key).map((m) => m.content);
 const draftProducts = new Set(data.products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
-const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f);
+// Account and store pages (cart, login, library...) are private: noindex, out of the sitemap, blocked in robots.txt.
+const PRIVATE = /^\/(account|login|library|admin|checkout|cart|api|private)(\/|$)/;
+const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f) || PRIVATE.test(urlPath(f));
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
 const pages = {}; // file -> facts
@@ -66,7 +68,7 @@ for (const f of pageFiles) {
   if (BAD_HOST.test(head)) add("FAIL", "head-host", `head mentions ${head.match(BAD_HOST)[0]}`, f);
 
   if (noindex && !EXPECT_NOINDEX(f)) add("FAIL", "noindex", `public page is noindex (${robots})`, f);
-  if (!noindex && EXPECT_NOINDEX(f)) add("FAIL", "noindex", "should be noindex (404 page or draft product)", f);
+  if (!noindex && EXPECT_NOINDEX(f)) add("FAIL", "noindex", "should be noindex (404 page, draft product or private page)", f);
   if (noindex && canon.length) add("FAIL", "canonical", `noindex page names a canonical (${canon.join(", ")})`, f);
   for (const c of canon) if (!servedPathsOf(c)) add("FAIL", "canonical", `${c} isn't a page on this site`, f);
   if (!noindex) {
@@ -184,7 +186,6 @@ for (const m of body.matchAll(/<(\/?)([a-z]+)[^>]*>/g)) {
 if (stack.length) add("FAIL", "sitemap-xml", `unclosed <${stack.join("><")}>`);
 if (/&(?!amp;|lt;|gt;|quot;|apos;)/.test(body)) add("FAIL", "sitemap-xml", "unescaped &");
 if (!locs.length) add("FAIL", "sitemap", "no URLs");
-const PRIVATE = /^\/(account|login|admin|checkout|cart|api|private)(\/|$)/;
 const byPath = Object.fromEntries(Object.entries(pages).map(([f, p]) => [p.path, f]));
 locs.forEach((u, i) => {
   if (locs.indexOf(u) !== i) add("FAIL", "sitemap-duplicate", u);
@@ -221,7 +222,7 @@ const allowed = (p) => {
 };
 for (const u of locs) if (!allowed(u.slice(ORIGIN.length))) add("FAIL", "robots-blocks", `${u} is blocked by robots.txt`);
 for (const p of ["/css/base.css", "/js/util.js", "/data/site.js", "/img/og.png"]) if (!allowed(p)) add("FAIL", "robots-blocks", `${p} is blocked (pages need it to render)`);
-for (const p of ["/account", "/login", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
+for (const p of ["/account", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
 if (robots && !out.some((l) => /^FAIL robots/.test(l))) add("PASS", "robots", "public pages crawlable, private areas blocked, sitemap declared");
 
 // ---------- redirects, recorded URLs and preview hosts ----------
@@ -241,8 +242,9 @@ for (const u of recorded) {
 const headers = exists("_headers") ? read("_headers") : "";
 if (!/https:\/\/:project\.pages\.dev\/\*\s+X-Robots-Tag: noindex/.test(headers)) add("WARN", "preview-noindex", "_headers doesn't keep *.pages.dev out of search");
 if (/^\/\*\s*\n\s+X-Robots-Tag:\s*noindex/m.test(headers)) add("FAIL", "headers-noindex", "_headers sends noindex for every page on every host");
-const deploy = exists(".github/workflows/deploy.yml") ? read(".github/workflows/deploy.yml") : "";
-for (const f of ["_headers", "robots.txt", "sitemap.xml", "_redirects"]) if (deploy && !deploy.includes(f)) add("FAIL", "deploy", `deploy.yml doesn't publish ${f}`);
+// The deploy publishes what scripts/dist.js collects.
+const dist = exists("scripts/dist.js") ? read("scripts/dist.js") : "";
+for (const f of ["_headers", "robots.txt", "sitemap.xml", "_redirects"]) if (!dist.includes(`"${f}"`)) add("FAIL", "deploy", `scripts/dist.js doesn't publish ${f}`);
 
 // ---------- identity data: no placeholders shipped ----------
 const isProfile = (u) => { try { const x = new URL(u); return x.protocol === "https:" && x.pathname.replace(/\/+$/, "") !== ""; } catch { return false; } };

@@ -1,11 +1,13 @@
 // Generates everything search engines read from data/: each page's <head> metadata, one page per release, product and
-// news post, sitemap.xml and the list of public URLs. Usage: node scripts/build.js [--check]
+// news post, sitemap.xml, the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
+// Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
 const path = require("path");
 const { ROOT, loadData, abs } = require("./lib/data");
 const H = require("./lib/head");
 const P = require("./lib/pages");
+const C = require("./lib/catalog");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -80,6 +82,10 @@ for (const r of data.releases) {
   if (!r.artwork) errors.push(`release ${r.id}: add artwork (it is the page's preview image)`);
   for (const t of r.tracks || []) if (!/^\d+:\d\d$/.test(t.duration || "")) errors.push(`release ${r.id}: track "${t.title}" needs a duration like "2:27"`);
 }
+
+// ---------- store catalog: db/catalog.sql (the deploy applies it to the store database) ----------
+errors.push(...C.validate(data.products, data.productTypes));
+outputs.set("db/catalog.sql", C.catalogSql(data.products, data.productTypes));
 
 // Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
 const stale = [];
