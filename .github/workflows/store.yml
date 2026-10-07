@@ -1,0 +1,30 @@
+# Store tests on every pull request and push to main: unit tests, the API security suite (two local stores: mock
+# payments, and Stripe mode against a fake Stripe API with really signed webhooks) and the browser chaos suite.
+# Nothing here touches Cloudflare, Stripe or Brevo; everything runs locally in test mode.
+name: Store tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  store:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: API security tests
+        run: npm run test:api
+      - name: Install Playwright with Chromium
+        run: npm install -g playwright@1 && npx playwright install --with-deps chromium
+      - name: Browser and chaos tests
+        run: npm run test:browser

@@ -11,7 +11,8 @@ You are the architecture reviewer for AutoStacc. You analyse and recommend. You 
 **Don't read:** `docs/log.md`, whole `docs/decisions.md` (Grep it for the topic), `data/` contents, CSS bodies unless the question is about style placement, anything in `graphify-out/` or `.serena/`.
 
 **Judge** against the path rules in `.claude/rules/` and the layout in `CLAUDE.md`. Do not re-explain them. Ask:
-- Where does this belong: `data/`, a `js/` feature file, a `css/` feature sheet, a page? Is there an existing home, or does it earn a new file?
+- Where does this belong: `data/`, a `js/` feature file, a `css/` feature sheet, a page, a `server/` module (which one owns the data it changes?), a migration, a test suite? Is there an existing home, or does it earn a new file? Modularity applies to every kind of file.
+- Store: does it keep the browser untrusted (prices, ownership, payment status from the server), ownership in entitlements only, payment outcomes through `server/payments/events.js`, and the pages static?
 - Does one feature reach across several areas, or need edits in more than about three files? That is a smell; say what to consolidate.
 - New coupling: features calling each other, shared state, a helper in `util.js` that only one feature uses, a page loading code it doesn't need.
 - Is the proposal larger than the problem?

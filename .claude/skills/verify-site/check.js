@@ -1,7 +1,8 @@
 // Runs the site checks and prints one line per result: PASS / WARN / FAIL <check> - <detail> (<file>).
 // Usage: NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js [page.html ...]
 // Needs Playwright with Chromium (preinstalled in cloud sessions at /opt/pw-browsers/chromium).
-// Pages are served like production (scripts/serve.js): clean addresses, _redirects, real 404 status.
+// Pages are served like production (scripts/serve.js): clean addresses, _redirects, real 404 status. The store API is
+// offline there (503), so this also checks that every page still works when the store is down.
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
@@ -17,6 +18,8 @@ const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
 const { SITE, products } = loadData(root);
 const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
+// Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
+const PRIVATE = /^\/(account|login|library|admin|checkout|cart)(\/|$)/;
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
 const DATA_GLOBALS = { SITE: "data/site.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js", MUSIC: "data/music.js" };
@@ -67,13 +70,13 @@ const SEO = require("./seo-browser.js");
       tab.on("pageerror", (e) => problems.push(["FAIL", "runtime-error", String(e)]));
       // Only our own pages count; embedded players (Deezer, Spotify, ...) log their own errors.
       tab.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && (!m.location().url || m.location().url.startsWith(base)) && problems.push(["FAIL", "console-error", m.text()]));
-      tab.on("response", (r) => r.url().startsWith(base) && r.status() >= 400 && !(page === "404.html" && r.url() === base + urlOf(page)) && problems.push(["FAIL", "http-" + r.status(), r.url().replace(base, "")]));
+      tab.on("response", (r) => r.url().startsWith(base) && r.status() >= 400 && !(r.status() === 503 && r.url().startsWith(base + "/api/")) && !(page === "404.html" && r.url() === base + urlOf(page)) && problems.push(["FAIL", "http-" + r.status(), r.url().replace(base, "")]));
       // Requests made inside embedded players (YouTube ads and stats, etc.) aren't the site's own.
       tab.on("requestfailed", (r) => !r.url().startsWith(base) && r.frame() === tab.mainFrame() && problems.push(["WARN", "external-request", `${r.url().slice(0, 60)} failed (offline sandbox?)`]));
       const res = await tab.goto(base + urlOf(page));
       if (page === "404.html" && res.status() !== 404) problems.push(["FAIL", "404-status", `unknown address returned ${res.status()}, not 404`]);
       await tab.waitForTimeout(250);
-      if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) })) problems.push(p);
+      if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) || PRIVATE.test(urlOf(page)) })) problems.push(p);
       const facts = await tab.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - innerWidth,
         header: !!document.querySelector(".site-header .nav"),

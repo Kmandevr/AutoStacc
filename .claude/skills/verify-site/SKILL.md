@@ -12,7 +12,7 @@ NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js            # a
 NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js shop.html  # one page
 ```
 
-The script serves the site like Cloudflare Pages (`scripts/serve.js`: clean addresses, `_redirects`, real 404), so nothing needs cleaning up. Exit code 1 means at least one FAIL. With no arguments it covers every page, including the generated ones in `music/`, `shop/` and `news/`. To browse by hand: `node scripts/serve.js` and open http://localhost:8000/.
+The script serves the site like Cloudflare Pages (`scripts/serve.js`: clean addresses, `_redirects`, real 404), so nothing needs cleaning up. The store API is offline there (503), so it also proves every page works when the store is down; the store itself is tested by the `store-check` skill. Exit code 1 means at least one FAIL. With no arguments it covers every page, including the generated ones in `music/`, `shop/` and `news/`. To browse by hand: `node scripts/serve.js` and open http://localhost:8000/.
 
 ## What it checks
 

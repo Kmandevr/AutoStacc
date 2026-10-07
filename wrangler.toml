@@ -1,0 +1,74 @@
+# Cloudflare Pages project "autostacc": the static site (dist/, built by scripts/dist.js) plus the store API in
+# functions/ (code in server/). Bindings: D1 database DB, private R2 bucket FILES (paid downloads), R2 bucket PREVIEWS
+# (public audio previews). Secrets never go here: they are Pages secrets (production) or .dev.vars (local, gitignored).
+# The top level is local development; [env.preview] is branch previews and [env.production] is autostacc.com.
+# The deploy (scripts/cloudflare.js) swaps the placeholder database ids for the real ones; they are not secret.
+name = "autostacc"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-15"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+APP_ENV = "development"
+SITE_URL = "http://localhost:8788"
+PAYMENT_PROVIDER = "mock"
+EMAIL_PROVIDER = "log"
+EMAIL_FROM = "Glitches & Stitches <store@autostacc.com>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "autostacc-dev"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "db/migrations"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "autostacc-files-dev"
+
+[[r2_buckets]]
+binding = "PREVIEWS"
+bucket_name = "autostacc-previews-dev"
+
+# Branch previews: test-mode Stripe keys and their own database and buckets, so a preview can never grant production access.
+[env.preview.vars]
+APP_ENV = "preview"
+SITE_URL = "https://preview.autostacc.pages.dev"
+PAYMENT_PROVIDER = "stripe"
+EMAIL_PROVIDER = "log"
+EMAIL_FROM = "Glitches & Stitches <store@autostacc.com>"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "autostacc-preview"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "db/migrations"
+
+[[env.preview.r2_buckets]]
+binding = "FILES"
+bucket_name = "autostacc-files-preview"
+
+[[env.preview.r2_buckets]]
+binding = "PREVIEWS"
+bucket_name = "autostacc-previews-preview"
+
+# autostacc.com: live Stripe keys only (server/config.js refuses anything else), Brevo email.
+[env.production.vars]
+APP_ENV = "production"
+SITE_URL = "https://autostacc.com"
+PAYMENT_PROVIDER = "stripe"
+EMAIL_PROVIDER = "brevo"
+EMAIL_FROM = "Glitches & Stitches <store@autostacc.com>"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "autostacc"
+database_id = "00000000-0000-0000-0000-000000000002"
+migrations_dir = "db/migrations"
+
+[[env.production.r2_buckets]]
+binding = "FILES"
+bucket_name = "autostacc-files"
+
+[[env.production.r2_buckets]]
+binding = "PREVIEWS"
+bucket_name = "autostacc-previews"

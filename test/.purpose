@@ -1,0 +1,1 @@
+Store tests: unit/ (pure modules), api/ (security suites against local stores), browser/ (chaos tests in Chromium), support/ (fake Stripe, clients).

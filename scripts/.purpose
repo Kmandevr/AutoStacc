@@ -1,1 +1,1 @@
-Node scripts (no dependencies): build.js generates page heads, release/product/news pages and sitemap.xml from data/; seo-test.js guards search visibility; serve.js runs the site locally like Cloudflare Pages.
+Node scripts: build.js generates page heads, item pages, sitemap.xml and db/catalog.sql from data/; seo-test.js guards search visibility; serve.js and dev.js run the site locally; dist.js, cloudflare.js and deploy-check.js serve the deploy.

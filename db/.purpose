@@ -1,0 +1,1 @@
+Store database (D1): migrations/ (forward-only schema) and catalog.sql (generated from data/products.js by scripts/build.js).
