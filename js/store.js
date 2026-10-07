@@ -18,10 +18,12 @@
 
   let state = null; // { signedIn, products: { id: { available, free, owned, priceCents, currency } } }
 
-  function control(id) {
+  function control(id, detail) {
     const p = state && state.products[id];
     if (!p) return null; // unknown to the API (draft or API down): keep the static fallback
-    if (p.owned) return `<span class="owned-badge" title="It's in your library">OWNED</span><a class="btn ghost" href="/library">Open library</a>`;
+    // Cards get just the stamp (it links to the library); the product page adds a full button.
+    if (p.owned) return detail ? `<span class="owned-badge">OWNED</span><a class="btn ghost" href="/library">Open library</a>`
+      : `<a class="owned-badge" href="/library" title="It's in your library">OWNED</a>`;
     if (!p.available) return `<span class="btn" aria-disabled="true">Unavailable</span>`;
     if (p.free) return `<button class="btn" type="button" data-claim="${escapeHTML(id)}">Get it free</button>`;
     if (cart.has(id)) return `<a class="btn ghost in-cart" href="/cart">In cart → checkout</a>`;
@@ -30,7 +32,7 @@
 
   function paint() {
     for (const el of slots()) {
-      const html = control(el.dataset.buy);
+      const html = control(el.dataset.buy, el.classList.contains("detail-buy"));
       if (html !== null && el.innerHTML !== html) el.innerHTML = html;
     }
     if (!state) return;

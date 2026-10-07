@@ -38,11 +38,18 @@
     if (big) { big.tabIndex = -1; big.focus(); }
   }
 
+  // Drawn once; later polls only change the message, so the panel doesn't re-glitch and screen readers hear each change once.
   function waiting(o, slow) {
-    root.innerHTML = state("STITCHING…", false, `<p class="msg pending" role="status">${slow
+    if (!$("[data-waiting]", root)) {
+      root.innerHTML = state("STITCHING…", false, `<p class="msg pending" role="status" data-waiting></p>${lines(o)}
+        <div class="actions" hidden data-slow><button class="btn ghost" type="button" data-recheck>Check again</button></div>`);
+    }
+    const text = slow
       ? "Still waiting for the payment to clear. That can take a minute. This page is safe to refresh, and we'll email you when it's done."
-      : "Waiting for the payment to clear. Don't pay twice: this takes a few seconds."}</p>${lines(o)}
-      ${slow ? `<div class="actions"><button class="btn ghost" type="button" data-recheck>Check again</button></div>` : ""}`);
+      : "Waiting for the payment to clear. Don't pay twice: this takes a few seconds.";
+    const m = $("[data-waiting]", root);
+    if (m.textContent !== text) m.textContent = text;
+    $("[data-slow]", root).hidden = !slow;
   }
 
   async function poll() {
@@ -86,9 +93,16 @@
     if (e.target.closest("[data-recheck]")) return poll();
     const btn = e.target.closest("[data-mock]");
     if (!btn || btn.disabled) return;
-    root.querySelectorAll("[data-mock]").forEach((b) => (b.disabled = true));
+    const buttons = root.querySelectorAll("[data-mock]");
+    buttons.forEach((b) => (b.disabled = true));
     const res = await api("/api/dev/mock-payment", { method: "POST", body: { orderId, sessionId: mockSession, outcome: btn.dataset.mock } });
-    if (!res.ok) { root.insertAdjacentHTML("afterbegin", `<p class="msg error">${escapeHTML(res.error.message)}</p>`); return; }
+    if (!res.ok) {
+      buttons.forEach((b) => (b.disabled = false));
+      const old = $(".mock-error", root);
+      if (old) old.remove();
+      root.insertAdjacentHTML("afterbegin", `<p class="msg error mock-error" role="alert">${escapeHTML(res.error.message)}</p>`);
+      return;
+    }
     history.replaceState(null, "", `/checkout?order=${encodeURIComponent(orderId)}&status=return`);
     poll();
   });

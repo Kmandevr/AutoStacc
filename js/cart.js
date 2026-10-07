@@ -11,6 +11,21 @@
   const params = new URLSearchParams(location.search);
   let priced = null, account = null, busy = false;
 
+  // Announcements ("Removed ...") go to one polite live region; the cart itself re-renders silently.
+  const live = document.createElement("p");
+  live.className = "sr-only";
+  live.setAttribute("role", "status");
+  root.before(live);
+  const say = (text) => { live.textContent = ""; setTimeout(() => (live.textContent = text), 50); };
+
+  // After a re-render, put keyboard focus back where the person was working.
+  function refocus(hint) {
+    if (!hint) return;
+    const target = hint.qty ? $(`[data-qty="${CSS.escape(hint.qty)}"]`, root)
+      : root.querySelectorAll("[data-remove]")[hint.index] || root.querySelectorAll("[data-remove]")[hint.index - 1] || $("#checkout-btn", root) || $(".btn", root);
+    if (target) target.focus();
+  }
+
   const PROBLEMS = {
     not_found: "This piece isn't in the store anymore.",
     unavailable: "Not for sale right now.",
@@ -83,9 +98,9 @@
 
   function sessionValue(k) { try { return sessionStorage.getItem(k) || ""; } catch { return ""; } }
 
-  async function load() {
+  async function load(hint) {
     const items = cart.items();
-    if (!items.length) return empty();
+    if (!items.length) { empty(); return refocus(hint); }
     const [res, acct] = await Promise.all([api("/api/cart/price", { method: "POST", body: { items } }), api("/api/account")]);
     account = acct.ok ? acct.data : null;
     if (!res.ok) {
@@ -95,6 +110,7 @@
     }
     priced = res.data.cart;
     render();
+    refocus(hint);
   }
 
   async function checkout(btn) {
@@ -131,16 +147,24 @@
 
   root.addEventListener("click", (e) => {
     const rm = e.target.closest("[data-remove]");
-    if (rm) { cart.remove(rm.dataset.remove); sound("blip", rm); return load(); }
+    if (rm) {
+      const index = [...root.querySelectorAll("[data-remove]")].indexOf(rm);
+      cart.remove(rm.dataset.remove);
+      sound("blip", rm);
+      say(`Removed ${rm.getAttribute("aria-label").replace(/^Remove /, "")}.`);
+      return load({ index });
+    }
     if (e.target.closest("[data-retry]")) return load();
     const btn = e.target.closest("#checkout-btn");
     if (btn && !btn.disabled) checkout(btn);
   });
   root.addEventListener("change", (e) => {
     const sel = e.target.closest("[data-qty]");
-    if (sel) { cart.setQuantity(sel.dataset.qty, Number(sel.value)); load(); }
+    if (sel) { cart.setQuantity(sel.dataset.qty, Number(sel.value)); load({ qty: sel.dataset.qty }); }
   });
   // Coming back with the back button (from Stripe or anywhere): unlock the button and re-price.
+  // A field stops being marked invalid as soon as it's edited.
+  root.addEventListener("input", (e) => e.target.removeAttribute("aria-invalid"));
   addEventListener("pageshow", (e) => { if (e.persisted) { busy = false; load(); } });
   addEventListener("storage", (e) => e.key === "gs:cart" && load());
 
