@@ -1,0 +1,8 @@
+# Public URLs ever published. scripts/build.js adds new ones; seo-test.js fails if one disappears without a redirect.
+https://autostacc.com/
+https://autostacc.com/music
+https://autostacc.com/news
+https://autostacc.com/press
+https://autostacc.com/shop
+https://autostacc.com/music/hail
+https://autostacc.com/news/hail-out-now

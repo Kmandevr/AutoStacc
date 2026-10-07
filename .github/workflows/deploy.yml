@@ -1,4 +1,5 @@
-# Publishes the site to Cloudflare Pages on every push to main. Only the site files and _redirects are uploaded, not docs/ or .claude/.
+# Publishes the site to Cloudflare Pages on every push to main, after regenerating the SEO files and running the SEO tests
+# (a failing test stops the deploy). Only the public site is uploaded, not docs/, scripts/ or .claude/.
 # Needs repo secrets CLOUDFLARE_API_TOKEN (permission "Cloudflare Pages: Edit") and CLOUDFLARE_ACCOUNT_ID.
 name: Deploy to Cloudflare Pages
 on:
@@ -19,13 +20,21 @@ jobs:
       PROJECT: autostacc
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Committed pages, heads and sitemap match data/ (so the live site is what the repo shows)
+        run: node scripts/build.js --check
+      - name: SEO regression tests
+        run: node scripts/seo-test.js
       - name: Collect site files
         run: |
           mkdir dist
           cp *.html dist/
-          cp -r css js data dist/
-          cp -r img dist/
-          cp _redirects robots.txt sitemap.xml dist/
+          cp -r css js data img dist/
+          # generated pages (scripts/build.js); a folder is absent when its data list is empty
+          for d in music shop news; do [ -d "$d" ] && cp -r "$d" dist/; done
+          cp _redirects _headers robots.txt sitemap.xml dist/
           # dotfiles and editor-only type config (js/jsconfig.json, js/globals.d.ts) stay out of the public site
           find dist \( -name .purpose -o -name '*.d.ts' -o -name jsconfig.json \) -delete
       - name: Create the Pages project if it doesn't exist

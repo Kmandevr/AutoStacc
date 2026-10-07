@@ -12,12 +12,14 @@ NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js            # a
 NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js shop.html  # one page
 ```
 
-The script starts its own static server, so nothing needs cleaning up. Exit code 1 means at least one FAIL.
+The script serves the site like Cloudflare Pages (`scripts/serve.js`: clean addresses, `_redirects`, real 404), so nothing needs cleaning up. Exit code 1 means at least one FAIL. With no arguments it covers every page, including the generated ones in `music/`, `shop/` and `news/`. To browse by hand: `node scripts/serve.js` and open http://localhost:8000/.
 
 ## What it checks
 
 - **Static:** JS syntax (`node --check`), balanced CSS braces, local `src`/`href` targets that exist, each script's `window.SITE|PRODUCTS|NEWS|SHOWS` use matched by a loaded `data/*.js`, `js/util.js` loaded where `window.GS` is used, duplicate ids, `lang`, viewport, `<title>`, `img` alt.
 - **Browser, at 1280px and 390px:** page errors and console errors, HTTP errors, horizontal overflow, header/footer rendering, empty data containers, tap targets under 24px, the mobile menu toggle, the shop filter (choose a category, then All), and the newsletter form.
+- **SEO, rendered (`seo-browser.js`):** title, description, robots, canonical, Open Graph and JSON-LD as a crawler sees them after scripts run, one `h1` and no skipped heading levels, image alt, links that hop through redirects, the 404 status. With no arguments it also crawls from `/` and fails on broken links and on sitemap URLs that no page links to.
+- Static SEO tests are separate: `node scripts/seo-test.js` (see the `seo-check` skill).
 
 ## Reporting
 
