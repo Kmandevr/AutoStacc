@@ -7,7 +7,13 @@ description: How to find, claim, work, report and finish tasks in AutoStacc usin
 
 **GitHub is the task list.** Issue = one piece of work or bug. PR = its implementation (`Closes #N`). `docs/` = permanent knowledge only. Never keep a second task list in `CLAUDE.md`, `docs/`, code comments or local files.
 
-Repo `Kmandevr/AutoStacc`. Use the GitHub MCP tools (`search_issues`, `list_issues`, `issue_read`, `issue_write`, `add_issue_comment`, `search_pull_requests`) with `minimal_output` where offered. Fetch only what a step needs; never list every issue.
+Repo `Kmandevr/AutoStacc`. GitHub MCP tools, each for one job, always with `fields` trimmed to what you need (`number`, `title`, `labels`; add `body` only for the issue you will work on):
+
+- `list_issues` with `labels` (all must match) and `state`: structured queries (status, priority, bug). Use this for the board.
+- `search_issues`: natural-language matching, for finding duplicates or related work. It does not understand `label:` filters.
+- `search_pull_requests` (GitHub syntax, e.g. `is:open`): PRs.
+- `issue_read` (`get` shows linked PRs, `get_comments` shows claims), `issue_write`, `add_issue_comment`.
+- `issue_write` `labels` **replaces** the whole label set. Re-send the labels you want to keep.
 
 ## Labels (the whole state model)
 
@@ -18,15 +24,13 @@ Repo `Kmandevr/AutoStacc`. Use the GitHub MCP tools (`search_issues`, `list_issu
 | Type | `bug` `feature` `improvement` `refactor` `documentation` `chore` | |
 | Area | `area: ui` `shop` `news` `data` `infra`, `accessibility` | Only where useful |
 
-## Session start (3 small queries, only when the task isn't already given)
+## Session start (small queries, only when the task isn't already given)
 
-```
-repo:Kmandevr/AutoStacc is:issue is:open label:"status: in progress"      # who is working on what
-repo:Kmandevr/AutoStacc is:pr is:open                                        # waiting for review
-repo:Kmandevr/AutoStacc is:issue is:open label:"status: ready"              # candidates
-```
+1. `list_issues` labels `["status: in progress"]`, OPEN: what is being worked on.
+2. `search_pull_requests` `is:open`: what waits for review.
+3. `list_issues` labels `["status: ready"]`, OPEN: candidates. Sort them yourself by `P0`..`P3`.
 
-Also run `git status` and `git log -3 --oneline`. Add `label:bug label:P0,P1` for urgent bugs and `label:"status: blocked"` only when asked about blockers. Recently changed: `is:issue is:closed sort:updated-desc` limited to 5.
+Also `git status` and `git log -3 --oneline`. Urgent bugs: `list_issues` labels `["bug","P0"]`, then `["bug","P1"]`. Blockers, only when asked: labels `["status: blocked"]`. Recently changed: `list_issues` state CLOSED, `orderBy` UPDATED_AT DESC, `perPage` 5.
 
 ## Choosing work
 
@@ -34,7 +38,7 @@ If the user names a task, use it. If you may choose, take the first that applies
 
 ## Before starting
 
-1. Search for duplicates or related work: open issues, open PRs, and the last few closed issues (`search_issues` with a keyword). Reuse and comment on an existing issue instead of opening another.
+1. Search for duplicates or related work: `search_issues` with a short description (open and closed), plus `search_pull_requests` for open PRs. Reuse and comment on an existing issue instead of opening another.
 2. **Claim** (also how sessions avoid colliding): add `status: in progress` and remove `status: ready`, then comment `Claimed: branch <branch-name>`. Re-read the comments: the **earliest** `Claimed:` comment wins. If it isn't yours, back off and pick another issue. An `in progress` issue with no open PR and no branch activity for over a day is abandoned: comment, then reclaim.
 3. Confirm scope from the issue's acceptance criteria. Find files with the repo map, then Serena or Graphify (see `CLAUDE.md`). Use the matching skill (`add-product`, `add-news`, ...).
 
@@ -46,7 +50,7 @@ If the user names a task, use it. If you may choose, take the first that applies
 
 ## Found a bug or idea outside the current issue
 
-1. Search existing issues. If one exists, add what you learned as a comment and stop.
+1. `search_issues` with a short description. If one exists, add what you learned as a comment and stop.
 2. Otherwise open a narrow issue. Bug: use the sections of `.github/ISSUE_TEMPLATE/bug.yml` as `### Heading` blocks (Summary, Reproduction, Expected, Actual, Acceptance criteria are required; Environment, Evidence, Suspected area only if you know them). Task: `task.yml`.
 3. Labels: `bug` (or a type), a priority, an area if it's clear. Add `status: ready` only if it's fully scoped; otherwise leave it in backlog. Mention `#<current issue>` if related.
 4. Continue the original task. Stop only if the bug blocks it (then mark the current issue `status: blocked` and say why) or it is P0.
