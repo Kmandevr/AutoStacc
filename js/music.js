@@ -10,7 +10,8 @@
   if (!player || !platforms) return;
 
   // Only well-known players are embedded, so a typo can't load an unrelated page into the site.
-  const PLAYERS = ["open.spotify.com", "w.soundcloud.com", "bandcamp.com", "embed.music.apple.com", "www.youtube.com", "www.youtube-nocookie.com"];
+  const PLAYERS = ["open.spotify.com", "w.soundcloud.com", "widget.deezer.com", "bandcamp.com", "embed.music.apple.com",
+    "www.youtube.com", "www.youtube-nocookie.com"];
   let src = "";
   let host = "";
   try {
@@ -21,8 +22,8 @@
   } catch { /* not set */ }
 
   if (PLAYERS.some((h) => host === h || host.endsWith("." + h))) {
-    // Spotify's and SoundCloud's compact players are short; the others need a 16:9 frame.
-    const tall = !/spotify|soundcloud/.test(host);
+    // Spotify's, SoundCloud's and Deezer's players are short; the others need a 16:9 frame.
+    const tall = !/spotify|soundcloud|deezer/.test(host);
     player.innerHTML = `<iframe class="player${tall ? " tall" : ""}" src="${escapeHTML(src)}"
       title="${escapeHTML(MUSIC.embedTitle || "Music player")}" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;

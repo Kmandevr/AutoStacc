@@ -18,3 +18,4 @@
 .news-item p { margin: 0; color: var(--muted); }
 .news-item .body { margin-top: 12px; color: var(--text); }
 .news-item .body p { color: var(--text); margin: 0 0 10px; }
+.news-item .body a { display: inline-block; padding-block: 2px; }

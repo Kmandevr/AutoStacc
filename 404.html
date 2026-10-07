@@ -26,6 +26,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/eggs.css">
   <link rel="stylesheet" href="css/error.css">
 </head>
 <body data-page="404">
@@ -34,7 +35,7 @@
   <main id="main">
     <section class="error">
       <div class="wrap">
-        <p class="err-code">$ open ./this-page<br>ERR 404: fragment not found</p>
+        <p class="err-code">$ open ./this-page<br><span id="err-msg">ERR 404: fragment not found</span></p>
         <h1 class="glitch" data-text="NOT FOUND">NOT FOUND</h1>
         <p>This page broke off and hasn't been stitched back in. Maybe it never existed. Maybe it's source material for something else.</p>
         <div class="error-actions">
@@ -50,6 +51,9 @@
   <script src="data/site.js"></script>
   <script src="js/util.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/eggs.js"></script>
+  <script src="js/terminal.js"></script>
   <script src="js/motion.js"></script>
 </body>
 </html>
