@@ -1,0 +1,41 @@
+/* Your Stacc (library page): view switch and filters, the project → Stacclet → Pac tree, content-type groups,
+   asset rows with checkboxes, the selection bar and the "from projects you follow" list. */
+
+.stacc-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; margin: 0 0 14px; }
+.stacc-views { display: flex; gap: 8px; }
+.stacc-views [aria-pressed="true"] { background: var(--green); color: var(--bg); text-shadow: none; }
+.stacc-filter { display: grid; gap: 4px; font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.stacc-filter select { min-height: 40px; background: var(--bg); color: var(--text); border: 1px solid var(--line); font: inherit; text-transform: none; letter-spacing: 0; padding: 6px 8px; }
+
+.stacc-selection { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 0; margin-bottom: 14px; background: var(--bg); border-bottom: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+.stacc-selection .msg { flex: 1 1 100%; margin: 4px 0 0; }
+
+.stacc-project { margin: 0 0 30px; }
+.stacc-project > h2 { margin: 0 0 12px; text-transform: uppercase; overflow-wrap: anywhere; }
+.stacc-count { color: var(--green-dim); font-size: .8rem; font-family: var(--font); letter-spacing: .04em; text-shadow: none; }
+.stacc-stacclet { border: 1px solid var(--line); background: var(--bg-2); box-shadow: 5px -4px 0 rgba(191,95,255,.3); padding: 10px 16px; margin: 0 0 16px; }
+.stacc-pac { border-left: 2px solid var(--purple); padding: 4px 0 4px 14px; margin: 10px 0; }
+.stacc-stacclet > summary, .stacc-pac > summary { cursor: pointer; padding: 8px 0; color: var(--green); overflow-wrap: anywhere; }
+.stacc-kind { color: var(--purple); font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; margin-right: 6px; }
+
+.stacc-group { margin: 8px 0 18px; }
+.stacc-group-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; border-bottom: 1px solid var(--line); }
+.stacc-group-head h2, .stacc-group-head h3, .stacc-group-head h4 { margin: 0 0 6px; font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; }
+.stacc-all { font-size: .85rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; min-height: 32px; }
+.stacc-assets { list-style: none; margin: 0; padding: 0; }
+.stacc-asset { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.stacc-asset .msg { flex: 1 1 100%; margin: 4px 0 0; }
+.stacc-pick { display: flex; gap: 10px; align-items: flex-start; min-width: 0; flex: 1 1 260px; cursor: pointer; }
+.stacc-pick input, .stacc-all input { width: 20px; height: 20px; accent-color: var(--green); flex: none; margin-top: 2px; }
+.stacc-name { display: grid; gap: 2px; overflow-wrap: anywhere; }
+
+.stacc-waiting ul { margin: 8px 0 0; padding-left: 18px; }
+.stacc-new { margin-top: 30px; }
+.stacc-follow-hint { margin-top: 24px; }
+.stacc-follow-hint a, .stacc-waiting a { display: inline-block; padding-block: 4px; }
+
+@media (max-width: 600px) {
+  .stacc-stacclet { padding: 8px 12px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .stacc-asset .btn { flex: 1 1 100%; text-align: center; }
+  .stacc-filter { flex: 1 1 40%; }
+}

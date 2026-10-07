@@ -8,6 +8,8 @@ const { ROOT, loadData, abs } = require("./lib/data");
 const H = require("./lib/head");
 const P = require("./lib/pages");
 const C = require("./lib/catalog");
+const PL = require("./lib/platform");
+const { platformSql } = require("./lib/platform-catalog");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -18,7 +20,7 @@ const outputs = new Map(); // file -> content
 // ---------- hand-written pages: every *.html in the root ----------
 // Each writes its own <title> and <meta name="description"> (the home page takes both from data/site.js);
 // everything else in the head block is generated. A page opts out of search with its own <meta name="robots" content="noindex">.
-const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", press: "AboutPage" };
+const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", press: "AboutPage" };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const strip = (html) => html.replace(new RegExp(`${H.START.slice(0, 15)}[\\s\\S]*?${H.END}`), "");
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
@@ -52,7 +54,8 @@ for (const file of handPages) {
     const lists = {
       music: data.releases.map((r) => [r.title, "/music/" + r.id]),
       shop: data.products.filter((x) => !x.draft).map((x) => [x.title, "/shop/" + x.id]),
-      news: [...data.news].sort((a, b) => b.date.localeCompare(a.date)).map((n) => [n.title, "/news/" + n.id])
+      news: [...data.news].sort((a, b) => b.date.localeCompare(a.date)).map((n) => [n.title, "/news/" + n.id]),
+      projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, x.home])
     }[key];
     const extra = { breadcrumb: H.breadcrumbs(SITE, crumbs) };
     if (lists && lists.length) extra.mainEntity = H.itemList(SITE, lists);
@@ -84,8 +87,10 @@ for (const r of data.releases) {
 }
 
 // ---------- store catalog: db/catalog.sql (the deploy applies it to the store database) ----------
+// Projects and polls are synced after the products, in the same file. The platform links are checked first.
 errors.push(...C.validate(data.products, data.productTypes));
-outputs.set("db/catalog.sql", C.catalogSql(data.products, data.productTypes));
+errors.push(...PL.validate(data));
+outputs.set("db/catalog.sql", C.catalogSql(data.products, data.productTypes) + platformSql(data));
 
 // Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
 const stale = [];

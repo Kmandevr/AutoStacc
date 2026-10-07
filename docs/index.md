@@ -1,16 +1,20 @@
 ---
-title: Glitches & Stitches vault
+title: AutoStacc vault
 summary: Vault home: links to every note.
 updated: 2026-10-07
 ---
 
-# Glitches & Stitches vault
+# AutoStacc vault
 
-Project memory for the website. Open this `docs/` folder as a vault in Obsidian, or read it on GitHub.
+Project memory for the AutoStacc platform and its first project, Glitches & Stitches. Open this `docs/` folder as a vault in Obsidian, or read it on GitHub.
 
 ## Notes
 
-- [Identity](identity.md): the project's concept, the loop, sound, visuals and personality (owner-written; follow it for anything creative)
+- [Architecture](architecture.md): AutoStacc as a platform: projects, Stacclets, Pacs, assets, Your Stacc, Auto-Stacc, polls, relationships
+- [AutoStacc](autostacc.md): the platform's identity and Stacc vocabulary
+- [Projects](projects.md): the project data contract and how to add a project
+- [Your Stacc](library.md): the content-level library, selected downloads, follows and Auto-Stacc
+- [Identity](identity.md): the Glitches & Stitches project's concept, the loop, sound, visuals and personality (owner-written; follow it for anything creative)
 - [Artist](artist.md): confirmed facts and what is still unknown
 - [Brand](brand.md): visual style and tone of voice
 - [Shop](shop.md): the catalogue and what is still placeholder
