@@ -91,6 +91,10 @@ export function normalizeEvent(event) {
         amount: o.amount_refunded,
         currency: String(o.currency || "").toUpperCase()
       };
+    case "charge.dispute.created":
+      return { ...base, type: "disputed", paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null };
+    case "charge.dispute.closed":
+      return { ...base, type: o.status === "won" ? "dispute_won" : "ignored", paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null };
     default:
       return { ...base, type: "ignored" };
   }

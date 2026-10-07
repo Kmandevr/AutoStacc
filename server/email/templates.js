@@ -21,8 +21,17 @@ const para = (s) => `<p style="line-height:1.6;margin:0 0 12px">${esc(s)}</p>`;
 export const templates = {
   "verify-email": ({ url }) => ({
     subject: "Confirm your email — Glitches & Stitches",
-    text: `Confirm your email to finish creating your account:\n${url}\n\nThe link works for 24 hours. If you didn't sign up, ignore this.`,
-    html: layout("confirm your email", para("One click and your account is stitched together.") + button(url, "Confirm email") + para("The link works for 24 hours. If you didn't sign up, ignore this."))
+    text: `Confirm your email to finish creating your account:\n${url}\n\nThe link works for 24 hours.\nDidn't sign up? Don't click: confirming gives that account anything bought with this email. Ignore this mail and nothing happens.`,
+    html: layout("confirm your email", para("One click and your account is stitched together.") + button(url, "Confirm email") +
+      para("The link works for 24 hours.") + para("Didn't sign up? Don't click: confirming gives that account anything bought with this email. Ignore this mail and nothing happens."))
+  }),
+
+  // After guest purchases join an account (confirmed email or password reset).
+  "purchases-linked": ({ count, libraryUrl, resetUrl }) => ({
+    subject: "Your purchases joined your account — Glitches & Stitches",
+    text: `${count} purchase${count === 1 ? "" : "s"} made with this email ${count === 1 ? "is" : "are"} now in your account library: ${libraryUrl}\n\nDidn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`,
+    html: layout("stitched in", para(`${count} purchase${count === 1 ? "" : "s"} made with this email ${count === 1 ? "is" : "are"} now in your account library.`) +
+      button(libraryUrl, "Open your library") + para(`Didn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`))
   }),
 
   "reset-password": ({ url }) => ({
@@ -36,6 +45,14 @@ export const templates = {
     subject: "You already have an account — Glitches & Stitches",
     text: `Someone tried to create an account with this email, but you already have one.\nLog in: ${loginUrl}\nForgot your password? ${resetUrl}`,
     html: layout("you already have an account", para("Someone tried to create an account with this email, but you already have one.") + button(loginUrl, "Log in") + para(`Forgot your password? ${resetUrl}`))
+  }),
+
+  "payment-rejected": ({ provider, eventId, sessionId, orderId, reason, adminUrl }) => ({
+    subject: "Store alert: a payment was refused",
+    text: `A ${provider} payment event was refused by the store, so the buyer got nothing yet.\nReason: ${reason}\nEvent: ${eventId}\nSession: ${sessionId || "-"}\nOrder: ${orderId || "-"}\n\nCheck it in the ${provider} dashboard and in ${adminUrl}; refund it there or grant access by hand.`,
+    html: layout("payment refused", para(`A ${provider} payment event was refused by the store, so the buyer got nothing yet.`) +
+      para(`Reason: ${reason}`) + para(`Event: ${eventId} · Session: ${sessionId || "-"} · Order: ${orderId || "-"}`) +
+      button(adminUrl, "Open the admin") + para("Refund it in the payment dashboard, or grant access by hand."))
   }),
 
   "purchase-confirmation": ({ order, items, libraryUrl, guestUrl }) => {

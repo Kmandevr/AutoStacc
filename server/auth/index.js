@@ -3,7 +3,7 @@
 // Its HTTP endpoints live under /api/auth/* (see the Better Auth docs for the list).
 import { betterAuth } from "better-auth";
 import { sendEmail } from "../email/index.js";
-import { claimGuestPurchases } from "../entitlements/claim.js";
+import { claimGuestPurchases, verifyByReset } from "../entitlements/claim.js";
 
 export function createAuth(app) {
   const { config, env, ctx } = app;
@@ -15,6 +15,9 @@ export function createAuth(app) {
     secret: config.authSecret,
     database: env.DB,
     trustedOrigins: [config.siteUrl],
+    // On-demand confirmation mails would let whoever pre-registered an address mail its owner repeatedly; the one
+    // mail at sign-up and password reset (which also verifies) cover every real need.
+    disabledPaths: ["/send-verification-email"],
     emailAndPassword: {
       enabled: true,
       // Purchases attach to an account by email, so the email must be proven before anything is linked.
@@ -23,6 +26,7 @@ export function createAuth(app) {
       maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
+      onPasswordReset: ({ user }) => verifyByReset(app, user),
       sendResetPassword: ({ user, url }) => sendEmail(app, "reset-password", user.email, { url }),
       // Signing up with a taken email answers exactly like a new sign-up and mails the owner instead (no enumeration).
       onExistingUserSignUp: ({ user }) =>
@@ -30,7 +34,9 @@ export function createAuth(app) {
     },
     emailVerification: {
       sendOnSignUp: true,
-      sendOnSignIn: true,
+      // Not on sign-in: whoever knows a pre-registered account's password must not be able to send its owner
+      // confirmation mails on demand. Lost the mail? Reset the password (it verifies too).
+      sendOnSignIn: false,
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: ({ user, url }) => sendEmail(app, "verify-email", user.email, { url }),

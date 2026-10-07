@@ -108,4 +108,11 @@ export default (ctx) => describe("downloads", () => {
     assert.equal((await new Client(ctx.mock.url).post("/api/checkout", { email: unique("late"), items: [{ productId: "stems-patchwork" }] })).status, 409);
     await admin.req("PATCH", "/api/admin/products/stems-patchwork", { body: { salesPaused: false } });
   });
+
+  test("hammering download links is rate limited", async () => {
+    const c = new Client(ctx.mock.url);
+    const codes = [];
+    for (let i = 0; i < 70; i++) codes.push((await c.get(`/api/downloads/garbage${i}.x`)).status);
+    assert.ok(codes.includes(429), codes.slice(-5).join(","));
+  });
 });

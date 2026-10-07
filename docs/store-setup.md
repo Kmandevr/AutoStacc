@@ -37,10 +37,10 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 
 1. Activate the Stripe account (business details, payouts). Set the statement descriptor and branding (Settings → Branding) so Checkout looks like Glitches & Stitches.
 2. Developers → Webhooks → Add endpoint: `https://autostacc.com/api/webhooks/stripe`, events:
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`.
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`.
    Copy its signing secret into `STRIPE_WEBHOOK_SECRET`.
 3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above.
-4. Refunds are done in the Stripe dashboard; the webhook revokes access automatically.
+4. Refunds are done in the Stripe dashboard; the webhook revokes access automatically. A chargeback suspends access until it's resolved. If the store ever refuses a paid event (it should not), every `ADMIN_EMAILS` address gets a "Store alert" mail and `/admin` shows it at the top.
 
 ## 4. Brevo
 

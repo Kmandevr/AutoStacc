@@ -74,17 +74,17 @@ Order states: `pending → paid → refunded`, `pending → failed`, `pending �
 All outcomes go through `server/payments/events.js`, which accepts only verified events:
 
 1. **Signature and freshness:** Stripe's library checks the `Stripe-Signature` HMAC and refuses timestamps older than 5 minutes (replays).
-2. **Once per event:** `payment_events` keyed by event id; a duplicate is acknowledged and ignored; an attempt that errored can be retried by Stripe.
+2. **Once per event:** `payment_events` keyed by event id; a duplicate is acknowledged and ignored; an attempt that errored, or died half-way (still processing after 5 minutes), is redone on Stripe's retry.
 3. **Must match the order:** same provider, session or payment id, order id, live/test mode, and for payments the exact total and currency.
-4. **Then:** paid → grant entitlements (idempotent) and send one receipt; expired → cancelled; async failure → failed; full refund → refunded and access revoked; partial refund → noted, access kept.
+4. **Then:** paid → grant entitlements and send the receipt (both idempotent, so a retry finishes a half-done job); expired → cancelled; async failure → failed; full refund → refunded and access revoked; partial refund → noted, access kept; chargeback opened → access suspended, won → restored. A refund or chargeback that arrives before its payment is held by payment id and applied the moment the payment lands. A paid event the store refuses (amount, mode or order mismatch) mails every admin and shows as an alert at the top of `/admin`.
 
-Handled Stripe events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`. Others are logged and ignored. If a webhook is late, the checkout page calls `POST /api/orders/:id/reconcile`, which asks Stripe directly with the secret key and feeds the answer through the same pipeline. The browser's "success" page never changes anything.
+Handled Stripe events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Others are logged and ignored. If a webhook is late, the checkout page calls `POST /api/orders/:id/reconcile`, which asks Stripe directly with the secret key and feeds the answer through the same pipeline. The browser's "success" page never changes anything.
 
 ## Entitlements
 
 Ownership is its own table, separate from orders: `entitlements(user_id, email, product_id, source_type, source_id, status, expires_at, ...)` with sources `purchase`, `free`, `promo`, `manual`, `bundle`, `subscription`, `replacement`. Every ownership check reads only this table. A grant is unique per (product, source, email), so replays never duplicate it. Refunds and admin revokes set `status = revoked` (kept for the record).
 
-Guests: a purchase entitlement carries the buyer's email and no account. When anyone verifies that email (sign-up), `entitlements` and `orders` with that email get the account's id: adopted, not copied. Purchases after that link straight to the account. Signing up with someone else's email gets nothing (it can't be verified). Until then the guest reaches their order through its key: the cookie set at checkout, or the link in the receipt (`/library#key=...`, one order, 30 days).
+Guests: a purchase entitlement carries the buyer's email and no account. When someone proves that email (the confirmation link, or a password reset, which also confirms), `entitlements` and `orders` with that email get the account's id: adopted, not copied, and the address gets a "your purchases joined your account" mail with a reset link. Purchases after that link straight to the account. Signing up with someone else's email gets nothing (it can't be verified). Pre-registration is defused: the confirmation mail is sent once, at sign-up (never on sign-in attempts; Better Auth's resend endpoint is disabled), it warns not to click if you didn't sign up, the real owner can always take the account by resetting the password (which logs everyone else out), and adoption is announced by mail. Residual risk: an owner who clicks a confirmation link for an account they didn't create, and ignores the follow-up mail. Until then the guest reaches their order through its key: the cookie set at checkout, or the link in the receipt (`/library#key=...`, one order, 30 days).
 
 ## Downloads
 
@@ -115,4 +115,4 @@ Guests: a purchase entitlement carries the buyer's email and no account. When an
 
 ## Not built yet
 
-Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts have a column (`discount_cents`) but no codes. Disputes (`charge.dispute.*`) are logged, not acted on. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.
+Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts have a column (`discount_cents`) but no codes. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.

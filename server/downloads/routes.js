@@ -44,6 +44,7 @@ async function issue(app) {
 const back = (reason) => new Response(null, { status: 303, headers: { Location: `/library?download=${reason}`, "Cache-Control": "no-store" } });
 
 async function redeem(app, { token }) {
+  await limit(app, "download-get", 60, 60);
   const { payload, error } = await readDownload(app.config.downloadSecret, token);
   if (error) {
     await logEvent(app.db, "denied", { reason: error, fileId: payload && payload.f });

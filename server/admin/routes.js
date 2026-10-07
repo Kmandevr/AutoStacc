@@ -16,13 +16,16 @@ const like = (q) => `%${String(q || "").replace(/[%_]/g, "")}%`;
 
 async function summary(app) {
   await requireAdmin(app);
-  const [orders, customers, entitlements, products] = await Promise.all([
+  const [orders, customers, entitlements, products, alerts] = await Promise.all([
     all(app.db, "SELECT status, COUNT(*) AS n, SUM(total_cents) AS cents FROM orders GROUP BY status"),
     first(app.db, 'SELECT COUNT(*) AS n FROM "user"'),
     first(app.db, "SELECT COUNT(*) AS n FROM entitlements WHERE status = 'active'"),
-    first(app.db, "SELECT COUNT(*) AS n FROM products WHERE deleted_at IS NULL")
+    first(app.db, "SELECT COUNT(*) AS n FROM products WHERE deleted_at IS NULL"),
+    // Payment events the store refused, errored on, or is holding (a refund waiting for its payment).
+    all(app.db, `SELECT id, type, order_id, outcome, detail, received_at FROM payment_events
+      WHERE outcome IN ('rejected', 'error') OR outcome LIKE '%waiting for payment' ORDER BY received_at DESC LIMIT 20`)
   ]);
-  return json({ orders, customers: customers.n, activeEntitlements: entitlements.n, products: products.n, environment: app.config.appEnv, paymentProvider: app.config.paymentProvider });
+  return json({ orders, customers: customers.n, activeEntitlements: entitlements.n, products: products.n, alerts, environment: app.config.appEnv, paymentProvider: app.config.paymentProvider });
 }
 
 async function products(app) {
