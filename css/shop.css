@@ -100,6 +100,8 @@
 
 /* ---------- store controls (js/store.js): buy slot, the "stitched" snap after adding (OWNED badge: base.css) ---------- */
 .buy { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.detail-buy.buy { justify-content: flex-start; }
+a.owned-badge:hover { color: var(--bg); background: var(--green); text-shadow: none; }
 .btn.in-cart { border-color: var(--purple); color: var(--purple); text-shadow: var(--glow-purple); }
 .stitched { animation: stitch-in .32s var(--snap); }
 @keyframes stitch-in {

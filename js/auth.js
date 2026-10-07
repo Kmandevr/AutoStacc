@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  const { $, escapeHTML, api } = window.GS;
+  const { $, api } = window.GS;
   const root = $("#auth-app");
   if (!root) return;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
@@ -14,9 +14,17 @@
   const next = /^\/(?!\/)[\w\-/?=&.%#]*$/.test(rawNext) ? rawNext : "/account";
 
   const field = (id, label, type, extra = "") =>
-    `<div class="field"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" required ${extra}></div>`;
+    `<div class="field"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" required aria-describedby="form-msg" ${extra}></div>`;
   const email = field("email", "Email", "email", 'autocomplete="email" inputmode="email" maxlength="254"');
-  const msg = (text = "", kind = "") => `<p class="msg ${kind}" role="${kind === "error" ? "alert" : "status"}">${text}</p>`;
+  // One status region per form, kept in place and updated as text, so screen readers announce every change.
+  const msg = () => `<p class="msg" id="form-msg" role="status"></p>`;
+  const say = (form, text, kind = "") => {
+    const m = $(".msg", form);
+    m.className = "msg " + kind;
+    m.textContent = "";
+    setTimeout(() => (m.textContent = text), 50);
+    if (kind === "error") sound("error");
+  };
 
   const VIEWS = {
     signin: () => `<form class="panel appear" data-form="signin" novalidate>
@@ -50,7 +58,7 @@
 
   function show(view, notice = "", kind = "") {
     root.innerHTML = VIEWS[view]();
-    if (notice) $(".msg", root).outerHTML = msg(notice, kind);
+    if (notice) say(root, notice, kind);
     const first = $("input", root);
     if (first && view !== "signin") first.focus();
   }
@@ -69,7 +77,6 @@
     btn.classList.toggle("busy", on);
     if (label) btn.textContent = label;
   }
-  const say = (form, text, kind) => { $(".msg", form).outerHTML = msg(text, kind); if (kind === "error") sound("error"); };
 
   const ERRORS = {
     INVALID_EMAIL_OR_PASSWORD: "That email and password don't match an account.",
@@ -79,7 +86,7 @@
   };
   const errorText = (res) => res.status === 0 ? res.error.message
     : res.status === 429 ? "Too many tries. Wait a minute, then try again."
-    : escapeHTML(ERRORS[res.error.code] || res.error.message);
+    : ERRORS[res.error.code] || res.error.message;
 
   async function submit(form) {
     if (!form.checkValidity()) {
@@ -98,7 +105,7 @@
     } else if (kind === "signup") {
       res = await api("/api/auth/sign-up/email", { method: "POST", body: { name: value("name"), email: value("email"), password: value("password"), callbackURL: "/library?welcome=1" } });
       // Same answer whether or not the email already had an account (the owner of that email gets a note instead).
-      if (res.ok) { setBusy(form, false); show("signin", `Check ${escapeHTML(value("email") || "your inbox")} for a link to confirm your email, then log in.`); return; }
+      if (res.ok) { setBusy(form, false); show("signin", `Check ${value("email") || "your inbox"} for a link to confirm your email, then log in.`); return; }
     } else if (kind === "forgot") {
       res = await api("/api/auth/request-password-reset", { method: "POST", body: { email: value("email"), redirectTo: "/login" } });
       if (res.ok) { setBusy(form, false); say(form, "If that email has an account, a reset link is on its way. It works for one hour."); return; }
@@ -116,11 +123,13 @@
     if (!btn.disabled) submit(e.target);
   });
   addEventListener("hashchange", route);
+  // A field stops being marked invalid as soon as it's edited.
+  root.addEventListener("input", (e) => e.target.removeAttribute("aria-invalid"));
 
   // Already signed in: go straight on.
   api("/api/account").then((res) => {
     if (res.ok && res.data.user && !params.get("token")) location.replace(next);
-    else if (res.status === 503) root.innerHTML = msg("Accounts are offline for maintenance. Your purchases are safe; try again soon.", "error");
+    else if (res.status === 503) root.innerHTML = `<p class="msg error" role="alert">Accounts are offline for maintenance. Your purchases are safe; try again soon.</p>`;
     else route();
   });
 })();

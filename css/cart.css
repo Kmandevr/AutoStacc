@@ -31,6 +31,8 @@
 
 @media (max-width: 600px) {
   .cart-line { grid-template-columns: minmax(0, 1fr) auto; }
+  .cart-price { grid-row: 1; grid-column: 2; }
   .cart-qty { grid-column: 1; }
+  .cart-qty:empty { display: none; }
   .cart-line .link-btn { grid-column: 2; justify-self: end; }
 }

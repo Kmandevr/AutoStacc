@@ -75,6 +75,8 @@
     }
     sound("error");
     const text = res.status === 0 ? res.error.message : res.status === 401 ? "Your session ended. Log in again." : res.error.message;
+    const prior = btn.closest("li").querySelector(".msg");
+    if (prior) prior.remove();
     const note = document.createElement("p");
     note.className = "msg error";
     note.setAttribute("role", "alert");

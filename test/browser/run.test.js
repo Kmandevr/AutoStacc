@@ -245,6 +245,32 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("removing a cart line by keyboard keeps focus in the cart and announces it", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/shop");
+    await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "vj-loops", quantity: 1 }]);
+    await page.goto("/cart");
+    await page.locator("[data-remove]").first().focus();
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.querySelectorAll(".cart-line").length === 1);
+    assert.equal(await page.evaluate(() => document.activeElement.matches("[data-remove], #checkout-btn")), true);
+    await page.waitForFunction(() => [...document.querySelectorAll("[role=status]")].some((el) => /Removed/.test(el.textContent)));
+    await ctx.close();
+  });
+
+  test("the payment-waiting screen is drawn once, not on every poll", async () => {
+    const { ctx, page } = await open(PHONE);
+    await toMockPay(page, unique("waiting"));
+    const url = new URL(page.url());
+    // Never pay: the page polls a pending order. The status element must survive the polls.
+    await page.goto(`/checkout?order=${url.searchParams.get("order")}`);
+    await page.waitForSelector("[data-waiting]");
+    await page.evaluate(() => (document.querySelector("[data-waiting]").dataset.mark = "same"));
+    await page.waitForTimeout(4000);
+    assert.equal(await page.evaluate(() => document.querySelector("[data-waiting]") && document.querySelector("[data-waiting]").dataset.mark), "same");
+    await ctx.close();
+  });
+
   for (const width of [320, 390, 768, 1280]) {
     test(`no sideways scroll, no tiny buttons, no CSP errors at ${width}px`, async () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
