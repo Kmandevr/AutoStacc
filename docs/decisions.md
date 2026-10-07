@@ -42,3 +42,7 @@ So an agent only reads and edits what a task needs: layer 0 is a repo map printe
 
 Goal: things used every session stay small; the rest loads on demand. Changes: the session hook prints only a compact top-level map (directories summarised from `.area` files, so output doesn't grow with the repo); Graphify moved behind `.claude/tools/graph.sh`, which installs and refreshes it only when called (supersedes the earlier "hook installs Graphify" decision); conventions moved from `CLAUDE.md` into path-scoped `.claude/rules/`; the workflow was renamed `change` and made project-agnostic (it runs the checks listed in `CLAUDE.md`). `.claude/` is documented in `.claude/README.md` so it can be reused in other projects.
 
+## 2026-10-07: Serena for symbol-level code work, Skills for repeatable tasks
+
+Serena (project-scoped MCP server via `.mcp.json`, JavaScript only) handles symbol lookup, references and targeted edits; Graphify stays the project-level map, so the two don't overlap (table in `.claude/README.md`). Serena's file, shell and memory tools are switched off because Claude Code already has them and `docs/` is the memory. Skills in `.claude/skills/` (`verify-site`, `add-product`, `add-news`, `accessibility-review`, `release-check`) hold the repeatable workflows, so `CLAUDE.md` only points to them. No HTML or CSS language server: those files are small and Grep is enough.
+
