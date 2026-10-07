@@ -8,6 +8,7 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: `autostacc.com` is live on Cloudflare Pages with HTTPS; `/` redirects to `/home`. Owner is adding a Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`.
 - 2026-10-07: Renamed `index.html` to `home.html` and added `_redirects` so the site's address goes to `/home`; the deploy now uploads `_redirects`. Tested with `wrangler pages dev`.
 - 2026-10-07: More dynamic motion: CRT power-on titles, typed hero tagline, scroll reveals and flicker-on section titles (`js/motion.js`, loaded on every page), burstier glitch, rolling refresh band, snappier hover and press states. Reduced motion turns it all off.
 - 2026-10-07: Retheme to an old-terminal look (black, phosphor green, neon purple, VT323 headings, CRT scanlines, blinking cursor). First deploy to `autostacc.pages.dev` succeeded after the API token was given Pages Edit permission.
