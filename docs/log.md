@@ -8,6 +8,7 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: Sounds made grittier at the owner's request: mix saturation, harder bit-crush, buzz layer, attack crackle and stutter chops ("Repeat" stutters in the chant motif). Rebalanced so typing stays soft; peak -8.4 dBFS, no clipping.
 - 2026-10-07: Sound redesign: one pentatonic scale, soft tones with echo, limiter and light bit-crush, sounds timed to their animation frames and panned to where they happen, the chant as the sound-on motif, section-reveal pings, terminal key clicks and a monogram shatter sound. Levels checked from a recording of the live page (peak -10 dBFS, no clipping).
 - 2026-10-07: The Listen player is now HAIL on YouTube (full track, counted views) via the YouTube player API, falling back to the Deezer player when YouTube can't play for a visitor. Streaming buttons are labelled "Stream HAIL on".
 - 2026-10-07: The process has a catchy short form from the owner: Tear. Stitch. Glitch. Cinch. Repeat. Used as the hero tagline, the five steps of "The loop", the terminal (`loop` plus one command per step) the press fact sheet and the link-preview image (`img/og.png`); recorded in `docs/identity.md`.
