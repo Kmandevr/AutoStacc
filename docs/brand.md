@@ -17,6 +17,7 @@ Old-school terminal (owner's choice, 2026-10-07): a glowing CRT screen in three 
 - Terminal touches: `$ ` before section titles, `> ` on buttons and the current nav link, a blinking block cursor after the hero tagline
 - Dashed borders as "stitching"
 - Glitch effect on page titles (purple and green offset layers); glitch and cursor stop for reduced-motion users
+- Motion is quick and snappy (`--snap` easing, 0.1 to 0.5s) and plays mostly once: titles power on like a CRT, the hero tagline types itself out, sections flicker on and cards, news and shows rise in as you scroll (`js/motion.js`), the glitch title twitches in short bursts every few seconds, and a faint refresh band rolls down the screen. Hover: cards lift and glow with scrolling scanlines and a one-off title twitch, links wipe in an underline, buttons press in. All of it is off for reduced-motion users.
 - Product covers glow green or purple depending on the product's `hue`
 - Fonts: VT323 (pixel terminal font) for the logo, headings and covers; JetBrains Mono for everything else
 
