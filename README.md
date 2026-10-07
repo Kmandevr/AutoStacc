@@ -8,9 +8,13 @@ It is a plain static site (HTML, CSS and JavaScript, with no build step or serve
 
 | File | What it shows |
 | --- | --- |
-| `home.html` | Hero, latest news, featured products, upcoming shows, about, newsletter signup |
+| `home.html` | Hero, music player and streaming links, latest news, featured products, upcoming shows, about, the loop, newsletter signup |
 | `shop.html` | All products, filterable by category |
 | `news.html` | Every update in full |
+| `press.html` | Short and long bio (with copy buttons), booking and press contact, press kit, fact sheet |
+| `404.html` | Shown for any address that doesn't exist |
+
+Also published: `img/` (site icon and the link-preview image), `robots.txt`, `sitemap.xml` and `_redirects`.
 
 ## Code layout
 
@@ -20,10 +24,11 @@ One file per feature in `css/` and `js/`; each page loads only the ones it uses.
 
 All content lives in `data/`. Edit these files; you don't need to touch the HTML.
 
-- `data/site.js`: artist name, contact email, social links, newsletter endpoint
+- `data/site.js`: artist name, site address, booking email, press kit link, social links, newsletter endpoint. Social links that are just a site's home page (like `https://instagram.com/`) stay hidden until you add the real profile.
+- `data/music.js`: the embedded player (paste the embed link from Spotify, SoundCloud, Bandcamp, Apple Music or YouTube) and streaming links
 - `data/products.js`: items for sale
 - `data/news.js`: news posts (the newest is shown first automatically)
-- `data/shows.js`: tour dates (past dates are hidden automatically)
+- `data/shows.js`: tour dates (past dates are hidden automatically). Shows with a ticket link are also announced to Google.
 
 ## Selling digital items
 
