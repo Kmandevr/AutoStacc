@@ -149,7 +149,7 @@
   padding: 10px 0;
 }
 .loop strong {
-  min-width: 21ch;
+  min-width: 12ch;
   color: var(--green);
   text-transform: uppercase;
   letter-spacing: .06em;
