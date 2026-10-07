@@ -1,11 +1,11 @@
 // News and updates, newest first. `body` may contain simple HTML.
 window.NEWS = [
   {
-    date: "2026-10-01",
-    title: "New single 'Patchwork' out now",
+    date: "2025-10-15",
+    title: "HAIL is out now",
     tag: "Release",
-    summary: "The first single from the upcoming EP is live everywhere.",
-    body: "<p>'Patchwork' is out on all platforms. Remix stems are in the shop for anyone who wants to tear it apart.</p>"
+    summary: "The single HAIL is out on Apple Music, Deezer and more.",
+    body: "<p>HAIL is out now. Play it in the <a href=\"home.html#listen\">Listen</a> section, or stream it on <a href=\"https://music.apple.com/us/album/hail/1847091235?i=1847091237\" target=\"_blank\" rel=\"noopener\">Apple Music</a> and <a href=\"https://www.deezer.com/track/3605198432\" target=\"_blank\" rel=\"noopener\">Deezer</a>.</p>"
   },
   {
     date: "2026-09-18",

@@ -61,7 +61,8 @@ const server = http.createServer((req, res) => {
       const tab = await browser.newPage({ viewport: { width, height: 800 } });
       const problems = [];
       tab.on("pageerror", (e) => problems.push(["FAIL", "runtime-error", String(e)]));
-      tab.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && problems.push(["FAIL", "console-error", m.text()]));
+      // Only our own pages count; embedded players (Deezer, Spotify, ...) log their own errors.
+      tab.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && (!m.location().url || m.location().url.startsWith(base)) && problems.push(["FAIL", "console-error", m.text()]));
       tab.on("response", (r) => r.url().startsWith(base) && r.status() >= 400 && problems.push(["FAIL", "http-" + r.status(), r.url().replace(base, "")]));
       tab.on("requestfailed", (r) => !r.url().startsWith(base) && problems.push(["WARN", "external-request", `${r.url().slice(0, 60)} failed (offline sandbox?)`]));
       await tab.goto(`${base}/${page}`);

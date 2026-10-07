@@ -44,6 +44,7 @@
     });
     const el = visible[Math.floor(Math.random() * visible.length)];
     if (el && !document.hidden) {
+      document.dispatchEvent(new CustomEvent("gs:sound", { detail: "zap" }));
       el.classList.add("zap");
       el.addEventListener("animationend", () => el.classList.remove("zap"), { once: true });
     }
@@ -64,6 +65,7 @@
     let n = 0;
     setTimeout(function tick() {
       typed.textContent = text.slice(0, ++n);
+      if (text[n - 1] !== " ") document.dispatchEvent(new CustomEvent("gs:sound", { detail: "tick" }));
       if (n < text.length) setTimeout(tick, 28 + Math.random() * 36);
     }, Number(el.dataset.type) || 0);
   });
