@@ -1,6 +1,7 @@
 ---
 title: Glitches & Stitches vault
-updated: 2026-10-06
+summary: Vault home: links to every note.
+updated: 2026-10-07
 ---
 
 # Glitches & Stitches vault

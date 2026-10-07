@@ -1,5 +1,6 @@
 ---
 title: Status
+summary: What is done, what needs the owner, ideas. Read at session start.
 updated: 2026-10-07
 ---
 
