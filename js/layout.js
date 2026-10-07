@@ -17,6 +17,7 @@
     ["/news", "News", "news"],
     ["/#about", "About", "about"],
     ["/press", "Press", "press"],
+    ["/projects", "Projects", "projects"],
     ["/account", "Account", "account"]
   ];
   const current = (key) =>
@@ -89,6 +90,7 @@
         <div>
           &copy; ${new Date().getFullYear()} ${escapeHTML(SITE.artist || "")}
           &middot; <a href="/press">Press &amp; booking</a>
+          ${SITE.platform ? ` &middot; on <a href="/projects">${escapeHTML(SITE.platform.name)}</a>` : ""}
           ${SITE.email ? ` &middot; <a href="mailto:${escapeHTML(SITE.email)}">${escapeHTML(SITE.email)}</a>` : ""}
         </div>
         <div class="socials" aria-label="Official profiles" role="group">

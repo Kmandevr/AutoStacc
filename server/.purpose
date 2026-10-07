@@ -1,1 +1,1 @@
-Store API (Cloudflare Pages Functions code): auth, catalog, cart, checkout, payments, orders, entitlements, downloads, storage, email, admin, analytics. Entry: app.js.
+Store API (Cloudflare Pages Functions code): auth, catalog, cart, checkout, payments, orders, entitlements (incl. Auto-Stacc), downloads, storage, email, admin, analytics, projects (follows), polls. Entry: app.js.

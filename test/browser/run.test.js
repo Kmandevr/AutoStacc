@@ -74,7 +74,7 @@ describe("store in the browser", () => {
     await page.goto("/shop/stems-patchwork");
     await page.waitForSelector("[data-buy] .owned-badge");
     await page.goto("/library");
-    await page.waitForSelector(".vault-item");
+    await page.waitForSelector(".stacc-asset");
     const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-download]")]);
     assert.match(download.suggestedFilename(), /stems-patchwork/);
     assert.deepEqual(page.errors, []);
@@ -188,6 +188,28 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("Your Stacc on a phone: follow with Auto-Stacc, browse both views, download a selection", async () => {
+    const { ctx, page } = await open(PHONE);
+    await signUp(page, unique("stacc"));
+    await page.waitForSelector("text=Nothing owned yet.");
+    await page.goto("/projects");
+    await page.click("[data-follow='glitches-and-stitches']");
+    await page.check("[data-auto='glitches-and-stitches']");
+    await page.waitForSelector("text=Auto-Stacc on.");
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-project h2:has-text('Glitches & Stitches')");
+    await page.waitForSelector(".stacc-asset:has-text('auto-stacc')");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll");
+    await page.click("[data-view=kinds]");
+    await page.waitForSelector("[data-view=kinds][aria-pressed=true]");
+    await page.check(".stacc-group [data-select-group]");
+    await page.waitForSelector("text=1 item selected");
+    const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-download-selected]")]);
+    assert.match(download.suggestedFilename(), /dev-free/);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
   test("empty states: cart, library when logged out, library with nothing in it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/cart");
@@ -276,7 +298,7 @@ describe("store in the browser", () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account"]) {
+      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects"]) {
         await page.goto(p);
         await page.waitForTimeout(700);
         const facts = await page.evaluate(() => ({

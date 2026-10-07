@@ -267,7 +267,8 @@ const MISSPELL = [
   [/(?<![\w/-])Stiches\b|Glitches\s*(?:&amp;|&)\s*Stiches/i, "Stiches"],
   [/Glitch\s*(?:&amp;|&)\s*Stitches/, "Glitch & Stitches"],
   [/Glitches\s+and\s+Stitches/i, "Glitches and Stitches"],
-  [/\bAutoStacc\b/, "AutoStacc (the artist is Glitches & Stitches; the domain is autostacc.com)"]
+  // AutoStacc is the platform's name (docs/autostacc.md); guard its spelling, not its use. The lowercase domain is fine.
+  [/(?<![\w./@-])Autostacc\b(?!\.com)|\bAuto[ -]?Stack\b|\bAuto Stacc\b/, "AutoStacc misspelled (Autostacc, AutoStack, Auto Stacc)"]
 ];
 for (const f of published) {
   const text = read(f).split("\n").filter((l) => !/alternateNames|"alternateName"|^\s*"Glitches and Stitches"\s*$/.test(l)).join("\n");

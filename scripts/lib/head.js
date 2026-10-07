@@ -118,7 +118,7 @@ function product(SITE, p, url, release) {
     category: p.category,
     url,
     ...(p.image && { image: abs(SITE, p.image.src) }),
-    brand: { "@type": "Brand", name: SITE.artist },
+    brand: { "@type": "Brand", name: p.creator || SITE.artist },
     ...(release && { isRelatedTo: { "@type": "MusicAlbum", name: release.title, url: abs(SITE, "/music/" + release.id) } }),
     offers: {
       "@type": "Offer",

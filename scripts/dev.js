@@ -31,7 +31,8 @@ function ensureDevVars() {
   console.log("dev: wrote .dev.vars with fresh local secrets");
 }
 
-// Local-only test data: everything for sale, three extra test products, and one small file per product.
+// Local-only test data: everything for sale, three extra test products, one small file per product (the sample pack's
+// tagged with a Pac and kind), a second project without polls, and test polls (open, closed, and one for that project).
 const fileIdFor = (productId) => "pf_" + [...crypto.createHash("sha256").update(productId).digest("hex").slice(0, 16)].map((c) => "abcdefghijklmnop"[parseInt(c, 16)]).join("");
 function devSeed(stateDir) {
   const { loadData } = require("./lib/data");
@@ -41,14 +42,23 @@ function devSeed(stateDir) {
     ["dev-paused", "Paused test item", 500, 1, 1],
     ["dev-free", "Free test item", 0, 1, 0]
   ];
+  const T = "strftime('%Y-%m-%dT%H:%M:%fZ','now')";
+  const poll = (id, project, opens, closes) => `INSERT OR REPLACE INTO polls (id, project_id, question, options, opens_at, closes_at, published, created_at, updated_at)
+       VALUES ('${id}', '${project}', 'Test poll', '[{"id":"finish-it","label":"Finish it"},{"id":"scrap-it","label":"Scrap it"}]', ${opens}, ${closes}, 1, ${T}, ${T});`;
   const sql = [
     "UPDATE products SET published = 1 WHERE id NOT LIKE 'dev-%';",
+    `INSERT OR REPLACE INTO projects (id, name, features, published, created_at, updated_at) VALUES ('dev-other', 'Other test project', '["store"]', 1, ${T}, ${T});`,
+    poll("dev-poll", "glitches-and-stitches", "NULL", "NULL"),
+    poll("dev-closed-poll", "glitches-and-stitches", "NULL", "'2000-01-01T00:00:00.000Z'"),
+    poll("dev-other-poll", "dev-other", "NULL", "NULL"),
     ...extra.map(([id, title, cents, published, paused]) =>
       `INSERT OR REPLACE INTO products (id, title, description, type, price_cents, currency, tags, metadata, featured, published, sales_paused, max_quantity, created_at, updated_at)
        VALUES ('${id}', '${title}', 'Local test product.', 'other', ${cents}, 'USD', '[]', '{}', 0, ${published}, ${paused}, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now'));`),
+    "UPDATE products SET project_id = 'glitches-and-stitches' WHERE id LIKE 'dev-%';",
     ...[...products, ...extra.map((e) => e[0])].map((id) =>
       `INSERT OR IGNORE INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at)
-       VALUES ('${fileIdFor(id)}', '${id}', 'dev/${id}/readme.txt', '${id}-readme.txt', 'Test file', 'text/plain', 64, 0, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'));`)
+       VALUES ('${fileIdFor(id)}', '${id}', 'dev/${id}/readme.txt', '${id}-readme.txt', 'Test file', 'text/plain', 64, 0, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'));`),
+    "UPDATE product_files SET pac_id = 'frayed-signals-samples', kind = 'samples' WHERE product_id = 'sample-pack-vol1';"
   ];
   const seedFile = path.join(stateDir, "dev-seed.sql");
   fs.writeFileSync(seedFile, sql.join("\n") + "\n");
