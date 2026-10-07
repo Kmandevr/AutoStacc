@@ -36,7 +36,7 @@
     header.innerHTML = `
       <div class="wrap">
         <a class="logo" href="home.html">GLITCHES<span>&amp;</span>STITCHES</a>
-        <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Menu">[≡]</button>
         <nav class="nav" id="nav">
           ${links
             .map(([href, label, key]) => `<a href="${href}"${key === page ? ' class="active" aria-current="page"' : ""}>${label}</a>`)
@@ -45,12 +45,14 @@
       </div>`;
     const toggle = $(".nav-toggle", header);
     const nav = $(".nav", header);
-    toggle.addEventListener("click", () => {
-      const open = nav.classList.toggle("open");
+    const setOpen = (open) => {
+      nav.classList.toggle("open", open);
       toggle.setAttribute("aria-expanded", String(open));
-    });
+      toggle.textContent = open ? "[×]" : "[≡]";
+    };
+    toggle.addEventListener("click", () => setOpen(!nav.classList.contains("open")));
     nav.addEventListener("click", (e) => {
-      if (e.target.tagName === "A") nav.classList.remove("open");
+      if (e.target.tagName === "A") setOpen(false);
     });
   }
 

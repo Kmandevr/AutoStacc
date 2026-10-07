@@ -281,3 +281,12 @@ section { padding: 80px 0; }
 
 .empty { color: var(--green-dim); font-family: var(--mono); }
 .empty a { display: inline-block; padding-block: 2px; }
+
+/* ---------- phones: tighter rhythm, nothing touching the edges ---------- */
+@media (max-width: 600px) {
+  .wrap { padding: 0 18px; }
+  section { padding: 56px 0; }
+  .page-hero { padding: 44px 0 28px; }
+  .section-head { margin-bottom: 22px; }
+  .btn { padding: 12px 18px; text-align: center; }
+}

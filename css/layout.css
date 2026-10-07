@@ -64,7 +64,7 @@
 .snd[aria-pressed="true"] { color: var(--green); text-shadow: var(--glow); }
 .snd:hover { color: var(--green); }
 @media (max-width: 720px) {
-  .snd { margin: 0 12px 0 auto; }
+  .snd { margin: 0 4px 0 auto; padding: 10px 6px; font-size: .78rem; }
 }
 .nav-toggle {
   display: none;
@@ -78,11 +78,14 @@
 }
 
 @media (max-width: 720px) {
-  .nav-toggle { display: block; }
+  /* phone header: logo, sound switch and a compact menu button all fit from 320px up */
+  .site-header .wrap { height: 56px; gap: 4px; }
+  .logo { font-size: 1.3rem; white-space: nowrap; }
+  .nav-toggle { display: block; min-width: 44px; min-height: 40px; padding: 4px 8px; font-size: 1.05rem; line-height: 1; }
   .nav {
     display: none;
     position: absolute;
-    top: 64px; left: 0; right: 0;
+    top: 56px; left: 0; right: 0;
     flex-direction: column;
     gap: 0;
     background: var(--bg-2);
@@ -91,6 +94,9 @@
   .nav.open { display: flex; animation: drop .2s var(--snap); }
   .nav a:hover { background-size: 0 1px; }
   .nav a { padding: 14px 20px; border-top: 1px solid var(--line); }
+}
+@media (max-width: 350px) {
+  .logo { font-size: 1.12rem; letter-spacing: .02em; }
 }
 
 /* ---------- footer ---------- */

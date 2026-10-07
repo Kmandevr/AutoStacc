@@ -34,7 +34,8 @@
 }
 .hero p {
   color: var(--green);
-  font-size: clamp(.95rem, 2vw, 1.15rem);
+  /* small enough on phones that the five-word chant stays on one line */
+  font-size: clamp(.8rem, 3.6vw, 1.15rem);
   margin: 0 0 36px;
 }
 .hero .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
@@ -187,4 +188,20 @@
 .form-msg { color: var(--purple); text-shadow: var(--glow-purple); margin-top: 14px; min-height: 1.5em; }
 @media (max-width: 480px) {
   .newsletter form { flex-direction: column; }
+}
+
+/* ---------- phones ---------- */
+@media (max-width: 600px) {
+  .hero { min-height: calc(100svh - 56px); padding: 48px 0; }
+  .hero .actions { flex-direction: column; align-items: stretch; max-width: 280px; margin: 0 auto; }
+  .kicker { font-size: .72rem; letter-spacing: .05em; }
+  /* streaming links as an even two-column grid instead of a ragged stack */
+  .platforms { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .platforms-label { grid-column: 1 / -1; }
+  .platforms .btn { padding: 12px 8px; font-size: .82rem; }
+  .player, .player-empty { box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .show .btn { justify-self: stretch; }
+  .about { gap: 32px; }
+  .about .art { width: 100%; max-width: 300px; margin: 0 auto; }
+  .loop strong { min-width: 0; }
 }

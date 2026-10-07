@@ -48,3 +48,9 @@
 @media (prefers-reduced-motion: reduce) {
   .copy { transition: none; }
 }
+
+@media (max-width: 600px) {
+  .press { gap: 36px; }
+  .panel { padding: 20px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .press-actions .btn { flex: 1 1 100%; }
+}
