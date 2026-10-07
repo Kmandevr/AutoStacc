@@ -159,8 +159,9 @@ function headBlock(SITE, page) {
     lines.push(`<title>${esc(page.title)}</title>`);
     meta("name", "description", page.description);
   }
-  if (!page.index && !page.ownRobots) meta("name", "robots", "noindex, follow");
-  else lines.push(`<link rel="canonical" href="${esc(abs(SITE, page.path))}">`);
+  // Only indexable pages name a canonical; a noindex page gets the robots tag (unless it writes its own).
+  if (page.index) lines.push(`<link rel="canonical" href="${esc(abs(SITE, page.path))}">`);
+  else if (!page.ownRobots) meta("name", "robots", "noindex, follow");
   meta("property", "og:site_name", SITE.artist);
   meta("property", "og:locale", "en_US");
   meta("property", "og:type", page.ogType || "website");

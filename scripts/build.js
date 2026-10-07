@@ -1,6 +1,6 @@
 // Generates everything search engines read from data/: each page's <head> metadata, one page per release, product and
 // news post, sitemap.xml and the list of public URLs. Usage: node scripts/build.js [--check]
-// --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it).
+// --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
 const path = require("path");
 const { ROOT, loadData, abs } = require("./lib/data");
@@ -76,7 +76,10 @@ for (const g of generated) {
   outputs.set(g.file, g.html);
   pages.push({ ...g.page, file: g.file });
 }
-for (const r of data.releases) if (!r.artwork) errors.push(`release ${r.id}: add artwork (it is the page's preview image)`);
+for (const r of data.releases) {
+  if (!r.artwork) errors.push(`release ${r.id}: add artwork (it is the page's preview image)`);
+  for (const t of r.tracks || []) if (!/^\d+:\d\d$/.test(t.duration || "")) errors.push(`release ${r.id}: track "${t.title}" needs a duration like "2:27"`);
+}
 
 // Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
 const stale = [];

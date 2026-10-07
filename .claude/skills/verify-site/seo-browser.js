@@ -24,6 +24,7 @@ async function checkHead(tab, { SITE, path, noindex }) {
   else if (!f.title.includes(SITE.artist) && !f.title.startsWith("[signal lost]")) p.push(["FAIL", "seo-title", `"${f.title}" doesn't name ${SITE.artist}`]);
   if (f.description.length !== 1 || !f.description[0]) p.push(["FAIL", "seo-description", `${f.description.length} meta descriptions`]);
   if (/noindex/.test(f.robots) !== noindex) p.push(["FAIL", "seo-robots", noindex ? "should be noindex" : `public page is "${f.robots}"`]);
+  if (noindex && f.canonical.length) p.push(["FAIL", "seo-canonical", `noindex page names a canonical (${f.canonical.join(", ")})`]);
   if (!noindex && (f.canonical.length !== 1 || f.canonical[0] !== origin + path)) p.push(["FAIL", "seo-canonical", `${f.canonical.join(", ") || "none"}, expected ${origin + path}`]);
   for (const [k, v] of Object.entries(f.og)) if (!v && !(k === "og:url" && path.startsWith("/this-address"))) p.push(["FAIL", "seo-open-graph", `missing ${k}`]);
   for (const t of f.jsonld) {

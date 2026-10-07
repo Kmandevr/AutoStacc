@@ -14,7 +14,7 @@ function createServer(root = path.resolve(__dirname, "..")) {
   const rules = fs.existsSync(path.join(root, "_redirects"))
     ? fs.readFileSync(path.join(root, "_redirects"), "utf8").split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => l.trim().split(/\s+/))
     : [];
-  const file = (p) => { const f = path.join(root, p); return f.startsWith(root) && fs.existsSync(f) && fs.statSync(f).isFile() ? f : null; };
+  const file = (p) => { const f = path.join(root, p); return f.startsWith(root + path.sep) && fs.existsSync(f) && fs.statSync(f).isFile() ? f : null; };
   const send = (res, status, f, headers = {}) => {
     res.writeHead(status, { "Content-Type": TYPES[path.extname(f)] || "application/octet-stream", ...headers });
     res.end(fs.readFileSync(f));
@@ -23,7 +23,8 @@ function createServer(root = path.resolve(__dirname, "..")) {
 
   return http.createServer((req, res) => {
     const [rawPath, query] = req.url.split("?");
-    const p = decodeURIComponent(rawPath);
+    let p;
+    try { p = decodeURIComponent(rawPath); } catch { return send(res, 404, path.join(root, "404.html")); }
     const qs = query ? "?" + query : "";
     const rule = rules.find(([from]) => from === p);
     if (rule) return redirect(res, Number(rule[2] || 302), rule[1] + qs);

@@ -16,7 +16,7 @@ Goal: when someone searches "Glitches & Stitches", search engines have every hon
   - the block between `<!-- seo:start -->` and `<!-- seo:end -->` in every page's head: canonical, robots, Open Graph, Twitter card, JSON-LD. Hand-written pages keep their own `<title>` and description above the block; the home page's come from `data/site.js`.
   - one static page per release (`music/<id>.html` → `/music/<id>`), product (`shop/<id>.html`) and news post (`news/<id>.html`), with breadcrumbs, artwork, related links and structured data. Templates: `scripts/lib/pages.js`; head and JSON-LD: `scripts/lib/head.js`.
   - `sitemap.xml` with every indexable page, and `scripts/public-urls.txt`, the record of every URL ever published.
-  - `--check` writes nothing and fails if anything is out of date. Output is committed so pages also work without a build; the deploy rebuilds anyway.
+  - `--check` writes nothing and fails if anything is out of date. Output is committed, so the repo is exactly what goes live; the deploy refuses to publish if it is out of date.
 - Pages stay static HTML on Cloudflare Pages: no server rendering, no Worker, no framework. Lists (shop grid, news, release cards) are still rendered in the browser from `data/`; the head, item pages and sitemap are static so every crawler and link preview sees them.
 
 ## Addresses
