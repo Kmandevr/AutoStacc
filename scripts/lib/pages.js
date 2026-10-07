@@ -12,7 +12,11 @@ const fmtDate = (s) => {
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 };
 // Search descriptions read best under ~160 characters; cut at a word boundary.
-const clip = (s, n = 160) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n - 1)).replace(/[,.;:]$/, "") + "…");
+const clip = (s, n = 160) => {
+  if (s.length <= n) return s;
+  const cut = s.lastIndexOf(" ", n - 1);
+  return s.slice(0, cut > 0 ? cut : n - 1).replace(/[,.;:]$/, "") + "…";
+};
 
 function shell(SITE, { page, section, styles, scripts, main }) {
   return `<!doctype html>
@@ -93,7 +97,7 @@ function releasePage(SITE, data, r) {
   const tracks = r.tracks || [];
   const related = data.products.filter((p) => p.release === r.id);
   const posts = data.news.filter((n) => n.release === r.id);
-  const total = tracks.reduce((t, x) => { const [m, s] = x.duration.split(":").map(Number); return t + m * 60 + s; }, 0);
+  const total = tracks.reduce((t, x) => { const [m, s] = String(x.duration || "0:00").split(":").map(Number); return t + m * 60 + s; }, 0);
   const length = `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
   const page = {
     path: "/music/" + r.id,

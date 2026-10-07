@@ -39,6 +39,8 @@ const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f);
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
 const pages = {}; // file -> facts
+// A canonical must be an address on this site that a page file serves.
+const servedPathsOf = (u) => u.startsWith(ORIGIN + "/") && pageFiles.some((f) => ORIGIN + urlPath(f) === u.split(/[?#]/)[0]);
 const titles = new Map(), descriptions = new Map();
 for (const f of pageFiles) {
   const html = read(f);
@@ -65,6 +67,8 @@ for (const f of pageFiles) {
 
   if (noindex && !EXPECT_NOINDEX(f)) add("FAIL", "noindex", `public page is noindex (${robots})`, f);
   if (!noindex && EXPECT_NOINDEX(f)) add("FAIL", "noindex", "should be noindex (404 page or draft product)", f);
+  if (noindex && canon.length) add("FAIL", "canonical", `noindex page names a canonical (${canon.join(", ")})`, f);
+  for (const c of canon) if (!servedPathsOf(c)) add("FAIL", "canonical", `${c} isn't a page on this site`, f);
   if (!noindex) {
     if (canon.length !== 1) add("FAIL", "canonical", `${canon.length} canonical links`, f);
     else if (canon[0] !== ORIGIN + pages[f].path) add("FAIL", "canonical", `${canon[0]} should be ${ORIGIN + pages[f].path}`, f);

@@ -59,7 +59,7 @@ node scripts/seo-test.js     # search-visibility tests (also run in CI and befor
 
 ## Deploying to Cloudflare Pages
 
-The live site is deployed by `.github/workflows/deploy.yml` on every push to `main`. It regenerates the SEO files and runs `scripts/seo-test.js` first; a failing test stops the deploy. One-time setup:
+The live site is deployed by `.github/workflows/deploy.yml` on every push to `main`. It first checks that the generated files match `data/` and runs `scripts/seo-test.js`; either failing stops the deploy. One-time setup:
 
 1. In Cloudflare, create an API token (**My Profile → API Tokens → Create Token**, custom token with **Account → Cloudflare Pages → Edit**) and copy your **Account ID** from the dashboard.
 2. In this repository, open **Settings → Secrets and variables → Actions** and add them as `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.

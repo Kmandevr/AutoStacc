@@ -23,8 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Generate page heads, release/product/news pages and sitemap from data/
-        run: node scripts/build.js
+      - name: Committed pages, heads and sitemap match data/ (so the live site is what the repo shows)
+        run: node scripts/build.js --check
       - name: SEO regression tests
         run: node scripts/seo-test.js
       - name: Collect site files
