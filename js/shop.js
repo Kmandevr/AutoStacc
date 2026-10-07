@@ -1,4 +1,4 @@
-// Renders product cards: the featured strip on the home page and the filterable shop grid.
+// Renders product cards (each linking to its page at /shop/<id>): the featured strip on the home page and the filterable shop grid.
 // Needs data/products.js and js/util.js.
 (function () {
   "use strict";
@@ -15,7 +15,8 @@
       #000;`;
   }
 
-  function productCard(p) {
+  // `level`: the card's heading level, so it sits under the section it appears in (h2 on the shop, h3 on home).
+  function productCard(p, level = 3) {
     const available = Boolean(p.checkoutUrl);
     const button = available
       ? `<a class="btn" href="${escapeHTML(p.checkoutUrl)}" target="_blank" rel="noopener">Buy</a>`
@@ -25,7 +26,7 @@
         <div class="cover" style="${coverStyle(p.hue ?? 300)}"><span>${escapeHTML(p.title.split(" — ")[0])}</span></div>
         <div class="card-body">
           <span class="tag">${escapeHTML(p.category)}</span>
-          <h3>${escapeHTML(p.title)}</h3>
+          <h${level}><a href="/shop/${escapeHTML(p.id)}">${escapeHTML(p.title)}</a></h${level}>
           <p>${escapeHTML(p.description)}</p>
           <div class="card-foot">
             <span class="price">${money(p.price)}</span>
@@ -39,7 +40,7 @@
     const el = $("#featured-products");
     if (!el) return;
     const items = PRODUCTS.filter((p) => p.featured).slice(0, 3);
-    el.innerHTML = items.length ? items.map(productCard).join("") : `<p class="empty">Shop opening soon.</p>`;
+    el.innerHTML = items.length ? items.map((p) => productCard(p, 3)).join("") : `<p class="empty">Shop opening soon.</p>`;
   }
 
   function renderShop() {
@@ -51,7 +52,7 @@
 
     const draw = () => {
       const items = current === "All" ? PRODUCTS : PRODUCTS.filter((p) => p.category === current);
-      el.innerHTML = items.length ? items.map(productCard).join("") : `<p class="empty">Nothing here yet.</p>`;
+      el.innerHTML = items.length ? items.map((p) => productCard(p, 2)).join("") : `<p class="empty">Nothing here yet.</p>`;
       filters.querySelectorAll("button").forEach((b) => {
         const on = b.dataset.cat === current;
         b.classList.toggle("active", on);

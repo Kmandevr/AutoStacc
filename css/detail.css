@@ -1,0 +1,65 @@
+/* Single-item pages generated from data/: release, product and news post layouts, breadcrumbs, link tiles. */
+
+/* ---------- breadcrumbs and hero ---------- */
+.crumbs ol { display: flex; flex-wrap: wrap; gap: 4px 0; list-style: none; margin: 0 0 18px; padding: 0; font-size: .85rem; color: var(--muted); }
+.crumbs li + li::before { content: "/"; margin: 0 10px; color: var(--green-dim); }
+.crumbs a { display: inline-block; padding-block: 2px; }
+.crumbs [aria-current] { color: var(--green); text-shadow: var(--glow); }
+.detail-kicker { margin: 0 0 8px; color: var(--purple); text-shadow: var(--glow-purple); text-transform: uppercase; letter-spacing: .08em; font-size: .85rem; }
+.detail-hero .glitch { overflow-wrap: anywhere; }
+.page-hero.detail-hero { padding-bottom: 8px; }
+.detail-hero p a { display: inline-block; padding-block: 2px; }
+
+/* ---------- release and product: artwork beside the facts ---------- */
+.release, .product { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 48px; align-items: start; }
+.release-art, .product-art { margin: 0; border: 1px solid var(--line); box-shadow: 6px -4px 0 rgba(191,95,255,.35); background: var(--bg-2); }
+.release-art img, .product-art img { display: block; width: 100%; height: auto; }
+.product-art.cover { border-bottom: 1px solid var(--line); font-size: clamp(2rem, 6vw, 3.4rem); }
+.cover.tint-green { background: radial-gradient(circle at 50% 40%, rgb(51 255 102 / .3), transparent 70%), repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px), #000; }
+.cover.tint-purple { background: radial-gradient(circle at 50% 40%, rgb(191 95 255 / .3), transparent 70%), repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px), #000; }
+.release-info .lede, .product-info .lede { margin-top: 0; font-size: 1.05rem; }
+.release-info .platforms-label { margin: 28px 0 12px; }
+.detail-buy { margin: 28px 0 12px; }
+.product-info .note { color: var(--muted); font-size: .85rem; }
+.sub-head { margin: 48px 0 0; font-size: clamp(1.8rem, 4vw, 2.4rem); text-transform: uppercase; }
+
+/* ---------- tracklist ---------- */
+.tracklist { list-style: none; counter-reset: track; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.tracklist li { counter-increment: track; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.tracklist li::before { content: counter(track, decimal-leading-zero); color: var(--purple); text-shadow: var(--glow-purple); }
+.tracklist .track-title { color: var(--green); text-shadow: var(--glow); font-weight: 700; }
+.tracklist time { color: var(--muted); }
+.tracklist .isrc { grid-column: 2 / -1; color: var(--green-dim); font-size: .8rem; }
+
+/* ---------- link tiles: related products, posts and releases ---------- */
+.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+.tile { display: grid; gap: 6px; padding: 18px; color: var(--text); text-shadow: none; border: 1px solid var(--line); background: var(--bg); box-shadow: 4px -3px 0 rgba(191,95,255,.28); transition: border-color .15s, box-shadow .18s var(--snap); }
+.tile:hover { color: var(--text); text-shadow: none; border-color: var(--purple); box-shadow: 0 0 14px rgba(191,95,255,.3); }
+.tile strong { color: var(--green); text-shadow: var(--glow); }
+.tile time { color: var(--green-dim); font-size: .85rem; }
+
+/* ---------- news post ---------- */
+.article { display: grid; gap: 36px; max-width: 760px; }
+.article-body { font-size: 1.05rem; }
+.article-body p { margin: 0 0 14px; }
+.article-body a { display: inline-block; padding-block: 2px; }
+.release-tile { grid-template-columns: 96px 1fr; align-items: center; gap: 18px; background: var(--bg-2); }
+.release-tile img { display: block; width: 96px; height: 96px; }
+.release-tile > span { display: grid; gap: 4px; }
+.release-tile > span > span:last-child { color: var(--purple); text-shadow: var(--glow-purple); }
+
+.detail-more { display: flex; flex-wrap: wrap; gap: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tile { transition: none; }
+}
+
+@media (max-width: 860px) {
+  .release, .product { grid-template-columns: 1fr; gap: 32px; }
+  .release-art, .product-art { max-width: 480px; }
+}
+@media (max-width: 600px) {
+  .release-art, .product-art { box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .tracklist li { grid-template-columns: auto 1fr auto; gap: 2px 12px; }
+  .detail-more .btn, .detail-buy .btn { flex: 1 1 100%; display: block; }
+}

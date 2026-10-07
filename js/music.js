@@ -1,13 +1,17 @@
-// Renders the "Listen" section on the home page: an embedded player (with a backup) and streaming links. Needs data/music.js and js/util.js.
+// Renders an embedded player (with a backup) into #listen-player, and on the home page the release's streaming links.
+// Plays the release named by the player's data-release, or data/music.js `featured`. Needs data/music.js and js/util.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML, isSet } = window.GS;
   const MUSIC = window.MUSIC || {};
+  const SITE = window.SITE || {};
 
   const player = $("#listen-player");
+  if (!player) return;
   const platforms = $("#listen-platforms");
-  if (!player || !platforms) return;
+  const releases = (MUSIC.releases || []).filter((r) => !r.draft);
+  const release = releases.find((r) => r.id === (player.dataset.release || MUSIC.featured)) || releases[0] || {};
 
   // Only well-known players are embedded, so a typo can't load an unrelated page into the site.
   const PLAYERS = ["open.spotify.com", "w.soundcloud.com", "widget.deezer.com", "bandcamp.com", "embed.music.apple.com",
@@ -31,7 +35,7 @@
     // Spotify's, SoundCloud's and Deezer's players are short; the others need a 16:9 frame.
     const tall = !/spotify|soundcloud|deezer/.test(host);
     return `<iframe class="player${tall ? " tall" : ""}" src="${escapeHTML(src)}"
-      title="${escapeHTML(MUSIC.embedTitle || "Music player")}" loading="lazy"
+      title="${escapeHTML(release.title ? `${release.title} by ${SITE.artist || ""}` : "Music player")}" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
   }
 
@@ -56,16 +60,19 @@
     document.head.append(api);
   }
 
-  const main = vet(MUSIC.embedUrl);
-  const backup = vet(MUSIC.fallbackEmbedUrl);
+  const main = vet(release.embedUrl);
+  const backup = vet(release.fallbackEmbedUrl);
   const ytId = main && /youtube/.test(main.host) && (main.src.match(/\/embed\/([\w-]{11})/) || [])[1];
   if (ytId) youtube(ytId, backup);
   else if (main || backup) player.innerHTML = frame(main || backup);
   else player.innerHTML = EMPTY;
 
-  const live = (MUSIC.platforms || []).filter((p) => isSet(p.url));
+  // Release pages list their streaming links in the page itself; the home page gets them here.
+  if (!platforms) return;
+  const live = (release.links || []).filter((p) => isSet(p.url));
   platforms.innerHTML = live.length
-    ? (MUSIC.platformsLabel ? `<span class="platforms-label">${escapeHTML(MUSIC.platformsLabel)}</span>` : "") +
-      live.map((p) => `<a class="btn ghost" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.name)}</a>`).join("")
+    ? `<span class="platforms-label">Stream ${escapeHTML(release.title)} on</span>` +
+      live.map((p) => `<a class="btn ghost" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.name)}</a>`).join("") +
+      `<a class="btn" href="/music/${escapeHTML(release.id)}">${escapeHTML(release.title)}: release page</a>`
     : `<p class="empty">Streaming links land here with the first release. <a href="#newsletter">Get told first</a>.</p>`;
 })();
