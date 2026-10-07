@@ -1,5 +1,20 @@
 /* Shared site header and footer. Loaded on every page. */
 
+/* ---------- skip link: hidden until a keyboard user tabs to it ---------- */
+.skip-link {
+  position: fixed;
+  top: 8px; left: 8px;
+  z-index: 200;
+  padding: 10px 16px;
+  background: var(--green);
+  color: var(--bg);
+  text-shadow: none;
+  font-weight: 700;
+  transform: translateY(-160%);
+  transition: transform .12s var(--snap);
+}
+.skip-link:focus { transform: none; color: var(--bg); }
+
 /* ---------- header ---------- */
 .site-header {
   position: sticky;

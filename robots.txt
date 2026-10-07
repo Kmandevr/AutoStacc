@@ -1,0 +1,5 @@
+# Search engines may index the whole site.
+User-agent: *
+Allow: /
+
+Sitemap: https://autostacc.com/sitemap.xml
