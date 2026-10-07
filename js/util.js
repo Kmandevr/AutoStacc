@@ -1,5 +1,5 @@
 // Shared helpers. Every page loads this first; other scripts read from window.GS.
-window.GS = (function () {
+const GS = (function () {
   "use strict";
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -19,3 +19,4 @@ window.GS = (function () {
 
   return { $, escapeHTML, money, parseDate, fmtDate };
 })();
+window.GS = GS;
