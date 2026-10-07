@@ -7,9 +7,9 @@
   },
   "scripts": {
     "dev": "node scripts/dev.js",
-    "test": "node --test test/unit/",
-    "test:api": "node --test --test-concurrency=1 test/api/",
-    "test:browser": "node test/browser/run.js"
+    "test": "node --test test/unit/*.test.js",
+    "test:api": "node --test --test-reporter=spec test/api/run.test.js",
+    "test:browser": "node --test --test-reporter=spec test/browser/run.test.js"
   },
   "dependencies": {
     "better-auth": "^1.7.7",

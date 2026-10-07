@@ -55,11 +55,12 @@
     const add = e.target.closest("[data-add-to-cart]");
     if (add) {
       const id = add.dataset.addToCart;
+      // Find the slot before the cart changes: the repaint replaces this button.
+      const slot = add.closest("[data-buy]");
       cart.add(id);
       sound("stitch", add);
       track("add_to_cart", id);
       say("Added to cart.");
-      const slot = add.closest("[data-buy]");
       paint();
       // Static fallback buttons (API down) still work: show the in-cart link anyway.
       if (slot && slot.contains(add)) slot.innerHTML = `<a class="btn ghost in-cart" href="/cart">In cart → checkout</a>`;

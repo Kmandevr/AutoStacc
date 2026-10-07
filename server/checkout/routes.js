@@ -9,9 +9,11 @@ import { ownedProductIds } from "../entitlements/grants.js";
 import { createOrder, attachCheckout, transition, findReusablePending, getOrderByIdempotencyKey } from "../orders/orders.js";
 import { newGuestKey, guestCookie, guestKeysFromRequest } from "../orders/guest.js";
 import { paymentProvider } from "../payments/index.js";
+import { limit } from "../lib/ratelimit.js";
 
 async function checkout(app) {
   const { db, config, request } = app;
+  await limit(app, "checkout", 12, 60);
   const body = await readJson(app.request);
   const items = parseItems(body.items);
   const user = await currentUser(app);
