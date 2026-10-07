@@ -1,12 +1,13 @@
 ---
 paths:
-  - "js/**"
-  - "*.html"
+  - "js/**/*.js"
 ---
 
-# Scripts and pages
+# Scripts
 
-- Plain `<script>` tags, no modules, no build step, so pages work from `file://`. Helpers are shared on `window.GS` (`js/util.js`).
-- One file per feature. Each page loads only the scripts it uses; when a page starts using a new feature, add that script (and its `data/` file) to that page only.
-- Every script starts with a one-line `//` comment saying what it is for and what it needs. The repo map is built from it.
-- Content is data in `data/*.js`, never hard-coded in HTML or scripts.
+- One file per feature, wrapped in an IIFE, plain `<script>` (no modules, no build step, so pages work from `file://`). Split a file when it grows past one feature or roughly 150 lines.
+- The only global a script adds is `window.GS` (`js/util.js`). Read data as `window.NAME || []`. Keep state inside the IIFE.
+- Dependencies point one way: feature script to `util.js`. Features never call each other, so there are no cycles. A helper moves to `util.js` only when a second feature needs it, and check `util.js` first before writing a new one.
+- Guard on the page: look up the feature's container first and return early if it's missing, so the script is harmless on other pages.
+- Escape every data value you put into HTML with `GS.escapeHTML`. The one exception is `news.body`, which is trusted HTML by design.
+- Start with a one-line `//` comment saying what the file is for and what it needs (the repo map reads it).
