@@ -33,7 +33,7 @@ Preserve module boundaries: edit only the files a change needs, and leave unrela
 
 ## Workflow
 
-One-file changes: just do them. Changes across areas: run the saved workflow `change` (`args: { task: "..." }`): plan, build in parallel on disjoint files, verify, update docs. It never commits. See `.claude/README.md`.
+One-file changes: just do them. For independent review or testing, delegate to a subagent in `.claude/agents/` (`architect` before structural changes, `frontend-reviewer`, `browser-tester`, `code-reviewer` after) and ask for findings only. Changes across areas: run the saved workflow `change` (`args: { task: "...", agents: { test: "browser-tester", review: "code-reviewer" } }`): plan, build in parallel on disjoint files, verify, update docs. It never commits. See `.claude/README.md`.
 
 ## Checking changes
 

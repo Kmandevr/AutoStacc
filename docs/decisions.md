@@ -54,3 +54,7 @@ Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only pe
 
 Directory descriptions use `.purpose` (not `.area`, which clashed with the `area:` labels) to match the one-line purpose in each file. The task skill is `tasks`, the GitHub workflow is `clear-status-on-close`. The one-time Project setup guide moved into issue #13 instead of a repo file. Labels: removed the unused GitHub defaults (duplicate, invalid, wontfix, good first issue, help wanted, question), renamed `accessibility` to `area: accessibility` so all area labels match.
 
+## 2026-10-07: Subagents and per-file-type rules
+
+Four read-only subagents in `.claude/agents/` (`architect`, `frontend-reviewer`, `browser-tester`, `code-reviewer`) do specialised review and testing in their own context and return short findings, so the main session stays small. Path rules in `.claude/rules/` are split by file type (`html`, `js`, `css`, `data`, `docs`, `claude`) and load only when matching files are touched. Each kind of instruction has one home (table in `.claude/README.md`); rules don't repeat `CLAUDE.md`. The `change` workflow takes optional subagent names for its verify step so it stays project-agnostic.
+
