@@ -53,3 +53,7 @@ The owner asked for a neon purple, phosphor green and black look, like an old te
 ## 2026-10-07: Hosted on Cloudflare Pages, HTTPS from Cloudflare
 
 The domain, `autostacc.com`, is on Cloudflare, so the site is hosted on Cloudflare Pages (project `autostacc`). It deploys from GitHub Actions (`.github/workflows/deploy.yml`, Wrangler with an API token in repo secrets) rather than Cloudflare's own GitHub connection, which kept looping back to the dashboard during setup. The workflow uploads only the pages, `css/`, `js/` and `data/`, not `docs/` or `.claude/`. Cloudflare issues and renews the HTTPS certificate for the custom domain itself. The custom domain `autostacc.com` is attached to the Pages project (live 2026-10-07). `autostacc.pages.dev` can't be deleted, so a Cloudflare Bulk Redirect (set up in the dashboard, not in this repo) sends it to `https://autostacc.com` with path and query kept. Cloudflare Origin Certificates are not used: there is no origin server to install one on, and their private keys never go in this repo.
+
+## 2026-10-07: Editor-only type config in `js/`
+
+Serena's TypeScript server couldn't link helpers shared through `window.GS`, so references stopped at `util.js`. `util.js` now names the object `const GS` before setting `window.GS`, and `js/jsconfig.json` plus `js/globals.d.ts` tell the server that `window.GS` is that object. Pages never load these files and there's still no build step. The trade-off is one extra global name (`GS`) for the same object.
