@@ -1,4 +1,4 @@
-/* Product cards, grid and shop filters. Used by shop.html and the featured products on index.html. */
+/* Product cards, grid and shop filters. Used by shop.html and the featured products on home.html. */
 
 /* ---------- cards / grid ---------- */
 .grid {
@@ -13,13 +13,24 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color .2s, transform .2s;
+  transition: border-color .15s, box-shadow .2s var(--snap), transform .2s var(--snap);
 }
 .alt .card { background: var(--bg); }
-.card:hover, .card:focus-within { border-color: var(--pink); transform: translateY(-3px); }
+.card:hover, .card:focus-within { border-color: var(--purple); box-shadow: 0 0 18px rgba(191,95,255,.35); transform: translateY(-5px); }
+/* on hover the cover's scanlines scroll and its title twitches once */
+.card:hover .cover::after { animation: scan-drift .6s linear infinite; }
+.card:hover .cover span { animation: jitter .35s steps(1); }
+@keyframes scan-drift { to { transform: translateY(6px); } }
+@keyframes jitter {
+  0% { transform: translate(-3px, 1px) skewX(-6deg); }
+  30% { transform: translate(3px, -1px); }
+  60% { transform: translate(-1px, 0) skewX(4deg); }
+  100% { transform: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .card { transition: none; }
   .card:hover, .card:focus-within { transform: none; }
+  .card:hover .cover::after, .card:hover .cover span { animation: none; }
 }
 
 .cover {
@@ -28,24 +39,25 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  font-family: var(--mono);
-  font-weight: 700;
-  color: rgba(255,255,255,.9);
+  font-family: var(--display);
+  color: var(--green);
   text-align: center;
   padding: 20px;
-  font-size: 1.1rem;
-  text-shadow: 2px 0 var(--pink), -2px 0 var(--cyan);
+  font-size: 2rem;
+  line-height: 1.1;
+  text-shadow: 2px 0 var(--purple), var(--glow);
+  border-bottom: 2px dashed var(--line);
 }
 .cover::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -6px 0 0;
   background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 6px);
 }
 .cover span { position: relative; z-index: 1; }
 
 .card-body { padding: 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.card-body h3 { margin: 0; font-size: 1.1rem; line-height: 1.3; }
+.card-body h3 { margin: 0; font-size: 1rem; line-height: 1.4; }
 .card-body p { margin: 0; color: var(--muted); font-size: .95rem; flex: 1; }
 .card-foot {
   display: flex;
@@ -54,15 +66,15 @@
   margin-top: 10px;
   gap: 10px;
 }
-.price { font-family: var(--mono); font-weight: 700; font-size: 1.15rem; color: var(--lime); }
+.price { font-weight: 700; font-size: 1.15rem; color: var(--green); }
 
 .tag {
   display: inline-block;
-  font-family: var(--mono);
   font-size: .72rem;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--purple);
+  text-shadow: var(--glow-purple);
 }
 
 /* ---------- shop filters ---------- */
@@ -70,12 +82,14 @@
 .filters button {
   background: transparent;
   border: 1px solid var(--line);
-  color: var(--muted);
-  border-radius: 999px;
+  color: var(--green-dim);
+  border-radius: var(--radius);
   padding: 7px 16px;
   font: inherit;
   font-size: .9rem;
   cursor: pointer;
+  transition: background-color .12s, color .12s, border-color .12s, transform .1s var(--snap);
 }
-.filters button:hover { color: var(--text); border-color: var(--muted); }
-.filters button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.filters button:active { transform: scale(.95); }
+.filters button:hover { color: var(--green); border-color: var(--green); }
+.filters button.active { background: var(--green); color: var(--bg); border-color: var(--green); text-shadow: none; }
