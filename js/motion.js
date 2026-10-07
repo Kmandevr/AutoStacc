@@ -1,4 +1,4 @@
-// Motion: reveals cards, news, shows and section titles as they scroll into view, and types out [data-type] text.
+// Motion: scroll reveals, typed [data-type] text, the occasional glitch "zap", and ambient effects that keep their place across pages.
 // Needs nothing; load it after the scripts that render content. Does nothing for reduced-motion users.
 (function () {
   "use strict";
@@ -8,8 +8,11 @@
   const main = document.querySelector("main");
   if (!main) return;
 
+  const root = document.documentElement;
   // css/base.css only hides .reveal items under .motion, so the page stays visible if this script never runs.
-  document.documentElement.classList.add("motion");
+  root.classList.add("motion");
+  // Ambient loops run on wall-clock time, so they carry on from where they were when you change page.
+  root.style.setProperty("--clock", `${-(Date.now() % 9000)}ms`);
 
   const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .loop li, .newsletter form";
   const seen = new IntersectionObserver((entries) => {
@@ -31,10 +34,22 @@
   }
 
   watch(main);
-  // Shop filters re-render the grid; animate the new cards in too.
-  new MutationObserver((changes) => {
-    changes.forEach((c) => c.target.nodeType === 1 && watch(c.target));
-  }).observe(main, { childList: true, subtree: true });
+
+  // Every 6 to 14 seconds one visible title glitches for a moment.
+  const ZAP = ".section-head h2, .cover span, .loop strong, .logo";
+  function zap() {
+    const visible = [...document.querySelectorAll(ZAP)].filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < innerHeight;
+    });
+    const el = visible[Math.floor(Math.random() * visible.length)];
+    if (el && !document.hidden) {
+      el.classList.add("zap");
+      el.addEventListener("animationend", () => el.classList.remove("zap"), { once: true });
+    }
+    setTimeout(zap, 6000 + Math.random() * 8000);
+  }
+  setTimeout(zap, 4000);
 
   // Typewriter: screen readers get the full text at once, the typed copy is hidden from them.
   document.querySelectorAll("[data-type]").forEach((el) => {
