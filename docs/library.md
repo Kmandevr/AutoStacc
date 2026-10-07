@@ -1,0 +1,33 @@
+---
+title: Your Stacc
+summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, follows and Auto-Stacc.
+updated: 2026-10-07
+---
+
+# Your Stacc
+
+`/library` is Your Stacc: the content a customer can use, not a receipt list. Ownership and downloads are the store's ([store](store.md#entitlements)); this note is about organizing them. Model: [architecture](architecture.md).
+
+## Where the data comes from
+
+1. `GET /api/library` (server, from `entitlements`): owned products, each with its `projectId`, `pacs` and active files, and each file's `pacId`, `kind`, size and name. Unchanged rules: only active entitlements, only active files, storage keys never sent.
+2. `data/projects.js`, `data/stacclets.js`, `data/pacs.js`, `data/content-types.js` (static): names and structure.
+3. `js/stacc-model.js` joins them into one list of **assets**, one object per file, each knowing its project, Stacclet, Pac, product, kind and format. A file's kind is what the admin chose at upload, else guessed from its extension (`content-types.js` `formats`).
+
+## Views (same assets, no copies)
+
+- **By project:** Project → Stacclet → Pac → content type → files; files uploaded without a Pac sit under their product.
+- **By content type:** MIDI, Samples, Loops, Presets, … each with a count, across every project, each file showing where it came from.
+- **Filters:** project, content type and format apply to both views.
+
+Both views are built from the same asset objects (`GS.stacc.tree`, `GS.stacc.byKind`); unit tests (`test/unit/stacc-model.test.js`) check that the same object is reached through both.
+
+## Downloads
+
+Every file has its own Download button (a fresh 5-minute signed link per click, as before). Checkboxes, with "select all" per Pac and per content type, feed **Download selected**: the page asks for each file's link in turn and saves them one after another. No ZIP yet (see [architecture](architecture.md#not-built-yet-on-purpose)).
+
+## Follows and Auto-Stacc
+
+On `/projects` a signed-in customer can follow a project and switch Auto-Stacc on. Your Stacc then lists the followed projects' published products they don't own yet ("New from projects you follow"). With Auto-Stacc on, free products of that project are granted automatically (on follow, and every time the library opens), so they appear as owned with the source "auto". Paid products are never granted by following. Unfollowing keeps what was already added.
+
+API: `GET /api/projects` (published projects, plus your follows when signed in), `PUT /api/follows/:projectId {autoStacc}`, `DELETE /api/follows/:projectId`. Tests: `test/api/platform.suite.js`.

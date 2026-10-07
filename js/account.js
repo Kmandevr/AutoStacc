@@ -25,7 +25,7 @@
       <div class="panel appear wide account-top">
         <h2>Hi, ${escapeHTML(user.name || "you")}</h2>
         <p>${escapeHTML(user.email)} · member since ${day(user.createdAt)}</p>
-        <div class="actions"><a class="btn" href="/library">Open my library</a>${user.admin ? `<a class="btn ghost" href="/admin">Admin</a>` : ""}<button class="btn ghost" type="button" data-signout>Log out</button></div>
+        <div class="actions"><a class="btn" href="/library">Open Your Stacc</a>${user.admin ? `<a class="btn ghost" href="/admin">Admin</a>` : ""}<button class="btn ghost" type="button" data-signout>Log out</button></div>
       </div>
       <div class="panel wide"><h2>Orders</h2>${orders(list)}</div>
       <form class="panel" data-form="profile" novalidate>

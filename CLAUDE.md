@@ -1,6 +1,6 @@
 # AutoStacc
 
-Website for the EDM artist **Glitches & Stitches**. It sells digital items (sample packs, presets, stems, music, visuals) and promotes the artist with news and tour dates.
+**AutoStacc** is a platform: storefront, accounts, checkout, the customer's library ("Your Stacc"), delivery and project discovery. **Projects** create the content; AutoStacc sells, delivers and organizes it. **Glitches & Stitches**, an EDM artist, is the first project (its home page, music, news and press live here too). Model: Project → Stacclet → Pac → asset, plus products, follows, Auto-Stacc, polls and relationships: [docs/architecture.md](docs/architecture.md). Never hard-code a project into platform code; a project is data in `data/projects.js` and opts into features.
 
 ## Start of every session
 
@@ -8,7 +8,7 @@ Tasks and bugs live in GitHub Issues: use the `tasks` skill to find, claim and f
 
 ## Rules
 
-- For anything creative (copy, artwork, names, release ideas, branding, promotion), follow [docs/identity.md](docs/identity.md). Don't turn it into a generic EDM brand.
+- For anything creative about Glitches & Stitches (copy, artwork, names, release ideas, branding, promotion), follow [docs/identity.md](docs/identity.md); don't turn it into a generic EDM brand. Platform copy and the Stacc vocabulary follow [docs/autostacc.md](docs/autostacc.md).
 - Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and open an issue for it.
 - Record decisions and new facts in `docs/` before ending a session (details in `.claude/rules/docs.md`).
 
@@ -18,7 +18,7 @@ Static HTML, CSS and JS with no framework, hosted on Cloudflare Pages, plus the 
 
 - All content is data in `data/*.js`. Update content there, not in the HTML.
 - One generator, `node scripts/build.js` (plain Node, no dependencies), writes what search engines read from `data/`: each page's head block (canonical, Open Graph, JSON-LD), the release, product and news pages in `music/`, `shop/`, `news/`, and `sitemap.xml`. Run it after changing `data/` or a page's title or description, and commit the output. Never hand-edit generated output. How it fits together: [docs/seo.md](docs/seo.md).
-- The official address is `https://autostacc.com`; the artist is always written "Glitches & Stitches". Links are root-relative clean addresses (`/shop`, `/music/hail`); preview with `node scripts/serve.js`.
+- The official address is `https://autostacc.com`; the platform is written "AutoStacc", the artist "Glitches & Stitches". Page titles still carry the artist's name (the site-wide identity switch is the owner's open decision, see docs/decisions.md). Links are root-relative clean addresses (`/shop`, `/music/hail`); preview with `node scripts/serve.js`.
 - The store is an API beside the static pages: Cloudflare Pages Functions (`functions/` → `server/`, one folder per area), D1 (`db/migrations/`), private R2, Better Auth, Stripe Checkout, Brevo. The browser is never trusted with prices, ownership or payment status; card details never reach the site. How it works: [docs/store.md](docs/store.md); running it: `npm run dev` ([docs/development.md](docs/development.md)). Conventions load from `.claude/rules/server.md` and `tests.md`.
 - Conventions for scripts, styles and notes load on demand from `.claude/rules/` when you touch those files.
 

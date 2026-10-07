@@ -1,17 +1,4 @@
-/* Library ("the vault") and account pages: owned products with their files, order history. */
-
-.vault { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; max-width: 900px; }
-.vault-item { background: var(--bg-2); border: 1px solid var(--line); box-shadow: 5px -4px 0 rgba(191,95,255,.3); padding: 22px; }
-.vault-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; }
-.vault-head h2 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.1rem); text-transform: uppercase; overflow-wrap: anywhere; }
-.vault-head h2 a { color: var(--green); text-shadow: var(--glow); }
-.vault-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 14px; }
-.vault-source { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
-.vault-source::before { content: "// "; color: var(--green-dim); }
-.vault-files { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.vault-files > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.vault-files .msg { flex: 1 1 100%; margin: 6px 0 0; }
-.vault-file { display: grid; gap: 2px; overflow-wrap: anywhere; min-width: 0; }
+/* Account page: order history. Your Stacc (the library page) is css/stacc.css. */
 
 .orders { list-style: none; margin: 0; padding: 0; }
 .order { padding: 14px 0; border-bottom: 1px solid var(--line); }
@@ -22,8 +9,3 @@
 .order-items { margin: 6px 0; padding-left: 18px; color: var(--muted); }
 .order-items a { display: inline-block; padding-block: 2px; }
 .order.status-refunded .order-items, .order.status-cancelled .order-items { text-decoration: line-through; }
-
-@media (max-width: 600px) {
-  .vault-item { padding: 18px 14px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
-  .vault-files .btn { flex: 1 1 100%; text-align: center; }
-}

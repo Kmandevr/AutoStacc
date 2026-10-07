@@ -31,24 +31,30 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
 | `payments/` | providers (Stripe, mock), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/dev/mock-payment` |
 | `orders/` | orders, status machine, fulfilment, guest keys | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/guest/key` |
-| `entitlements/` | ownership, guest adoption, library, free claims | `GET /api/library`, `POST /api/library/free` |
+| `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
 | `downloads/` | signed links, streaming private files | `POST /api/downloads`, `GET /api/downloads/:token` |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
 | `admin/` | owner tools | `/api/admin/*` |
 | `analytics/` | daily counters | `POST /api/events` |
+| `projects/` | projects (synced), follows | `GET /api/projects`, `PUT`/`DELETE /api/follows/:projectId` |
+| `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
 Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
 
+## Platform layer
+
+The store is the commerce half of AutoStacc. Projects, Stacclets, Pacs, assets, Your Stacc, follows, Auto-Stacc and polls are built on top of it without changing auth, checkout, payments, entitlements or download security: [architecture](architecture.md), [library](library.md). Schema: `db/migrations/0003_platform.sql` (`products.project_id`, `products.pacs`, `product_files.pac_id`, `product_files.kind`, `projects`, `follows`, `polls`, `poll_votes`).
+
 ## Product model
 
-Products live in `data/products.js` (reviewed in git, rendered into static pages and search data) and are synced into D1 by `db/catalog.sql`, which `scripts/build.js` generates and the deploy applies. Checkout only ever reads the database copy, so the price charged is the price on the page. Fields: `id` (also the slug and page address), `title`, `description`, `type`, `price`, `currency` (defaults to `SITE.currency`), `image` (artwork), `preview` (audio clip), `tags`, `includes`, `metadata`, `featured`, `release`, `draft` (= unpublished). The database adds `created_at`, `updated_at`, `sales_paused` (the admin's switch), `max_quantity` and `deleted_at` (a product removed from data is unpublished and marked deleted, never dropped: orders and entitlements point at it).
+Products live in `data/products.js` (reviewed in git, rendered into static pages and search data) and are synced into D1 by `db/catalog.sql`, which `scripts/build.js` generates and the deploy applies. Checkout only ever reads the database copy, so the price charged is the price on the page. Fields: `id` (also the slug and page address), `title`, `description`, `type`, `price`, `currency` (defaults to `SITE.currency`), `image` (artwork), `preview` (audio clip), `tags`, `includes`, `metadata`, `featured`, `release`, `project` (who created it), `pacs` (the Pacs it delivers), `draft` (= unpublished). The database adds `created_at`, `updated_at`, `sales_paused` (the admin's switch), `max_quantity` and `deleted_at` (a product removed from data is unpublished and marked deleted, never dropped: orders and entitlements point at it).
 
 Types are data too: `data/product-types.js` (music, stems, samples, sample packs, presets, visuals, VJ loops, other) with a label, max quantity per order and preview kind. A new kind of product is one line there.
 
-Paid files are not in git: the owner uploads them in `/admin`; they go to the private `FILES` bucket under random keys (`product_files`). Preview clips go to the separate `PREVIEWS` bucket and play from `/media/previews/<file>`; a preview is never the paid file.
+Paid files are not in git: the owner uploads them in `/admin`; they go to the private `FILES` bucket under random keys (`product_files`), optionally tagged with one of the product's Pacs and a content kind so Your Stacc can file them. Preview clips go to the separate `PREVIEWS` bucket and play from `/media/previews/<file>`; a preview is never the paid file.
 
 ## Releases
 

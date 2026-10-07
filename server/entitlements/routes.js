@@ -1,5 +1,7 @@
-// The customer's library: every product they own (from entitlements, whatever the source) with its downloadable
-// files, and claiming free products. Paid files are listed by id only; links come from server/downloads.
+// The customer's library ("Your Stacc"): every product they own (from entitlements, whatever the source) with its
+// downloadable files, each tagged with its Pac and content kind so the page can organize them (docs/library.md), and
+// claiming free products. Paid files are listed by id only; links come from server/downloads. Opening it runs
+// Auto-Stacc first, so free products of followed projects arrive without any other trigger.
 import { json, fail, readJson, id } from "../lib/http.js";
 import { all, parseJson } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
@@ -7,14 +9,16 @@ import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
 import { getProduct, getProducts, isFree, isVisible } from "../catalog/products.js";
 import { limit } from "../lib/ratelimit.js";
+import { autoStacc, AUTO_NOTE } from "./autostacc.js";
 
 async function library(app) {
   const access = await requireAccess(app);
+  if (access.user) await autoStacc(app.db, access.user);
   const ents = await activeEntitlements(app.db, access);
   const productIds = [...new Set(ents.map((e) => e.product_id))];
   const products = new Map((await getProducts(app.db, productIds)).map((p) => [p.id, p]));
   const files = productIds.length
-    ? await all(app.db, `SELECT id, product_id, filename, label, content_type, size_bytes FROM product_files
+    ? await all(app.db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind FROM product_files
         WHERE active = 1 AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
     : [];
   const items = productIds.filter((pid) => products.has(pid)).map((pid) => {
@@ -24,13 +28,15 @@ async function library(app) {
       productId: pid,
       title: p.title,
       type: p.type,
+      projectId: p.project_id || null,
+      pacs: parseJson(p.pacs, []),
       artwork: p.artwork,
       metadata: parseJson(p.metadata, {}),
       // Downloads go through this entitlement (the earliest active one).
       entitlementId: mine[0].id,
-      sources: [...new Set(mine.map((e) => e.source_type))],
+      sources: [...new Set(mine.map((e) => (e.source_type === "free" && e.note === AUTO_NOTE ? "auto" : e.source_type)))],
       grantedAt: mine[0].granted_at,
-      files: files.filter((f) => f.product_id === pid).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes }))
+      files: files.filter((f) => f.product_id === pid).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "" }))
     };
   });
   return json({ signedIn: Boolean(access.user), guestOrders: access.guestOrderIds, items });

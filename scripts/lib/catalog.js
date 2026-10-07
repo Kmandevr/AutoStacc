@@ -5,7 +5,7 @@ const crypto = require("crypto");
 
 const q = (v) => (v === null || v === undefined ? "NULL" : typeof v === "number" ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
 const NOW = "strftime('%Y-%m-%dT%H:%M:%fZ','now')";
-const COLS = ["id", "title", "description", "type", "price_cents", "currency", "artwork", "preview", "tags", "release_id", "metadata", "featured", "published", "max_quantity"];
+const COLS = ["id", "title", "description", "type", "price_cents", "currency", "artwork", "preview", "tags", "release_id", "metadata", "featured", "published", "max_quantity", "project_id", "pacs"];
 
 function row(p, types) {
   const type = types[p.type] || {};
@@ -23,7 +23,9 @@ function row(p, types) {
     metadata: JSON.stringify({ ...(p.metadata || {}), ...(p.includes ? { includes: p.includes } : {}), ...(p.hue !== undefined ? { hue: p.hue } : {}) }),
     featured: p.featured ? 1 : 0,
     published: p.draft ? 0 : 1,
-    max_quantity: type.maxQuantity || 1
+    max_quantity: type.maxQuantity || 1,
+    project_id: p.project || null,
+    pacs: JSON.stringify(p.pacs || [])
   };
   r.catalog_hash = crypto.createHash("sha256").update(JSON.stringify(COLS.map((c) => r[c]))).digest("hex").slice(0, 16);
   return r;
@@ -59,4 +61,4 @@ function catalogSql(products, types) {
   return out.join("\n") + "\n";
 }
 
-module.exports = { catalogSql, validate };
+module.exports = { catalogSql, validate, q, NOW };
