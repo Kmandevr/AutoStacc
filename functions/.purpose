@@ -1,0 +1,1 @@
+Pages Functions entry points: /api/* and /media/previews/* hand off to server/. No logic here.

@@ -1,1 +1,4 @@
-{ "type": "module" }
+{
+  "description": "Store tests (ES modules): unit, API security and browser chaos suites, plus their helpers.",
+  "type": "module"
+}
