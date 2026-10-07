@@ -3,8 +3,10 @@
 :root {
   --bg: #000;
   --bg-2: #0b0812;
-  --text: #33ff66;
-  --muted: #24b350;
+  --text: #f2f2f2;
+  --muted: #b8b8c0;
+  --green: #33ff66;
+  --green-dim: #24b350;
   --purple: #bf5fff;
   --line: #1f5c33;
   --glow: 0 0 6px rgba(51,255,102,.45);
@@ -26,7 +28,6 @@ body {
   color: var(--text);
   font-family: var(--font);
   line-height: 1.6;
-  text-shadow: var(--glow);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -42,15 +43,16 @@ body::after {
   z-index: 100;
 }
 
+h1, h2, h3 { color: var(--green); text-shadow: var(--glow); }
 h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: .02em; }
 
-::selection { background: var(--text); color: var(--bg); text-shadow: none; }
+::selection { background: var(--green); color: var(--bg); text-shadow: none; }
 
 a { color: var(--purple); text-decoration: none; text-shadow: var(--glow-purple); }
-a:hover { color: var(--text); text-shadow: var(--glow); }
+a:hover { color: var(--green); text-shadow: var(--glow); }
 
 /* visible keyboard focus on every interactive element */
-:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 
 /* blinking block cursor, e.g. after the hero tagline */
 .cursor::after {
@@ -86,7 +88,7 @@ img { max-width: 100%; display: block; }
   mix-blend-mode: screen;
 }
 .glitch::after {
-  color: var(--text);
+  color: var(--green);
   transform: translate(3px, 0);
   clip-path: inset(55% 0 0 0);
   animation: glitch-b 3.4s infinite steps(1);
@@ -137,18 +139,18 @@ img { max-width: 100%; display: block; }
   color: var(--bg);
   text-shadow: none;
   transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 var(--text);
+  box-shadow: 4px 4px 0 var(--green);
 }
 @media (prefers-reduced-motion: reduce) {
   .btn { transition: none; }
   .btn:hover { transform: none; }
 }
-.btn.ghost { background: transparent; color: var(--text); border-color: var(--text); box-shadow: none; text-shadow: var(--glow); }
-.btn.ghost:hover { background: var(--text); color: var(--bg); text-shadow: none; box-shadow: 4px 4px 0 var(--purple); }
+.btn.ghost { background: transparent; color: var(--green); border-color: var(--green); box-shadow: none; text-shadow: var(--glow); }
+.btn.ghost:hover { background: var(--green); color: var(--bg); text-shadow: none; box-shadow: 4px 4px 0 var(--purple); }
 .btn[aria-disabled="true"] {
   background: var(--bg-2);
   border-color: var(--line);
-  color: var(--muted);
+  color: var(--green-dim);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -176,4 +178,4 @@ section { padding: 80px 0; }
 }
 .alt { background: var(--bg-2); border-top: 2px dashed var(--line); border-bottom: 2px dashed var(--line); }
 
-.empty { color: var(--muted); font-family: var(--mono); }
+.empty { color: var(--green-dim); font-family: var(--mono); }
