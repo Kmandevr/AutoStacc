@@ -9,7 +9,8 @@ cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 command -v graphify >/dev/null 2>&1 || uv tool install graphifyy >&2
 
 g=graphify-out/graph.json
-if [ ! -f "$g" ] || [ -n "$(find . \( -path ./graphify-out -o -path ./.git -o -path ./.claude \) -prune -o -type f -newer "$g" -print -quit)" ]; then
+# Rebuild only when a tracked or new, non-ignored file is newer than the graph.
+if [ ! -f "$g" ] || [ -n "$(git ls-files -co --exclude-standard | xargs -r -d '\n' find -newer "$g" -print -quit)" ]; then
   graphify update . >&2
 fi
 
