@@ -6,16 +6,16 @@
   const { $, escapeHTML } = window.GS;
   const SITE = window.SITE || {};
   const emit = (type, detail) => document.dispatchEvent(new CustomEvent(type, { detail }));
-  const go = (href) => () => { location.href = href; return "> opening " + href.replace(".html", "") + " ..."; };
+  const go = (href) => () => { location.href = href; return "> opening " + href + " ..."; };
 
   const COMMANDS = {
     help: () =>
       "commands: ls, open <page>, play hail, loop, tear, stitch, glitch, cinch, repeat, whoami, about, booking, sound on|off, remix, hail, date, echo, clear, exit",
     ls: () => "home/  music/  shows/  shop/  news/  press/  hail.wav  unfinished_ideas/ (412 files)",
-    open: (a) => ({ home: go("home.html"), music: go("home.html#listen"), shows: go("home.html#shows"), shop: go("shop.html"),
-      news: go("news.html"), press: go("press.html") }[a] || (() => `open: no such page: ${a || "(nothing)"}. try ls`))(),
+    open: (a) => ({ home: go("/"), music: go("/music"), shows: go("/#shows"), shop: go("/shop"),
+      news: go("/news"), press: go("/press") }[a] || (() => `open: no such page: ${a || "(nothing)"}. try ls`))(),
     cd: (a) => COMMANDS.open(a.replace(/\/$/, "")),
-    play: (a) => (/hail/i.test(a) ? go("home.html#listen")() : "play: try `play hail`"),
+    play: (a) => (/hail/i.test(a) ? go("/music/hail")() : "play: try `play hail`"),
     loop: () => "[01] tear  [02] stitch  [03] glitch  [04] cinch  [05] repeat ↻ 01",
     whoami: () => "guest. or a fragment that hasn't been stitched in yet.",
     about: () => "Glitches & Stitches: unfinished songs are raw material. tear. stitch. glitch. cinch. repeat.",

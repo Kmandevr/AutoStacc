@@ -12,7 +12,9 @@
 }
 .alt .news-item { background: var(--bg); }
 .news-item:hover { box-shadow: 0 0 0 rgba(191,95,255,0); border-color: var(--purple); }
-.news-item h3 { margin: 6px 0 8px; font-size: 1.15rem; }
+.news-item :is(h2, h3) { margin: 6px 0 8px; font-family: var(--font); font-size: 1.15rem; letter-spacing: 0; }
+.news-item :is(h2, h3) a { display: inline-block; padding-block: 2px; color: inherit; text-shadow: inherit; }
+.news-item :is(h2, h3) a:hover { color: var(--purple); text-shadow: var(--glow-purple); }
 .news-item .meta { display: flex; gap: 14px; align-items: center; }
 .news-item time { color: var(--green-dim); font-size: .85rem; }
 .news-item p { margin: 0; color: var(--muted); }

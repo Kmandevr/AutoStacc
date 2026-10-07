@@ -1,4 +1,4 @@
-# Cloudflare Pages redirects: the site's address goes to /home. Pages already serves home.html at /home, and shop, news and press at /shop, /news and /press.
-/            /home  302
-/index       /home  301
-/index.html  /home  301
+# Cloudflare Pages redirects. The home page is index.html at /; Pages itself sends /index and /*.html to the clean address.
+# When a public page is removed or renamed, add a 301 here from its old address (scripts/seo-test.js checks this).
+/home       /  301
+/home.html  /  301

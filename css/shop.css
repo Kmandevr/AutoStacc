@@ -52,7 +52,9 @@
 .cover span { position: relative; z-index: 1; }
 
 .card-body { padding: 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.card-body h3 { margin: 0; font-size: 1rem; line-height: 1.4; }
+.card-body :is(h2, h3) { margin: 0; font-family: var(--font); font-size: 1rem; line-height: 1.4; letter-spacing: 0; }
+.card-body :is(h2, h3) a { display: inline-block; padding-block: 2px; color: inherit; text-shadow: inherit; }
+.card-body :is(h2, h3) a:hover { color: var(--purple); text-shadow: var(--glow-purple); }
 .card-body p { margin: 0; color: var(--muted); font-size: .95rem; flex: 1; }
 .card-foot {
   display: flex;
@@ -60,16 +62,6 @@
   justify-content: space-between;
   margin-top: 10px;
   gap: 10px;
-}
-.price { font-weight: 700; font-size: 1.15rem; color: var(--green); }
-
-.tag {
-  display: inline-block;
-  font-size: .72rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--purple);
-  text-shadow: var(--glow-purple);
 }
 
 /* ---------- shop filters ---------- */

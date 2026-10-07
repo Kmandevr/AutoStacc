@@ -6,7 +6,7 @@ updated: 2026-10-07
 
 # Shop
 
-Products are defined in `data/products.js`. Every field there is currently placeholder (tracked in GitHub issues).
+Products are defined in `data/products.js`. Every field there is currently placeholder (tracked in GitHub issues), so every product is `draft: true`: still shown in the shop as "Coming soon", but its page (`/shop/<id>`) is `noindex`, left out of the sitemap and publishes no product structured data. Remove `draft` once a product is real.
 
 ## How selling works
 

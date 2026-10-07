@@ -1,0 +1,7 @@
+# Cloudflare Pages response headers. The pages.dev copies of the site (the project address and every preview deployment)
+# stay out of search results, so https://autostacc.com is the only address search engines index.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex

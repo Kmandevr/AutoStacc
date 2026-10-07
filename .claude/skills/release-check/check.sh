@@ -19,6 +19,7 @@ done
 [ -z "$(git status --porcelain)" ] && report PASS git-clean "working tree clean" || report WARN uncommitted "$(git status --porcelain | wc -l) uncommitted change(s)"
 
 grep -q 'checkoutUrl: ""' data/products.js && report WARN placeholder "products with empty checkoutUrl (data/products.js)"
-grep -q 'example.com' data/site.js && report WARN placeholder "example.com email (data/site.js)"
+grep -q 'email: ""' data/site.js && report WARN placeholder "no booking email (data/site.js)"
+grep -q "draft: true" data/*.js && report WARN placeholder "draft (placeholder) entries kept out of search (data/)"
 grep -q 'newsletterAction: ""' data/site.js && report WARN placeholder "empty newsletterAction (data/site.js)"
 exit $fail

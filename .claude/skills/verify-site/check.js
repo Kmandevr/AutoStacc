@@ -1,13 +1,22 @@
 // Runs the site checks and prints one line per result: PASS / WARN / FAIL <check> - <detail> (<file>).
 // Usage: NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js [page.html ...]
 // Needs Playwright with Chromium (preinstalled in cloud sessions at /opt/pw-browsers/chromium).
+// Pages are served like production (scripts/serve.js): clean addresses, _redirects, real 404 status.
 const fs = require("fs");
 const path = require("path");
-const http = require("http");
 const { execFileSync } = require("child_process");
 
 const root = process.cwd();
-const pages = process.argv.length > 2 ? process.argv.slice(2) : fs.readdirSync(root).filter((f) => f.endsWith(".html"));
+const { createServer } = require(path.join(root, "scripts/serve.js"));
+const { loadData } = require(path.join(root, "scripts/lib/data.js"));
+const allPages = [
+  ...fs.readdirSync(root).filter((f) => f.endsWith(".html")),
+  ...["music", "shop", "news"].filter((d) => fs.existsSync(d)).flatMap((d) => fs.readdirSync(d).filter((f) => f.endsWith(".html")).map((f) => `${d}/${f}`))
+];
+const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
+const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
+const { SITE, products } = loadData(root);
+const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
 const DATA_GLOBALS = { SITE: "data/site.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js", MUSIC: "data/music.js" };
@@ -24,9 +33,9 @@ for (const f of fs.readdirSync(path.join(root, "css")).filter((n) => n.endsWith(
 }
 for (const page of pages) {
   const html = fs.readFileSync(page, "utf8");
-  const refs = [...html.matchAll(/(?:src|href)="([^"#?:]+\.(?:js|css|html|png|jpg|svg|ico|webp))"/g)].map((m) => m[1]);
+  const refs = [...html.matchAll(/(?:src|href)="([^"#?:]+\.(?:js|css|html|png|jpg|svg|ico|webp))"/g)].map((m) => m[1].replace(/^\//, ""));
   for (const r of refs) if (!fs.existsSync(r)) add("FAIL", "broken-reference", `missing ${r}`, page);
-  const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+  const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].replace(/^\//, ""));
   for (const s of scripts.filter((s) => s.startsWith("js/") && fs.existsSync(s))) {
     const used = [...new Set([...fs.readFileSync(s, "utf8").matchAll(/window\.(SITE|PRODUCTS|NEWS|SHOWS|MUSIC)\b/g)].map((m) => m[1]))];
     for (const g of used) if (!scripts.includes(DATA_GLOBALS[g])) add("FAIL", "missing-data-script", `${s} reads window.${g} but the page does not load ${DATA_GLOBALS[g]}`, page);
@@ -41,13 +50,8 @@ for (const page of pages) {
 }
 
 // ---------- browser checks ----------
-const server = http.createServer((req, res) => {
-  const p = path.join(root, decodeURIComponent(req.url.split("?")[0]).replace(/\/$/, "/home.html"));
-  if (!p.startsWith(root) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
-  const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
-  res.writeHead(200, { "Content-Type": types[path.extname(p)] || "application/octet-stream" });
-  res.end(fs.readFileSync(p));
-});
+const server = createServer(root);
+const SEO = require("./seo-browser.js");
 
 (async () => {
   let chromium;
@@ -63,11 +67,13 @@ const server = http.createServer((req, res) => {
       tab.on("pageerror", (e) => problems.push(["FAIL", "runtime-error", String(e)]));
       // Only our own pages count; embedded players (Deezer, Spotify, ...) log their own errors.
       tab.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && (!m.location().url || m.location().url.startsWith(base)) && problems.push(["FAIL", "console-error", m.text()]));
-      tab.on("response", (r) => r.url().startsWith(base) && r.status() >= 400 && problems.push(["FAIL", "http-" + r.status(), r.url().replace(base, "")]));
+      tab.on("response", (r) => r.url().startsWith(base) && r.status() >= 400 && !(page === "404.html" && r.url() === base + urlOf(page)) && problems.push(["FAIL", "http-" + r.status(), r.url().replace(base, "")]));
       // Requests made inside embedded players (YouTube ads and stats, etc.) aren't the site's own.
       tab.on("requestfailed", (r) => !r.url().startsWith(base) && r.frame() === tab.mainFrame() && problems.push(["WARN", "external-request", `${r.url().slice(0, 60)} failed (offline sandbox?)`]));
-      await tab.goto(`${base}/${page}`);
+      const res = await tab.goto(base + urlOf(page));
+      if (page === "404.html" && res.status() !== 404) problems.push(["FAIL", "404-status", `unknown address returned ${res.status()}, not 404`]);
       await tab.waitForTimeout(250);
+      if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) })) problems.push(p);
       const facts = await tab.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - innerWidth,
         header: !!document.querySelector(".site-header .nav"),
@@ -99,7 +105,7 @@ const server = http.createServer((req, res) => {
           if ((await tab.locator(".card").count()) !== before) problems.push(["FAIL", "shop-filter", "'All' did not restore the full list"]);
         } else problems.push(["WARN", "shop-filter", "fewer than two categories, filter not exercised"]);
       }
-      if (page === "home.html" && width === 1280 && (await tab.locator("#newsletter-form").count())) {
+      if (page === "index.html" && width === 1280 && (await tab.locator("#newsletter-form").count())) {
         await tab.fill("#newsletter-form input[type=email]", "test@example.com");
         await tab.click("#newsletter-form button");
         if (!(await tab.locator("#newsletter-msg").innerText()).trim() && !(await tab.url()).includes("?")) problems.push(["WARN", "newsletter", "submitting showed no message"]);
@@ -108,6 +114,8 @@ const server = http.createServer((req, res) => {
       await tab.close();
     }
   }
+  // Crawl from the home page like a search engine that runs scripts: every sitemap URL must be reachable by links.
+  if (process.argv.length <= 2) for (const p of await SEO.crawl(browser, base, SITE)) add(...p);
   await browser.close();
 })().catch((e) => add("FAIL", "checker", String(e.message || e).split("\n")[0])).finally(() => {
   server.close();

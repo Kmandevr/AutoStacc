@@ -19,7 +19,7 @@
   // Shared with the hidden terminal (js/terminal.js) through events, so the features stay independent.
   function hail() {
     sound("hail");
-    toast(`&gt; HAIL: out now. <a href="home.html#listen">listen</a>`);
+    toast(`&gt; HAIL: out now. <a href="/music/hail">listen</a>`);
     if (calm) return;
     const storm = document.createElement("div");
     storm.className = "hail";
