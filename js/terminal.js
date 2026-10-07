@@ -10,15 +10,20 @@
 
   const COMMANDS = {
     help: () =>
-      "commands: ls, open <page>, play hail, loop, whoami, about, booking, sound on|off, remix, hail, date, echo, clear, exit",
+      "commands: ls, open <page>, play hail, loop, tear, stitch, glitch, cinch, repeat, whoami, about, booking, sound on|off, remix, hail, date, echo, clear, exit",
     ls: () => "home/  music/  shows/  shop/  news/  press/  hail.wav  unfinished_ideas/ (412 files)",
     open: (a) => ({ home: go("home.html"), music: go("home.html#listen"), shows: go("home.html#shows"), shop: go("shop.html"),
       news: go("news.html"), press: go("press.html") }[a] || (() => `open: no such page: ${a || "(nothing)"}. try ls`))(),
     cd: (a) => COMMANDS.open(a.replace(/\/$/, "")),
     play: (a) => (/hail/i.test(a) ? go("home.html#listen")() : "play: try `play hail`"),
-    loop: () => "[01] create  [02] finish  [03] extract  [04] stitch  [05] glitch  [06] stitch it all  [07] repeat ↻ 01",
+    loop: () => "[01] tear  [02] stitch  [03] glitch  [04] cinch  [05] repeat ↻ 01",
     whoami: () => "guest. or a fragment that hasn't been stitched in yet.",
-    about: () => "Glitches & Stitches: unfinished songs are raw material. take broken pieces, stitch them, glitch them, reuse them.",
+    about: () => "Glitches & Stitches: unfinished songs are raw material. tear. stitch. glitch. cinch. repeat.",
+    tear: () => "> ripping fragments out of old songs... 412 found.",
+    stitch: () => "> sewing fragments together... done. it holds.",
+    glitch: () => { emit("gs:sound", "zap"); return "> c̷o̴r̶r̸u̵p̶t̷i̵n̴g... perfect."; },
+    cinch: () => "> pulled tight. locked in. added to the catalog.",
+    repeat: () => "> it's a piece now too. back to: tear.",
     booking: () => (SITE.email ? `> ${SITE.email} (or /press)` : "> see /press"),
     sound: (a) => {
       if (a !== "on" && a !== "off") return "usage: sound on|off";
