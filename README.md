@@ -16,7 +16,7 @@ It is a plain static site (HTML, CSS and JavaScript, with no build step or serve
 
 - `css/`: `base.css` (every page), `layout.css` (header and footer), `shop.css`, `news.css`, `home.css`
 - `js/`: `util.js` (shared helpers), `layout.js`, `shop.js`, `news.js`, `shows.js`, `newsletter.js`
-- Each page loads only the files it uses. See the table in `CLAUDE.md`.
+- Each page loads only the files it uses. See "Read in layers" in `CLAUDE.md`.
 
 ## Updating content
 

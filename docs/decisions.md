@@ -1,6 +1,7 @@
 ---
 title: Decisions
-updated: 2026-10-06
+summary: Dated record of what was chosen and why.
+updated: 2026-10-07
 ---
 
 # Decisions
@@ -27,5 +28,9 @@ The project will grow a lot, so [Graphify](https://github.com/Graphify-Labs/grap
 
 ## 2026-10-07: One file per feature, loaded per page
 
-Split `js/main.js` and `css/style.css` so a change touches only the files for that feature, and each page loads only what it uses. Still plain scripts and stylesheets with no build step and no ES modules (so pages work from `file://`). Shared helpers are on `window.GS` (`js/util.js`). The "Where to work" table in `CLAUDE.md` maps tasks to files.
+Split `js/main.js` and `css/style.css` so a change touches only the files for that feature, and each page loads only what it uses. Still plain scripts and stylesheets with no build step and no ES modules (so pages work from `file://`). Shared helpers are on `window.GS` (`js/util.js`).
+
+## 2026-10-07: Read in layers
+
+So an agent only reads and edits what a task needs: layer 0 is a repo map printed by the session-start hook (built from each file's own purpose line, so it can't go stale), layer 1 is Graphify queries, layer 2 is the specific file or lines. Rule and conventions are in `CLAUDE.md`.
 

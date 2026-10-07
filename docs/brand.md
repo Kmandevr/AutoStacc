@@ -1,5 +1,6 @@
 ---
 title: Brand
+summary: Visual style (colours, borders, glitch effect) and tone of voice.
 updated: 2026-10-07
 ---
 
