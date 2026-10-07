@@ -1,0 +1,70 @@
+/* Shared site header and footer. Loaded on every page. */
+
+/* ---------- header ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10,10,15,.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px dashed var(--line);
+}
+.site-header .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.logo {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text);
+  font-size: 1.05rem;
+}
+.logo span { color: var(--pink); }
+.nav { display: flex; gap: 24px; }
+.nav a { color: var(--muted); font-weight: 500; }
+.nav a:hover, .nav a.active { color: var(--text); }
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .nav-toggle { display: block; }
+  .nav {
+    display: none;
+    position: absolute;
+    top: 64px; left: 0; right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: var(--bg-2);
+    border-bottom: 2px dashed var(--line);
+  }
+  .nav.open { display: flex; }
+  .nav a { padding: 14px 20px; border-top: 1px solid var(--line); }
+}
+
+/* ---------- footer ---------- */
+.site-footer {
+  border-top: 2px dashed var(--line);
+  padding: 40px 0;
+  color: var(--muted);
+  font-size: .9rem;
+}
+.site-footer .wrap {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.socials { display: flex; gap: 18px; flex-wrap: wrap; }
+.socials a { color: var(--muted); }
+.socials a:hover { color: var(--pink); }
