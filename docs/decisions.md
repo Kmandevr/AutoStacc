@@ -38,3 +38,7 @@ So an agent only reads and edits what a task needs: layer 0 is a repo map printe
 
 `site-change` (`.claude/workflows/site-change.js`) plans, builds in parallel on disjoint files, verifies with a browser check and an adversarial review, then updates docs. Kept to about 5 agents so cost stays modest. It does not commit, so the owner or the session reviews the diff first. Not yet run on a real task.
 
+## 2026-10-07: Modular tooling, loaded only when needed
+
+Goal: things used every session stay small; the rest loads on demand. Changes: the session hook prints only a compact top-level map (directories summarised from `.area` files, so output doesn't grow with the repo); Graphify moved behind `.claude/tools/graph.sh`, which installs and refreshes it only when called (supersedes the earlier "hook installs Graphify" decision); conventions moved from `CLAUDE.md` into path-scoped `.claude/rules/`; the workflow was renamed `change` and made project-agnostic (it runs the checks listed in `CLAUDE.md`). `.claude/` is documented in `.claude/README.md` so it can be reused in other projects.
+
