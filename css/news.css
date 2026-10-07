@@ -3,12 +3,15 @@
 /* ---------- news ---------- */
 .news-list { display: flex; flex-direction: column; gap: 18px; }
 .news-item {
-  border: 2px dashed var(--line);
+  border: 1px solid var(--line);
+  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
+  transition: box-shadow .18s var(--snap), border-color .15s;
   border-radius: var(--radius);
   padding: 22px 24px;
   background: var(--bg-2);
 }
 .alt .news-item { background: var(--bg); }
+.news-item:hover { box-shadow: 0 0 0 rgba(191,95,255,0); border-color: var(--purple); }
 .news-item h3 { margin: 6px 0 8px; font-size: 1.15rem; }
 .news-item .meta { display: flex; gap: 14px; align-items: center; }
 .news-item time { color: var(--green-dim); font-size: .85rem; }

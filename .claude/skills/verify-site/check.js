@@ -89,9 +89,11 @@ const server = http.createServer((req, res) => {
         const buttons = tab.locator("#shop-filters button");
         if ((await buttons.count()) > 2) {
           await buttons.nth(1).click();
+          await tab.waitForTimeout(300); // the filter swaps cards inside a view transition, a frame or two later
           const after = await tab.locator(".card").count();
           if (!(after > 0 && after < before)) problems.push(["FAIL", "shop-filter", `cards ${before} -> ${after} after choosing a category`]);
           await buttons.nth(0).click();
+          await tab.waitForTimeout(300);
           if ((await tab.locator(".card").count()) !== before) problems.push(["FAIL", "shop-filter", "'All' did not restore the full list"]);
         } else problems.push(["WARN", "shop-filter", "fewer than two categories, filter not exercised"]);
       }

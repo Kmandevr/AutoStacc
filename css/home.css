@@ -12,6 +12,7 @@
     radial-gradient(circle at 80% 70%, rgba(51,255,102,.12), transparent 45%);
 }
 .hero h1 {
+  animation: power-on .5s var(--snap) both, glitch-skew 4.2s .8s steps(1) infinite;
   font-size: clamp(3rem, 11vw, 8rem);
   margin: 0 0 18px;
 }
@@ -26,14 +27,14 @@
 .hero p[data-type] { min-height: 1.6em; }
 
 /* ---------- shows ---------- */
-.shows { border-top: 2px dashed var(--line); }
+.shows { border-top: 1px solid var(--line); }
 .show {
   display: grid;
   grid-template-columns: 130px 1fr auto;
   gap: 20px;
   align-items: center;
   padding: 18px 0;
-  border-bottom: 2px dashed var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .show time { color: var(--purple); font-weight: 700; text-shadow: var(--glow-purple); }
 .show .where strong { display: block; font-size: 1.1rem; }
@@ -53,7 +54,7 @@
 .about .art {
   position: relative;
   aspect-ratio: 1;
-  border: 2px dashed var(--purple);
+  border: 1px solid var(--purple);
   border-radius: var(--radius);
   background:
     radial-gradient(circle, rgba(191,95,255,.3), transparent 70%),
@@ -65,7 +66,7 @@
   font-size: clamp(5rem, 13vw, 9rem);
   text-shadow: 3px 0 var(--purple), -3px 0 var(--green);
 }
-/* the monogram is torn in half and stitched back together, slightly misaligned */
+/* the monogram is torn in half and put back together slightly misaligned */
 .about .art span { position: relative; color: transparent; text-shadow: none; }
 .about .art span::before,
 .about .art span::after {
@@ -75,63 +76,39 @@
   color: var(--green);
   text-shadow: 3px 0 var(--purple), var(--glow);
 }
-.about .art span::before { clip-path: inset(0 0 50% 0); transform: translateX(-7px); }
-.about .art span::after { clip-path: inset(50% 0 0 0); transform: translateX(7px); }
-.about .art::after {
-  content: "";
-  position: absolute;
-  left: 14%; right: 14%; top: 50%;
-  border-top: 2px dashed var(--purple);
-}
+.about .art span::before { clip-path: inset(0 0 52% 0); transform: translateX(-7px); }
+.about .art span::after { clip-path: inset(48% 0 0 0); transform: translateX(7px); }
 @media (max-width: 800px) {
   .about { grid-template-columns: 1fr; }
 }
 
-/* ---------- the loop: steps hang off a stitched seam ---------- */
+/* ---------- the loop: a terminal log of the process ---------- */
 .loop-intro { color: var(--muted); margin: 0 0 28px; }
 .loop {
   list-style: none;
   counter-reset: step;
   margin: 0;
-  padding: 0 0 0 34px;
-  position: relative;
+  padding: 0;
   max-width: 760px;
-}
-.loop::before {
-  content: "";
-  position: absolute;
-  left: 10px; top: 14px; bottom: 14px;
-  border-left: 2px dashed var(--purple);
 }
 .loop li {
   counter-increment: step;
-  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 2px 16px;
   padding: 10px 0;
 }
-.loop li::before {
-  content: "\00d7";
-  position: absolute;
-  left: -34px; top: 8px;
-  width: 22px;
-  text-align: center;
-  color: var(--purple);
-  background: var(--bg-2);
-  font-weight: 700;
-  text-shadow: var(--glow-purple);
-}
-.loop li:last-child::before { content: "\21bb"; }
 .loop strong {
-  min-width: 19ch;
+  min-width: 21ch;
   color: var(--green);
   text-transform: uppercase;
   letter-spacing: .06em;
 }
-.loop strong::before { content: counter(step, decimal-leading-zero) " "; color: var(--green-dim); text-shadow: none; }
+.loop strong::before { content: "[" counter(step, decimal-leading-zero) "] "; color: var(--purple); text-shadow: var(--glow-purple); }
 .loop span { color: var(--muted); }
+/* the last step points back to the first */
+.loop li:last-child span::after { content: "  \21bb 01"; color: var(--purple); text-shadow: var(--glow-purple); }
 
 /* ---------- newsletter ---------- */
 .newsletter { text-align: center; }
@@ -147,7 +124,7 @@
   min-width: 0;
   padding: 12px 16px;
   border-radius: var(--radius);
-  border: 2px dashed var(--line);
+  border: 1px solid var(--line);
   background: var(--bg);
   color: var(--text);
   font: inherit;

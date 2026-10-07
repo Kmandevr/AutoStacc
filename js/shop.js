@@ -66,7 +66,8 @@
       const btn = e.target.closest("button");
       if (!btn) return;
       current = btn.dataset.cat;
-      draw();
+      // Cross-fade to the new set of cards where the browser supports it (css/base.css), otherwise swap.
+      document.startViewTransition ? document.startViewTransition(draw) : draw();
     });
     draw();
   }

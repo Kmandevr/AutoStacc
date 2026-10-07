@@ -7,7 +7,8 @@
   z-index: 50;
   background: rgba(0,0,0,.85);
   backdrop-filter: blur(8px);
-  border-bottom: 2px dashed var(--line);
+  border-bottom: 1px solid var(--line);
+  view-transition-name: site-header;
 }
 .site-header .wrap {
   display: flex;
@@ -54,7 +55,7 @@
     flex-direction: column;
     gap: 0;
     background: var(--bg-2);
-    border-bottom: 2px dashed var(--line);
+    border-bottom: 1px solid var(--line);
   }
   .nav.open { display: flex; animation: drop .2s var(--snap); }
   .nav a:hover { background-size: 0 1px; }
@@ -63,7 +64,7 @@
 
 /* ---------- footer ---------- */
 .site-footer {
-  border-top: 2px dashed var(--line);
+  border-top: 1px solid var(--line);
   padding: 40px 0;
   color: var(--green-dim);
   font-size: .9rem;
