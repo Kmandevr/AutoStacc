@@ -25,6 +25,12 @@ All current content is placeholder and must be replaced with real details:
 - [ ] Confirm the spelling of the name: "Glitches & Stitches" vs "Stiches"
 - [ ] Domain name and hosting choice (see [decisions](decisions.md))
 
+## Setup to confirm manually
+
+- [ ] Approve the `serena` MCP server the first time Claude Code asks (project `.mcp.json` servers need approval; `/mcp` shows its state). If it times out on a fresh container, set `MCP_TIMEOUT=60000`.
+- [ ] Check in a real session that Serena's tools appear and `find_symbol` works.
+- [ ] Footer links are 18 to 23px tall on mobile (`verify-site` WARN, WCAG target size). Decide whether to fix.
+
 ## Ideas, not started
 
 - Embedded music players (SoundCloud, Spotify)
