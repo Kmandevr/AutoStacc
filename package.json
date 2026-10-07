@@ -1,0 +1,21 @@
+{
+  "name": "autostacc",
+  "private": true,
+  "description": "Glitches & Stitches: static site plus the store API (Cloudflare Pages Functions, D1, R2).",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "test": "node --test test/unit/",
+    "test:api": "node --test --test-concurrency=1 test/api/",
+    "test:browser": "node test/browser/run.js"
+  },
+  "dependencies": {
+    "better-auth": "^1.7.7",
+    "stripe": "^23.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.148.0"
+  }
+}
