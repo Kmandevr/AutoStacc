@@ -1,0 +1,13 @@
+---
+paths:
+  - "scripts/**"
+---
+
+# Node scripts
+
+- Plain Node (22), CommonJS, no dependencies and no npm install: they run in the deploy, in CI and locally as `node scripts/<name>.js`. They are build and test tools; pages never load them, and the deploy doesn't publish them.
+- `build.js` is the only writer of generated output: the seo block in each page's head, `music/`, `shop/`, `news/`, `sitemap.xml` and `scripts/public-urls.txt`. It must stay deterministic (same data, same bytes) so `--check` works; no dates from the clock, no random values.
+- Data comes from `lib/data.js` (runs `data/*.js` like a browser would). Head and JSON-LD come from `lib/head.js`, page templates from `lib/pages.js`. A new generated page type is a template in `lib/pages.js` plus one line in `build.js`.
+- Escape every data value put into HTML with `esc`; JSON-LD escapes `<`. Generated pages use root-relative clean links (`/shop/x`), never `*.html`.
+- `seo-test.js` reads the output, never the generator's internals, so it can catch generator bugs. Add a test when adding a rule that protects search visibility.
+- Start each file with a one-line `//` comment saying what it is for (the repo map reads it).

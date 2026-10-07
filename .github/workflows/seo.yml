@@ -1,0 +1,33 @@
+# Search-visibility guard on every pull request and push: generated files must match data/, the SEO regression tests
+# must pass, and the site is checked in a real browser (rendered <head>, structured data, crawl for orphan pages).
+name: SEO and site checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generated files are up to date (else run node scripts/build.js and commit)
+        run: node scripts/build.js --check
+      - name: SEO regression tests
+        run: node scripts/seo-test.js
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright with Chromium
+        run: npm install -g playwright@1 && npx playwright install --with-deps chromium
+      - name: Browser checks (verify-site)
+        run: NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js

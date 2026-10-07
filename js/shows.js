@@ -3,7 +3,8 @@
   "use strict";
 
   const { $, escapeHTML, parseDate, fmtDate, isSet, jsonLd } = window.GS;
-  const SHOWS = window.SHOWS || [];
+  // Drafts are placeholders, never shown or announced.
+  const SHOWS = (window.SHOWS || []).filter((s) => !s.draft);
   const SITE = window.SITE || {};
 
   const el = $("#show-list");

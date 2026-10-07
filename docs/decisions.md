@@ -6,6 +6,10 @@ updated: 2026-10-07
 
 # Decisions
 
+## 2026-10-07: SEO from one generator, home at `/`
+
+The owner asked for complete, honest search visibility so autostacc.com is the clear official home of Glitches & Stitches. Hand-copied head tags on every page couldn't scale to a page per release, product and post, and social previews and non-rendering crawlers need static tags. So `scripts/build.js` (plain Node, no dependencies, committed output, also run by the deploy) generates each page's head block, item pages, structured data and `sitemap.xml` from `data/` (the deploy checks the committed output is current); lists still render in the browser. This replaces "no build step" with "no required build step": the committed files are plain static pages. The home page moved from `/home` to `/` (`index.html`): the root of the domain is the strongest official-site signal and the canonical a search result shows; `/home` 301s there. Links became root-relative clean addresses because nested pages need them and `shop.html` links were redirect hops; local preview is `node scripts/serve.js`, which mimics Cloudflare Pages. Placeholder content is `draft: true`: draft news and tour dates are hidden because they stated invented facts, draft products stay visible as "Coming soon" but out of search. The fake booking email and bare-domain profile links were removed. Tests (`scripts/seo-test.js`, verify-site's rendered-head and crawl checks) run in CI and gate the deploy. Details: [seo](seo.md).
+
 ## 2026-10-06: Static site, no build step
 
 Plain HTML, CSS and JS. Free to host anywhere (GitHub Pages, Netlify, Cloudflare Pages) and easy to edit. Revisit if a cart or accounts are needed.
@@ -44,7 +48,7 @@ Researched first and agreed with the owner. Browsers block sound before a click 
 
 ## 2026-10-07: Professional artist-site essentials
 
-Checked against what artist sites and EPK guides treat as standard: music you can play on the site, a press page (short and long bio, booking contact, press kit), tour dates with ticket links, newsletter, all platforms linked, and proper sharing and search setup. Added a Listen section (`data/music.js`, embeds only known players), `press.html`, a themed `404.html`, site icon and link-preview image (`img/`), Open Graph and canonical tags, `robots.txt` and `sitemap.xml`, MusicGroup structured data, MusicEvent data only for shows with a ticket link (so unconfirmed dates never reach Google), a skip link, and hiding of placeholder social and streaming links. Bios are written only from [identity](identity.md); nothing invented.
+Checked against what artist sites and EPK guides treat as standard: music you can play on the site, a press page (short and long bio, booking contact, press kit), tour dates with ticket links, newsletter, all platforms linked, and proper sharing and search setup. Added a Listen section (`data/music.js`, embeds only known players), `press.html`, a themed `404.html`, site icon and link-preview image (`img/`), Open Graph and canonical tags, `robots.txt` and `sitemap.xml` (all generated since the SEO decision above), MusicGroup structured data, MusicEvent data only for shows with a ticket link (so unconfirmed dates never reach Google), a skip link, and hiding of placeholder social and streaming links. Bios are written only from [identity](identity.md); nothing invented.
 
 ## 2026-10-07: Stitching as a feel, seamless page changes
 
@@ -56,7 +60,7 @@ The owner described the project's identity (method, the loop, sound, visuals, pe
 
 ## 2026-10-07: Clean addresses, home page at /home
 
-The owner wants the site at `AutoStacc.com` with named pages: `/home`, `/shop`, `/news`. The home page file is `home.html` (Cloudflare Pages serves `name.html` at `/name` and redirects `.html` links there), and `_redirects` sends `/` to `/home`. Links in the code stay as `shop.html` etc. so pages still open locally. The root redirect is a 302 so it can be changed later without browsers caching it.
+The owner wants the site at `AutoStacc.com` with named pages: `/home`, `/shop`, `/news`. The home page file is `home.html` (Cloudflare Pages serves `name.html` at `/name` and redirects `.html` links there), and `_redirects` sends `/` to `/home`. Links in the code stay as `shop.html` etc. so pages still open locally. The root redirect is a 302 so it can be changed later without browsers caching it. Superseded by the SEO decision above: home is now `/`.
 
 ## 2026-10-07: Terminal theme in purple, green and black
 

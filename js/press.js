@@ -1,4 +1,4 @@
-// Press page: booking and press-kit buttons from the site settings, and copy-to-clipboard for the bios. Needs data/site.js and js/util.js.
+// Press page: booking and press-kit buttons and official profiles from the site settings, and copy-to-clipboard for the bios. Needs data/site.js and js/util.js.
 (function () {
   "use strict";
 
@@ -14,10 +14,19 @@
     SITE.email && `<a class="btn ghost" href="${escapeHTML(mail("Press"))}">Press enquiry</a>`,
     isSet(SITE.pressKitUrl)
       ? `<a class="btn ghost" href="${escapeHTML(SITE.pressKitUrl)}" target="_blank" rel="noopener">Download press kit</a>`
-      : `<p class="note">Press photos and logo pack available on request.</p>`
+      : `<p class="note">Press photos and logo pack available on request.</p>`,
+    !SITE.email && `<p class="note">A booking and press address is on its way.</p>`
   ]
     .filter(Boolean)
     .join("");
+
+  const profiles = $("#press-profiles");
+  if (profiles) {
+    profiles.innerHTML = (SITE.socials || [])
+      .filter((s) => isSet(s.url))
+      .map((s) => `<a class="btn ghost" href="${escapeHTML(s.url)}" target="_blank" rel="me noopener">${escapeHTML(s.name)}</a>`)
+      .join("");
+  }
 
   // Copy buttons put the bio text on the clipboard for promoters and press.
   document.querySelectorAll("[data-copy]").forEach((btn) => {
