@@ -12,7 +12,7 @@ window.MUSIC = {
     { name: "Deezer", url: "https://www.deezer.com/track/3605198432" },
     { name: "SoundCloud", url: "" },
     { name: "Bandcamp", url: "" },
-    { name: "YouTube", url: "" },
+    { name: "YouTube Music", url: "https://music.youtube.com/watch?v=EzVo6Mc8Yt0" },
     { name: "Beatport", url: "" }
   ]
 };
