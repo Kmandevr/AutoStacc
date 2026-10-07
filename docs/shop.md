@@ -1,6 +1,7 @@
 ---
 title: Shop
-updated: 2026-10-06
+summary: Products, how selling and checkout work, placeholder catalogue.
+updated: 2026-10-07
 ---
 
 # Shop

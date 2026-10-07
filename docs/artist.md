@@ -1,6 +1,7 @@
 ---
 title: Artist
-updated: 2026-10-06
+summary: Facts about Glitches & Stitches (bio, genre, releases, links). Placeholder until the owner confirms.
+updated: 2026-10-07
 ---
 
 # Glitches & Stitches
