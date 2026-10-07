@@ -19,3 +19,7 @@
 .news-item .body { margin-top: 12px; color: var(--text); }
 .news-item .body p { color: var(--text); margin: 0 0 10px; }
 .news-item .body a { display: inline-block; padding-block: 2px; }
+
+@media (max-width: 600px) {
+  .news-item { padding: 18px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+}

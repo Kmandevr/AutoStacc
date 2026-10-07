@@ -88,3 +88,20 @@
 .filters button:active { transform: scale(.95); }
 .filters button:hover { color: var(--green); border-color: var(--green); }
 .filters button.active { background: var(--green); color: var(--bg); border-color: var(--green); text-shadow: none; }
+
+/* ---------- phones: filters become one swipeable row, slimmer offset layer ---------- */
+@media (max-width: 600px) {
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -18px 22px;
+    padding: 2px 18px 6px;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 18px;
+    scrollbar-width: none;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters button { flex: none; scroll-snap-align: start; }
+  .card { box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .card-foot .btn { padding: 10px 14px; font-size: .85rem; }
+}
