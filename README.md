@@ -25,7 +25,7 @@ One file per feature in `css/` and `js/`; each page loads only the ones it uses.
 All content lives in `data/`. Edit these files; you don't need to touch the HTML.
 
 - `data/site.js`: artist name, site address, booking email, press kit link, social links, newsletter endpoint. Social links that are just a site's home page (like `https://instagram.com/`) stay hidden until you add the real profile.
-- `data/music.js`: the embedded player (paste the embed link from Spotify, SoundCloud, Deezer, Bandcamp, Apple Music or YouTube) and streaming links. It currently plays HAIL from Deezer.
+- `data/music.js`: the embedded player (paste the embed link from Spotify, SoundCloud, Deezer, Bandcamp, Apple Music or YouTube) and streaming links. It currently plays HAIL from YouTube (full track, every play counts as a view) and falls back to Deezer's player if YouTube can't play for a visitor.
 - `data/products.js`: items for sale
 - `data/news.js`: news posts (the newest is shown first automatically)
 - `data/shows.js`: tour dates (past dates are hidden automatically). Shows with a ticket link are also announced to Google.

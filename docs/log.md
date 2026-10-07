@@ -8,6 +8,7 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: The Listen player is now HAIL on YouTube (full track, counted views) via the YouTube player API, falling back to the Deezer player when YouTube can't play for a visitor. Streaming buttons are labelled "Stream HAIL on".
 - 2026-10-07: The process has a catchy short form from the owner: Tear. Stitch. Glitch. Cinch. Repeat. Used as the hero tagline, the five steps of "The loop", the terminal (`loop` plus one command per step) the press fact sheet and the link-preview image (`img/og.png`); recorded in `docs/identity.md`.
 - 2026-10-07: Added the YouTube Music link for HAIL (from the owner, verified) to the Listen buttons and the HAIL news post.
 - 2026-10-07: HAIL wired in (Deezer player, Apple Music and Deezer links, real news post replacing "Patchwork", hero line, fact sheet, Apple Music and Deezer artist profiles in the footer). Added opt-in browser-generated UI sound (`js/sound.js`) and easter eggs (`js/eggs.js`, `js/terminal.js`, `css/eggs.css`) on every page. `verify-site` now ignores console errors from embedded players.
