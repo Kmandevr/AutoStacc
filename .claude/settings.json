@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(graphify:*)",
+      "Bash(uv tool install graphifyy)"
+    ]
+  }
+}
