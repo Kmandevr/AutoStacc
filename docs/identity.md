@@ -21,7 +21,15 @@ Unfinished songs are raw material, not failures. A half-finished song can contai
 
 ## The loop
 
-The project is intentionally recursive:
+**Short form (the owner's chant):** Tear. Stitch. Glitch. Cinch. Repeat.
+
+- **Tear:** rip the best pieces out of old songs.
+- **Stitch:** sew the fragments together into something new.
+- **Glitch:** chop, corrupt and reinterpret them.
+- **Cinch:** pull it tight and lock it in; the track is finished and joins the catalog.
+- **Repeat:** the new track is a piece too; tear it up again (remix²).
+
+Use the short form in copy, titles and promotion. The full process it stands for is intentionally recursive:
 
 1. Create a song or musical idea.
 2. Finish it enough to become part of the Glitches & Stitches catalog.
