@@ -42,7 +42,8 @@ They answer different questions. Don't use both for the same one.
 
 Notes on Serena here:
 - Covers JavaScript, HTML and CSS: CSS selectors are symbols (`find_symbol ".card"` returns just that rule), HTML gives a structure outline with ids and classes. Markdown and data notes are not indexed.
-- Scripts are wrapped in an IIFE, so symbols appear as `<function>/productCard`. Searching by the bare name (`productCard`) works.
+- Scripts are wrapped in an IIFE, so symbols appear as `<function>/productCard`. `get_symbols_overview` on a script needs `depth: 2` (the default stops at the wrapper). Searching by the bare name (`productCard`) works.
+- Cross-file references work through `js/jsconfig.json` and `js/globals.d.ts` (editor-only). For a shared helper, ask for references to the exported property: `find_referencing_symbols` with `GS/<function>/escapeHTML[1]` in `js/util.js` lists every script that uses it (`[0]` is the local constant).
 - Graphify's graph is code-only (no API key): JS functions and Markdown headings. HTML and CSS are Serena's job. Use keywords in `graph.sh query`, not sentences.
 - The project's memory stays in `docs/`; Serena's own memory and onboarding tools are disabled to avoid a second source of truth.
 - `.mcp.json` is a project-scoped MCP server. Claude Code asks for approval the first time unless `enabledMcpjsonServers` in `settings.json` already covers it (it does).

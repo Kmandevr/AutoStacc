@@ -8,6 +8,7 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: Branch cleanup: merged `ccr-9560f71b-ivcspt` (Serena type config) and kept its editor-only files out of deploys; deleted `ccr-933cb98c-ky2szz` (already merged), `test/issue-workflow` (temporary test file) and `claude/cloudflare-agent-setup-ikz86q` (Workers hosting config, superseded by the live Cloudflare Pages setup).
 - 2026-10-07: Reworked the look so stitching is felt, not drawn: removed dashed borders and stitch marks, added stepped panel edges, misregistered cards and news items, glitch "zaps", glitch-slice page transitions with a persistent header, wall-clock ambient motion and a cross-fading shop filter. `verify-site` now waits for the filter transition.
 - 2026-10-07: Added `docs/identity.md` from the owner's description and linked it from `CLAUDE.md`, artist, brand and index. Home page: new tagline, About copy rewritten to the method, a stitched-together monogram, and a "The loop" section with the seven-step process on a stitched seam.
 - 2026-10-07: `autostacc.com` is live on Cloudflare Pages with HTTPS; `/` redirects to `/home`. Owner is adding a Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`.
@@ -16,6 +17,7 @@ Newest first.
 - 2026-10-07: Retheme to an old-terminal look (black, phosphor green, neon purple, VT323 headings, CRT scanlines, blinking cursor). First deploy to `autostacc.pages.dev` succeeded after the API token was given Pages Edit permission.
 - 2026-10-07: Added `.github/workflows/deploy.yml` to deploy to Cloudflare Pages from GitHub Actions, since the Cloudflare GitHub connection wouldn't complete. Needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo secrets.
 - 2026-10-07: Chose Cloudflare Pages for hosting with Cloudflare-managed HTTPS (see decisions). Added deploy steps to the README.
+- 2026-10-07: Made Serena useful for JS: `js/jsconfig.json` and `js/globals.d.ts` (editor-only) plus `const GS` in `util.js` let it follow `window.GS` helpers across files; documented `depth: 2` for script overviews. `tree.sh` reads purposes from `.ts` and `.json` files.
 - 2026-10-07: Fixed #14, #21, #22 and #23: footer links are 24px+ tall, `hue: 0` renders red, a shared cyan `:focus-visible` ring with `aria-pressed` on the shop filters, and reduced motion now also stops card/button motion and smooth scrolling.
 - 2026-10-07: Owner approved all Serena tools (`mcp__serena` in `.claude/settings.json`) and set up the GitHub Project board. Closed #12 and #13.
 - 2026-10-07: Cleanup pass: Serena now covers JS, HTML and CSS and has `remind`/`cleanup` hooks; Serena installs at session start; `graph.sh` only rebuilds when files change; merged seven overlapping tooling entries in `decisions.md` into one; trimmed the README layout list.
