@@ -1,0 +1,7 @@
+/* Not-found page. Used by 404.html. */
+
+.error { min-height: calc(100vh - 64px - 140px); display: grid; align-items: center; }
+.err-code { color: var(--purple); text-shadow: var(--glow-purple); margin: 0 0 18px; }
+.error h1 { font-size: clamp(3rem, 12vw, 7rem); margin: 0 0 18px; }
+.error p { max-width: 560px; }
+.error-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }

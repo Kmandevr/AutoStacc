@@ -8,7 +8,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=VT323&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="img/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://autostacc.com/home">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Glitches &amp; Stitches">
+  <meta property="og:title" content="Glitches &amp; Stitches">
+  <meta property="og:description" content="Glitches &amp; Stitches: electronic music made from broken pieces, stitched together and glitched into something new. Music, shows, news and downloads.">
+  <meta property="og:url" content="https://autostacc.com/home">
+  <meta property="og:image" content="https://autostacc.com/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Glitches &amp; Stitches in green pixel type on a black terminal screen">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/shop.css">
@@ -18,14 +32,24 @@
 <body data-page="home">
   <header id="site-header"></header>
 
-  <main>
+  <main id="main">
     <section class="hero">
       <div class="wrap">
         <h1 class="glitch" data-text="GLITCHES &amp; STITCHES">GLITCHES &amp; STITCHES</h1>
         <p class="cursor" data-type="450">Broken pieces. Stitched. Glitched. Reused.</p>
         <div class="actions">
-          <a class="btn" href="shop.html">Shop downloads</a>
-          <a class="btn ghost" href="#shows">Tour dates</a>
+          <a class="btn" href="#listen">Listen</a>
+          <a class="btn ghost" href="shop.html">Shop downloads</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="listen">
+      <div class="wrap">
+        <div class="section-head"><h2>Listen</h2></div>
+        <div class="listen">
+          <div id="listen-player"></div>
+          <div class="platforms" id="listen-platforms"></div>
         </div>
       </div>
     </section>
@@ -95,8 +119,8 @@
 
     <section class="newsletter" id="newsletter">
       <div class="wrap">
-        <div class="section-head" style="justify-content:center"><h2>Stay in the loop</h2></div>
-        <p>New releases, presales and free downloads, straight to your inbox. No spam.</p>
+        <div class="section-head"><h2>Stay in the loop</h2></div>
+        <p>New releases, presales and free downloads, straight to your inbox. No spam, unsubscribe any time.</p>
         <form id="newsletter-form">
           <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
           <button class="btn" type="submit">Sign up</button>
@@ -109,11 +133,13 @@
   <footer id="site-footer"></footer>
 
   <script src="data/site.js"></script>
+  <script src="data/music.js"></script>
   <script src="data/products.js"></script>
   <script src="data/news.js"></script>
   <script src="data/shows.js"></script>
   <script src="js/util.js"></script>
   <script src="js/layout.js"></script>
+  <script src="js/music.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/news.js"></script>
   <script src="js/shows.js"></script>

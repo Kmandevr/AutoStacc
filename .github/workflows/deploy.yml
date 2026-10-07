@@ -24,7 +24,8 @@ jobs:
           mkdir dist
           cp *.html dist/
           cp -r css js data dist/
-          cp _redirects dist/
+          cp -r img dist/
+          cp _redirects robots.txt sitemap.xml dist/
           # dotfiles and editor-only type config (js/jsconfig.json, js/globals.d.ts) stay out of the public site
           find dist \( -name .purpose -o -name '*.d.ts' -o -name jsconfig.json \) -delete
       - name: Create the Pages project if it doesn't exist

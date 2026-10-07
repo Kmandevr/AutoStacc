@@ -17,6 +17,29 @@ const GS = (function () {
   const fmtDate = (s, opts = { month: "short", day: "numeric", year: "numeric" }) =>
     parseDate(s).toLocaleDateString("en-US", opts);
 
-  return { $, escapeHTML, money, parseDate, fmtDate };
+  // A link counts as set unless it is empty, not a web address, or just a platform's own home page
+  // (the placeholders in data/). Profiles on their own subdomain, like name.bandcamp.com, count as set.
+  const PLATFORM_HOMES = ["soundcloud.com", "open.spotify.com", "spotify.com", "instagram.com", "tiktok.com", "youtube.com",
+    "bandcamp.com", "music.apple.com", "beatport.com", "facebook.com", "x.com", "twitter.com"];
+  const isSet = (url) => {
+    try {
+      const u = new URL(url);
+      if (!/^https?:$/.test(u.protocol)) return false;
+      const home = u.pathname.replace(/\/+$/, "") === "" && !u.search;
+      return !(home && PLATFORM_HOMES.includes(u.hostname.replace(/^www\./, "")));
+    } catch {
+      return false;
+    }
+  };
+
+  // Adds structured data (schema.org JSON-LD) for search engines.
+  const jsonLd = (data) => {
+    const tag = document.createElement("script");
+    tag.type = "application/ld+json";
+    tag.textContent = JSON.stringify(data);
+    document.head.append(tag);
+  };
+
+  return { $, escapeHTML, money, parseDate, fmtDate, isSet, jsonLd };
 })();
 window.GS = GS;

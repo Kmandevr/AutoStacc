@@ -1,9 +1,10 @@
-// Renders upcoming tour dates on the home page. Needs data/shows.js and js/util.js.
+// Renders upcoming tour dates on the home page, plus event structured data for shows with tickets. Needs data/site.js, data/shows.js and js/util.js.
 (function () {
   "use strict";
 
-  const { $, escapeHTML, parseDate, fmtDate } = window.GS;
+  const { $, escapeHTML, parseDate, fmtDate, isSet, jsonLd } = window.GS;
   const SHOWS = window.SHOWS || [];
+  const SITE = window.SITE || {};
 
   const el = $("#show-list");
   if (!el) return;
@@ -28,5 +29,24 @@
       </div>`
         )
         .join("")
-    : `<p class="empty" style="padding:18px 0">No upcoming shows. Check back soon.</p>`;
+    : `<p class="empty shows-empty">No upcoming shows. Check back soon.</p>`;
+
+  // Search engines can list shows under the artist. Only shows with a ticket link are announced,
+  // so unconfirmed dates never reach Google.
+  const ticketed = upcoming.filter((s) => isSet(s.ticketUrl));
+  if (ticketed.length) {
+    jsonLd(
+      ticketed.map((s) => ({
+        "@context": "https://schema.org",
+        "@type": "MusicEvent",
+        name: `${SITE.artist} live in ${s.city}`,
+        startDate: s.date,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        location: { "@type": "Place", name: s.venue, address: s.city },
+        performer: { "@type": "MusicGroup", name: SITE.artist, url: SITE.url },
+        offers: { "@type": "Offer", url: s.ticketUrl }
+      }))
+    );
+  }
 })();
