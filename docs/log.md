@@ -8,6 +8,7 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: Made Serena useful for JS: `js/jsconfig.json` and `js/globals.d.ts` (editor-only) plus `const GS` in `util.js` let it follow `window.GS` helpers across files; documented `depth: 2` for script overviews. `tree.sh` reads purposes from `.ts` and `.json` files.
 - 2026-10-07: Fixed #14, #21, #22 and #23: footer links are 24px+ tall, `hue: 0` renders red, a shared cyan `:focus-visible` ring with `aria-pressed` on the shop filters, and reduced motion now also stops card/button motion and smooth scrolling.
 - 2026-10-07: Owner approved all Serena tools (`mcp__serena` in `.claude/settings.json`) and set up the GitHub Project board. Closed #12 and #13.
 - 2026-10-07: Cleanup pass: Serena now covers JS, HTML and CSS and has `remind`/`cleanup` hooks; Serena installs at session start; `graph.sh` only rebuilds when files change; merged seven overlapping tooling entries in `decisions.md` into one; trimmed the README layout list.
