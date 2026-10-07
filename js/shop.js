@@ -6,11 +6,13 @@
   const { $, escapeHTML, money } = window.GS;
   const PRODUCTS = window.PRODUCTS || [];
 
+  // The theme only has two colours, so the hue picks one: greens and blues glow green, the rest purple.
   function coverStyle(hue) {
-    const h2 = (hue + 60) % 360;
+    const tint = hue >= 90 && hue < 210 ? "51 255 102" : "191 95 255";
     return `background:
-      linear-gradient(135deg, hsl(${hue} 90% 45% / .9), hsl(${h2} 90% 35% / .9)),
-      repeating-linear-gradient(90deg, #000 0 8px, #222 8px 16px);`;
+      radial-gradient(circle at 50% 40%, rgb(${tint} / .3), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px),
+      #000;`;
   }
 
   function productCard(p) {

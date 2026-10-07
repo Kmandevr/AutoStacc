@@ -9,9 +9,9 @@
   background: var(--bg-2);
 }
 .alt .news-item { background: var(--bg); }
-.news-item h3 { margin: 6px 0 8px; font-size: 1.3rem; }
+.news-item h3 { margin: 6px 0 8px; font-size: 1.15rem; }
 .news-item .meta { display: flex; gap: 14px; align-items: center; }
-.news-item time { font-family: var(--mono); color: var(--muted); font-size: .85rem; }
+.news-item time { color: var(--muted); font-size: .85rem; }
 .news-item p { margin: 0; color: var(--muted); }
 .news-item .body { margin-top: 12px; color: var(--text); }
 .news-item .body p { color: var(--text); margin: 0 0 10px; }
