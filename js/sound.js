@@ -2,13 +2,13 @@
 // Every note comes from one scale, so overlapping sounds stay in key, and each sound follows the timing of its animation.
 // Other scripts ask for a sound with: document.dispatchEvent(new CustomEvent("gs:sound", { detail: "zap" })),
 // or { detail: { name: "word", n: 2, el } } to pass a step number and the element (for left/right placement).
-// Needs js/layout.js to have drawn the header.
+// Needs js/layout.js to have drawn the header; the switch goes at the end of the nav (inside the menu on phones).
 (function () {
   "use strict";
 
-  const header = document.querySelector(".site-header .wrap");
+  const nav = document.querySelector(".site-header .nav");
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!header || !AudioCtx) return;
+  if (!nav || !AudioCtx) return;
 
   const KEY = "gs-sound";
   let on = false;
@@ -170,7 +170,7 @@
     if (ctx.state === "running") SOUNDS[d.name]({ x: d.x ?? panOf(d.el), n: d.n ?? 0 });
   }
 
-  // The switch, styled like a terminal flag. Placed before the phone menu button.
+  // The switch, styled like a terminal flag, at the end of the nav.
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "snd";
@@ -180,7 +180,7 @@
     btn.setAttribute("aria-pressed", String(on));
   };
   draw();
-  header.insertBefore(btn, header.querySelector(".nav-toggle"));
+  nav.append(btn);
   btn.addEventListener("click", () => {
     on = !on;
     try { localStorage.setItem(KEY, on ? "on" : "off"); } catch { /* not remembered */ }
