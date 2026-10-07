@@ -8,6 +8,9 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: Renamed `index.html` to `home.html` and added `_redirects` so the site's address goes to `/home`; the deploy now uploads `_redirects`. Tested with `wrangler pages dev`.
+- 2026-10-07: More dynamic motion: CRT power-on titles, typed hero tagline, scroll reveals and flicker-on section titles (`js/motion.js`, loaded on every page), burstier glitch, rolling refresh band, snappier hover and press states. Reduced motion turns it all off.
+- 2026-10-07: Retheme to an old-terminal look (black, phosphor green, neon purple, VT323 headings, CRT scanlines, blinking cursor). First deploy to `autostacc.pages.dev` succeeded after the API token was given Pages Edit permission.
 - 2026-10-07: Added `.github/workflows/deploy.yml` to deploy to Cloudflare Pages from GitHub Actions, since the Cloudflare GitHub connection wouldn't complete. Needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repo secrets.
 - 2026-10-07: Chose Cloudflare Pages for hosting with Cloudflare-managed HTTPS (see decisions). Added deploy steps to the README.
 - 2026-10-07: Fixed #14, #21, #22 and #23: footer links are 24px+ tall, `hue: 0` renders red, a shared cyan `:focus-visible` ring with `aria-pressed` on the shop filters, and reduced motion now also stops card/button motion and smooth scrolling.
