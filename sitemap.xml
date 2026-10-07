@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The site's pages for search engines. Add a line when a page is added. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://autostacc.com/home</loc></url>
+  <url><loc>https://autostacc.com/shop</loc></url>
+  <url><loc>https://autostacc.com/news</loc></url>
+  <url><loc>https://autostacc.com/press</loc></url>
+</urlset>

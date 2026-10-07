@@ -10,7 +10,7 @@ const root = process.cwd();
 const pages = process.argv.length > 2 ? process.argv.slice(2) : fs.readdirSync(root).filter((f) => f.endsWith(".html"));
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
-const DATA_GLOBALS = { SITE: "data/site.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js" };
+const DATA_GLOBALS = { SITE: "data/site.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js", MUSIC: "data/music.js" };
 
 // ---------- static checks: no browser needed ----------
 for (const f of ["js", "data"].flatMap((d) => fs.readdirSync(path.join(root, d)).filter((n) => n.endsWith(".js")).map((n) => `${d}/${n}`))) {
@@ -28,7 +28,7 @@ for (const page of pages) {
   for (const r of refs) if (!fs.existsSync(r)) add("FAIL", "broken-reference", `missing ${r}`, page);
   const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
   for (const s of scripts.filter((s) => s.startsWith("js/") && fs.existsSync(s))) {
-    const used = [...new Set([...fs.readFileSync(s, "utf8").matchAll(/window\.(SITE|PRODUCTS|NEWS|SHOWS)\b/g)].map((m) => m[1]))];
+    const used = [...new Set([...fs.readFileSync(s, "utf8").matchAll(/window\.(SITE|PRODUCTS|NEWS|SHOWS|MUSIC)\b/g)].map((m) => m[1]))];
     for (const g of used) if (!scripts.includes(DATA_GLOBALS[g])) add("FAIL", "missing-data-script", `${s} reads window.${g} but the page does not load ${DATA_GLOBALS[g]}`, page);
     if (!scripts.includes("js/util.js") && /window\.GS/.test(fs.readFileSync(s, "utf8"))) add("FAIL", "missing-util", `${s} needs js/util.js loaded first`, page);
   }

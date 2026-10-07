@@ -26,6 +26,37 @@
 /* keep the line's height while the tagline types itself out */
 .hero p[data-type] { min-height: 1.6em; }
 
+/* ---------- listen ---------- */
+.listen { display: grid; gap: 20px; }
+.player {
+  display: block;
+  width: 100%;
+  height: 352px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
+}
+.player.tall { height: auto; aspect-ratio: 16 / 9; }
+/* shown until a release is linked in data/music.js */
+.player-empty {
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  min-height: 200px;
+  padding: 24px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle, rgba(191,95,255,.18), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(51,255,102,.06) 0 1px, transparent 1px 5px),
+    var(--bg-2);
+  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
+  color: var(--green);
+  text-shadow: var(--glow);
+}
+.player-empty span:first-child { color: var(--purple); text-shadow: var(--glow-purple); }
+.platforms { display: flex; flex-wrap: wrap; gap: 12px; }
+
 /* ---------- shows ---------- */
 .shows { border-top: 1px solid var(--line); }
 .show {
@@ -36,6 +67,7 @@
   padding: 18px 0;
   border-bottom: 1px solid var(--line);
 }
+.shows-empty { padding: 18px 0; }
 .show time { color: var(--purple); font-weight: 700; text-shadow: var(--glow-purple); }
 .show .where strong { display: block; font-size: 1.1rem; }
 .show .where span { color: var(--muted); }
@@ -112,6 +144,7 @@
 
 /* ---------- newsletter ---------- */
 .newsletter { text-align: center; }
+.newsletter .section-head { justify-content: center; }
 .newsletter p { color: var(--muted); max-width: 520px; margin: 0 auto 24px; }
 .newsletter form {
   display: flex;
