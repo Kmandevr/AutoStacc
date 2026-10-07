@@ -6,7 +6,7 @@ updated: 2026-10-07
 
 # Shop
 
-Products are defined in `data/products.js`. Every field there is currently placeholder (see [status](status.md)).
+Products are defined in `data/products.js`. Every field there is currently placeholder (tracked in GitHub issues).
 
 ## How selling works
 

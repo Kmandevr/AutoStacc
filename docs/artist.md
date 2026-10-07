@@ -10,7 +10,7 @@ Only confirmed facts go here. Don't invent anything; ask the owner.
 
 ## Confirmed
 
-- EDM artist named "Glitches & Stitches" (spelling to be confirmed, see [status](status.md)).
+- EDM artist named "Glitches & Stitches" (spelling to be confirmed, tracked in GitHub issues).
 
 ## Unknown, to fill in
 
