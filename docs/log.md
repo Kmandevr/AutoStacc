@@ -8,6 +8,7 @@ updated: 2026-10-07
 
 Newest first.
 
+- 2026-10-07: Hardened `.gitignore`: secrets (`.env*`, `.dev.vars`, `*.pem`/`*.key`/`*.crt` and other key files), tool output (`node_modules/`, `.wrangler/`, `dist/`, test reports, logs), `.claude/settings.local.json` and OS clutter; `docs/.gitignore` also ignores Obsidian's `.trash/`. Checked that no tracked file is ignored and that no key or token was ever committed.
 - 2026-10-07: Branch cleanup: merged `ccr-9560f71b-ivcspt` (Serena type config) and kept its editor-only files out of deploys; deleted `ccr-933cb98c-ky2szz` (already merged), `test/issue-workflow` (temporary test file) and `claude/cloudflare-agent-setup-ikz86q` (Workers hosting config, superseded by the live Cloudflare Pages setup).
 - 2026-10-07: Reworked the look so stitching is felt, not drawn: removed dashed borders and stitch marks, added stepped panel edges, misregistered cards and news items, glitch "zaps", glitch-slice page transitions with a persistent header, wall-clock ambient motion and a cross-fading shop filter. `verify-site` now waits for the filter transition.
 - 2026-10-07: Added `docs/identity.md` from the owner's description and linked it from `CLAUDE.md`, artist, brand and index. Home page: new tagline, About copy rewritten to the method, a stitched-together monogram, and a "The loop" section with the seven-step process on a stitched seam.
