@@ -1,0 +1,53 @@
+name: Bug
+description: Something on the site is broken
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken? One or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Exact steps, starting from a page URL.
+      placeholder: "1. Open shop.html\n2. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Only what matters, e.g. page, browser, device or width, branch/commit.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Console errors, logs or screenshots, if useful.
+  - type: input
+    id: suspected-area
+    attributes:
+      label: Suspected area
+      description: Likely file or module, if known.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true for this to count as fixed.
+    validations:
+      required: true

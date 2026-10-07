@@ -4,11 +4,11 @@ Website for the EDM artist **Glitches & Stitches**. It sells digital items (samp
 
 ## Start of every session
 
-Read [docs/status.md](docs/status.md) for what's pending. The `docs/` folder is the project's memory and an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
+Tasks and bugs live in GitHub Issues: use the `github-workflow` skill to find, claim and finish work, and don't keep a task list anywhere else. The `docs/` folder holds permanent project knowledge and is an Obsidian vault; facts about the artist, brand and decisions live there, not in this file. Its notes list is [docs/index.md](docs/index.md).
 
 ## Rules
 
-- Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and add it to `docs/status.md`.
+- Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and open an issue for it.
 - Record decisions and new facts in `docs/` before ending a session (details in `.claude/rules/docs.md`).
 
 ## Site
@@ -41,4 +41,4 @@ Run the `verify-site` skill. Before calling a change ready, run `release-check`.
 
 ## Git
 
-Develop on the branch the session names. Don't open a pull request unless asked.
+Develop on the branch the session names. Don't open a pull request unless asked; when you do, put `Closes #N` in it.
