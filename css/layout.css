@@ -39,7 +39,7 @@
   font-size: 1.6rem;
 }
 .logo span { color: var(--purple); text-shadow: var(--glow-purple); }
-.nav { display: flex; gap: 24px; }
+.nav { display: flex; gap: 24px; margin-left: auto; }
 .nav a {
   color: var(--green-dim);
   font-weight: 500;
@@ -50,6 +50,22 @@
 .nav a:hover { background-size: 100% 1px; }
 .nav a:hover, .nav a.active { color: var(--green); text-shadow: var(--glow); }
 .nav a.active::before { content: "> "; color: var(--purple); }
+/* sound switch (js/sound.js), a terminal-style flag */
+.snd {
+  margin-left: 20px;
+  background: none;
+  border: 0;
+  padding: 8px 4px;
+  color: var(--green-dim);
+  font: inherit;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.snd[aria-pressed="true"] { color: var(--green); text-shadow: var(--glow); }
+.snd:hover { color: var(--green); }
+@media (max-width: 720px) {
+  .snd { margin: 0 12px 0 auto; }
+}
 .nav-toggle {
   display: none;
   background: none;

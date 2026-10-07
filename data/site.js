@@ -12,6 +12,8 @@ window.SITE = {
   newsletterAction: "",
   // Profile links. A bare site address (like "https://instagram.com/") counts as not set yet and is hidden.
   socials: [
+    { name: "Apple Music", url: "https://music.apple.com/us/artist/glitches-stiches/1847091236" },
+    { name: "Deezer", url: "https://www.deezer.com/artist/354234772" },
     { name: "SoundCloud", url: "https://soundcloud.com/" },
     { name: "Spotify", url: "https://open.spotify.com/" },
     { name: "Instagram", url: "https://instagram.com/" },
