@@ -8,11 +8,12 @@
 }
 .card {
   background: var(--bg-2);
-  border: 2px dashed var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
   transition: border-color .15s, box-shadow .2s var(--snap), transform .2s var(--snap);
 }
 .alt .card { background: var(--bg); }
@@ -21,12 +22,6 @@
 .card:hover .cover::after { animation: scan-drift .6s linear infinite; }
 .card:hover .cover span { animation: jitter .35s steps(1); }
 @keyframes scan-drift { to { transform: translateY(6px); } }
-@keyframes jitter {
-  0% { transform: translate(-3px, 1px) skewX(-6deg); }
-  30% { transform: translate(3px, -1px); }
-  60% { transform: translate(-1px, 0) skewX(4deg); }
-  100% { transform: none; }
-}
 @media (prefers-reduced-motion: reduce) {
   .card { transition: none; }
   .card:hover, .card:focus-within { transform: none; }
@@ -46,7 +41,7 @@
   font-size: 2rem;
   line-height: 1.1;
   text-shadow: 2px 0 var(--purple), var(--glow);
-  border-bottom: 2px dashed var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .cover::after {
   content: "";
