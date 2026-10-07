@@ -73,7 +73,7 @@
 
   const ERRORS = {
     INVALID_EMAIL_OR_PASSWORD: "That email and password don't match an account.",
-    EMAIL_NOT_VERIFIED: "Confirm your email first. We just sent a fresh link.",
+    EMAIL_NOT_VERIFIED: "Confirm your email first with the link we sent when you signed up. Lost it? Use \"Forgot your password?\": a reset confirms your email too.",
     PASSWORD_TOO_SHORT: "Use at least 10 characters.",
     INVALID_TOKEN: "That reset link has expired or was already used. Ask for a new one."
   };

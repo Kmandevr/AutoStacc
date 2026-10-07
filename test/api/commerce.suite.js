@@ -2,7 +2,7 @@
 // owned, unpublished, paused and free products can't be bought; the success page proves nothing.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { Client, unique } from "../support/client.js";
+import { Client, unique, sql } from "../support/client.js";
 import { newBuyer, mockBuy, stripeCheckout } from "../support/flows.js";
 
 export default (ctx) => describe("commerce", () => {
@@ -126,5 +126,16 @@ export default (ctx) => describe("commerce", () => {
     assert.equal((await c.post("/api/library/free", { productId: "dev-unpublished" })).status, 404);
     const lib = await c.get("/api/library");
     assert.deepEqual(lib.data.items.map((i) => i.productId), ["dev-free"]);
+  });
+
+  test("an old checkout key doesn't send anyone to an expired payment page", async () => {
+    const c = new Client(ctx.mock.url);
+    const body = { email: unique("stale-key"), items: [{ productId: "wallpapers" }] };
+    const headers = { "Idempotency-Key": "old-tab-" + Date.now() };
+    const first = await c.post("/api/checkout", body, { headers });
+    sql(ctx.mock.stateDir, `UPDATE orders SET created_at = '2000-01-01T00:00:00.000Z' WHERE id = '${first.data.orderId}'`);
+    const again = await c.post("/api/checkout", body, { headers });
+    assert.equal(again.status, 409);
+    assert.equal(again.data.error.code, "checkout_finished");
   });
 });

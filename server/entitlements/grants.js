@@ -19,6 +19,11 @@ export const revokeBySource = (db, sourceType, sourceId, reason) =>
   run(db, `UPDATE entitlements SET status = 'revoked', revoked_at = ?, revoke_reason = ?
            WHERE source_type = ? AND source_id = ? AND status = 'active'`, now(), reason, sourceType, sourceId);
 
+// Undo a revocation with a given reason (e.g. a chargeback that was won), leaving other revocations alone.
+export const restoreBySource = (db, sourceType, sourceId, reason) =>
+  run(db, `UPDATE entitlements SET status = 'active', revoked_at = NULL, revoke_reason = NULL
+           WHERE source_type = ? AND source_id = ? AND status = 'revoked' AND revoke_reason = ?`, sourceType, sourceId, reason);
+
 export const revokeById = (db, id, reason) =>
   run(db, "UPDATE entitlements SET status = 'revoked', revoked_at = ?, revoke_reason = ? WHERE id = ? AND status = 'active'", now(), reason, id);
 

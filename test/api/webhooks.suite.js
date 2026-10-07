@@ -144,4 +144,61 @@ export default (ctx) => describe("webhooks", () => {
     const session = ctx.stripe.fake.sessions.get(order.sessionId);
     assert.equal((await sendWebhook(c, sessionEvent("checkout.session.completed", session), WEBHOOK_SECRET)).data.outcome, "already paid");
   });
+
+  test("a refund that arrives before its payment still wins", async () => {
+    const { c, order } = await buyer("refund-first");
+    const session = ctx.stripe.fake.pay(order.sessionId);
+    const refund = { id: eventId(), object: "event", type: "charge.refunded", livemode: false, created: Math.floor(Date.now() / 1000),
+      data: { object: { id: "ch_y", object: "charge", payment_intent: session.payment_intent, amount: 999, amount_refunded: 999, refunded: true, currency: "usd" } } };
+    assert.equal((await sendWebhook(c, refund, WEBHOOK_SECRET)).data.outcome, "refund waiting for payment");
+    const paid = await sendWebhook(c, sessionEvent("checkout.session.completed", session), WEBHOOK_SECRET);
+    assert.match(paid.data.outcome, /refund/);
+    assert.equal(await status(c, order.orderId), "refunded");
+    assert.deepEqual(await owned(c), []);
+    // Reconciling later can't bring it back either.
+    assert.equal((await c.post(`/api/orders/${order.orderId}/reconcile`, {})).data.order.status, "refunded");
+    assert.deepEqual(await owned(c), []);
+  });
+
+  test("an event whose first attempt died half-way is processed on Stripe's retry", async () => {
+    const { c, order } = await buyer("crashed");
+    const session = ctx.stripe.fake.pay(order.sessionId);
+    const ev = sessionEvent("checkout.session.completed", session);
+    sql(ctx.stripe.stateDir, `INSERT INTO payment_events (id, provider, type, livemode, outcome, received_at) VALUES ('stripe:${ev.id}', 'stripe', 'checkout.session.completed', 0, 'processing', '2000-01-01T00:00:00.000Z')`);
+    assert.equal((await sendWebhook(c, ev, WEBHOOK_SECRET)).data.outcome, "paid");
+    assert.deepEqual(await owned(c), ["stems-patchwork"]);
+    // A fresh "processing" row (another delivery right now) is still a duplicate.
+    const ev2 = sessionEvent("checkout.session.completed", session);
+    sql(ctx.stripe.stateDir, `INSERT INTO payment_events (id, provider, type, livemode, outcome, received_at) VALUES ('stripe:${ev2.id}', 'stripe', 'x', 0, 'processing', '${new Date().toISOString()}')`);
+    assert.equal((await sendWebhook(c, ev2, WEBHOOK_SECRET)).data.outcome, "duplicate");
+  });
+
+  test("a receipt that failed to send goes out on the next paid event", async () => {
+    const { c, email, order } = await buyer("mail-retry");
+    await stripePay(ctx, c, order);
+    sql(ctx.stripe.stateDir, `UPDATE email_events SET status = 'failed' WHERE dedupe_key = 'purchase-confirmation:${order.orderId}'`);
+    const session = ctx.stripe.fake.sessions.get(order.sessionId);
+    await sendWebhook(c, sessionEvent("checkout.session.completed", session), WEBHOOK_SECRET);
+    const rows = sql(ctx.stripe.stateDir, `SELECT status FROM email_events WHERE dedupe_key = 'purchase-confirmation:${order.orderId}'`);
+    assert.equal(rows[0].status, "logged");
+    assert.ok((await outbox(ctx.stripe.url, email)).some((m) => m.kind === "purchase-confirmation" && /#key=/.test(m.body_text)));
+  });
+
+  test("a chargeback suspends access; winning it restores access", async () => {
+    const { c, order } = await buyer("dispute");
+    const { session } = await stripePay(ctx, c, order);
+    const dispute = (type, status) => ({ id: eventId(), object: "event", type, livemode: false, created: Math.floor(Date.now() / 1000),
+      data: { object: { id: "dp_1", object: "dispute", payment_intent: session.payment_intent, status } } });
+    assert.match((await sendWebhook(c, dispute("charge.dispute.created", "needs_response"), WEBHOOK_SECRET)).data.outcome, /suspended/);
+    assert.deepEqual(await owned(c), []);
+    assert.match((await sendWebhook(c, dispute("charge.dispute.closed", "won"), WEBHOOK_SECRET)).data.outcome, /restored/);
+    assert.deepEqual(await owned(c), ["stems-patchwork"]);
+  });
+
+  test("a refused paid event alerts the owner", async () => {
+    const { c, order } = await buyer("alert");
+    await stripePay(ctx, c, order, { overrides: { amount_total: 5 } });
+    const mails = await outbox(ctx.stripe.url, "admin@autostacc.test");
+    assert.ok(mails.some((m) => m.kind === "payment-rejected" && m.body_text.includes("amount mismatch")));
+  });
 });

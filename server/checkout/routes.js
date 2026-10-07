@@ -25,7 +25,9 @@ async function checkout(app) {
   const idemKey = rawKey ? await sha256(`${user ? user.id : email}:${str(rawKey, "Idempotency-Key", { max: 100 })}`) : null;
   if (idemKey) {
     const prior = await getOrderByIdempotencyKey(db, idemKey);
-    if (prior && prior.status === "pending" && prior.checkout_url) return json({ orderId: prior.id, url: prior.checkout_url, reused: true });
+    // Reused only while its payment page is still open (it expires after checkoutTtlMinutes).
+    const fresh = prior && Date.now() - Date.parse(prior.created_at) < (config.checkoutTtlMinutes - 5) * 60000;
+    if (prior && prior.status === "pending" && prior.checkout_url && fresh) return json({ orderId: prior.id, url: prior.checkout_url, reused: true });
     if (prior) fail(409, "checkout_finished", "That checkout already finished. Refresh the cart.", { orderId: prior.id, status: prior.status });
   }
 

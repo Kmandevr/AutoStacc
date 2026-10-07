@@ -131,4 +131,27 @@ export default (ctx) => describe("auth", () => {
     assert.equal((await c.get("/api/admin/summary")).status, 404);
     assert.equal(sql(ctx.mock.stateDir, `SELECT role FROM "user" WHERE email = '${email}'`)[0].role, "customer");
   });
+
+  test("a pre-registered account can't be used to take a buyer's purchases", async () => {
+    const victim = unique("prereg-victim");
+    await mockBuy(new Client(ctx.mock.url), [{ productId: "vj-loops" }], { email: victim });
+    const attacker = new Client(ctx.mock.url);
+    await attacker.post("/api/auth/sign-up/email", { email: victim, password: "attacker-pass-123", name: "M" });
+    const verifyMails = async () => (await outbox(ctx.mock.url, victim)).filter((m) => m.kind === "verify-email").length;
+    assert.equal(await verifyMails(), 1);
+    // The attacker can't make the site keep mailing the victim confirmation links.
+    await attacker.post("/api/auth/sign-in/email", { email: victim, password: "attacker-pass-123" });
+    assert.equal((await attacker.post("/api/auth/send-verification-email", { email: victim })).status, 404);
+    assert.equal(await verifyMails(), 1);
+    // The real owner resets the password: that proves the inbox, verifies the account and adopts the purchase.
+    const owner = new Client(ctx.mock.url);
+    await owner.post("/api/auth/request-password-reset", { email: victim, redirectTo: "/login" });
+    const link = linkIn((await outbox(ctx.mock.url, victim)).find((m) => m.kind === "reset-password"));
+    const token = new URL((await owner.get(new URL(link).pathname + new URL(link).search)).headers.get("location"), ctx.mock.url).searchParams.get("token");
+    assert.equal((await owner.post("/api/auth/reset-password", { token, newPassword: "owner-pass-456" })).status, 200);
+    assert.equal((await owner.post("/api/auth/sign-in/email", { email: victim, password: "owner-pass-456" })).status, 200);
+    assert.deepEqual((await owner.get("/api/library")).data.items.map((i) => i.productId), ["vj-loops"]);
+    assert.equal((await new Client(ctx.mock.url).post("/api/auth/sign-in/email", { email: victim, password: "attacker-pass-123" })).status, 401);
+    assert.ok((await outbox(ctx.mock.url, victim)).some((m) => m.kind === "purchases-linked"));
+  });
 });
