@@ -36,4 +36,4 @@ Issues are the work items, PRs the implementation (`Closes #N`), `docs/` only pe
 
 ## 2026-10-07: Hosted on Cloudflare Pages, HTTPS from Cloudflare
 
-The domain is on Cloudflare, so the site deploys from this repo with Cloudflare Pages (no build command, output folder `/`). Cloudflare issues and renews the HTTPS certificate for the custom domain itself. Cloudflare Origin Certificates are not used: there is no origin server to install one on, and their private keys never go in this repo.
+The domain, `autostacc.com`, is on Cloudflare, so the site deploys from this repo with Cloudflare Pages (no build command, output folder `/`). Cloudflare issues and renews the HTTPS certificate for the custom domain itself. Cloudflare Origin Certificates are not used: there is no origin server to install one on, and their private keys never go in this repo.
