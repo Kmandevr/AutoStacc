@@ -1,11 +1,11 @@
 export const meta = {
-  name: 'site-change',
-  description: 'Plan, implement, verify and document a change to the AutoStacc site, reading only the files each step needs',
-  whenToUse: 'A site change that touches more than one area (data, pages, scripts, styles). Pass args: { task: "what to change" }. Small one-file edits do not need it.',
+  name: 'change',
+  description: 'Plan, build in parallel, verify and document a change to the project, reading only the files each step needs',
+  whenToUse: 'A change that touches more than one area of the project. Pass args: { task: "what to change" }. Small one-file edits do not need it. Project-specific rules and checks come from CLAUDE.md and .claude/rules/, not from this file.',
   phases: [
     { title: 'Plan', detail: 'one agent maps the task to files using the repo map and Graphify' },
     { title: 'Build', detail: 'one agent per independent work item, disjoint files' },
-    { title: 'Verify', detail: 'headless browser check and an adversarial diff review in parallel' },
+    { title: 'Verify', detail: 'the project checks and an adversarial diff review in parallel' },
     { title: 'Docs', detail: 'update status, log and decisions' },
   ],
 }
@@ -14,9 +14,8 @@ const task = typeof args === 'string' ? args : args && args.task
 if (!task) throw new Error('Pass args: { task: "what to change" }')
 
 const READ_RULE =
-  'Read in layers (see CLAUDE.md): start from the repo map (run .claude/hooks/tree.sh), use `graphify query/explain/affected` for questions, ' +
-  'and open only files that are named. Use Grep or Read with offset/limit instead of whole files when you can. Never invent facts about the artist: ' +
-  'use docs/ or mark it placeholder and note it for docs/status.md. Keep the site static, no build step, no modules.'
+  'Read in layers (CLAUDE.md): start from the repo map (.claude/tools/tree.sh), use .claude/tools/graph.sh for questions, ' +
+  'and open only files that are named; use Grep or Read with offset/limit instead of whole files. Follow the rules in CLAUDE.md and .claude/rules/.'
 
 const PLAN = {
   type: 'object',
@@ -98,18 +97,16 @@ const verify = () =>
   parallel([
     () =>
       agent(
-        'Verify the site in a headless browser. Serve the repo root with `python3 -m http.server 8000` in the background, ' +
-          'load index.html, shop.html and news.html at 1280px and 390px wide using Playwright with executablePath /opt/pw-browsers/chromium, ' +
-          'and check: no console errors, no horizontal overflow, header and footer render, and the shop filter changes the card count. ' +
-          'Stop the server afterwards. Report pass=false with each problem if anything fails.',
-        { phase: 'Verify', label: 'verify:browser', schema: CHECK }
+        'Run the checks described under "Checking changes" in CLAUDE.md and report pass=false with each problem if anything fails. ' +
+          'Clean up anything you start (servers, temp files).',
+        { phase: 'Verify', label: 'verify:checks', schema: CHECK }
       ),
     () =>
       agent(
         `Review \`git diff\` and untracked files against this task: ${task}\n` +
-          'Try to REFUTE that the change is correct and safe. Look for: invented facts about the artist, a build step or framework, ' +
+          'Try to REFUTE that the change is correct and safe. Look for: breaking a rule in CLAUDE.md or .claude/rules/, ' +
           'edits outside the planned files (' + changed.join(', ') + '), a page missing a script or stylesheet it now needs, broken links, ' +
-          'a new file without a one-line purpose comment. Default to pass=false if you are unsure.',
+          'a new file without the one-line purpose the repo map needs. Default to pass=false if you are unsure.',
         { phase: 'Verify', label: 'verify:review', schema: CHECK }
       ),
   ])
@@ -131,7 +128,7 @@ phase('Docs')
 if (!problems.length) {
   await agent(
     `The task "${task}" is done and verified (changed: ${changed.join(', ')}). Update docs/: add a dated line to docs/log.md, ` +
-      `tick or add items in docs/status.md (including any owner-only facts: ${(plan.openQuestions || []).join('; ') || 'none'}), ` +
+      `tick or add items in docs/status.md (including any facts only the owner can supply: ${(plan.openQuestions || []).join('; ') || 'none'}), ` +
       `and add docs/decisions.md only if a real decision was made. Bump \`updated:\` on notes you touch. Do not commit.`,
     { phase: 'Docs', label: 'docs' }
   )
