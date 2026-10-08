@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
 
 const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/about"];
-const GATED = ["/dashboard", "/account", "/settings"];
+const GATED = ["/dashboard", "/account", "/settings", "/studio"];
 const goesToLogin = (r, next) => {
   assert.equal(r.status, 302);
   assert.equal(r.headers.get("location"), `/login?next=${encodeURIComponent(next)}`);
