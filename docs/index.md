@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # AutoStacc vault
@@ -14,6 +14,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Architecture](architecture.md): AutoStacc as a platform: projects, Stacclets, Pacs, assets, Your Stacc, Auto-Stacc, polls, relationships
 - [AutoStacc](autostacc.md): the platform's identity and Stacc vocabulary
 - [Projects](projects.md): the project data contract and how to add a project
+- [Creators and the Studio](creators.md): creators own projects, `/<creator>/<project>` addresses, free no-code creator sites and how they stay safe and cheap, seller and fee per order line, file lifecycle, quotas
 - [Your Stacc](library.md): the content-level library, selected downloads, follows and Auto-Stacc
 - [Identity](identity.md): the Glitches & Stitches project's concept, the loop, sound, visuals and personality (owner-written; follow it for anything creative)
 - [Artist](artist.md): confirmed facts and what is still unknown

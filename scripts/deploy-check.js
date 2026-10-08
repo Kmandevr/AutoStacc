@@ -20,9 +20,10 @@ async function check(path, test) {
 }
 
 (async () => {
-  for (const p of ["/", "/shop", "/about", "/projects", "/projects/glitches-and-stitches", "/projects/glitches-and-stitches/music", "/sitemap.xml", "/cart", "/library"]) await check(p, (r) => (r.status === 200 ? null : `status ${r.status}`));
-  // Old addresses from before projects moved under /projects/ still lead to their pages.
-  await check("/music/hail", (r) => (r.status === 301 && /\/projects\/glitches-and-stitches\/music\/hail$/.test(r.headers.get("location") || "") ? null : `expected a 301 to the project page, got ${r.status} ${r.headers.get("location")}`));
+  for (const p of ["/", "/shop", "/about", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/sitemap.xml", "/cart", "/library"]) await check(p, (r) => (r.status === 200 ? null : `status ${r.status}`));
+  // Old addresses (from before the project moved under /projects/, then into its creator's space) lead straight there.
+  for (const old of ["/music/hail", "/projects/glitches-and-stitches/music/hail"])
+    await check(old, (r) => (r.status === 301 && /^(https:\/\/[^/]+)?\/autostacc\/glitches-and-stitches\/music\/hail$/.test(r.headers.get("location") || "") ? null : `expected a 301 to the project page, got ${r.status} ${r.headers.get("location")}`));
   if (store) {
     await check("/api/account", async (r) => (r.status === 200 ? null : `status ${r.status} ${(await r.text()).slice(0, 120)}`));
     await check("/api/products", async (r) => (r.status === 200 && Array.isArray((await r.json()).products) ? null : `status ${r.status}`));

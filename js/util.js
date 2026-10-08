@@ -117,8 +117,13 @@ const GS = (function () {
     } catch {}
   };
 
-  // A project's pages live under /projects/<id>: projectPath("x", "music", "hail") -> "/projects/x/music/hail".
-  const projectPath = (id, ...rest) => ["/projects", id, ...rest].filter((x) => x !== "" && x !== undefined).join("/");
+  // A project's pages live in its creator's space (data/projects.js `creator`): /<creator>/<id>, so
+  // projectPath("x", "music", "hail") -> "/<creator of x>/x/music/hail". The same rule as scripts/lib/data.js projectPath.
+  const projectPath = (id, ...rest) => {
+    const p = (window.PROJECTS || []).find((x) => x.id === id) || {};
+    const base = p.creator ? [p.creator, id] : ["projects", id];
+    return "/" + [...base, ...rest].filter((x) => x !== "" && x !== undefined).join("/");
+  };
 
   // The project whose page this is (<body data-project>, an entry of data/projects.js), or {} on platform pages.
   const currentProject = () => (window.PROJECTS || []).find((p) => p.id === document.body.dataset.project) || {};

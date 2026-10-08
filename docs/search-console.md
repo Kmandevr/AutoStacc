@@ -13,7 +13,7 @@ The website side is done: clean addresses, canonical links, a sitemap, robots.tx
 Open each of these in a browser. They should all work:
 
 - https://autostacc.com/ shows AutoStacc's public home page (not a redirect to /home or to login)
-- https://autostacc.com/projects/glitches-and-stitches/music/hail shows the HAIL page, and the old https://autostacc.com/music/hail redirects there
+- https://autostacc.com/autostacc/glitches-and-stitches/music/hail shows the HAIL page, and the old https://autostacc.com/music/hail redirects there
 - https://autostacc.com/sitemap.xml shows a list of addresses
 - https://autostacc.com/robots.txt ends with `Sitemap: https://autostacc.com/sitemap.xml`
 - https://autostacc.com/this-does-not-exist shows the "Not found" page
@@ -52,7 +52,7 @@ Do the same (paste the address, Request indexing if needed) for:
 - https://autostacc.com/shop
 - https://autostacc.com/news
 
-When a new release or real product goes live, inspect its page (`/projects/glitches-and-stitches/music/<name>` or `/shop/<name>`) the same way. Google allows a limited number of requests per day; only request the pages that matter.
+When a new release or real product goes live, inspect its page (`/autostacc/glitches-and-stitches/music/<name>` or `/shop/<name>`) the same way. Google allows a limited number of requests per day; only request the pages that matter.
 
 ## 6. Watch indexing coverage (weekly for the first month, then monthly)
 
@@ -76,7 +76,7 @@ Optional, same idea for Bing (also powers DuckDuckGo and others): https://www.bi
 
 ## Profiles that should point back to the official page
 
-Search engines connect an artist to their official site when the site links to the profiles (done: footer, music and press pages, structured data) **and the profiles link back**. Add `https://autostacc.com/projects/glitches-and-stitches` (the artist's official page since 2026-10-08) wherever a profile has a website or links field. When a profile exists, put its address in the project's `socials` in `data/projects.js` (or send it to whoever updates the site).
+Search engines connect an artist to their official site when the site links to the profiles (done: footer, music and press pages, structured data) **and the profiles link back**. Add `https://autostacc.com/autostacc/glitches-and-stitches` (the artist's official page since 2026-10-08) wherever a profile has a website or links field. When a profile exists, put its address in the project's `socials` in `data/projects.js` (or send it to whoever updates the site).
 
 | Profile | Status | What to do |
 | --- | --- | --- |

@@ -5,7 +5,7 @@
 //   3. a payment must match the order's total and currency to the cent
 //   4. status moves are compare-and-set (server/orders/orders.js), so racing events can't double-apply
 import { first, run, now } from "../lib/db.js";
-import { getOrderBySession, getOrderByPayment, transition } from "../orders/orders.js";
+import { getOrderBySession, getOrderByPayment, transition, recordRefund } from "../orders/orders.js";
 import { fulfil, unfulfil, restore } from "../orders/fulfilment.js";
 import { sendEmail } from "../email/index.js";
 
@@ -78,7 +78,10 @@ async function apply(app, ev) {
         "SELECT outcome FROM payment_events WHERE provider = ? AND detail = ? AND outcome IN ('refund waiting for payment', 'dispute waiting for payment') LIMIT 1",
         ev.provider, ev.paymentId);
       if (parked) {
-        if (parked.outcome.startsWith("refund")) await transition(db, order.id, "refunded");
+        if (parked.outcome.startsWith("refund")) {
+          await transition(db, order.id, "refunded");
+          await recordRefund(db, order.id, order.total_cents, true);
+        }
         await unfulfil(app, order.id, parked.outcome.startsWith("refund") ? "refunded" : "disputed");
         await run(db, "UPDATE payment_events SET outcome = REPLACE(outcome, 'waiting for payment', 'applied'), order_id = ? WHERE provider = ? AND detail = ? AND outcome LIKE '%waiting for payment'",
           order.id, ev.provider, ev.paymentId);
@@ -95,6 +98,7 @@ async function apply(app, ev) {
       return { outcome: (await transition(db, order.id, "cancelled")) ? "cancelled" : `no change (${order.status})`, orderId: order.id };
     case "refunded": {
       const moved = await transition(db, order.id, "refunded");
+      if (moved || order.status === "refunded") await recordRefund(db, order.id, ev.amount ?? order.total_cents, true);
       if (moved || order.status === "refunded") await unfulfil(app, order.id, "refunded");
       return { outcome: moved ? "refunded" : `no change (${order.status})`, orderId: order.id };
     }
@@ -107,6 +111,7 @@ async function apply(app, ev) {
       return { outcome: "dispute won, access restored", orderId: order.id };
     case "partial_refund":
       // Access stays: a partial refund is a goodwill gesture. Revoke by hand in the admin if needed.
+      await recordRefund(db, order.id, ev.amount, false);
       return { outcome: "partial refund noted", orderId: order.id };
     default:
       return { outcome: "ignored", detail: ev.type };

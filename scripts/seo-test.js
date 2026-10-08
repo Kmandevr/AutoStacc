@@ -14,7 +14,7 @@ const data = loadData();
 const { SITE } = data;
 const ORIGIN = origin(SITE);
 const BRAND = SITE.name; // the site: every title ends "· AutoStacc"
-// A page under /projects/<id> belongs to that project and also names it ("... · Glitches & Stitches · AutoStacc").
+// A page under /<creator>/<project> belongs to that project and also names it ("... · Glitches & Stitches · AutoStacc").
 const projectOf = (p) => data.projects.find((x) => p && (p === projectPath(x.id) || p.startsWith(projectPath(x.id) + "/")));
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
 
@@ -30,14 +30,14 @@ try {
 // ---------- pages ----------
 const htmlUnder = (dir) => (exists(dir) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("projects")];
+const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
 const urlPath = (f) => (f === "index.html" ? "/" : "/" + f.replace(/\.html$/, ""));
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));
 const metaVal = (head, key) => tags(head, "meta").filter((m) => m.name === key || m.property === key).map((m) => m.content);
 const draftProducts = new Set(data.products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages (cart, login, library...) are private: noindex, out of the sitemap, blocked in robots.txt.
-const PRIVATE = /^\/(dashboard|account|settings|login|library|admin|checkout|cart|api|private)(\/|$)/;
+const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|api|private)(\/|$)/;
 const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f) || PRIVATE.test(urlPath(f));
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
@@ -121,7 +121,7 @@ const REQUIRED = {
   WebSite: ["name", "url"], Organization: ["name", "url"], MusicGroup: ["name", "url"], MusicAlbum: ["name", "url", "byArtist", "datePublished", "track"],
   MusicRecording: ["name"], Product: ["name", "description", "offers", "brand", "url"], Offer: ["price", "priceCurrency", "availability"],
   BlogPosting: ["headline", "datePublished", "author", "url"], BreadcrumbList: ["itemListElement"], ItemList: ["itemListElement"],
-  WebPage: ["url", "name"], CollectionPage: ["url", "name"], AboutPage: ["url", "name"], ItemPage: ["url", "name"], ListItem: ["position"]
+  WebPage: ["url", "name"], CollectionPage: ["url", "name"], AboutPage: ["url", "name"], ProfilePage: ["url", "name"], ItemPage: ["url", "name"], ListItem: ["position"]
 };
 const URL_KEYS = new Set(["url", "item", "@id", "image", "logo", "sameAs", "mainEntityOfPage", "availability", "albumReleaseType"]);
 function walk(node, f, typesSeen) {
@@ -166,7 +166,7 @@ for (const [f, p] of Object.entries(pages)) {
 const needs = (f, type, why) => pages[f] && !jsonTypes[f].has(type) && add("FAIL", "jsonld-missing", `${type} expected (${why})`, f);
 needs("index.html", "WebSite", "home page");
 needs("index.html", "Organization", "home page");
-for (const x of data.projects.filter((p) => !p.draft)) needs(`projects/${x.id}.html`, x.entity || "Organization", "project home page");
+for (const x of data.projects.filter((p) => !p.draft)) needs(`${projectPath(x.id).slice(1)}.html`, x.entity || "Organization", "project home page");
 for (const r of data.releases) needs(`${projectPath(r.project, "music", r.id).slice(1)}.html`, "MusicAlbum", "release page");
 for (const n of data.news) needs(`${projectPath(n.project, "news", n.id).slice(1)}.html`, "BlogPosting", "news post");
 for (const pr of data.products) {
@@ -176,7 +176,7 @@ for (const pr of data.products) {
 }
 for (const [f, p] of Object.entries(pages)) if (!p.noindex && f !== "index.html") needs(f, "BreadcrumbList", "every indexable page below home");
 for (const x of data.projects.filter((p) => !p.draft)) {
-  const home = pages[`projects/${x.id}.html`];
+  const home = pages[`${projectPath(x.id).slice(1)}.html`];
   if (home && !/"sameAs"/.test(home.html)) add("WARN", "same-as", `no official profiles in ${x.id} socials yet`, "data/projects.js");
 }
 

@@ -1,0 +1,32 @@
+/* The Studio (/studio, js/studio.js and js/studio-editor.js): the creator overview and the no-code site editor. */
+.studio .tag { font-size: .75rem; }
+.studio-projects { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 14px; }
+.studio-projects li { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.studio-projects details { flex-basis: 100%; }
+.studio-projects summary, .studio-creator summary { cursor: pointer; color: var(--muted); }
+.studio .btn.small { min-height: 36px; padding: 6px 12px; font-size: .85rem; }
+
+.studio-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 12px; }
+.studio-bar h2 { margin: 0 auto 0 0; font-size: clamp(1.4rem, 4vw, 2rem); }
+.studio-grid { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.studio-side h3, .studio-block h3 { margin: 0 0 10px; }
+.studio-side h3 + .field { margin-top: 0; }
+.studio-images { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.studio-images li { display: grid; grid-template-columns: 56px 1fr; gap: 4px 10px; align-items: center; font-size: .8rem; color: var(--muted); }
+.studio-images img { width: 56px; height: 56px; object-fit: cover; grid-row: span 2; }
+.studio-images button { justify-self: start; }
+.studio-upload { display: inline-flex; cursor: pointer; }
+.studio-main { display: grid; gap: 18px; min-width: 0; }
+.studio-main .panel + .panel { margin-top: 0; }
+.studio-block-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.studio-block-head h3 { margin: 0 auto 0 0; }
+.studio-item { padding: 12px; margin: 0 0 12px; border: 1px dashed var(--line); }
+.studio-checks { display: grid; gap: 8px; border: 1px solid var(--line); padding: 12px; }
+.studio-checks label { display: flex; gap: 8px; align-items: center; }
+.studio-add { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.studio-add select { min-height: 44px; padding: 8px 12px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); }
+.studio-status:empty { display: none; }
+
+@media (max-width: 860px) {
+  .studio-grid { grid-template-columns: 1fr; }
+}

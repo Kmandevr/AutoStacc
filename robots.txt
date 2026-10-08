@@ -8,6 +8,7 @@ Allow: /
 Disallow: /dashboard
 Disallow: /account
 Disallow: /settings
+Disallow: /studio
 Disallow: /login
 Disallow: /library
 Disallow: /admin

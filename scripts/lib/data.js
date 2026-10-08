@@ -7,7 +7,7 @@ const ROOT = path.resolve(__dirname, "../..");
 
 function loadData(root = ROOT) {
   const window = {};
-  for (const f of ["site", "projects", "stacclets", "pacs", "content-types", "music", "product-types", "products", "news", "shows", "polls", "relationships"]) {
+  for (const f of ["site", "creators", "projects", "stacclets", "pacs", "content-types", "music", "product-types", "products", "news", "shows", "polls", "relationships"]) {
     const file = path.join(root, "data", f + ".js");
     if (fs.existsSync(file)) vm.runInNewContext(fs.readFileSync(file, "utf8"), { window }, { filename: file });
   }
@@ -23,6 +23,7 @@ function loadData(root = ROOT) {
     news: (window.NEWS || []).filter((n) => !n.draft),
     shows: (window.SHOWS || []).filter((s) => !s.draft),
     // The platform layer (docs/architecture.md). Drafts are kept: products can be drafts that still need their links checked.
+    creators: window.CREATORS || [],
     projects: window.PROJECTS || [],
     stacclets: window.STACCLETS || [],
     pacs: window.PACS || [],
@@ -36,11 +37,20 @@ function loadData(root = ROOT) {
   };
 }
 
-// Where a project's pages live: /projects/<id>, /projects/<id>/music/<release>, ...
-const projectPath = (id, ...rest) => ["/projects", id, ...rest].filter((x) => x !== "" && x !== undefined).join("/");
+// Where a project's pages live: in its creator's space, /<creator>/<id>, then /music/<release>, /news/<post>, ...
+// The same rule as js/util.js. Reads data/projects.js once (every script works on this repo's data).
+let projectsCache;
+const projectPath = (id, ...rest) => {
+  projectsCache = projectsCache || loadData().projects;
+  const p = projectsCache.find((x) => x.id === id) || {};
+  const base = p.creator ? [p.creator, id] : ["projects", id];
+  return "/" + [...base, ...rest].filter((x) => x !== "" && x !== undefined).join("/");
+};
+// The repo path of a project's pages: its address without the leading slash (autostacc/glitches-and-stitches).
+const projectDir = (id) => projectPath(id).slice(1);
 
 // The site's address without a trailing slash, and absolute URLs built from it.
 const origin = (SITE) => String(SITE.url || "").replace(/\/+$/, "");
 const abs = (SITE, p) => (/^https?:\/\//.test(p) ? p : origin(SITE) + "/" + String(p).replace(/^\/+/, ""));
 
-module.exports = { ROOT, loadData, origin, abs, projectPath };
+module.exports = { ROOT, loadData, origin, abs, projectPath, projectDir };

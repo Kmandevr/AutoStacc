@@ -11,6 +11,7 @@ import { ownedProductIds } from "../entitlements/grants.js";
 import { createOrder, attachCheckout, transition, findReusablePending, getOrderByIdempotencyKey } from "../orders/orders.js";
 import { newGuestKey, guestCookie, guestKeysFromRequest } from "../orders/guest.js";
 import { paymentProvider } from "../payments/index.js";
+import { attributeLines } from "../revenue/split.js";
 import { limit } from "../lib/ratelimit.js";
 
 const PROMO_PROBLEMS = {
@@ -50,8 +51,9 @@ async function checkout(app) {
   if (cart.promoProblem) fail(409, "promo_invalid", PROMO_PROBLEMS[cart.promoProblem] || "That code can't be used.", { promoProblem: cart.promoProblem, cart: publicCart });
   if (cart.totalCents <= 0) fail(409, "cart_changed", "Nothing in the cart costs money; claim free items from their page.");
 
-  const lines = cart.lines.map((l) => ({ productId: l.productId, title: l.title, unitPriceCents: l.unitPriceCents, quantity: l.quantity,
-    listPriceCents: l.listPriceCents, saleId: l.sale ? l.sale.id : null, discountCents: l.discountCents }));
+  // Each line knows who sold it and how its money splits (server/revenue/split.js), fixed now for the record.
+  const lines = await attributeLines(db, cart.lines.map((l) => ({ productId: l.productId, title: l.title, unitPriceCents: l.unitPriceCents, quantity: l.quantity,
+    listPriceCents: l.listPriceCents, saleId: l.sale ? l.sale.id : null, discountCents: l.discountCents })));
   // An admin's test purchase never picks up the customer's own pending order (or the other way round).
   const impersonationId = impersonationIdOf(app);
   const reusable = impersonationId ? null : await findReusablePending(db, user && user.id, lines, config.checkoutTtlMinutes - 5, cart.promotionId);
