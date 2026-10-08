@@ -1,9 +1,13 @@
 # Crawl rules: all public pages (and the CSS, JS and data they need to render) are open; private areas never are.
-# Account and store pages (also noindex) and the store API are never crawled. AI crawlers are welcome on the public
-# pages; /llms.txt summarizes the site for them.
+# Public: the home page, the store and its product pages, /projects and every project's pages, /about. Private: the
+# signed-in app (dashboard, account, settings, Your Stacc), login, cart, checkout, admin and the store API; they are
+# also noindex and the account pages are gated on the server (this file is a crawl hint, never a security boundary).
+# AI crawlers are welcome on the public pages; /llms.txt summarizes the site for them.
 User-agent: *
 Allow: /
+Disallow: /dashboard
 Disallow: /account
+Disallow: /settings
 Disallow: /login
 Disallow: /library
 Disallow: /admin

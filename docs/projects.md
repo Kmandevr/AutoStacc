@@ -18,7 +18,7 @@ A project is a creator on AutoStacc: it publishes releases, products, Stacclets 
 | `title`, `description` | its home page's search title and description |
 | `features` | platform features it uses: `releases`, `news`, `shows`, `store`, `polls`, `relationships` |
 | `pages` | its own pages, the nav of its own header (on its pages only): `[{ label, path }]`, path relative to `/projects/<id>` (`""` = home, `"music"`, `"#shows"`) |
-| `logoFull` | optional `{ src, width, height }` of its full logo: the heading of its project card (hub, `/projects`), which wears its look |
+| `logoFull` | optional `{ src, width, height }` of its full logo: the heading of its project card (home page, `/projects`, dashboard), which wears its look |
 | `wordmark` | optional lettering for its header logo (else its name); an `&` in it can be styled (`.ph-amp`) |
 | `skin` | `true`: its pages load `css/projects/<id>/skin.css` (its own look inside the AutoStacc frame) |
 | `sounds` | `true`: its pages load the UI sounds and easter eggs. Platform pages never play sounds |

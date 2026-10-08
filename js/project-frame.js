@@ -1,5 +1,6 @@
-// The frame on a project's pages: a thin AutoStacc strip (its logo to the hub, Store, Your Stacc, Projects, account,
-// cart and the slot js/theme.js fills), then the project's own header in its theme (its logo and wordmark to its home, its pages as nav, a menu button on phones and the
+// The frame on a project's pages: a thin AutoStacc strip (its logo to the home page, Store, Projects, and for a
+// signed-in visitor Dashboard, Your Stacc and Log out; Log in and Create account or Dashboard, cart and the slot
+// js/theme.js fills; js/account-nav.js shows the data-auth set that matches the visitor), then the project's own header in its theme (its logo and wordmark to its home, its pages as nav, a menu button on phones and the
 // slot js/sound.js fills) and its own footer with an AutoStacc line. The header and footer carry the project's skin
 // class, so each project styles them in its own look (css/projects/<id>/skin.css); without a skin they use
 // css/project-frame.css. <body data-project="<id>" data-project-page="music"> marks the project and page.
@@ -29,10 +30,14 @@
     <div class="as-strip">
       <a class="as-home" href="/">${MARK}<span>${e(SITE.name || "Home")}</span></a>
       <nav class="as-links" aria-label="${e(SITE.name || "Site")}">
-        <a href="/shop">Store</a><a href="/library">Your Stacc</a><a href="/projects">Projects</a>
+        <a href="/shop">Store</a><a href="/projects">Projects</a>
+        <a href="/library" data-auth="in" hidden>Your Stacc</a>
+        <button class="as-signout" type="button" data-auth="in" data-signout hidden>Log out</button>
       </nav>
       <div class="topbar-tools">
-        <a class="tool-link" href="/account">Account</a>
+        <a class="tool-link" href="/login" data-auth="out">Log in</a>
+        <a class="tool-link tool-cta" href="/login#signup" data-auth="out">Create account</a>
+        <a class="tool-link" href="/dashboard" data-auth="in" hidden>Dashboard</a>
         <a class="tool-link cart-link" href="/cart">Cart<span class="cart-count" aria-hidden="true"></span><span class="sr-only cart-count-sr"></span></a>
       </div>
     </div>

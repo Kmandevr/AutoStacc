@@ -3,6 +3,7 @@
     "allow": [
       "Bash(.claude/tools/graph.sh:*)",
       "Bash(.claude/tools/tree.sh:*)",
+      "Bash(.claude/skills/code-nav/check.sh)",
       "Bash(graphify:*)",
       "Bash(uv tool install graphifyy)",
       "mcp__serena",

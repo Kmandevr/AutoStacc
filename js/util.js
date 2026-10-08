@@ -97,6 +97,14 @@ const GS = (function () {
     count: () => cart.items().length
   };
 
+  // Where to go after logging in: a path on this site only (never //other.host, a full URL or javascript:), with no
+  // "." or ".." segments (%2e counts as a dot), and never the login page itself (a signed-in visitor would bounce);
+  // anything else gets the fallback.
+  const safeNext = (raw, fallback = "/dashboard") =>
+    /^\/(?!\/)[\w\-/?=&.%#]*$/.test(raw || "") && !/\/(?:\.|%2e){1,2}(?=[/?#]|$)/i.test(raw.split(/[?#]/)[0]) && !/^\/login(?:[/?#.]|$)/.test(raw) ? raw : fallback;
+  // The login page, returning to `next` afterwards; mode "signup" opens Create account.
+  const loginPath = (next, mode = "") => `/login?next=${encodeURIComponent(next)}${mode ? "#" + mode : ""}`;
+
   // Privacy-friendly analytics: an event name and a product/release id, counted per day on the server. Skipped when
   // the browser asks not to be tracked. Never blocks or breaks the page.
   const track = (event, subject = "") => {
@@ -158,6 +166,6 @@ const GS = (function () {
   const quiet = (t) => t && [t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
   const viewSwap = (fn) => (document.startViewTransition ? quiet(document.startViewTransition(fn)) : fn());
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath, viewSwap };
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath, viewSwap };
 })();
 window.GS = GS;

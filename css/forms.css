@@ -1,4 +1,7 @@
-/* Store and account UI (cart, login, account, library, checkout, admin): terminal panels, fields, status messages. */
+/* Store and account UI (cart, login, account, settings, library, checkout, admin): terminal panels, fields, status messages. */
+
+/* a link in an account page's intro (account ↔ settings) stays a comfortable tap target */
+.platform .page-hero p a { display: inline-block; padding-block: 2px; }
 
 .panel {
   background: var(--panel);

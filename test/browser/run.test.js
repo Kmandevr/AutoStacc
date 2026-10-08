@@ -25,9 +25,15 @@ before(async () => {
 }, { timeout: 240000 });
 after(async () => { if (browser) await browser.close(); if (server) server.child.kill("SIGTERM"); });
 
-// A fresh browser profile; collects console errors (CSP violations show up here) and uncaught exceptions.
+// A fresh browser profile; collects console errors (CSP violations show up here) and uncaught exceptions. Each profile
+// is its own visitor with its own client IP (as in the API tests), so the store's per-IP rate limits on sign-up and
+// login don't make one test fail because of the others. Only requests to the local store carry it.
+let visitors = 0;
 async function open(device = PHONE) {
   const ctx = await browser.newContext({ ...device, baseURL: base });
+  const n = ++visitors;
+  await ctx.route((url) => url.href.startsWith(base), (route) =>
+    route.continue({ headers: { ...route.request().headers(), "cf-connecting-ip": `10.250.${(n >> 8) & 255}.${n & 255}` } }));
   const page = await ctx.newPage();
   page.errors = [];
   page.on("pageerror", (e) => page.errors.push(e.message));
@@ -61,7 +67,7 @@ async function signUp(page, email, password = "browser-pass-123") {
   await page.waitForSelector("text=Check");
   const mail = (await outbox(base, email)).find((m) => m.kind === "verify-email");
   await page.goto(new URL(linkIn(mail)).pathname + new URL(linkIn(mail)).search);
-  await page.waitForURL(/\/library/);
+  await page.waitForURL((u) => u.pathname === "/dashboard");
 }
 
 describe("store in the browser", () => {
@@ -196,6 +202,7 @@ describe("store in the browser", () => {
   test("Your Stacc on a phone: follow with Auto-Stacc, browse both views, download a selection", async () => {
     const { ctx, page } = await open(PHONE);
     await signUp(page, unique("stacc"));
+    await page.goto("/library");
     await page.waitForSelector("text=Nothing owned yet.");
     await page.goto("/projects");
     await page.click("[data-follow='glitches-and-stitches']");
@@ -222,8 +229,10 @@ describe("store in the browser", () => {
     await page.goto("/library");
     await page.waitForSelector("text=Locked");
     await signUp(page, unique("empty"));
-    await page.waitForSelector("text=Nothing owned yet.");
     await page.waitForSelector("text=Email confirmed");
+    await page.waitForSelector("text=Nothing in your Stacc yet.");
+    await page.goto("/library");
+    await page.waitForSelector("text=Nothing owned yet.");
     await ctx.close();
   });
 
@@ -235,18 +244,19 @@ describe("store in the browser", () => {
     await page.waitForSelector("text=Orders");
     sql(stateDir, `UPDATE session SET expiresAt = '2000-01-01T00:00:00.000Z' WHERE userId = (SELECT id FROM "user" WHERE email = '${email}')`);
     await page.goto("/account");
-    await page.waitForURL(/\/login\?next=\/account/);
+    await page.waitForURL(/\/login\?next=%2Faccount$/);
     await ctx.close();
   });
 
-  test("account: rename, then log out", async () => {
+  test("settings: rename, then log out from the account page", async () => {
     const { ctx, page } = await open(PHONE);
     await signUp(page, unique("account"));
-    await page.goto("/account");
+    await page.goto("/settings");
     await page.fill("#name", "Renamed Human");
     await page.click("[data-form=profile] button[type=submit]");
     await page.waitForSelector("[data-form=profile] .msg:has-text('Saved.')");
-    await page.click("[data-signout]");
+    await page.goto("/account");
+    await page.click("#account-app [data-signout]");
     await page.waitForURL(base + "/");
     await page.goto("/library");
     await page.waitForSelector("text=Locked");
@@ -282,7 +292,7 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/projects/glitches-and-stitches/music");
     assert.equal(await page.locator(".side").count(), 0, "no AutoStacc sidebar inside a project");
-    assert.equal(await page.getAttribute(".as-home", "href"), "/", "the AutoStacc logo goes to the hub");
+    assert.equal(await page.getAttribute(".as-home", "href"), "/", "the AutoStacc logo goes to the home page");
     assert.equal(await page.getAttribute(".ph-logo", "href"), "/projects/glitches-and-stitches", "the project's logo goes to its home");
     assert.equal(await page.locator(".ph-logo .ph-mark").count(), 1);
     assert.equal(await page.locator(".ph-nav").isVisible(), false);
@@ -366,6 +376,89 @@ describe("store in the browser", () => {
     await page.evaluate(() => (document.querySelector("[data-waiting]").dataset.mark = "same"));
     await page.waitForTimeout(4000);
     assert.equal(await page.evaluate(() => document.querySelector("[data-waiting]") && document.querySelector("[data-waiting]").dataset.mark), "same");
+    await ctx.close();
+  });
+
+  test("anonymous: the home page is a public cover; the app sends you to log in, then back where you were going", async () => {
+    const { ctx, page } = await open(DESK);
+    const privateCalls = [];
+    page.on("request", (r) => { if (/\/api\/(library|orders|projects)/.test(r.url())) privateCalls.push(r.url()); });
+    await page.goto("/");
+    await page.waitForSelector("main >> text=Stacc it once.");
+    assert.ok(await page.locator("main a[href='/login#signup']").first().isVisible(), "Create account on the cover");
+    assert.ok(await page.locator(".topbar a[href='/login']").isVisible(), "Log in in the top bar");
+    assert.equal(await page.locator(".topbar [data-signout]").isVisible(), false, "no Log out for a stranger");
+    assert.equal(await page.locator(".side a[href='/dashboard']").isVisible(), false, "no app links for a stranger");
+    assert.ok(await page.locator("[data-shop] .card").count() > 0, "featured products from the catalog");
+    assert.deepEqual(privateCalls, [], "the cover asks nothing about the visitor's things");
+    for (const p of ["/dashboard", "/account", "/settings"]) {
+      await page.goto(p);
+      await page.waitForURL(new RegExp(`/login\\?next=${encodeURIComponent(p)}$`));
+      await page.waitForSelector("[data-form=signin]");
+    }
+    for (const p of ["/projects", "/shop", "/about"]) {
+      await page.goto(p);
+      assert.equal(new URL(page.url()).pathname, p, `${p} stays public`);
+    }
+    // An account, signed out, then back in through the gate: login returns to the page that asked.
+    const email = unique("gate");
+    await signUp(page, email);
+    await page.click(".topbar [data-signout]");
+    await page.waitForURL(base + "/");
+    await page.goto("/settings");
+    await page.waitForURL(/\/login\?next=%2Fsettings$/);
+    await page.fill("#email", email);
+    await page.fill("#password", "browser-pass-123");
+    await page.click("button[type=submit]");
+    await page.waitForURL(base + "/settings");
+    await page.waitForSelector("[data-form=profile]");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("signed in: the app's navigation, dashboard, account, settings and Your Stacc; log out returns to the public site", async () => {
+    const { ctx, page } = await open(DESK);
+    await signUp(page, unique("app"));
+    await page.waitForSelector("h1:has-text('Dashboard')");
+    await page.waitForSelector("[data-dashboard-stacc] >> text=Nothing in your Stacc yet.");
+    assert.ok(await page.locator(".side a[href='/dashboard'][aria-current=page]").isVisible(), "the app group in the sidebar");
+    assert.ok(await page.locator(".side a[href='/settings']").isVisible());
+    assert.equal(await page.locator(".topbar a[href='/login']").isVisible(), false, "no Log in once signed in");
+    assert.ok(await page.locator(".topbar [data-signout]").isVisible());
+    await page.goto("/");
+    assert.ok(await page.locator("main a[href='/dashboard']").first().isVisible(), "the cover offers the dashboard");
+    assert.equal(await page.locator("main a[href='/login#signup']").first().isVisible(), false);
+    for (const [p, ready] of [["/account", "text=Orders"], ["/settings", "[data-form=password]"], ["/library", "text=Nothing owned yet."]]) {
+      await page.goto(p);
+      await page.waitForSelector(ready);
+      assert.equal(new URL(page.url()).pathname, p);
+    }
+    await page.click(".topbar [data-signout]");
+    await page.waitForURL(base + "/");
+    await page.waitForSelector(".topbar a[href='/login']:visible");
+    await page.goto("/dashboard");
+    await page.waitForURL(/\/login\?next=%2Fdashboard$/);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("the signed-in pages fit a phone: no sideways scroll, no tiny buttons, no CSP errors", async () => {
+    const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });
+    await signUp(page, unique("app-phone"));
+    for (const p of ["/dashboard", "/account", "/settings", "/library", "/"]) {
+      await page.goto(p);
+      await page.waitForTimeout(700);
+      const facts = await page.evaluate(() => ({
+        overflow: document.documentElement.scrollWidth - innerWidth,
+        small: [...document.querySelectorAll("main a, main button, main input, .topbar a, .topbar button")].filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width && r.height && getComputedStyle(el).display !== "inline" && (r.height < 24 || r.width < 24);
+        }).map((el) => el.outerHTML.slice(0, 80))
+      }));
+      assert.ok(facts.overflow <= 0, `${p} overflows by ${facts.overflow}px`);
+      assert.deepEqual(facts.small, [], `${p} has small targets`);
+    }
+    assert.deepEqual(page.errors, []);
     await ctx.close();
   });
 

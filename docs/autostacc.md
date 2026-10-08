@@ -1,7 +1,7 @@
 ---
 title: AutoStacc
 summary: The platform's identity and vocabulary: what Auto and Stacc mean, Projects, Stacclets, Pacs, Your Stacc, and when to use plain words instead.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # AutoStacc: platform identity
@@ -40,7 +40,7 @@ Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) 
 
 ## Site structure
 
-`/` is the AutoStacc hub (a dashboard: Your Stacc at a glance, new releases, projects rack, how it works). Platform pages: `/shop`, `/library`, `/about`, `/projects`. Each project lives under `/projects/<id>` with its own pages (`/projects/glitches-and-stitches/music/hail`). On platform pages navigation is a sidebar in two groups, **AutoStacc** (Store, Your Stacc, About) and **Projects** (one link per project): on a computer an icon rail that expands (the choice is remembered), on phones a compact drawer. Account, cart and the theme switch sit top right. A project is its own mini-site: its pages have no sidebar, only a thin AutoStacc strip on top (home, Store, Your Stacc, Projects, theme, account, cart), then the project's own header in its own theme (its logo and wordmark linking to its home, its pages as nav, its tools such as the sound switch; a menu button on phones) and its own footer with a "Sold and delivered by AutoStacc" line (`js/project-frame.js`, `css/project-frame.css`, restyled by its skin). Its music, shows, news and press are reachable only inside it.
+`/` is AutoStacc's public cover (what it is, Create account / Log in / Browse the store, what it does, featured products, projects and new releases, how it works). Public platform pages: `/shop`, `/about`, `/projects`. The signed-in app: `/dashboard` (Your Stacc at a glance, new releases from followed projects, projects, account shortcuts), `/library` (Your Stacc), `/account` (orders), `/settings` (name, password). Each project lives under `/projects/<id>` with its own pages (`/projects/glitches-and-stitches/music/hail`). On platform pages navigation is a sidebar, **AutoStacc** (Home, Store, About), **Projects** (one link per project) and, signed in, **You** (Dashboard, Your Stacc, Account, Settings): on a computer an icon rail that expands (the choice is remembered), on phones a compact drawer. Top right: Log in and Create account (or Log out), cart and the theme switch. A project is its own mini-site: its pages have no sidebar, only a thin AutoStacc strip on top (home, Store, Projects; signed in also Your Stacc, Log out and Dashboard; signed out Log in and Create account; theme, cart), then the project's own header in its own theme (its logo and wordmark linking to its home, its pages as nav, its tools such as the sound switch; a menu button on phones) and its own footer with a "Sold and delivered by AutoStacc" line (`js/project-frame.js`, `css/project-frame.css`, restyled by its skin). Its music, shows, news and press are reachable only inside it.
 
 ## Visual identity (placeholder logo)
 

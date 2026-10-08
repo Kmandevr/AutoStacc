@@ -1,7 +1,7 @@
 ---
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Store
@@ -26,6 +26,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | --- | --- | --- |
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
 | `account/` | who is signed in | `GET /api/account` |
+| `pages/` | the server-side gate for the account pages | `/dashboard`, `/account`, `/settings` (Pages Functions in `functions/`) |
 | `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
@@ -42,7 +43,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
-Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
+Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, sign-out), `js/dashboard.js`, `js/account.js`, `js/settings.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
 
 ## Platform layer
 
@@ -68,6 +69,7 @@ Releases stay in `data/music.js` (title, slug/id, artwork, date, description, tr
 - Sign-up with an existing email answers exactly like a new sign-up and mails the owner of that email instead (no account enumeration); password reset answers the same for unknown emails.
 - Reset links last 1 hour, verification links 24 hours; a reset logs out every session. Sessions last 30 days.
 - Email changes are off (purchases are tied to the address). `role` is server-only.
+- The account pages (`/dashboard`, `/account`, `/settings`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` keeps its own check (the admin API answers 404). Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
 
 ## Cart and checkout
 
@@ -115,6 +117,7 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 - Unguessable ids everywhere (`ord_`, `ent_`, `pf_` + 128 random bits); guest and download keys are 256-bit or HMAC-signed; only hashes of guest keys are stored.
 - Same-origin check on every state-changing store request (plus Better Auth's own), SameSite=Lax httpOnly cookies, rate limits per client on auth (Better Auth) and store endpoints (`server/lib/ratelimit.js`).
 - Admin and unknown things answer 404; unpublished products look exactly like missing ones.
+- Signed-out visitors never receive the account pages (server gate above); public pages and their JSON-LD are static and carry nobody's data; `robots.txt` is a crawl hint, never the boundary.
 - Headers (`_headers`): no framing, no MIME sniffing, a restricted referrer and permissions on every page; a strict Content Security Policy (only this site's scripts and API) on account and store pages; API responses are `no-store` and `noindex`.
 - Test mode can't leak into production: separate databases and buckets per environment (`wrangler.toml`), mock orders are always `livemode 0`, and live/test mismatches between an event and its order are rejected.
 - Proven by tests that attack it: [development](development.md#tests).

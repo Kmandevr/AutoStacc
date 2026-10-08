@@ -110,7 +110,8 @@ body:has(> .site-frame) { padding-left: var(--side); }
   :root:not(.side-open) .side .side-text,
   :root:not(.side-open) .side-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   :root:not(.side-open) .side-nav a, :root:not(.side-open) .side-collapse, :root:not(.side-open) .brand { justify-content: center; padding-inline: 0; }
-  :root:not(.side-open) .side-nav ul + .side-label + ul { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  :root:not(.side-open) .side-nav ul + .side-label + ul,
+  :root:not(.side-open) .side-nav ul + div > .side-label + ul { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 }
 
 /* ---------- top bar ---------- */
@@ -151,6 +152,9 @@ body:has(> .site-frame) { padding-left: var(--side); }
 }
 .tool-link:hover, .theme-switch:hover, .snd:hover { border-color: var(--teal); color: var(--text); }
 .tool-link[aria-current] { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
+/* "Create account": the one filled tool, so a new visitor sees where to start (phones keep it on the login page) */
+.tool-cta { background: var(--btn-bg); border-color: var(--btn-bg); color: var(--on-accent); }
+.tool-cta:hover { color: var(--on-accent); box-shadow: 0 3px 0 var(--stack); }
 .cart-count { font-family: var(--mono); font-weight: 700; color: var(--teal); }
 .snd { font-family: var(--mono); font-size: .78rem; letter-spacing: .04em; }
 .snd[aria-pressed="true"] { border-color: var(--teal); color: var(--teal); }
@@ -228,6 +232,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .theme-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .tool-link, .theme-switch, .snd { padding: 6px 10px; min-height: 40px; }
   .topbar-tools { gap: 4px; }
+  .tool-cta { display: none; }
 }
 /* the narrowest phones: the top bar keeps every tool on screen (project pages add the sound switch) */
 @media (max-width: 380px) {

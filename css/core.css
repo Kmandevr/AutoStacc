@@ -76,6 +76,8 @@ img { max-width: 100%; display: block; }
   transition: transform .12s var(--snap), box-shadow .12s var(--snap), background-color .12s, color .12s;
 }
 .btn::before { content: var(--btn-prefix); }
+/* Pieces for signed-in or signed-out visitors only (js/account-nav.js): hidden wins over a component's own display. */
+[data-auth][hidden] { display: none; }
 .btn:hover {
   color: var(--on-accent);
   text-shadow: none;
