@@ -79,7 +79,7 @@ export default (ctx) => describe("platform", () => {
 
   test("admin uploads can name one of the product's Pacs and a content kind, nothing else", async () => {
     const admin = await adminClient(ctx.mock.url);
-    const put = (q) => admin.req("PUT", `/api/admin/products/sample-pack-vol1/files?filename=Kick%2001.wav&${q}`, { raw: "RIFF fake", headers: { "Content-Type": "audio/wav" } });
+    const put = (q) => admin.req("PUT", `/api/admin/products/sample-pack-vol1/files?filename=Kick%2001.wav&${q}`, { raw: Buffer.from("RIFF\u0000\u0000\u0000\u0000WAVEfmt ", "latin1"), headers: { "Content-Type": "audio/wav" } });
     assert.equal((await put("pac=frayed-signals-midi")).data.error.code, "invalid_pac");
     assert.equal((await put("pac=serum-presets")).status, 400);
     assert.equal((await put("kind=Bad%20Kind")).status, 400);
@@ -89,7 +89,7 @@ export default (ctx) => describe("platform", () => {
     assert.ok(product.files.some((f) => f.id === ok.data.fileId && f.pac_id === "frayed-signals-loops" && f.kind === "loops"));
     assert.deepEqual(product.pacs, ["frayed-signals-samples", "frayed-signals-loops"]);
     // A product without Pacs takes no Pac.
-    const none = await admin.req("PUT", "/api/admin/products/wallpapers/files?filename=a.png&pac=frayed-signals-loops", { raw: "png", headers: { "Content-Type": "image/png" } });
+    const none = await admin.req("PUT", "/api/admin/products/wallpapers/files?filename=a.png&pac=frayed-signals-loops", { raw: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]), headers: { "Content-Type": "image/png" } });
     assert.equal(none.status, 400);
   });
 
