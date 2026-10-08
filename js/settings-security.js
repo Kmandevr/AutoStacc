@@ -63,8 +63,8 @@
     if (res.status === 401) return toLogin();
     if (!res.ok) return say(form, res.status === 429 ? "Too many tries. Wait a minute." : res.error.code === "INVALID_PASSWORD" ? "The current password is wrong." : res.error.message, true);
     form.reset();
+    await drawDevices();
     say(form, "Password changed. Your other devices are signed out.");
-    drawDevices();
   });
 
   root.addEventListener("click", async (e) => {
@@ -78,7 +78,8 @@
     btn.disabled = false;
     if (res.status === 401) return toLogin();
     if (!res.ok) return say(panel, res.error.message, true);
+    // Redraw first, so the message is announced with the list already showing what changed.
+    await drawDevices();
     say(panel, btn.dataset.device ? "That device is signed out." : "Every other device is signed out.");
-    drawDevices();
   });
 })();

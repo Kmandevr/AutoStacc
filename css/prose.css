@@ -1,0 +1,38 @@
+/* Long-form pages generated from data/ (scripts/lib/trust-pages.js): /privacy, /terms, /refunds, /security, /contact, */
+/* /help and /license. A readable column with an "On this page" list beside it on computers, above it on phones. */
+
+.prose-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
+.prose-toc { position: sticky; top: calc(var(--topbar, 58px) + 16px); font-size: .9rem; }
+.prose-toc-title { margin: 0 0 8px; font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.prose-toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.prose-toc a { display: block; padding: 6px 10px; border-radius: 8px; color: var(--text); text-shadow: none; }
+.prose-toc a:hover { background: var(--panel-2); color: var(--text); }
+
+/* a link in the intro under the heading stays a comfortable tap target */
+.page-hero p a { display: inline-block; padding-block: 2px; }
+
+.prose { max-width: 70ch; min-width: 0; line-height: 1.65; }
+.prose-layout > .prose:only-child { grid-column: 1 / -1; }
+.prose section { scroll-margin-top: calc(var(--topbar, 58px) + 16px); }
+.prose h2 { margin: 36px 0 10px; font-size: clamp(1.35rem, 3vw, 1.7rem); }
+.prose h3 { margin: 26px 0 6px; font-size: 1.1rem; scroll-margin-top: calc(var(--topbar, 58px) + 16px); }
+.prose p, .prose li { color: var(--text); }
+.prose ul { padding-left: 20px; }
+.prose li + li { margin-top: 6px; }
+.prose a { display: inline-block; padding-block: 2px; overflow-wrap: anywhere; }
+.prose-updated { color: var(--muted); font-size: .88rem; }
+.prose-notice { padding: 12px 14px; border-left: 3px solid var(--amber); background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.prose-related { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); }
+.prose-related p { margin: 0 0 8px; font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.prose-related ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.prose-related li + li { margin-top: 0; }
+
+/* licence "You can" / "You can't" lists, here and in the product page's licence box (css/detail.css) */
+.license-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 28px; }
+.license-lists h3 { margin: 12px 0 4px; font-size: 1rem; }
+
+@media (max-width: 860px) {
+  .prose-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .prose-toc { position: static; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  .prose-toc ol { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}

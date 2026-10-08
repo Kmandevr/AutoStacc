@@ -79,7 +79,8 @@
           ${socials.map((s) => `<a href="${e(s.url)}" target="_blank" rel="me noopener">${e(s.name)}</a>`).join("")}</div>` : ""}</div>
         <div class="footer-platform">
           <span>Sold and delivered by <a href="/">${e(SITE.name || "")}</a></span>
-          <a href="/shop">Store</a><a href="/library">Your Stacc</a><a href="/about">About</a>
+          <a href="/shop">Store</a><a href="/library">Your Stacc</a><a href="/about">About</a><a href="/help">Help</a>
+          <a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds">Refunds</a>
         </div>
       </div>`;
   }

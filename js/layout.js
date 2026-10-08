@@ -1,4 +1,4 @@
-// AutoStacc's frame on platform pages: the sidebar (AutoStacc: Home, Store, About; Projects: one link per project in
+// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, About; Projects: one link per project in
 // data/projects.js; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
 // Create account, cart count, the slot js/theme.js fills, and the account menu's slot, [data-account-menu], which
 // js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
@@ -138,9 +138,9 @@
           <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
           ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
-        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/about", "About"]])}
-        ${col("Projects", PROJECTS.map((p) => [GS.projectPath(p.id), p.name]))}
-        ${col("Create", [["/studio", "Studio"], ...(SITE.email ? [[`mailto:${SITE.email}`, "Contact"]] : [])])}
+        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/about", "About"], ["/studio", "Studio"]])}
+        ${col("Help", [["/help", "Help"], ["/contact", "Contact"], ["/security", "Security"]])}
+        ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>
       </div>`;
   }

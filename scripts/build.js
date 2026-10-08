@@ -1,4 +1,5 @@
-// Generates everything search engines read from data/: each page's <head> metadata, one page per product (shop/) and
+// Generates everything search engines read from data/: each page's <head> metadata, the trust pages (/privacy, /terms,
+// /refunds, /security, /contact, /help, /license), one page per product (shop/) and
 // per project release and news post (<project address>/music/, <project address>/news/), sitemap.xml, llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
 // Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
@@ -12,6 +13,7 @@ const PL = require("./lib/platform");
 const { platformSql } = require("./lib/platform-catalog");
 const { llmsTxt } = require("./lib/llms");
 const { creatorPage, projectCard } = require("./lib/creator-page");
+const { trustPages } = require("./lib/trust-pages");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -98,7 +100,8 @@ const generated = [
   ...data.releases.map((r) => P.releasePage(SITE, data, r)),
   ...data.products.map((x) => P.productPage(SITE, data, x)),
   ...data.news.map((n) => P.newsPage(SITE, data, n)),
-  ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c))
+  ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c)),
+  ...trustPages(SITE, data)
 ];
 const seen = new Set();
 for (const g of generated) {
