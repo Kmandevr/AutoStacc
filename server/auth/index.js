@@ -4,6 +4,15 @@
 import { betterAuth } from "better-auth";
 import { sendEmail } from "../email/index.js";
 import { claimGuestPurchases, verifyByReset } from "../entitlements/claim.js";
+import { isAdmin } from "./roles.js";
+import { userById } from "../impersonation/sessions.js";
+import { auditAs } from "../audit/log.js";
+
+// Every new session of an admin account is an "admin signed in" entry in the audit log (customers' sign-ins aren't).
+async function recordAdminSignIn(app, session) {
+  const user = await userById(app.env.DB, session.userId);
+  if (isAdmin(app, user)) await auditAs(app.env.DB, { userId: user.id, label: user.email }, "admin.signed_in", { targetType: "user", targetId: user.id, subjectUserId: null });
+}
 
 export function createAuth(app) {
   const { config, env, ctx } = app;
@@ -49,6 +58,9 @@ export function createAuth(app) {
       additionalFields: { role: { type: "string", required: false, defaultValue: "customer", input: false } }
     },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
+    databaseHooks: {
+      session: { create: { after: (session) => recordAdminSignIn(app, session).catch((e) => console.error("audit: admin sign-in", e && e.message)) } }
+    },
     rateLimit: {
       enabled: true,
       storage: "database",

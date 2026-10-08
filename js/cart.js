@@ -1,5 +1,6 @@
 // Cart page: prices this browser's cart through the store API (never trusting local prices), shows problems per line,
-// takes a guest email when nobody is signed in, and starts checkout (one request per click, safe to retry).
+// sale prices and a promo code's discount (the code is kept for this tab only and checked by the store), takes a guest
+// email when nobody is signed in, and starts checkout (one request per click, safe to retry).
 // Needs js/util.js.
 (function () {
   "use strict";
@@ -35,8 +36,21 @@
     currency_mismatch: "Mixed currencies can't share one checkout."
   };
 
-  // A checkout key per cart: a second click, a refresh mid-request or the back button reuses the same order.
-  const signature = (items) => items.map((i) => `${i.productId}x${i.quantity}`).sort().join(",");
+  const PROMO_PROBLEMS = {
+    invalid: "That code doesn't exist.",
+    ended: "That code has ended.",
+    used_up: "That code has been used up.",
+    already_used: "You've already used that code.",
+    not_applicable: "That code doesn't cover anything in your cart."
+  };
+  const promo = {
+    get: () => { try { return sessionStorage.getItem("gs:promo") || ""; } catch { return ""; } },
+    set: (v) => { try { if (v) sessionStorage.setItem("gs:promo", v); else sessionStorage.removeItem("gs:promo"); } catch {} }
+  };
+
+  // A checkout key per cart and code: a second click, a refresh mid-request or the back button reuses the same order;
+  // a different cart or code is a different order.
+  const signature = (items) => items.map((i) => `${i.productId}x${i.quantity}`).sort().join(",") + `|${promo.get()}`;
   function checkoutKey(items) {
     try {
       const saved = JSON.parse(sessionStorage.getItem("gs:checkout") || "{}");
@@ -58,6 +72,22 @@
       <div class="actions"><a class="btn" href="/shop">Browse the store</a><a class="btn ghost" href="/library">Your Stacc</a></div></div>`;
   }
 
+  // During a sale: the catalog price struck through, then the sale price and the sale's name.
+  function linePrice(l) {
+    const now = escapeHTML(cents(l.lineTotalCents, l.currency));
+    if (!l.sale || l.listPriceCents <= l.unitPriceCents) return now;
+    return `<s class="price-was">${escapeHTML(cents(l.listPriceCents * l.quantity, l.currency))}</s> ${now} <span class="price-sale">${escapeHTML(l.sale.name)}</span>`;
+  }
+
+  // The code box, or the applied code with a way to take it off.
+  function promoBox(c) {
+    if (c.promoCode) return `<p class="cart-promo">Code <strong>${escapeHTML(c.promoCode)}</strong> applied${c.promotion && c.promotion.name ? ` (${escapeHTML(c.promotion.name)})` : ""}. <button class="link-btn" type="button" data-promo-remove>remove</button></p>`;
+    return `<form class="cart-promo" data-promo><label for="promo-code">Promo code</label>
+      <input id="promo-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" value="${escapeHTML(promo.get())}">
+      <button class="btn ghost" type="submit">Apply</button>
+      ${c.promoProblem ? `<span class="cart-problem" role="alert">${escapeHTML(PROMO_PROBLEMS[c.promoProblem] || "That code can't be used.")}</span>` : ""}</form>`;
+  }
+
   function line(l) {
     const qty = l.maxQuantity > 1
       ? `<label class="sr-only" for="q-${escapeHTML(l.productId)}">Quantity</label>
@@ -69,14 +99,15 @@
         ${l.problem ? `<span class="cart-problem">${escapeHTML(PROBLEMS[l.problem] || "Can't be bought right now.")}</span>` : ""}
       </div>
       <div class="cart-qty">${qty}</div>
-      <div class="cart-price">${l.title ? cents(l.lineTotalCents, l.currency) : ""}</div>
+      <div class="cart-price">${l.title ? linePrice(l) : ""}</div>
       <button class="link-btn" type="button" data-remove="${escapeHTML(l.productId)}" aria-label="Remove ${escapeHTML(l.title || l.productId)}">remove</button>
     </li>`;
   }
 
   function render(message = "") {
     const c = priced;
-    const blocked = c.problems.length > 0;
+    // A code that can't be used blocks checkout too: paying without the discount someone expected is worse.
+    const blocked = c.problems.length > 0 || Boolean(c.promoProblem);
     const who = account && account.user
       ? `<p class="small-print">Checking out as <strong>${escapeHTML(account.user.email)}</strong>. Your files will be in Your Stacc.</p>`
       : `<div class="field"><label for="cart-email">Email for your receipt and files</label>
@@ -85,8 +116,9 @@
     root.innerHTML = `${notice()}${message}
       <ul class="cart-lines">${c.lines.map(line).join("")}</ul>
       <div class="cart-summary panel">
-        <dl class="cart-totals"><dt>Subtotal</dt><dd>${cents(c.subtotalCents, c.currency)}</dd><dt>Total</dt><dd class="price">${cents(c.totalCents, c.currency)}</dd></dl>
-        ${blocked ? `<p class="msg error">Remove the lines marked above to check out.</p>` : ""}
+        <dl class="cart-totals"><dt>Subtotal</dt><dd>${cents(c.subtotalCents, c.currency)}</dd>${c.discountCents ? `<dt>Discount (${escapeHTML(c.promoCode)})</dt><dd>−${cents(c.discountCents, c.currency)}</dd>` : ""}<dt>Total</dt><dd class="price">${cents(c.totalCents, c.currency)}</dd></dl>
+        ${promoBox(c)}
+        ${c.problems.length ? `<p class="msg error">Remove the lines marked above to check out.</p>` : c.promoProblem ? `<p class="msg error">Change or clear the promo code to check out.</p>` : ""}
         ${who}
         <div class="actions">
           <button class="btn" type="button" id="checkout-btn"${blocked ? " disabled" : ""}>Checkout</button>
@@ -101,7 +133,7 @@
   async function load(hint) {
     const items = cart.items();
     if (!items.length) { empty(); return refocus(hint); }
-    const [res, acct] = await Promise.all([api("/api/cart/price", { method: "POST", body: { items } }), api("/api/account")]);
+    const [res, acct] = await Promise.all([api("/api/cart/price", { method: "POST", body: { items, promoCode: promo.get() } }), api("/api/account")]);
     account = acct.ok ? acct.data : null;
     if (!res.ok) {
       root.innerHTML = `${notice()}<p class="msg error">${escapeHTML(res.status === 503 ? "The store is offline for maintenance. Your cart is safe in this browser." : res.error.message)}</p>
@@ -127,7 +159,7 @@
     btn.classList.add("busy");
     btn.textContent = "Opening checkout";
     const key = checkoutKey(items);
-    const body = { items, ...(emailInput && { email: emailInput.value.trim() }) };
+    const body = { items, promoCode: promo.get(), ...(emailInput && { email: emailInput.value.trim() }) };
     if (emailInput) try { sessionStorage.setItem("gs:email", body.email); } catch {}
     const res = await api("/api/checkout", { method: "POST", body, headers: key ? { "Idempotency-Key": key } : {}, timeout: 30000 });
     if (res.ok && res.data.url) {
@@ -139,7 +171,7 @@
     sound("error");
     const err = res.error;
     if (err.code === "checkout_finished") { forgetKey(); return load(); }
-    if (err.code === "cart_changed" && err.cart) { priced = err.cart; return render(`<p class="msg error">${escapeHTML(err.message)}</p>`); }
+    if ((err.code === "cart_changed" || err.code === "promo_invalid") && err.cart) { priced = err.cart; return render(`<p class="msg error">${escapeHTML(err.message)}</p>`); }
     const text = res.status === 0 ? "We couldn't reach the store before checkout opened. Nothing was charged; please try again."
       : res.status === 401 || res.status === 403 ? `${escapeHTML(err.message)} <a href="/login?next=/cart">Log in</a>` : escapeHTML(err.message);
     render(`<p class="msg error">${text}</p>`);
@@ -155,8 +187,15 @@
       return load({ index });
     }
     if (e.target.closest("[data-retry]")) return load();
+    if (e.target.closest("[data-promo-remove]")) { promo.set(""); return load(); }
     const btn = e.target.closest("#checkout-btn");
     if (btn && !btn.disabled) checkout(btn);
+  });
+  root.addEventListener("submit", (e) => {
+    if (!e.target.matches("[data-promo]")) return;
+    e.preventDefault();
+    promo.set($("#promo-code", root).value.trim().toUpperCase());
+    load();
   });
   root.addEventListener("change", (e) => {
     const sel = e.target.closest("[data-qty]");

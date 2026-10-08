@@ -84,4 +84,9 @@
         </div>
       </div>`;
   }
+
+  // Anonymous counters (GS.track): the page kind, the project, and which news post (its address) was read.
+  if (document.body.dataset.page) GS.track("page_view", document.body.dataset.page);
+  GS.track("project_view", P.id);
+  if (document.body.dataset.page === "news-item") GS.track("news_view", location.pathname.replace(/\.html$|\/$/, "").split("/").pop());
 })();

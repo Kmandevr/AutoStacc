@@ -1,6 +1,7 @@
 // Admin API (owner only; every route starts with requireAdmin, which answers 404 to everyone else).
 // Catalog content and prices live in data/products.js (reviewed in git, shown on the static pages); here the owner
-// pauses sales, uploads paid files and previews, and manages orders, customers and entitlements.
+// pauses sales, uploads paid files and previews, and manages orders, customers and entitlements. Every change is
+// written to the audit log (server/audit/log.js) under the admin's name.
 import { json, fail, readJson, str, email as emailField, id } from "../lib/http.js";
 import { all, first, run, newId, now, parseJson } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
@@ -10,6 +11,8 @@ import { sendConfirmation } from "../orders/fulfilment.js";
 import { grant, revokeById } from "../entitlements/grants.js";
 import { verifiedUserIdForEmail } from "../entitlements/claim.js";
 import { newFileKey, putFile, previewKey, putPreview, safeFilename } from "../storage/buckets.js";
+import { audit } from "../audit/log.js";
+import { paymentProvider } from "../payments/index.js";
 
 const MAX_UPLOAD = 95 * 1024 * 1024; // Workers request bodies stop at 100 MB.
 const like = (q) => `%${String(q || "").replace(/[%_]/g, "")}%`;
@@ -25,7 +28,8 @@ async function summary(app) {
     all(app.db, `SELECT id, type, order_id, outcome, detail, received_at FROM payment_events
       WHERE outcome IN ('rejected', 'error') OR outcome LIKE '%waiting for payment' ORDER BY received_at DESC LIMIT 20`)
   ]);
-  return json({ orders, customers: customers.n, activeEntitlements: entitlements.n, products: products.n, alerts, environment: app.config.appEnv, paymentProvider: app.config.paymentProvider });
+  return json({ orders, customers: customers.n, activeEntitlements: entitlements.n, products: products.n, alerts, environment: app.config.appEnv,
+    paymentProvider: app.config.paymentProvider, livePayments: paymentProvider(app).livemode(app.config) });
 }
 
 async function products(app) {
@@ -44,10 +48,12 @@ async function updateProduct(app, { productId }) {
   if (typeof body.salesPaused !== "boolean") fail(400, "invalid_field", "salesPaused must be true or false.");
   const res = await run(app.db, "UPDATE products SET sales_paused = ?, updated_at = ? WHERE id = ?", body.salesPaused ? 1 : 0, now(), id(productId));
   if (!res.meta.changes) fail(404, "not_found", "No product with that id.");
+  await audit(app, body.salesPaused ? "product.sales_paused" : "product.sales_resumed", { targetType: "product", targetId: productId });
   return json({ ok: true });
 }
 
 // Raw upload: PUT the file bytes with ?filename=...&label=...&pac=...&kind=... . Stored privately under a random key.
+// &replaces=<fileId> (a file of the same product) deactivates that file once the new one is stored: a new version.
 // pac (optional) must be one of the product's Pacs (data/products.js `pacs`); kind (optional) is a content kind key
 // from data/content-types.js. They only organize the file in Your Stacc; access is still per product.
 async function uploadFile(app, { productId }) {
@@ -60,6 +66,10 @@ async function uploadFile(app, { productId }) {
   const pacId = url.searchParams.get("pac") ? id(url.searchParams.get("pac"), "pac") : null;
   if (pacId && !parseJson(p.pacs, []).includes(pacId)) fail(400, "invalid_pac", "That Pac isn't one of this product's Pacs.");
   const kind = url.searchParams.get("kind") ? str(url.searchParams.get("kind"), "kind", { max: 30, pattern: /^[a-z0-9]+(-[a-z0-9]+)*$/ }) : "";
+  const replaces = url.searchParams.get("replaces") ? str(url.searchParams.get("replaces"), "replaces", { max: 40, pattern: /^pf_[a-z2-7]+$/ }) : null;
+  if (replaces && !(await first(app.db, "SELECT id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", replaces, p.id))) {
+    fail(404, "not_found", "The file to replace isn't an active file of this product.");
+  }
   const size = Number(app.request.headers.get("content-length") || 0);
   if (!size || size > MAX_UPLOAD) fail(413, "too_large", "Files must be under 95 MB per upload.");
   const contentType = (app.request.headers.get("content-type") || "application/octet-stream").slice(0, 100);
@@ -68,7 +78,10 @@ async function uploadFile(app, { productId }) {
   const fileId = newId("pf");
   await run(app.db, `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind)
     VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?, ?)`, fileId, p.id, key, filename, label, contentType, object.size, now(), pacId, kind);
-  return json({ ok: true, fileId, sizeBytes: object.size }, 201);
+  if (replaces) await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", replaces);
+  await audit(app, replaces ? "product.file_replaced" : "product.file_added", { targetType: "product", targetId: p.id,
+    detail: { fileId, filename, sizeBytes: object.size, replaced: replaces } });
+  return json({ ok: true, fileId, sizeBytes: object.size, replaced: replaces }, 201);
 }
 
 // Files are deactivated, not deleted: the object stays in R2 for the record, but no new download can reach it.
@@ -76,6 +89,7 @@ async function removeFile(app, { fileId }) {
   await requireAdmin(app);
   const res = await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", str(fileId, "fileId", { max: 40 }));
   if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
+  await audit(app, "product.file_deactivated", { targetType: "file", targetId: fileId });
   return json({ ok: true });
 }
 
@@ -89,6 +103,7 @@ async function uploadPreview(app) {
   if (!contentType.startsWith("audio/")) fail(415, "unsupported_media_type", "Previews must be audio.");
   const key = previewKey(filename);
   await putPreview(app.env, key, app.request.body, contentType);
+  await audit(app, "preview.uploaded", { targetType: "preview", targetId: key, detail: { filename } });
   return json({ ok: true, path: `/media/${key}` }, 201);
 }
 
@@ -121,6 +136,7 @@ async function resendConfirmation(app, { orderId }) {
   const o = await getOrder(app.db, str(orderId, "orderId", { max: 40 }));
   if (!o || o.status !== "paid") fail(409, "not_paid", "Only paid orders get a confirmation.");
   const result = await sendConfirmation(app, o, null, { resend: true });
+  await audit(app, "order.receipt_resent", { targetType: "order", targetId: o.id, subjectUserId: o.user_id, detail: { status: result.status } });
   return json({ ok: result.status !== "failed", status: result.status });
 }
 
@@ -156,7 +172,10 @@ async function grantEntitlement(app) {
   if (!p) fail(404, "not_found", "No product with that id.");
   const sourceType = str(body.sourceType || "manual", "sourceType", { pattern: /^(manual|promo|replacement)$/ });
   const note = typeof body.note === "string" ? body.note.slice(0, 300) : null;
-  await grant(app.db, { userId: await verifiedUserIdForEmail(app.db, to), email: to, productId: p.id, sourceType, sourceId: newId("grant"), note: `${note || ""} (by ${admin.email})`.trim() });
+  const userId = await verifiedUserIdForEmail(app.db, to);
+  const sourceId = newId("grant");
+  await grant(app.db, { userId, email: to, productId: p.id, sourceType, sourceId, note: `${note || ""} (by ${admin.email})`.trim() });
+  await audit(app, "entitlement.granted", { targetType: "product", targetId: p.id, subjectUserId: userId, detail: { sourceType, sourceId, toAccount: Boolean(userId) } });
   return json({ ok: true }, 201);
 }
 
@@ -164,8 +183,10 @@ async function revokeEntitlement(app, { entitlementId }) {
   await requireAdmin(app);
   const body = await readJson(app.request);
   const reason = str(body.reason || "revoked by admin", "reason", { max: 200 });
-  const res = await revokeById(app.db, str(entitlementId, "entitlementId", { max: 40 }), reason);
+  const ent = await first(app.db, "SELECT user_id, product_id FROM entitlements WHERE id = ?", str(entitlementId, "entitlementId", { max: 40 }));
+  const res = await revokeById(app.db, entitlementId, reason);
   if (!res.meta.changes) fail(404, "not_found", "No active entitlement with that id.");
+  await audit(app, "entitlement.revoked", { targetType: "entitlement", targetId: entitlementId, subjectUserId: ent.user_id, detail: { productId: ent.product_id, reason } });
   return json({ ok: true });
 }
 
