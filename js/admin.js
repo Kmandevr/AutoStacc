@@ -1,6 +1,9 @@
-// Admin page shell and catalog tools: checks access (the API answers 404 to non-admins), draws the tabs and the
-// summary, and manages products: pause/resume sales, upload paid files and preview clips, deactivate files.
-// Orders, customers, entitlements and analytics are js/admin-records.js, started by the "gs:admin" event.
+// Control Center shell and catalog tools: checks access (the API answers 404 to non-admins), draws the LIVE/TEST
+// badge, the tabs and the summary, and manages products: pause/resume sales, upload paid files (or a new version of
+// one) and preview clips, deactivate files. The other tabs start on the "gs:admin" event: statistics
+// (js/admin-stats.js), orders, customers and entitlements (js/admin-records.js), customer preview with impersonation
+// and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), test-purchase checks and
+// the audit log (js/admin-audit.js).
 // Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
 (function () {
   "use strict";
@@ -12,12 +15,15 @@
   const PACS = window.PACS || [];
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
-  const TABS = [["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"], ["analytics", "Analytics"]];
+  const TABS = [["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"],
+    ["promotions", "Promotions"], ["tests", "Test purchases"], ["audit", "Audit log"]];
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
   function shell(s) {
     const paid = (s.orders.find((o) => o.status === "paid") || { n: 0, cents: 0 });
     root.innerHTML = `
+      <p class="admin-mode ${s.livePayments ? "live" : "test"}"><strong>${s.livePayments ? "LIVE" : "TEST"}</strong>
+        ${s.livePayments ? "Real payments. Test purchases are off here." : "Test payments only: nothing here is real revenue."}</p>
       <p class="msg">${escapeHTML(s.environment)} · payments: ${escapeHTML(s.paymentProvider)} · ${s.products} products · ${s.customers} customers · ${paid.n} paid orders (${cents(paid.cents || 0)}) · ${s.activeEntitlements} active entitlements</p>
       ${s.alerts.length ? `<div class="msg error" role="alert">Payment events that need a look (check them in Stripe too):<ul>${s.alerts.map((a) => `<li>${escapeHTML(a.received_at.slice(0, 16).replace("T", " "))} ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.order_id ? ` (${escapeHTML(a.order_id)})` : ""}</li>`).join("")}</ul></div>` : ""}
       <div class="admin-tabs" role="tablist">${TABS.map(([k, l], i) => `<button type="button" role="tab" id="tab-${k}" aria-controls="admin-${k}" aria-selected="${i === 0}">${l}</button>`).join("")}</div>
@@ -52,6 +58,7 @@
           <label class="sr-only" for="f-${escapeHTML(p.id)}">File for ${escapeHTML(p.title)}</label><input id="f-${escapeHTML(p.id)}" type="file" required>
           <label class="sr-only" for="l-${escapeHTML(p.id)}">Label</label><input id="l-${escapeHTML(p.id)}" type="text" placeholder="Label (e.g. WAV stems)" maxlength="120">
           ${p.pacs.length ? `<label class="sr-only" for="p-${escapeHTML(p.id)}">Pac</label><select id="p-${escapeHTML(p.id)}" data-pac><option value="">No Pac</option>${p.pacs.map((id) => `<option value="${escapeHTML(id)}">${escapeHTML(pacTitle(id))}</option>`).join("")}</select>` : ""}
+          ${p.files.some((f) => f.active) ? `<label class="sr-only" for="r-${escapeHTML(p.id)}">Replaces</label><select id="r-${escapeHTML(p.id)}" data-replaces><option value="">New file</option>${p.files.filter((f) => f.active).map((f) => `<option value="${escapeHTML(f.id)}">New version of ${escapeHTML(f.label || f.filename)}</option>`).join("")}</select>` : ""}
           <label class="sr-only" for="k-${escapeHTML(p.id)}">Content type</label><select id="k-${escapeHTML(p.id)}" data-kind><option value="">Type from file name</option>${Object.entries(KINDS).map(([k, t]) => `<option value="${escapeHTML(k)}">${escapeHTML(t.label)}</option>`).join("")}</select>
           <button class="btn" type="submit">Upload file</button><span class="msg" role="status"></span></form>
       </li>`).join("")}</ul>`;
@@ -75,8 +82,9 @@
   }
 
   root.addEventListener("submit", async (e) => {
-    e.preventDefault();
     const form = e.target;
+    if (!form.matches("[data-upload], [data-preview-upload]")) return;
+    e.preventDefault();
     const btn = $("button[type=submit]", form);
     if (btn.disabled) return;
     const file = $("input[type=file]", form).files[0];
@@ -89,7 +97,8 @@
       const label = $("input[type=text]", form).value;
       const pac = $("[data-pac]", form) ? $("[data-pac]", form).value : "";
       const kind = $("[data-kind]", form).value;
-      const query = new URLSearchParams({ filename: file.name, label, ...(pac && { pac }), ...(kind && { kind }) });
+      const replaces = $("[data-replaces]", form) ? $("[data-replaces]", form).value : "";
+      const query = new URLSearchParams({ filename: file.name, label, ...(pac && { pac }), ...(kind && { kind }), ...(replaces && { replaces }) });
       if (await upload(`/api/admin/products/${encodeURIComponent(id)}/files?${query}`, file, $(".msg", form))) products();
     }
     btn.disabled = false;
@@ -117,6 +126,6 @@
     if (!res.ok) { root.innerHTML = `<p class="msg error">Nothing here.</p>`; return; }
     shell(res.data);
     products();
-    dispatchEvent(new CustomEvent("gs:admin"));
+    dispatchEvent(new CustomEvent("gs:admin", { detail: res.data }));
   })();
 })();

@@ -20,6 +20,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Brand](brand.md): visual style and tone of voice
 - [Shop](shop.md): the catalogue and what is still placeholder
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
+- [Control Center](admin.md): the owner's admin: statistics and their sources, customer preview, support impersonation, test purchases, audit log
 - [Store setup](store-setup.md): the owner's checklist to switch the store on (Cloudflare, Stripe, Brevo, secrets)
 - [Development](development.md): running locally in test mode, environment variables, tests, extending the store
 - [SEO](seo.md): how search visibility works (generated metadata, item pages, sitemap, structured data, tests)

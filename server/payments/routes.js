@@ -31,5 +31,5 @@ async function mockPayment(app) {
 
 export const routes = [
   ["POST", "/api/webhooks/stripe", stripeWebhook, { external: true }],
-  ["POST", "/api/dev/mock-payment", mockPayment]
+  ["POST", "/api/dev/mock-payment", mockPayment, { impersonation: "test-payments" }]
 ];

@@ -53,3 +53,13 @@ export function adminClient(base) {
   }
   return admins.get(base);
 }
+
+// A second, separate signed-in session of the owner's account: impersonation is tied to the session that started
+// it, so tests that impersonate use their own instead of the shared adminClient.
+export async function freshAdmin(base) {
+  await adminClient(base);
+  const c = new Client(base);
+  const r = await c.post("/api/auth/sign-in/email", { email: "admin@autostacc.test", password: "admin-password-123" });
+  if (r.status !== 200) throw new Error("admin sign-in failed " + JSON.stringify(r.data));
+  return c;
+}

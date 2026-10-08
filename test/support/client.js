@@ -25,7 +25,17 @@ export class Client {
       if (!value || attrs.some((a) => /max-age=0\b/i.test(a.trim()))) this.jar.delete(name); else this.jar.set(name, value);
     }
   }
-  async req(method, p, { body, headers = {}, raw, redirect = "manual" } = {}) {
+  async req(method, p, opts = {}) {
+    try {
+      return await this.send(method, p, opts);
+    } catch (e) {
+      // A pooled keep-alive connection the local server closed while idle (tests that run several slow
+      // `wrangler d1 execute` calls in a row): the request never reached the server, so sending it again is safe.
+      if (!(e.cause && e.cause.code === "UND_ERR_SOCKET" && /other side closed/.test(e.cause.message))) throw e;
+      return this.send(method, p, opts);
+    }
+  }
+  async send(method, p, { body, headers = {}, raw, redirect = "manual" } = {}) {
     const res = await fetch(this.base + p, {
       method, redirect,
       headers: {
@@ -67,9 +77,14 @@ export async function verifiedUser(client, email, password = "correct-horse-batt
 
 const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 export function sql(stateDir, command) {
+  return sqlAll(stateDir, command)[0];
+}
+
+// Several statements in one call: one result list per statement.
+export function sqlAll(stateDir, command) {
   const out = execFileSync(WRANGLER, ["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--json", "--command", command],
     { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, WRANGLER_SEND_METRICS: "false" } }).toString();
-  return JSON.parse(out)[0].results;
+  return JSON.parse(out).map((r) => r.results);
 }
 
 export function devVar(name) {

@@ -1,4 +1,4 @@
-/* Admin page: tabs, product and file lists, upload rows, record tables. Used by admin.html only. */
+/* Control Center (admin.html only): LIVE/TEST badge, tabs, products, records, statistics, customer preview, audit log. */
 
 .admin-tabs { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 22px; padding-bottom: 4px; }
 .admin-tabs button { flex: none; min-height: 44px; padding: 8px 16px; background: transparent; border: 1px solid var(--line); color: var(--accent-dim); font: inherit; cursor: pointer; }
@@ -19,3 +19,56 @@
 .admin-table th, .admin-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .admin-table th { color: var(--accent-2); text-shadow: var(--glow-2); text-transform: uppercase; font-weight: 400; letter-spacing: .06em; }
 #order-detail h3 { font-size: 1rem; margin: 18px 0 6px; }
+
+/* LIVE vs TEST: always spelled out, the colour only backs the word up. */
+.admin-mode { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 0 14px; padding: 10px 14px; border: 2px solid var(--line); background: var(--panel); }
+.admin-mode strong { padding: 2px 10px; font-family: var(--mono); letter-spacing: .1em; color: var(--on-accent); }
+.admin-mode.live { border-color: var(--coral); }
+.admin-mode.live strong { background: var(--coral); }
+.admin-mode.test { border-color: var(--lime); }
+.admin-mode.test strong { background: var(--lime); }
+h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0; background: none; }
+
+/* Statistics: cards, then charts and tables. data-source tells payment records, store records, browser counts and estimates apart. */
+.stats-controls label { color: var(--muted); }
+.stats-controls select { min-height: 44px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; }
+.stats-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.stats-section { margin: 0 0 34px; }
+.stats-section h2 { margin: 0 0 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+.stat { display: grid; gap: 4px; align-content: start; padding: 14px; border: 1px solid var(--line); background: var(--panel); }
+.stat-label { color: var(--muted); font-size: .85rem; }
+.stat-value { font-size: 1.6rem; font-weight: 700; color: var(--heading); overflow-wrap: anywhere; }
+.stats-source { justify-self: start; padding: 1px 8px; font-size: .72rem; border: 1px solid var(--line); color: var(--muted); }
+.stats-source[data-source="payment"] { border-color: var(--teal); }
+.stats-source[data-source="activity"] { border-style: dashed; }
+.stats-source[data-source="derived"] { border-style: dotted; font-style: italic; }
+.stat[data-source="activity"] .stat-value, .stat[data-source="derived"] .stat-value { font-style: italic; }
+.stats-wide { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; margin-top: 16px; }
+.stats-rows h3 { font-size: 1rem; margin: 0 0 6px; }
+.stats-chart { margin: 0; padding: 14px; border: 1px solid var(--line); background: var(--panel); }
+.stats-chart figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.stats-total { color: var(--muted); font-size: .85rem; }
+.stats-chart svg { display: block; width: 100%; height: 120px; }
+.stats-chart path { fill: var(--accent); }
+.stats-chart line { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.stats-bar:hover path { fill: var(--accent-2); }
+.stats-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .75rem; margin-top: 4px; }
+.stats-chart details { margin-top: 8px; }
+
+/* Customer preview and its two separate actions. */
+.admin-preview h3 { font-size: 1rem; margin: 18px 0 6px; }
+.admin-danger, .admin-test { margin-top: 22px; padding: 14px; border: 2px solid var(--coral); }
+.admin-test { border-color: var(--lime); }
+.admin-danger input, .admin-test select { display: block; width: 100%; min-height: 44px; margin: 4px 0 10px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; }
+.admin .btn.danger { background: var(--coral); border-color: var(--coral); color: var(--on-accent); }
+.admin-checks { list-style: none; padding: 0; display: grid; gap: 6px; }
+.admin-checks [data-ok="false"] strong { color: var(--coral); }
+.admin-as { font-weight: 700; color: var(--coral); }
+
+/* Promotions: the create form's choices, and ended rows faded. */
+.admin-promo-form fieldset { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--line); }
+.admin-promo-form legend { padding: 0 6px; color: var(--muted); }
+.admin-choice label { display: block; margin: 4px 0; }
+.admin-promo-form input[type=number], .admin-promo-form select { min-height: 44px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; }
+.admin-table tr[data-status="ended"] td { color: var(--muted); }

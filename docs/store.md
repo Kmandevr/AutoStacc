@@ -26,7 +26,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | --- | --- | --- |
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
 | `account/` | who is signed in | `GET /api/account` |
-| `pages/` | the server-side gate for the account pages | `/dashboard`, `/account`, `/settings` (Pages Functions in `functions/`) |
+| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/account`, `/settings`, `/admin` (Pages Functions in `functions/`) |
 | `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
@@ -36,14 +36,18 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `downloads/` | signed links, streaming private files | `POST /api/downloads`, `GET /api/downloads/:token` |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
-| `admin/` | owner tools | `/api/admin/*` |
+| `admin/` | owner tools, customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
 | `analytics/` | daily counters | `POST /api/events` |
+| `stats/` | admin statistics: sections of typed metrics | `GET /api/admin/stats`, `/api/admin/stats/:section` |
+| `impersonation/` | support impersonation: rules, the per-request policy, start and exit | `POST /api/admin/customers/:userId/impersonate`, `POST /api/impersonation/exit` |
+| `audit/` | the append-only admin audit log | `GET /api/admin/audit` |
+| `promotions/` | sales and promo codes: what's running and what it takes off | `GET`/`POST /api/admin/promotions`, `POST /api/admin/promotions/:id/end` |
 | `projects/` | projects (synced), follows | `GET /api/projects`, `PUT`/`DELETE /api/follows/:projectId` |
 | `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
-Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, sign-out), `js/dashboard.js`, `js/account.js`, `js/settings.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
+Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, sign-out), `js/dashboard.js`, `js/account.js`, `js/settings.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-audit.js`, `js/impersonation.js` (banner); shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
 
 ## Platform layer
 
@@ -69,7 +73,7 @@ Releases stay in `data/music.js` (title, slug/id, artwork, date, description, tr
 - Sign-up with an existing email answers exactly like a new sign-up and mails the owner of that email instead (no account enumeration); password reset answers the same for unknown emails.
 - Reset links last 1 hour, verification links 24 hours; a reset logs out every session. Sessions last 30 days.
 - Email changes are off (purchases are tied to the address). `role` is server-only.
-- The account pages (`/dashboard`, `/account`, `/settings`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` keeps its own check (the admin API answers 404). Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
+- The account pages (`/dashboard`, `/account`, `/settings`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` answers the site's 404 page to anyone not signed in to an admin account (`guardAdminPage`), and the admin API answers 404 too. Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
 
 ## Cart and checkout
 
@@ -104,11 +108,11 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 ## Admin
 
-`/admin`, for verified accounts whose email is in `ADMIN_EMAILS` (or whose `role` is `admin`); the API answers 404 to everyone else. It pauses/resumes sales, uploads and deactivates paid files, uploads preview clips, lists and searches orders (with their payment events, entitlements and emails, and a resend-receipt button), customers, entitlements (grant manual/promo/replacement access, revoke), and the analytics counters. Titles, prices and descriptions are edited in `data/products.js` (see decisions); releases in `data/music.js`.
+`/admin` (the Control Center), for verified accounts whose email is in `ADMIN_EMAILS` (or whose `role` is `admin`); the API answers 404 to everyone else, including an admin who is impersonating a customer. It shows statistics, pauses/resumes sales, uploads, replaces and deactivates paid files, uploads preview clips, lists and searches orders (with their payment events, entitlements and emails, and a resend-receipt button), customers (with a read-only preview, support impersonation and, in a test store, test purchases), entitlements (grant manual/promo/replacement access, revoke) and the audit log. How each works and its safety rules: [control center](admin.md). Titles, prices and descriptions are edited in `data/products.js` (see decisions); releases in `data/music.js`.
 
 ## Analytics
 
-`GS.track(event, id)` → `POST /api/events` → one counter per day, event and product/release id in `analytics_daily`. Events: `release_view`, `product_view`, `preview_play`, `add_to_cart`, `checkout_start`, `purchase_complete`, `download_request`. No cookies, IPs, user ids or user agents; skipped when the browser sends Do Not Track or Global Privacy Control; sent with `sendBeacon` so it never delays the page.
+`GS.track(event, id)` → `POST /api/events` → one counter per day, event and product/release id in `analytics_daily`. Events: `page_view` (page kind), `project_view`, `news_view` (post address), `release_view`, `product_view`, `preview_play`, `add_to_cart`, `checkout_start`, `purchase_complete`, `download_request`. Not counted while an admin impersonates a customer. The admin reads them, labelled approximate, in the statistics ([control center](admin.md#statistics-overview)). No cookies, IPs, user ids or user agents; skipped when the browser sends Do Not Track or Global Privacy Control; sent with `sendBeacon` so it never delays the page.
 
 ## Security model
 
@@ -117,6 +121,7 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 - Unguessable ids everywhere (`ord_`, `ent_`, `pf_` + 128 random bits); guest and download keys are 256-bit or HMAC-signed; only hashes of guest keys are stored.
 - Same-origin check on every state-changing store request (plus Better Auth's own), SameSite=Lax httpOnly cookies, rate limits per client on auth (Better Auth) and store endpoints (`server/lib/ratelimit.js`).
 - Admin and unknown things answer 404; unpublished products look exactly like missing ones.
+- Support impersonation is a separate, server-verified session bound to the admin's own sign-in, read-mostly, never live payments, always bannered and fully attributed in the append-only audit log ([control center](admin.md#impersonate-customer-support)).
 - Signed-out visitors never receive the account pages (server gate above); public pages and their JSON-LD are static and carry nobody's data; `robots.txt` is a crawl hint, never the boundary.
 - Headers (`_headers`): no framing, no MIME sniffing, a restricted referrer and permissions on every page; a strict Content Security Policy (only this site's scripts and API) on account and store pages; API responses are `no-store` and `noindex`.
 - Test mode can't leak into production: separate databases and buckets per environment (`wrangler.toml`), mock orders are always `livemode 0`, and live/test mismatches between an event and its order are rejected.
@@ -124,4 +129,4 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 ## Not built yet
 
-Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts have a column (`discount_cents`) but no codes. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.
+Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts are sales and promo codes ([control center](admin.md#sales-and-promo-codes-promotions)); there are no automatic bundle or quantity discounts. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.

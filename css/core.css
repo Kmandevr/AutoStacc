@@ -126,6 +126,9 @@ section { padding: 80px 0; }
 
 /* ---------- small pieces shared by several pages ---------- */
 .price { font-weight: 700; font-size: 1.15rem; color: var(--accent); }
+/* A sale (js/store.js, js/cart.js): the catalog price struck through, and the sale's name. */
+.price-was { font-weight: 400; color: var(--muted); }
+.price-sale { display: inline-block; padding: 0 6px; font-size: .75rem; font-weight: 700; color: var(--on-accent); background: var(--accent); }
 
 .tag {
   display: inline-block;
