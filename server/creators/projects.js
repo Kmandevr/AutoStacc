@@ -56,9 +56,7 @@ export async function updateProject(db, project, { slug, name }) {
 // Deleted projects keep their row (orders may point at them later) but free their slug and leave the site.
 export const deleteProject = (db, project) => db.batch([
   stmt(db, "UPDATE projects SET published = 0, deleted_at = ?, updated_at = ? WHERE id = ?", now(), now(), project.id),
-  stmt(db, "DELETE FROM site_pages WHERE project_id = ?", project.id),
-  // Its products come off sale; people who already bought them keep their files.
-  stmt(db, "UPDATE products SET published = 0, updated_at = ? WHERE project_id = ? AND source = 'studio'", now(), project.id)
+  stmt(db, "DELETE FROM site_pages WHERE project_id = ?", project.id)
 ]);
 
 export const setProjectPublished = (db, projectId, published) =>

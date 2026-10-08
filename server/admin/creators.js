@@ -47,11 +47,6 @@ async function update(app, { creatorId }) {
   if (!Object.keys(set).length) fail(400, "nothing_to_change", "Send trusted, status, platformFeeBps or storageQuotaBytes.");
   await run(app.db, `UPDATE creators SET ${Object.keys(set).map((k) => `${k} = ?`).join(", ")}, updated_at = ? WHERE id = ?`, ...Object.values(set), now(), creator.id);
   await audit(app, "creator.updated", { targetType: "creator", targetId: creator.id, detail: set });
-  // A suspended creator's products come off sale at once (buyers keep what they own); the creator puts them back on sale
-  // themselves after being reinstated.
-  if (set.status === "suspended") {
-    await run(app.db, "UPDATE products SET published = 0, updated_at = ? WHERE source = 'studio' AND project_id IN (SELECT id FROM projects WHERE creator_id = ?)", now(), creator.id);
-  }
   // Whether search engines may index the pages is written into them, so a trust change renders them again.
   if (set.trusted !== undefined && set.trusted !== creator.trusted) await republishCreator(app, creator.id);
   return json({ ok: true });

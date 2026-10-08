@@ -24,9 +24,3 @@ export const countKept = async (db, productId) =>
 export const setStatus = (db, fileId, status, note = null) =>
   run(db, `UPDATE product_files SET status = ?, status_note = ?, status_at = ?, active = CASE WHEN ? IN ('rejected', 'deleted') THEN 0 ELSE active END
     WHERE id = ? AND status <> 'deleted'`, status, note, now(), status, fileId);
-
-// A product made in the Studio is only on sale while it has a file a buyer could download. Called after any change to a
-// file's state: a product whose last deliverable file was rejected or removed goes back to draft instead of selling nothing.
-export const unpublishEmptyStudioProducts = (db) =>
-  run(db, `UPDATE products SET published = 0, updated_at = ? WHERE source = 'studio' AND published = 1
-    AND NOT EXISTS (SELECT 1 FROM product_files f WHERE f.product_id = products.id AND f.active = 1 AND f.status = 'published')`, now());
