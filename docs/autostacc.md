@@ -40,7 +40,7 @@ Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) 
 
 ## Site structure
 
-`/` is the AutoStacc hub (a dashboard: Your Stacc at a glance, new releases, projects rack, how it works). Platform pages: `/shop`, `/library`, `/about`, `/projects`. Each project lives under `/projects/<id>` with its own pages (`/projects/glitches-and-stitches/music/hail`). Navigation is a sidebar in two groups, **AutoStacc** (Store, Your Stacc, About) and **Projects** (each project, expandable to its pages): open on desktop, a drawer on phones. Account, cart and the theme switch sit top right.
+`/` is the AutoStacc hub (a dashboard: Your Stacc at a glance, new releases, projects rack, how it works). Platform pages: `/shop`, `/library`, `/about`, `/projects`. Each project lives under `/projects/<id>` with its own pages (`/projects/glitches-and-stitches/music/hail`). Navigation is a sidebar in two groups, **AutoStacc** (Store, Your Stacc, About) and **Projects** (one link per project): open on desktop, a compact drawer on phones. Account, cart and the theme switch sit top right. A project's own pages (music, shows, news, press) are reachable only inside it: on its pages a project bar under the top bar shows its name, its pages as tabs and its own tools (the sound switch).
 
 ## Visual identity (placeholder logo)
 

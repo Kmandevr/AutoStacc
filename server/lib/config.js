@@ -49,9 +49,17 @@ export function loadConfig(env) {
   const emailProvider = env.EMAIL_PROVIDER || (devLike ? "log" : "brevo");
   if (!["brevo", "log"].includes(emailProvider)) problems.push(`EMAIL_PROVIDER "${emailProvider}" is unknown`);
   if (production && emailProvider !== "brevo") problems.push("production sends email through Brevo");
-  if (emailProvider === "brevo" && !env.BREVO_API_KEY) problems.push("BREVO_API_KEY is missing");
+  const brevoKey = env.BREVO_API_KEY || "";
+  if (emailProvider === "brevo") {
+    if (!brevoKey) problems.push("BREVO_API_KEY is missing");
+    else if (brevoKey.startsWith("xsmtpsib-")) problems.push("BREVO_API_KEY is an SMTP key; it must be an API key (xkeysib-...)");
+    else if (!brevoKey.startsWith("xkeysib-")) problems.push("BREVO_API_KEY must be a Brevo API key (xkeysib-...)");
+  }
+  // Two senders: EMAIL_FROM for purchases (receipts), EMAIL_FROM_NOREPLY for automated mail (account, alerts).
   const emailFrom = parseFrom(env.EMAIL_FROM || "");
   if (!emailFrom) problems.push("EMAIL_FROM must look like: Name <address@domain>");
+  const emailFromNoreply = parseFrom(env.EMAIL_FROM_NOREPLY || "");
+  if (!emailFromNoreply) problems.push("EMAIL_FROM_NOREPLY must look like: Name <address@domain>");
 
   if (problems.length) throw new ConfigError(problems);
 
@@ -69,8 +77,9 @@ export function loadConfig(env) {
     stripeLive,
     stripeApiBase,
     emailProvider,
-    brevoKey: env.BREVO_API_KEY || "",
+    brevoKey,
     emailFrom,
+    emailFromNoreply,
     // Comma-separated emails that are admins once verified. Roles can also be set in the user table.
     adminEmails: new Set(String(env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)),
     downloadTtlSeconds: 300,
