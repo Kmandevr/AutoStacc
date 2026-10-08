@@ -3,7 +3,7 @@
 const fs = require("fs");
 
 // Reads what a crawler sees after scripts have run.
-async function checkHead(tab, { SITE, path, noindex }) {
+async function checkHead(tab, { SITE, projects = [], path, noindex }) {
   const origin = SITE.url.replace(/\/+$/, "");
   const f = await tab.evaluate(() => {
     const meta = (k) => [...document.querySelectorAll(`meta[name="${k}"],meta[property="${k}"]`)].map((m) => m.content);
@@ -21,7 +21,10 @@ async function checkHead(tab, { SITE, path, noindex }) {
   });
   const p = [];
   if (!f.title) p.push(["FAIL", "seo-title", "rendered page has no title"]);
-  else if (!f.title.includes(SITE.artist) && !f.title.startsWith("[signal lost]")) p.push(["FAIL", "seo-title", `"${f.title}" doesn't name ${SITE.artist}`]);
+  // Platform pages name AutoStacc; a project's pages (/projects/<id>...) name the project.
+  const owner = projects.find((x) => path === `/projects/${x.id}` || path.startsWith(`/projects/${x.id}/`));
+  const name = owner ? owner.name : SITE.name;
+  if (f.title && !f.title.includes(name) && !f.title.startsWith("[signal lost]")) p.push(["FAIL", "seo-title", `"${f.title}" doesn't name ${name}`]);
   if (f.description.length !== 1 || !f.description[0]) p.push(["FAIL", "seo-description", `${f.description.length} meta descriptions`]);
   if (/noindex/.test(f.robots) !== noindex) p.push(["FAIL", "seo-robots", noindex ? "should be noindex" : `public page is "${f.robots}"`]);
   if (noindex && f.canonical.length) p.push(["FAIL", "seo-canonical", `noindex page names a canonical (${f.canonical.join(", ")})`]);

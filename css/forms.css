@@ -1,21 +1,21 @@
 /* Store and account UI (cart, login, account, library, checkout, admin): terminal panels, fields, status messages. */
 
 .panel {
-  background: var(--bg-2);
+  background: var(--panel);
   border: 1px solid var(--line);
-  box-shadow: 5px -4px 0 rgba(191,95,255,.3);
+  box-shadow: 5px -4px 0 color-mix(in srgb, var(--accent-2) 30%, transparent);
   padding: 26px;
   max-width: 560px;
 }
 .panel + .panel { margin-top: 28px; }
 .panel > h2 { margin: 0 0 14px; font-size: clamp(1.7rem, 4vw, 2.2rem); text-transform: uppercase; }
-.panel > h2::before { content: "$ "; color: var(--purple); text-shadow: var(--glow-purple); }
+.panel > h2::before { content: var(--prompt); color: var(--accent-2); text-shadow: var(--glow-2); }
 .panel > p { color: var(--muted); }
 .panel.wide { max-width: none; }
 
 /* ---------- fields: a terminal prompt per input ---------- */
 .field { display: grid; gap: 6px; margin: 0 0 18px; }
-.field label { color: var(--purple); text-shadow: var(--glow-purple); text-transform: uppercase; font-size: .8rem; letter-spacing: .08em; }
+.field label { color: var(--accent-2); text-shadow: var(--glow-2); text-transform: uppercase; font-size: .8rem; letter-spacing: .08em; }
 .field input, .field select, .field textarea {
   width: 100%;
   min-height: 48px;
@@ -23,33 +23,33 @@
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  color: var(--green);
-  caret-color: var(--green);
+  color: var(--accent);
+  caret-color: var(--accent);
   font: inherit;
   font-size: 1rem; /* 16px+ so phones don't zoom in */
   text-shadow: var(--glow);
 }
-.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: 2px solid var(--green); outline-offset: 0; border-color: var(--green); }
-.field input[aria-invalid="true"] { border-color: var(--purple); }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+.field input[aria-invalid="true"] { border-color: var(--accent-2); }
 .field .hint { color: var(--muted); font-size: .85rem; }
 .field-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .check { display: flex; gap: 10px; align-items: center; min-height: 44px; color: var(--muted); }
-.check input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--green); }
+.check input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--accent); }
 
 /* ---------- messages ---------- */
-.msg { margin: 0 0 18px; padding: 12px 14px; border-left: 3px solid var(--green); background: rgba(51,255,102,.06); color: var(--text); }
-.msg::before { content: "[ok] "; color: var(--green); text-shadow: var(--glow); }
-.msg.error { border-color: var(--purple); background: rgba(191,95,255,.08); }
-.msg.error::before { content: "[err] "; color: var(--purple); text-shadow: var(--glow-purple); }
-.msg.pending::before { content: "[..] "; color: var(--green-dim); }
+.msg { margin: 0 0 18px; padding: 12px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); color: var(--text); }
+.msg::before { content: var(--msg-ok); color: var(--accent); text-shadow: var(--glow); }
+.msg.error { border-color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 8%, transparent); }
+.msg.error::before { content: var(--msg-err); color: var(--accent-2); text-shadow: var(--glow-2); }
+.msg.pending::before { content: var(--msg-pending); color: var(--accent-dim); }
 .msg:empty { display: none; }
 .msg a { display: inline-block; padding-block: 2px; }
 
 /* busy buttons pulse instead of spinning; disabled ones go dim */
 .btn[disabled] { opacity: .55; cursor: wait; transform: none; box-shadow: none; }
 .btn.busy::after { content: "_"; animation: blink 1s steps(1) infinite; }
-.link-btn { background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--purple); font: inherit; text-shadow: var(--glow-purple); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.link-btn:hover { color: var(--green); text-shadow: var(--glow); }
+.link-btn { background: none; border: 0; padding: 8px 0; min-height: 44px; color: var(--accent-2); font: inherit; text-shadow: var(--glow-2); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.link-btn:hover { color: var(--accent); text-shadow: var(--glow); }
 
 .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
 .small-print { color: var(--muted); font-size: .85rem; }
@@ -60,6 +60,6 @@
 @media (prefers-reduced-motion: reduce) { .motion .panel.appear { animation: none; } .btn.busy::after { animation: none; } }
 
 @media (max-width: 600px) {
-  .panel { padding: 20px 16px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .panel { padding: 20px 16px; box-shadow: 3px -2px 0 color-mix(in srgb, var(--accent-2) 28%, transparent); }
   .actions .btn { flex: 1 1 100%; text-align: center; }
 }

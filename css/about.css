@@ -1,0 +1,36 @@
+/* About page: "how it works" as four tracks in an arrange view, and the Stacc words as a small legend. */
+
+.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; max-width: 860px; }
+.flow li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 16px;
+  align-items: baseline;
+  padding: 16px 18px 16px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+/* each step is a coloured clip that grows in like a recorded region */
+.flow li::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--track); }
+.flow-step { grid-row: span 2; font-family: var(--mono); font-weight: 700; color: var(--track); font-size: 1.1rem; }
+.flow strong { font-size: 1.05rem; }
+.flow li > span:last-child { color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .motion .flow li.reveal.in::before { animation: record .7s var(--snap) both; transform-origin: top; }
+}
+@keyframes record { from { scale: 1 0; } to { scale: 1 1; } }
+
+.terms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; margin: 0 0 24px; }
+.terms > div { padding: 14px 16px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--track); }
+.terms dt { font-weight: 700; margin-bottom: 4px; }
+.terms dd { margin: 0; color: var(--muted); }
+.platform .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+@media (max-width: 600px) {
+  .flow li { grid-template-columns: 1fr; padding-left: 20px; }
+  .flow-step { grid-row: auto; }
+}

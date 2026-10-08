@@ -3,12 +3,12 @@
   "use strict";
 
   const { $, escapeHTML, isSet } = window.GS;
-  const SITE = window.SITE || {};
+  const SITE = window.GS.currentProject(); // this project's contact, press kit and profiles
 
   const contact = $("#press-contact");
   if (!contact) return;
 
-  const mail = (subject) => `mailto:${SITE.email}?subject=${encodeURIComponent(`${subject}: ${SITE.artist}`)}`;
+  const mail = (subject) => `mailto:${SITE.email}?subject=${encodeURIComponent(`${subject}: ${SITE.name}`)}`;
   contact.innerHTML = [
     SITE.email && `<a class="btn" href="${escapeHTML(mail("Booking"))}">Booking enquiry</a>`,
     SITE.email && `<a class="btn ghost" href="${escapeHTML(mail("Press"))}">Press enquiry</a>`,

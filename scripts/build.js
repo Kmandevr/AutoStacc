@@ -1,10 +1,10 @@
-// Generates everything search engines read from data/: each page's <head> metadata, one page per release, product and
-// news post, sitemap.xml, the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
+// Generates everything search engines read from data/: each page's <head> metadata, one page per product (shop/) and
+// per project release and news post (projects/<id>/music/, projects/<id>/news/), sitemap.xml, the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
 // Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
 const path = require("path");
-const { ROOT, loadData, abs } = require("./lib/data");
+const { ROOT, loadData, abs, projectPath } = require("./lib/data");
 const H = require("./lib/head");
 const P = require("./lib/pages");
 const C = require("./lib/catalog");
@@ -17,27 +17,37 @@ const { SITE } = data;
 const errors = [];
 const outputs = new Map(); // file -> content
 
-// ---------- hand-written pages: every *.html in the root ----------
-// Each writes its own <title> and <meta name="description"> (the home page takes both from data/site.js);
-// everything else in the head block is generated. A page opts out of search with its own <meta name="robots" content="noindex">.
-const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", press: "AboutPage" };
+// ---------- hand-written pages: every *.html in the root and under projects/ ----------
+// Each writes its own <title> and <meta name="description">, except the home page (from data/site.js) and each
+// project's home, projects/<id>.html (from its entry in data/projects.js); everything else in the head block is
+// generated. A page opts out of search with its own <meta name="robots" content="noindex">.
+const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", press: "AboutPage", about: "AboutPage" };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const strip = (html) => html.replace(new RegExp(`${H.START.slice(0, 15)}[\\s\\S]*?${H.END}`), "");
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+const htmlUnder = (dir) => (fs.existsSync(path.join(ROOT, dir)) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
+  .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
 
-const handPages = fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")).sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
+const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("projects").filter((f) => !read(f).includes(P.GENERATED))]
+  .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
 const pages = []; // every page with its metadata, for the sitemap
+const projectById = new Map(data.projects.map((x) => [x.id, x]));
 
 for (const file of handPages) {
   const html = read(file);
   const rest = strip(html);
-  const key = (html.match(/<body[^>]*\sdata-page="([^"]+)"/) || [])[1];
+  const attr = (name) => (html.match(new RegExp(`<body[^>]*\\s${name}="([^"]*)"`)) || [])[1];
+  const key = attr("data-page");
+  const project = projectById.get(attr("data-project"));
   const isHome = file === "index.html";
-  const title = isHome ? SITE.title : decode((rest.match(/<title>([^<]*)<\/title>/) || [])[1] || "");
-  const description = isHome ? SITE.description : decode((rest.match(/<meta name="description" content="([^"]*)">/) || [])[1] || "");
-  if (!title) errors.push(`${file}: add a <title> above the seo block`);
+  const projectHome = project && file === `projects/${project.id}.html` ? project : null;
+  const own = isHome ? SITE : projectHome;
+  const title = own ? own.title : decode((rest.match(/<title>([^<]*)<\/title>/) || [])[1] || "");
+  const description = own ? own.description : decode((rest.match(/<meta name="description" content="([^"]*)">/) || [])[1] || "");
+  if (!title) errors.push(`${file}: add a <title> above the seo block${projectHome ? " (or title in data/projects.js)" : ""}`);
   if (!description) errors.push(`${file}: add a <meta name="description" content="..."> above the seo block`);
-  if (isHome && /<title>/.test(rest)) errors.push(`${file}: the home page's title comes from data/site.js (title); remove its own <title>`);
+  if (own && /<title>/.test(rest)) errors.push(`${file}: this page's title comes from data/ (${isHome ? "site.js" : "projects.js"}); remove its own <title>`);
+  if (file.startsWith("projects/") && !project) errors.push(`${file}: add data-project="<id>" (an id in data/projects.js) to <body>`);
   if (!html.includes(H.START.slice(0, 15)) || !html.includes(H.END)) {
     errors.push(`${file}: add the two seo markers in <head> (copy them from shop.html)`);
     continue;
@@ -45,22 +55,29 @@ for (const file of handPages) {
   const index = !/<meta name="robots" content="[^"]*noindex/.test(rest);
   const p = isHome ? "/" : file === "404.html" ? null : "/" + file.replace(/\.html$/, "");
   const name = title.split(" · ")[0];
-  const page = { file, path: p, title, description, ownTitle: !isHome, ownRobots: !index, index: index && Boolean(p), ogType: "website", schema: [] };
+  const page = { file, path: p, title, description, ownTitle: !own, ownRobots: !index, index: index && Boolean(p), ogType: "website", schema: [],
+    image: project ? project.image : undefined };
 
   if (isHome) {
-    page.schema = [H.website(SITE), H.artist(SITE), H.webPage(SITE, page, "WebPage", { about: { "@id": abs(SITE, "/#artist") } })];
+    page.schema = [H.website(SITE), H.organization(SITE), H.webPage(SITE, page, "WebPage", { about: { "@id": abs(SITE, "/#organization") } })];
   } else if (page.index) {
-    const crumbs = [["Home", "/"], [name, p]];
+    const crumbs = project
+      ? [["Home", "/"], ...(projectHome ? [] : [[project.name, projectPath(project.id)]]), [projectHome ? project.name : name, p]]
+      : [["Home", "/"], [name, p]];
+    const ofProject = (x) => !project || x.project === project.id;
     const lists = {
-      music: data.releases.map((r) => [r.title, "/music/" + r.id]),
+      music: data.releases.filter(ofProject).map((r) => [r.title, projectPath(r.project, "music", r.id)]),
       shop: data.products.filter((x) => !x.draft).map((x) => [x.title, "/shop/" + x.id]),
-      news: [...data.news].sort((a, b) => b.date.localeCompare(a.date)).map((n) => [n.title, "/news/" + n.id]),
-      projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, x.home])
+      news: [...data.news].filter(ofProject).sort((a, b) => b.date.localeCompare(a.date)).map((n) => [n.title, projectPath(n.project, "news", n.id)]),
+      projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)])
     }[key];
     const extra = { breadcrumb: H.breadcrumbs(SITE, crumbs) };
     if (lists && lists.length) extra.mainEntity = H.itemList(SITE, lists);
-    if (key === "press") extra.about = { "@id": abs(SITE, "/#artist") };
-    page.schema = [H.webPage(SITE, page, PAGE_TYPES[key] || "WebPage", extra), ...(key === "press" ? [H.artist(SITE)] : [])];
+    if (project && (projectHome || key === "press")) extra.about = { "@id": abs(SITE, projectPath(project.id)) + "#project" };
+    if (key === "about" && !project) extra.about = { "@id": abs(SITE, "/#organization") };
+    page.schema = [H.webPage(SITE, page, (!projectHome && PAGE_TYPES[key]) || "WebPage", extra),
+      ...(project && (projectHome || key === "press") ? [H.projectEntity(SITE, project)] : []),
+      ...(key === "about" && !project ? [H.organization(SITE)] : [])];
   }
   const block = H.headBlock(SITE, page);
   outputs.set(file, html.replace(new RegExp(`${H.START.slice(0, 15)}[^\\n]*\\n[\\s\\S]*?${H.END}`), () => block));
@@ -94,11 +111,9 @@ outputs.set("db/catalog.sql", C.catalogSql(data.products, data.productTypes) + p
 
 // Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
 const stale = [];
-for (const dir of ["music", "shop", "news"]) {
-  if (!fs.existsSync(path.join(ROOT, dir))) continue;
-  for (const f of fs.readdirSync(path.join(ROOT, dir)).filter((n) => n.endsWith(".html")).map((n) => `${dir}/${n}`)) {
-    if (!outputs.has(f) && read(f).includes(P.GENERATED)) stale.push(f);
-  }
+// (music/ and news/ at the root held the pages before they moved under projects/.)
+for (const f of ["music", "shop", "news", "projects"].flatMap(htmlUnder)) {
+  if (!outputs.has(f) && read(f).includes(P.GENERATED)) stale.push(f);
 }
 
 // ---------- sitemap.xml: every indexable page ----------
@@ -134,6 +149,11 @@ for (const f of changed) {
   fs.mkdirSync(path.dirname(path.join(ROOT, f)), { recursive: true });
   fs.writeFileSync(path.join(ROOT, f), outputs.get(f));
 }
-for (const f of stale) fs.unlinkSync(path.join(ROOT, f));
+for (const f of stale) {
+  fs.unlinkSync(path.join(ROOT, f));
+  // A folder emptied by the removal goes too (music/ and news/ once their pages moved under projects/).
+  const dir = path.dirname(path.join(ROOT, f));
+  if (!fs.readdirSync(dir).length) fs.rmdirSync(dir);
+}
 console.log(`build: ${changed.length} written, ${stale.length} removed, ${urls.length} URLs in sitemap.xml`);
 for (const f of [...changed, ...stale.map((s) => s + " (removed)")]) console.log("  " + f);

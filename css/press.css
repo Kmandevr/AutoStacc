@@ -18,7 +18,7 @@
 .copy {
   background: transparent;
   border: 1px solid var(--line);
-  color: var(--green-dim);
+  color: var(--accent-dim);
   padding: 6px 14px;
   min-height: 32px;
   font: inherit;
@@ -26,15 +26,15 @@
   cursor: pointer;
   transition: color .12s, border-color .12s, transform .1s var(--snap);
 }
-.copy:hover { color: var(--green); border-color: var(--green); }
+.copy:hover { color: var(--accent); border-color: var(--accent); }
 .copy:active { transform: scale(.95); }
 
 .press-side { display: grid; gap: 24px; }
 .panel {
   padding: 24px;
   border: 1px solid var(--line);
-  background: var(--bg-2);
-  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
+  background: var(--panel);
+  box-shadow: 4px -3px 0 color-mix(in srgb, var(--accent-2) 28%, transparent);
 }
 .panel p { color: var(--muted); margin: 12px 0 18px; }
 .press-actions { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -47,6 +47,6 @@
 
 @media (max-width: 600px) {
   .press { gap: 36px; }
-  .panel { padding: 20px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .panel { padding: 20px; box-shadow: 3px -2px 0 color-mix(in srgb, var(--accent-2) 28%, transparent); }
   .press-actions .btn { flex: 1 1 100%; }
 }

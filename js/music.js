@@ -5,7 +5,7 @@
 
   const { $, escapeHTML, isSet } = window.GS;
   const MUSIC = window.MUSIC || {};
-  const SITE = window.SITE || {};
+  const PROJECT = window.GS.currentProject();
 
   const player = $("#listen-player");
   if (!player) return;
@@ -37,7 +37,7 @@
     // Spotify's, SoundCloud's and Deezer's players are short; the others need a 16:9 frame.
     const tall = !/spotify|soundcloud|deezer/.test(host);
     return `<iframe class="player${tall ? " tall" : ""}" src="${escapeHTML(src)}"
-      title="${escapeHTML(release.title ? `${release.title} by ${SITE.artist || ""}` : "Music player")}" loading="lazy"
+      title="${escapeHTML(release.title ? `${release.title} by ${PROJECT.name || ""}` : "Music player")}" loading="lazy"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
   }
 
@@ -75,6 +75,6 @@
   platforms.innerHTML = live.length
     ? `<span class="platforms-label">Stream ${escapeHTML(release.title)} on</span>` +
       live.map((p) => `<a class="btn ghost" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.name)}</a>`).join("") +
-      `<a class="btn" href="/music/${escapeHTML(release.id)}">${escapeHTML(release.title)}: release page</a>`
+      `<a class="btn" href="${escapeHTML(window.GS.projectPath(release.project, "music", release.id))}">${escapeHTML(release.title)}: release page</a>`
     : `<p class="empty">Streaming links land here with the first release. <a href="#newsletter">Get told first</a>.</p>`;
 })();

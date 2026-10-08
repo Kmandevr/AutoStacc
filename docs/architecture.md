@@ -92,4 +92,4 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 - **Notifications:** follows record who wants news; nothing sends it yet. A "new release" mail is one template in `server/email/templates.js` plus a send when a product is published.
 - **Licences:** shown per product only as metadata; no licence records.
 - **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs.
-- **Platform-first home page:** `/` is still the Glitches & Stitches home and `SITE.artist` still drives the site-wide head and header. Changing that changes the site's search identity and is the owner's call (see [decisions](decisions.md)).
+- (Resolved 2026-10-08: the site is AutoStacc and projects live under `/projects/<id>`; see [decisions](decisions.md) and [autostacc](autostacc.md#site-structure).)

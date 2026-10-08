@@ -13,9 +13,9 @@ Start with `verify-site` (alt text, `lang`, tap targets, overflow). Then review 
 | Names | Links and buttons with clear text (not "click here"); `aria-label` on icon-only controls; disabled "Coming soon" buttons use `aria-disabled` and aren't focus traps |
 | Nav toggle | `aria-expanded` kept in sync, usable by keyboard, closes on Escape |
 | Forms | Visible or `aria-label`led label on the newsletter input; the status message in `#newsletter-msg` announced (`aria-live`) |
-| Keyboard | Everything reachable by Tab in a sensible order, visible focus (check `css/base.css` for `outline: none` overrides) |
-| Colour | Contrast of text and neon accents against the dark backgrounds, using the tokens in `css/base.css` (4.5:1 body text, 3:1 large text and UI). Don't judge by eye; compute the ratio |
-| Motion | The glitch title and animations stop under `prefers-reduced-motion` (already in `css/base.css`; confirm it still covers new animation) |
+| Keyboard | Everything reachable by Tab in a sensible order, visible focus (check `css/core.css` and `css/layout.css` for `outline: none` overrides) |
+| Colour | Contrast of text and accents in both AutoStacc themes (tokens in `css/platform.css`) and in each project skin (`css/projects/<id>/skin.css`) (4.5:1 body text, 3:1 large text and UI). Don't judge by eye; compute the ratio |
+| Motion | The glitch title and animations stop under `prefers-reduced-motion` (in `css/core.css`, `css/platform.css`, `css/layout.css` and the project skins; confirm it still covers new animation) |
 | Dynamic content | Filter buttons expose their pressed state (`aria-pressed`); results change is announced or at least not confusing |
 
 ## Reporting

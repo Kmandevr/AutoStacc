@@ -1,0 +1,146 @@
+/* AutoStacc's look: light/dark tokens, track colours and the platform touches inside main.platform. */
+/* AutoStacc's look (docs/autostacc.md): stacked, modular, a prettier DAW. Sets the tokens every page uses (light and dark, following the device unless the visitor picks one: js/theme.js sets data-theme on <html>) and the platform touches inside <main class="platform">. A project's own pages override the tokens with their skin. Every page. */
+
+
+:root {
+  /* light */
+  --bg: #eceef3;
+  --panel: #ffffff;
+  --panel-2: #f5f6f9;
+  --text: #161a22;
+  --muted: #586174;
+  --line: #d9dde5;
+  --grid: rgba(22, 26, 34, .045);
+  --teal: #0b7d74;
+  --amber: #b86e00;
+  --coral: #d64545;
+  --lime: #4f8a10;
+  --violet: #7356d8;
+  --shadow: 0 1px 2px rgba(22, 26, 34, .06), 0 6px 18px rgba(22, 26, 34, .07);
+  color-scheme: light;
+
+  /* roles, used by css/core.css and the feature sheets */
+  --accent: var(--text);
+  --accent-dim: var(--muted);
+  --accent-2: var(--teal);
+  --heading: var(--text);
+  --link: var(--teal);
+  --link-hover: var(--text);
+  --focus: var(--teal);
+  --btn-bg: var(--teal);
+  --on-accent: #ffffff;
+  --ghost-border: var(--line);
+  --stack: color-mix(in srgb, var(--teal) 22%, transparent);
+  --glow: none;
+  --glow-2: none;
+  --radius: 10px;
+  --max: 1120px;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --display: var(--font);
+  --display-weight: 750;
+  --display-tracking: -.02em;
+  --section-size: clamp(1.45rem, 3vw, 1.9rem);
+  --section-case: none;
+  --stamp-size: .8rem;
+  --btn-case: none;
+  --btn-tracking: 0;
+  --prompt: "";
+  --btn-prefix: "";
+  --msg-ok: "";
+  --msg-err: "";
+  --msg-pending: "";
+  --snap: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* dark: the device asks for it (and the visitor hasn't picked light), or the visitor picked it */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111318;
+    --panel: #191c23;
+    --panel-2: #20242d;
+    --text: #eef1f6;
+    --muted: #9aa3b2;
+    --line: #2a2f3a;
+    --grid: rgba(238, 241, 246, .035);
+    --teal: #2ee6d6;
+    --amber: #ffb547;
+    --coral: #ff6b6b;
+    --lime: #9be15d;
+    --violet: #a78bfa;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    --on-accent: #06201e;
+    --stack: color-mix(in srgb, var(--teal) 28%, transparent);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111318;
+  --panel: #191c23;
+  --panel-2: #20242d;
+  --text: #eef1f6;
+  --muted: #9aa3b2;
+  --line: #2a2f3a;
+  --grid: rgba(238, 241, 246, .035);
+  --teal: #2ee6d6;
+  --amber: #ffb547;
+  --coral: #ff6b6b;
+  --lime: #9be15d;
+  --violet: #a78bfa;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  --on-accent: #06201e;
+  --stack: color-mix(in srgb, var(--teal) 28%, transparent);
+  color-scheme: dark;
+}
+
+/* Track colours tag kinds of content wherever they appear (library, dashboard, shop). */
+[data-track] { --track: var(--teal); }
+[data-track="midi"] { --track: var(--amber); }
+[data-track="samples"] { --track: var(--coral); }
+[data-track="loops"] { --track: var(--lime); }
+[data-track="presets"] { --track: var(--violet); }
+
+/* ---------- platform pages ---------- */
+/* An arrange view behind the content: faint bars and beats. */
+.platform {
+  background:
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 64px 100%,
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 56px;
+  min-height: 70vh;
+}
+.platform .page-hero { padding: 48px 0 28px; }
+.platform .page-hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
+.platform section { padding: 48px 0; }
+.platform .alt { background: color-mix(in srgb, var(--panel) 70%, transparent); border-block: 1px solid var(--line); }
+
+/* section titles carry a small track-colour chip, like a track header */
+.platform .section-head h2 { display: inline-flex; align-items: center; gap: .5em; }
+.platform .section-head h2::before {
+  content: "";
+  width: .5em;
+  height: 1em;
+  border-radius: 3px;
+  background: var(--track, var(--teal));
+}
+.platform .btn:hover { box-shadow: 0 4px 0 var(--stack); transform: translateY(-2px); }
+.platform .btn.ghost { color: var(--text); background: var(--panel); }
+.platform .btn.ghost:hover { background: var(--panel-2); color: var(--text); border-color: var(--teal); }
+.platform .owned-badge { transform: none; letter-spacing: .1em; font-family: var(--mono); font-weight: 600; box-shadow: none; color: var(--teal); border-color: var(--teal); }
+
+/* panels: stacked cards (a softer copy sits behind each, like layered clips) */
+.platform .panel, .platform .card, .platform .tile, .platform .project-card, .platform .stacc-stacclet, .platform .vault-item {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow), 0 6px 0 -2px var(--stack);
+}
+
+/* meters and counts read as hardware */
+.platform .stacc-count, .platform .price, .platform .tag { font-family: var(--mono); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .platform .page-hero h1 { animation: stack-in .5s var(--snap) both; }
+  .platform .page-hero p { animation: stack-in .5s .08s var(--snap) both; }
+}
+@keyframes stack-in {
+  from { opacity: 0; translate: 0 -14px; }
+  to { opacity: 1; translate: 0 0; }
+}

@@ -1,13 +1,13 @@
 // Collects the public site into dist/ (what Cloudflare Pages serves): the pages, css/, js/, data/, img/, the
-// generated music/, shop/, news/ pages and the root files below. Never docs/, scripts/, server/ or .claude/ (the store
-// API in functions/ + server/ is bundled by Wrangler separately). Usage: node scripts/dist.js [outDir]
+// generated shop/ pages, projects/ (each project's pages, hand-written and generated) and the root files below.
+// Never docs/, scripts/, server/ or .claude/ (the store API in functions/ + server/ is bundled by Wrangler separately). Usage: node scripts/dist.js [outDir]
 const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.resolve(ROOT, process.argv[2] || "dist");
 const ROOT_FILES = ["_redirects", "_headers", "robots.txt", "sitemap.xml"];
-const DIRS = ["css", "js", "data", "img", "music", "shop", "news"];
+const DIRS = ["css", "js", "data", "img", "shop", "projects"];
 // Editor-only files and folder notes stay out of the public site.
 const SKIP = (name) => name === ".purpose" || name.endsWith(".d.ts") || name === "jsconfig.json" || name.startsWith(".");
 
