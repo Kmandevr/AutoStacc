@@ -11,6 +11,8 @@
     radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent 45%),
     radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 45%);
 }
+/* the hero's column fills the width, so the logo sizes against it (not the screen) and never overflows */
+.hero > .wrap { width: 100%; }
 /* latest-release line above the title */
 .kicker {
   display: inline-block;
@@ -27,10 +29,45 @@
 }
 .kicker span { color: var(--accent-2); text-shadow: var(--glow-2); }
 .kicker:hover { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent); }
-.hero h1 {
+/* the logo (img/projects/glitches-and-stitches/logo.png, from docs/assets/gs-logo): powers on, then twitches in short
+   bursts; two offset copies slice through it like the old glitch title */
+.hero-logo {
+  position: relative;
+  width: min(760px, 100%);
+  margin: 0 auto 18px;
+  /* the slices shift sideways during a burst; keep them inside the logo's box (it has its own margin) */
+  overflow: clip;
   animation: power-on .5s var(--snap) both, glitch-skew 4.2s .8s steps(1) infinite;
-  font-size: clamp(3rem, 11vw, 8rem);
-  margin: 0 0 18px;
+}
+.hero-logo img { display: block; width: 100%; height: auto; }
+.hero-logo::before, .hero-logo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/img/projects/glitches-and-stitches/logo.png") center / 100% auto no-repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.hero-logo::before, .hero-logo::after { opacity: 0; }
+.hero-logo::before { filter: hue-rotate(150deg); animation: logo-tear-a 4.2s .8s infinite steps(1); }
+.hero-logo::after { animation: logo-tear-b 4.2s .8s infinite steps(1); }
+/* the copies show only during the burst (90-96% of each cycle), as torn slices */
+@keyframes logo-tear-a {
+  0%, 89%, 97%, 100% { opacity: 0; transform: none; clip-path: inset(0); }
+  90% { opacity: 1; transform: translate(-12px, -2px); clip-path: inset(18% 0 58% 0); }
+  92% { opacity: 1; transform: translate(8px, 1px); clip-path: inset(62% 0 14% 0); }
+  94% { opacity: 1; transform: translate(-6px, 0); clip-path: inset(6% 0 80% 0); }
+  96% { opacity: 1; transform: translate(10px, 0); clip-path: inset(72% 0 6% 0); }
+}
+@keyframes logo-tear-b {
+  0%, 89%, 97%, 100% { opacity: 0; transform: none; clip-path: inset(0); }
+  90% { opacity: 1; transform: translate(12px, 2px); clip-path: inset(40% 0 38% 0); }
+  93% { opacity: 1; transform: translate(-9px, 0); clip-path: inset(10% 0 70% 0); }
+  95% { opacity: 1; transform: translate(6px, -1px); clip-path: inset(84% 0 2% 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo, .hero-logo::before, .hero-logo::after { animation: none; }
+  .hero-logo::before, .hero-logo::after { display: none; }
 }
 .hero p {
   color: var(--accent);

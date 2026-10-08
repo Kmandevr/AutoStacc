@@ -57,7 +57,7 @@
       bar("type", types.map((t) => [t, t]));
       dispatchEvent(new CustomEvent("gs:cards"));
     };
-    const swap = (fn) => (document.startViewTransition ? document.startViewTransition(fn) : fn());
+    const swap = GS.viewSwap;
     const fromUrl = () => {
       const q = new URLSearchParams(location.search);
       state.project = projects.some((x) => x.id === q.get("project")) ? q.get("project") : "";
