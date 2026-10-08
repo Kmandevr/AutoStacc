@@ -80,7 +80,12 @@ for (const file of handPages) {
       ...(key === "about" && !project ? [H.organization(SITE)] : [])];
   }
   const block = H.headBlock(SITE, page);
-  outputs.set(file, html.replace(new RegExp(`${H.START.slice(0, 15)}[^\\n]*\\n[\\s\\S]*?${H.END}`), () => block));
+  // A list between <!-- projects:start --> and <!-- projects:end --> gets a plain link per published project, so the
+  // project pages are linked in the HTML itself (js/projects.js upgrades the list to cards with follow controls).
+  const projectLinks = data.projects.filter((x) => !x.draft)
+    .map((x) => `<li class="project-card"><h3><a href="${H.esc(projectPath(x.id))}">${H.esc(x.name)}</a></h3><p>${H.esc(x.summary || "")}</p></li>`).join("");
+  outputs.set(file, html.replace(new RegExp(`${H.START.slice(0, 15)}[^\\n]*\\n[\\s\\S]*?${H.END}`), () => block)
+    .replace(/(<!-- projects:start[^>]*-->)[\s\S]*?(<!-- projects:end -->)/g, (m, a, b) => `${a}${projectLinks}${b}`));
   pages.push(page);
 }
 
