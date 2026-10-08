@@ -3,7 +3,9 @@
 // handles every [data-signout] button. It only chooses which links to show: the account pages are gated on the server
 // (server/pages/guard.js) and every private API checks the session itself. A remembered hint ("this browser was
 // signed in", never who) picks the set before the answer arrives; offline or with the store down the set stays as
-// it is. Load it after the frame (js/layout.js or js/project-frame.js). Needs js/util.js.
+// it is. While an admin impersonates a customer, the same answer says so and this loads the impersonation banner
+// (js/impersonation.js, css/impersonation.css) on every page. Load it after the frame (js/layout.js or
+// js/project-frame.js). Needs js/util.js.
 (function () {
   "use strict";
 
@@ -20,8 +22,19 @@
     document.querySelectorAll("[data-auth]").forEach((el) => { el.hidden = (el.dataset.auth === "in") !== signedIn; });
   }
 
+  // The banner's own files, once per page. They come only when the store says this browser is impersonating.
+  function loadBanner() {
+    if (document.querySelector("script[data-impersonation]")) return;
+    document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="/css/impersonation.css">');
+    const s = document.createElement("script");
+    s.src = "/js/impersonation.js";
+    s.dataset.impersonation = "";
+    document.body.append(s);
+  }
+
   show(recalled());
   api("/api/account").then((res) => {
+    if (res.data && res.data.impersonation) loadBanner();
     if (!res.ok) return;
     const signedIn = Boolean(res.data.user);
     remember(signedIn);
@@ -37,7 +50,7 @@
     const res = await api("/api/auth/sign-out", { method: "POST", body: {} });
     if (!res.ok && res.status !== 401) {
       btn.disabled = false;
-      btn.textContent = "Log out failed, try again";
+      btn.textContent = res.error.code === "impersonation_blocked" ? "Exit impersonation first (banner at the top)" : "Log out failed, try again";
       return;
     }
     remember(false);

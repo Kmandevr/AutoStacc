@@ -19,7 +19,7 @@ let server, browser, base, stateDir;
 
 before(async () => {
   stateDir = path.join(ROOT, ".wrangler", "test-browser");
-  server = startDevServer({ port: 8803, stateDir, fresh: true, quiet: true, vars: { APP_ENV: "test" } });
+  server = startDevServer({ port: 8803, stateDir, fresh: true, quiet: true, vars: { APP_ENV: "test", ADMIN_EMAILS: "owner@browser.test" } });
   base = await server.ready;
   browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 }, { timeout: 240000 });
@@ -496,4 +496,51 @@ describe("store in the browser", () => {
       await ctx.close();
     });
   }
+
+  test("impersonation: the banner is on every page, names both people, and Exit returns to the Control Center", async () => {
+    const shopper = await open(PHONE);
+    const customer = unique("imp-shopper");
+    await signUp(shopper.page, customer);
+    await shopper.ctx.close();
+    const { ctx, page } = await open(DESK);
+    await signUp(page, "owner@browser.test");
+    const id = sql(stateDir, `SELECT id FROM "user" WHERE email = '${customer}'`)[0].id;
+    await page.goto("/admin");
+    await page.click("#tab-customers");
+    await page.click(`[data-preview="${id}"]`);
+    await page.waitForSelector(".admin-preview h2");
+    page.once("dialog", (d) => d.accept());
+    await page.click("[data-impersonate]");
+    await page.waitForURL((u) => u.pathname === "/dashboard");
+    for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/projects/glitches-and-stitches"]) {
+      await page.goto(path);
+      const bar = page.locator("#impersonation-bar.imp-active");
+      await bar.waitFor();
+      assert.match(await bar.innerText(), new RegExp(customer.replace(/[.]/g, "\\.")), path);
+      assert.match(await bar.innerText(), /owner@browser\.test/, path);
+      assert.match(await page.title(), /^\[IMPERSONATING\]/, path);
+      // Nothing on the page sits under the bar.
+      const top = await page.evaluate(() => document.querySelector("main").getBoundingClientRect().top + scrollY);
+      assert.ok(top >= await bar.evaluate((b) => b.offsetHeight), path);
+    }
+    await page.click("[data-imp-exit]");
+    await page.waitForURL((u) => u.pathname === "/admin");
+    await page.waitForSelector("#tab-overview");
+    assert.equal(await page.locator("#impersonation-bar").count(), 0);
+
+    // Ended elsewhere (here: its time limit): the page says so instead of quietly turning back into the admin.
+    await page.click("#tab-customers");
+    await page.click(`[data-preview="${id}"]`);
+    page.once("dialog", (d) => d.accept());
+    await page.click("[data-impersonate]");
+    await page.waitForURL((u) => u.pathname === "/dashboard");
+    sql(stateDir, `UPDATE impersonations SET expires_at = '2000-01-01T00:00:00.000Z' WHERE ended_at IS NULL AND customer_user_id = '${id}'`);
+    await page.goto("/library");
+    await page.waitForSelector("#impersonation-bar.imp-ended");
+    assert.match(await page.title(), /^\[IMPERSONATION ENDED\]/);
+    await page.click("[data-imp-exit]");
+    await page.waitForURL((u) => u.pathname === "/admin");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
 });

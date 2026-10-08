@@ -4,6 +4,7 @@
 import { randomToken, now } from "../lib/db.js";
 import { sha256 } from "../lib/crypto.js";
 import { getOrder } from "./orders.js";
+import { hasImpersonationCookie } from "../impersonation/sessions.js";
 
 const COOKIE = "gs_guest";
 const MAX_KEYS = 10;
@@ -36,9 +37,11 @@ export async function checkGuestKey(app, key) {
   return ageDays <= app.config.guestAccessDays ? order : null;
 }
 
-// Order ids the request's guest cookie proves access to.
+// Order ids the request's guest cookie proves access to. None while impersonating: the admin's own guest purchases
+// must not mix into the customer's view.
 export async function guestOrderIds(app) {
   if (app._guestOrderIds) return app._guestOrderIds;
+  if (hasImpersonationCookie(app.request)) return (app._guestOrderIds = []);
   const ids = [];
   for (const key of readCookie(app.request)) {
     const order = await checkGuestKey(app, key);

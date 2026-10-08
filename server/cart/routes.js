@@ -14,4 +14,5 @@ async function price(app) {
   return json({ cart: await priceCart(app.db, items, { owned }) });
 }
 
-export const routes = [["POST", "/api/cart/price", price]];
+// Pricing changes nothing, so it also works while impersonating (server/impersonation/policy.js).
+export const routes = [["POST", "/api/cart/price", price, { impersonation: "allow" }]];

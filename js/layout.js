@@ -136,4 +136,7 @@
         </div>
       </div>`;
   }
+
+  // Anonymous page counter (GS.track: no cookies or ids; the admin's statistics read it).
+  if (document.body.dataset.page && document.body.dataset.page !== "admin") GS.track("page_view", document.body.dataset.page);
 })();

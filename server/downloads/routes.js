@@ -6,12 +6,15 @@ import { first, run, newId, now } from "../lib/db.js";
 import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access.js";
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
 import { signDownload, readDownload } from "./tokens.js";
+import { impersonationIdOf } from "../auth/session.js";
 import { getFile, safeFilename } from "../storage/buckets.js";
 import { limit } from "../lib/ratelimit.js";
 
-const logEvent = (db, event, f) =>
-  run(db, "INSERT INTO download_events (id, event, product_id, file_id, entitlement_id, subject, reason, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    newId("dl"), event, f.productId || null, f.fileId || null, f.entitlementId || null, f.subject || null, f.reason || null, now());
+// impersonation_id marks downloads an admin made while impersonating, so they never count as the customer's.
+const logEvent = (app, event, f) =>
+  run(app.db, `INSERT INTO download_events (id, event, product_id, file_id, entitlement_id, subject, reason, created_at, impersonation_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    newId("dl"), event, f.productId || null, f.fileId || null, f.entitlementId || null, f.subject || null, f.reason || null, now(), impersonationIdOf(app));
 
 const getActiveFile = (db, fileId) => first(db, "SELECT * FROM product_files WHERE id = ? AND active = 1", fileId);
 
@@ -31,12 +34,12 @@ async function issue(app) {
   const ents = file ? await activeEntitlements(app.db, access, file.product_id) : [];
   const ent = ents.find((e) => subjectFor(access, e));
   if (!file || !ent) {
-    await logEvent(app.db, "denied", { fileId, productId: file && file.product_id, reason: "no entitlement", subject: subjectsOf(access)[0] });
+    await logEvent(app, "denied", { fileId, productId: file && file.product_id, reason: "no entitlement", subject: subjectsOf(access)[0] });
     fail(403, "download_denied", "You don't own that file.");
   }
   const subject = subjectFor(access, ent);
   const { token, expiresAt } = await signDownload(app.config.downloadSecret, { fileId, entitlementId: ent.id, subject, ttlSeconds: app.config.downloadTtlSeconds });
-  await logEvent(app.db, "issued", { fileId, productId: file.product_id, entitlementId: ent.id, subject });
+  await logEvent(app, "issued", { fileId, productId: file.product_id, entitlementId: ent.id, subject });
   return json({ url: `/api/downloads/${token}`, expiresAt, filename: file.filename });
 }
 
@@ -47,12 +50,12 @@ async function redeem(app, { token }) {
   await limit(app, "download-get", 60, 60);
   const { payload, error } = await readDownload(app.config.downloadSecret, token);
   if (error) {
-    await logEvent(app.db, "denied", { reason: error, fileId: payload && payload.f });
+    await logEvent(app, "denied", { reason: error, fileId: payload && payload.f });
     return back(error === "expired" ? "expired" : "denied");
   }
   const access = await resolveAccess(app);
   const deny = async (reason) => {
-    await logEvent(app.db, "denied", { reason, fileId: payload.f, entitlementId: payload.e, subject: payload.s });
+    await logEvent(app, "denied", { reason, fileId: payload.f, entitlementId: payload.e, subject: payload.s });
     return back("denied");
   };
   // The link only works for the person it was issued to (copying it to someone else doesn't help them).
@@ -63,7 +66,7 @@ async function redeem(app, { token }) {
   if (!file || file.product_id !== ent.product_id) return deny("file mismatch");
   const object = await getFile(app.env, file.r2_key);
   if (!object) return deny("file missing from storage");
-  await logEvent(app.db, "served", { fileId: file.id, productId: file.product_id, entitlementId: ent.id, subject: payload.s });
+  await logEvent(app, "served", { fileId: file.id, productId: file.product_id, entitlementId: ent.id, subject: payload.s });
   const name = safeFilename(file.filename);
   return new Response(object.body, {
     headers: {
@@ -79,6 +82,7 @@ async function redeem(app, { token }) {
 }
 
 export const routes = [
-  ["POST", "/api/downloads", issue],
-  ["GET", "/api/downloads/:token", redeem]
+  // Allowed while impersonating (to check what a customer can download), and audited, including the file being served.
+  ["POST", "/api/downloads", issue, { impersonation: "allow" }],
+  ["GET", "/api/downloads/:token", redeem, { auditReads: true }]
 ];

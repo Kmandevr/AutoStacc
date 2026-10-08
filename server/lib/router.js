@@ -4,7 +4,7 @@ export function createRouter(tables) {
   const routes = tables.flat().map(([method, pattern, handler, opts = {}]) => {
     const names = [];
     const re = new RegExp("^" + pattern.replace(/:([a-zA-Z]+)/g, (_, n) => (names.push(n), "([^/]+)")) + "/?$");
-    return { method, re, names, handler, opts };
+    return { method, pattern, re, names, handler, opts };
   });
   return {
     match(method, path) {
