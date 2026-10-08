@@ -27,5 +27,6 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Development](development.md): running locally in test mode, environment variables, tests, extending the store
 - [SEO](seo.md): how search visibility works (generated metadata, item pages, sitemap, structured data, tests)
 - [Search Console](search-console.md): the owner's step-by-step for Google Search Console and official profiles
+- [Production requirements](production.md): trust pages, licences, support, privacy, security and accessibility rules every change must keep
 - [Decisions](decisions.md): what was chosen and why
 - [Log](log.md): dated history of changes

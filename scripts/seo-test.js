@@ -211,6 +211,10 @@ locs.forEach((u, i) => {
 });
 for (const [f, p] of Object.entries(pages)) if (!p.noindex && !locs.includes(ORIGIN + p.path)) add("FAIL", "sitemap-missing", `${ORIGIN + p.path} not in sitemap.xml`, f);
 if (locs.length && !out.some((l) => l.startsWith("FAIL sitemap"))) add("PASS", "sitemap", `${locs.length} canonical public URLs, valid XML`);
+// The trust pages a public store needs (docs/production.md) are always published and indexable.
+for (const p of ["/privacy", "/terms", "/refunds", "/license", "/help", "/contact", "/security"]) {
+  if (!locs.includes(ORIGIN + p)) add("FAIL", "trust-page", `${p} must be a public page in sitemap.xml (data/legal.js, data/help.js, data/licenses.js)`);
+}
 
 // ---------- robots.txt ----------
 const robots = exists("robots.txt") ? read("robots.txt") : "";
@@ -286,6 +290,9 @@ if (!SITE.title || !SITE.title.startsWith(BRAND)) add("FAIL", "home-title", "SIT
 for (const x of data.projects.filter((p) => !p.draft)) if (!x.title || !x.title.includes(x.name) || !x.title.endsWith(" · " + BRAND)) add("FAIL", "home-title", `${x.id}: its title must name it and end "· ${BRAND}"`, "data/projects.js");
 const drafts = data.products.filter((p) => p.draft).length;
 if (drafts) add("WARN", "drafts", `${drafts} placeholder product(s) kept out of search (issue #5)`, "data/products.js");
+
+// Legal text the owner hasn't confirmed yet shows a "To be confirmed" notice (data/legal.js review).
+for (const f of Object.keys(pages)) if (/class="prose-notice"/.test(pages[f].html)) add("WARN", "legal-review", "has text the owner still has to confirm (data/legal.js review)", f);
 
 // ---------- brand spelling across everything published ----------
 const published = [...pageFiles, ...["js", "data"].flatMap((d) => fs.readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith(".js")).map((f) => `${d}/${f}`)), "sitemap.xml", "robots.txt"];

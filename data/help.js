@@ -74,7 +74,7 @@ window.HELP = [
         "Nothing was charged and your cart is still there. Check the card details or try another card. A pending amount your bank shows for a failed payment disappears on its own."
       ] },
       { id: "checkout-problems", q: "Checkout won't start", a: [
-        "The cart lists anything that stops checkout, such as an item that's no longer for sale or one you already own; remove it and try again. If the store says it's offline, check the [status page](/status) and try again shortly."
+        "The cart lists anything that stops checkout, such as an item that's no longer for sale or one you already own; remove it and try again. If the store says it's offline, it's being worked on: your cart is kept, so try again shortly."
       ] },
       { id: "refunds", q: "Can I get a refund?", a: [
         "See the [refund policy](/refunds): duplicate charges, broken files and purchases you didn't make are refunded."
