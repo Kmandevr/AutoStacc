@@ -18,6 +18,7 @@
 //   email (booking/press; empty hides it, never a made-up address), pressKitUrl, newsletterAction (form endpoint;
 //   empty shows "coming soon"), socials: [{ name, url }] official profiles only (empty url = not set yet; never a
 //   site's home page).
+//   logoFull: optional { src, width, height } of its full logo, the heading of its project card.
 //   draft: true keeps it off /projects and out of the store database.
 window.PROJECTS = [
   {
@@ -45,6 +46,7 @@ window.PROJECTS = [
     alternateNames: ["Glitches and Stitches"],
     image: { src: "img/projects/glitches-and-stitches/og.png", width: 1200, height: 630, alt: "The Glitches & Stitches logo: Glitches over Stitches in green pixel type, a purple thread through the ampersand, framed by a line that sweeps up to the right" },
     logo: "img/projects/glitches-and-stitches/icon.png",
+    logoFull: { src: "img/projects/glitches-and-stitches/logo.png", width: 1600, height: 760 },
     email: "",
     pressKitUrl: "",
     newsletterAction: "",
