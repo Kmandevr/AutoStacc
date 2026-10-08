@@ -1,5 +1,5 @@
 // Generates everything search engines read from data/: each page's <head> metadata, one page per product (shop/) and
-// per project release and news post (projects/<id>/music/, projects/<id>/news/), sitemap.xml, the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
+// per project release and news post (projects/<id>/music/, projects/<id>/news/), sitemap.xml, llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
 // Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
@@ -10,6 +10,7 @@ const P = require("./lib/pages");
 const C = require("./lib/catalog");
 const PL = require("./lib/platform");
 const { platformSql } = require("./lib/platform-catalog");
+const { llmsTxt } = require("./lib/llms");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -130,6 +131,9 @@ outputs.set("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
 ${urls.map((u) => `  <url><loc>${H.esc(u)}</loc></url>`).join("\n")}
 </urlset>
 `);
+
+// ---------- llms.txt: the site in plain text for AI assistants ----------
+outputs.set("llms.txt", llmsTxt(data));
 
 // ---------- public URL record: new URLs are added, none is ever removed here ----------
 // scripts/seo-test.js fails if a recorded URL is neither in the sitemap nor redirected in _redirects,

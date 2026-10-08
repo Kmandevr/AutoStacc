@@ -33,6 +33,7 @@
   --btn-case: uppercase;
   --btn-tracking: .06em;
   --prompt: "$ ";
+  --heading-case: uppercase;
   --btn-prefix: "> ";
   --msg-ok: "[ok] ";
   --msg-err: "[err] ";

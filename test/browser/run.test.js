@@ -68,11 +68,11 @@ describe("store in the browser", () => {
     const email = unique("phone-buyer");
     await toMockPay(page, email, "stems-patchwork");
     await page.click("[data-mock=paid]");
-    await page.waitForSelector("text=CINCHED.");
+    await page.waitForSelector("text=Payment confirmed");
     assert.equal(await page.evaluate(() => localStorage.getItem("gs:cart")), "[]");
     // Refresh after success: still paid, nothing doubled.
     await page.reload();
-    await page.waitForSelector("text=CINCHED.");
+    await page.waitForSelector("text=Payment confirmed");
     assert.deepEqual(ordersFor(email).map((o) => o.status), ["paid"]);
     await page.goto("/shop/stems-patchwork");
     await page.waitForSelector("[data-buy] .owned-badge");
@@ -119,7 +119,7 @@ describe("store in the browser", () => {
     await toMockPay(page, email);
     await page.reload();
     await page.click("[data-mock=expired]");
-    await page.waitForSelector("text=CHECKOUT CANCELLED");
+    await page.waitForSelector("text=Checkout cancelled");
     assert.equal(ordersFor(email)[0].status, "cancelled");
     await page.click("text=Back to cart");
     await page.waitForSelector(".cart-line");
@@ -131,7 +131,7 @@ describe("store in the browser", () => {
     const email = unique("declined");
     await toMockPay(page, email);
     await page.click("[data-mock=failed]");
-    await page.waitForSelector("text=PAYMENT FAILED");
+    await page.waitForSelector("text=Payment didn't go through");
     assert.equal(ordersFor(email)[0].status, "failed");
     const lib = await page.request.get("/api/library");
     assert.equal((await lib.json()).items.length, 0);
@@ -147,7 +147,7 @@ describe("store in the browser", () => {
     await page.fill("#cart-email", email);
     await ctx.setOffline(true);
     await page.click("#checkout-btn");
-    await page.waitForSelector("text=Signal lost");
+    await page.waitForSelector("text=We couldn't reach the store");
     assert.equal(ordersFor(email).length, 0);
     await ctx.setOffline(false);
     await page.click("#checkout-btn");
@@ -216,7 +216,7 @@ describe("store in the browser", () => {
   test("empty states: cart, library when logged out, library with nothing in it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/cart");
-    await page.waitForSelector("text=Nothing stitched in here yet.");
+    await page.waitForSelector("text=Your cart is empty");
     await page.goto("/library");
     await page.waitForSelector("text=Locked");
     await signUp(page, unique("empty"));

@@ -8,7 +8,7 @@
   max-width: 560px;
 }
 .panel + .panel { margin-top: 28px; }
-.panel > h2 { margin: 0 0 14px; font-size: clamp(1.7rem, 4vw, 2.2rem); text-transform: uppercase; }
+.panel > h2 { margin: 0 0 14px; font-size: clamp(1.7rem, 4vw, 2.2rem); text-transform: var(--heading-case); }
 .panel > h2::before { content: var(--prompt); color: var(--accent-2); text-shadow: var(--glow-2); }
 .panel > p { color: var(--muted); }
 .panel.wide { max-width: none; }
