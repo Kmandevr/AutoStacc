@@ -25,8 +25,8 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |
 | Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` | the page's `data-project` |
 
-Store items wear their project's look in the store, the hub feed and on their product page; clicking one opens the store filtered to its project with it selected at the top.
+Store items wear their project's look in the store, the new releases feed (home page, dashboard) and on their product page; clicking one opens the store filtered to its project with it selected at the top.
 
 ## Still bound to one page (to convert)
 
-Each of these looks up fixed ids and should become `[data-<feature>]` with attributes (tracked in #52): hub panels (`#hub-stacc`, `#hub-releases`), news (`#news-list`, `#latest-news`), shows (`#show-list`), releases (`#release-list`, `#artist-profiles`), listen player (`#listen-player`, `#listen-platforms`), newsletter (`#newsletter-form`), press (`#press-contact`, `#press-profiles`), Your Stacc (`#library-app`), cart, checkout, account, login (`#*-app`) and admin. The store pages' `#*-app` roots are single-use by nature (one cart per page), but their parts (order list, cart lines) can still become modules when another page needs them.
+Each of these looks up fixed ids and should become `[data-<feature>]` with attributes (tracked in #52): news (`#news-list`, `#latest-news`), shows (`#show-list`), releases (`#release-list`, `#artist-profiles`), listen player (`#listen-player`, `#listen-platforms`), newsletter (`#newsletter-form`), press (`#press-contact`, `#press-profiles`), Your Stacc (`#library-app`), cart, checkout, account, login (`#*-app`) and admin. The store pages' `#*-app` roots are single-use by nature (one cart per page), but their parts (order list, cart lines) can still become modules when another page needs them.

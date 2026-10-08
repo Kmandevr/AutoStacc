@@ -37,7 +37,7 @@ const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "
 const metaVal = (head, key) => tags(head, "meta").filter((m) => m.name === key || m.property === key).map((m) => m.content);
 const draftProducts = new Set(data.products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages (cart, login, library...) are private: noindex, out of the sitemap, blocked in robots.txt.
-const PRIVATE = /^\/(account|login|library|admin|checkout|cart|api|private)(\/|$)/;
+const PRIVATE = /^\/(dashboard|account|settings|login|library|admin|checkout|cart|api|private)(\/|$)/;
 const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f) || PRIVATE.test(urlPath(f));
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
@@ -230,7 +230,10 @@ const allowed = (p) => {
 };
 for (const u of locs) if (!allowed(u.slice(ORIGIN.length))) add("FAIL", "robots-blocks", `${u} is blocked by robots.txt`);
 for (const p of ["/css/core.css", "/js/util.js", "/data/site.js", "/img/og.png"]) if (!allowed(p)) add("FAIL", "robots-blocks", `${p} is blocked (pages need it to render)`);
-for (const p of ["/account", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
+for (const p of ["/dashboard", "/account", "/settings", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
+// The public directory and every project page stay crawlable whatever is blocked beside them (a rule like
+// "Disallow: /p" or "/projects" would silently hide them).
+for (const p of ["/", "/shop", "/about", "/projects", ...data.projects.filter((x) => !x.draft).map((x) => projectPath(x.id))]) if (!allowed(p)) add("FAIL", "robots-public", `${p} is blocked by robots.txt`);
 if (robots && !out.some((l) => /^FAIL robots/.test(l))) add("PASS", "robots", "public pages crawlable, private areas blocked, sitemap declared");
 
 // ---------- redirects, recorded URLs and preview hosts ----------

@@ -1,5 +1,5 @@
 // Project cards with follow and Auto-Stacc controls, in every [data-project-list] on the page (the /projects directory
-// and the hub's projects rack): the projects in data/projects.js and, for signed-in customers, a follow button and the
+// and the dashboard's projects rack): the projects in data/projects.js and, for signed-in customers, a follow button and the
 // Auto-Stacc switch (free releases of that project are added to Your Stacc automatically). Follow state comes from the
 // store API; without it the cards still show. Needs data/projects.js and js/util.js.
 (function () {

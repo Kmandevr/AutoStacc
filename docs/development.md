@@ -1,7 +1,7 @@
 ---
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Development
@@ -58,7 +58,7 @@ Schema changes are new files in `db/migrations/` (`0003_....sql`), forward-only:
 | `npm run test:browser` | Browser and chaos tests (`test/browser`) in Chromium at phone and desktop sizes | ~1 min |
 | `verify-site` skill | Every page in a browser with the store offline | ~1 min |
 
-The API suites attack: anonymous and forged/expired sessions, cross-account access, enumeration, reset abuse, rate limits, role escalation; price, id, quantity tampering, duplicate and racing checkouts; unsigned, mis-signed, replayed, duplicated, racing and mismatched webhooks; cancel, fail, refund, reconciliation; downloads without login or entitlement, someone else's file or link, edited, forged and expired links, guessed paths, unpublished files, revoked access; guest keys, adoption by verified email, account hijack by unverified email; follows and Auto-Stacc (free only, once, never paid), Pac/kind tags on files with downloads still per product, poll votes (one per verified account, closed polls, projects without polls); malformed input, cross-site requests, admin access. The browser suite breaks the purchase flow with double clicks, the back button, refresh, offline, slow and failing API, store down, declined and abandoned payments, expired sessions and links, keyboard-only use, and checks overflow, tap targets and CSP errors at 320–1280px. CI: `.github/workflows/store.yml`.
+The API suites attack: the account pages' server gate (anonymous, forged, expired and signed-out sessions, open redirects, nothing private in any page's HTML), anonymous and forged/expired sessions, cross-account access, enumeration, reset abuse, rate limits, role escalation; price, id, quantity tampering, duplicate and racing checkouts; unsigned, mis-signed, replayed, duplicated, racing and mismatched webhooks; cancel, fail, refund, reconciliation; downloads without login or entitlement, someone else's file or link, edited, forged and expired links, guessed paths, unpublished files, revoked access; guest keys, adoption by verified email, account hijack by unverified email; follows and Auto-Stacc (free only, once, never paid), Pac/kind tags on files with downloads still per product, poll votes (one per verified account, closed polls, projects without polls); malformed input, cross-site requests, admin access. The browser suite walks the public cover, the gate (log in and land back where you were going) and the signed-in app's navigation and sign-out, and breaks the purchase flow with double clicks, the back button, refresh, offline, slow and failing API, store down, declined and abandoned payments, expired sessions and links, keyboard-only use, and checks overflow, tap targets and CSP errors at 320–1280px. CI: `.github/workflows/store.yml`.
 
 When fixing a store bug, write the failing test first in the suite for that area.
 

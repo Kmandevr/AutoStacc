@@ -1,17 +1,15 @@
 // Login page: sign in, create an account, forgot password and set a new password, all through Better Auth's
 // endpoints (/api/auth/*). Modes: #signup, #forgot, ?token=... (from the reset email), default sign in.
-// ?next=/path returns there afterwards (same-site paths only). Needs js/util.js.
+// ?next=/path returns there afterwards (same-site paths only, GS.safeNext); without one, the dashboard. Needs js/util.js.
 (function () {
   "use strict";
 
-  const { $, api } = window.GS;
+  const { $, api, safeNext } = window.GS;
   const root = $("#auth-app");
   if (!root) return;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
   const params = new URLSearchParams(location.search);
-  const rawNext = params.get("next") || "";
-  // Only paths on this site, never //other.host or javascript:.
-  const next = /^\/(?!\/)[\w\-/?=&.%#]*$/.test(rawNext) ? rawNext : "/account";
+  const next = safeNext(params.get("next"));
 
   const field = (id, label, type, extra = "") =>
     `<div class="field"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" required aria-describedby="form-msg" ${extra}></div>`;
@@ -103,7 +101,7 @@
       res = await api("/api/auth/sign-in/email", { method: "POST", body: { email: value("email"), password: value("password"), rememberMe: $("#remember", form).checked } });
       if (res.ok) { sound("open"); location.replace(next); return; }
     } else if (kind === "signup") {
-      res = await api("/api/auth/sign-up/email", { method: "POST", body: { name: value("name"), email: value("email"), password: value("password"), callbackURL: "/library?welcome=1" } });
+      res = await api("/api/auth/sign-up/email", { method: "POST", body: { name: value("name"), email: value("email"), password: value("password"), callbackURL: safeNext(params.get("next"), "/dashboard?welcome=1") } });
       // Same answer whether or not the email already had an account (the owner of that email gets a note instead).
       if (res.ok) { setBusy(form, false); show("signin", `Check ${value("email") || "your inbox"} for a link to confirm your email, then log in.`); return; }
     } else if (kind === "forgot") {
