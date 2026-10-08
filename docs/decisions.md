@@ -6,9 +6,9 @@ updated: 2026-10-08
 
 # Decisions
 
-## 2026-10-08: Tagline "Buy it once. Find it every time."
+## 2026-10-08: Public pitch is "straight from the artists"
 
-The owner found "Stacc it once. Auto handles the rest." odd, and asked for platform copy that reads professional and to the point. The new line states the actual promise (everything you buy stays sorted and findable) without personifying "Auto". Auto-Stacc is described in plain words ("free releases are added automatically"). Voice: [autostacc](autostacc.md).
+The owner found "Stacc it once. Auto handles the rest." odd, then rejected a library-led replacement ("Buy it once. Find it every time."): advertising that AutoStacc has a library is not the pitch. Chosen with the owner: the home page leads with "Sounds, presets and music, straight from the artists who make them", then the artists, the store and free releases (Auto-Stacc). Your Stacc stays the signed-in library, described plainly where it's used, not sold on public pages. Voice: [autostacc](autostacc.md).
 
 ## 2026-10-08: A public home page, and the app behind the account wall
 
