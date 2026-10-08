@@ -1,5 +1,5 @@
 /* Glitches & Stitches' skin: the glitch terminal inside the AutoStacc frame, on its pages only. */
-/* Glitches & Stitches' skin: the glitch terminal (docs/brand.md) inside the AutoStacc frame. Scoped to .skin-glitches-and-stitches, which the project's pages put on <main>, so the sidebar and top bar stay AutoStacc. Loaded on every page of the project (data/projects.js skin: true). */
+/* Scoped to .skin-glitches-and-stitches on the project's <main>, so the sidebar and top bar stay AutoStacc. Look: docs/brand.md. */
 
 
 .skin-glitches-and-stitches {
@@ -59,15 +59,16 @@
 }
 .skin-glitches-and-stitches::before {
   content: "";
-  position: absolute;
+  position: fixed;
   left: 0; right: 0; top: 0;
   height: 30vh;
   pointer-events: none;
   background: linear-gradient(transparent, rgba(51,255,102,.04), transparent);
+  transform: translateY(-100%);
   animation: gs-roll 9s linear var(--clock, 0s) infinite;
   z-index: 99;
 }
-@keyframes gs-roll { from { top: 0; } to { top: calc(100% - 30vh); } }
+@keyframes gs-roll { to { transform: translateY(100vh); } }
 
 /* blinking block cursor, e.g. after the hero tagline */
 .skin-glitches-and-stitches .cursor::after { content: "\2588"; margin-left: .15em; animation: blink 1s steps(1) infinite; }

@@ -1,4 +1,4 @@
-/* Product cards, grid and shop filters. Used by shop.html and the featured products on home.html. */
+/* Product cards, grid and shop filters. Used by shop.html and the featured products on a project's home page. */
 
 /* ---------- cards / grid ---------- */
 .grid {
@@ -39,8 +39,8 @@
   font-size: 1.7rem;
   line-height: 1.1;
   color: #fff;
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--track, var(--teal)) 92%, #fff) 0%, color-mix(in srgb, var(--track, var(--teal)) 70%, #000) 100%);
+  /* deep tones of the track colour, so the white title reads on every colour in both themes (4.5:1 or more) */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--track, var(--teal)) 55%, #000) 0%, color-mix(in srgb, var(--track, var(--teal)) 32%, #000) 100%);
   border-bottom: 1px solid var(--line);
 }
 /* three stacked clips in the corner, the AutoStacc mark's shape */
@@ -109,7 +109,7 @@
   .card-foot .btn { padding: 10px 14px; font-size: .85rem; }
 }
 
-/* ---------- store controls (js/store.js): buy slot, the "stitched" snap after adding (OWNED badge: base.css) ---------- */
+/* ---------- store controls (js/store.js): buy slot, the "stitched" snap after adding (OWNED badge: core.css) ---------- */
 .buy { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .detail-buy.buy { justify-content: flex-start; }
 a.owned-badge:hover { color: var(--bg); background: var(--accent); text-shadow: none; }

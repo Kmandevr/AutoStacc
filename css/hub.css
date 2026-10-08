@@ -1,5 +1,5 @@
 /* The hub (/): a mixer of panels (Your Stacc meters, new releases, projects rack, how it works). */
-/* The hub (/): a mixer of panels (Your Stacc meters, new releases as clips, the projects rack, how it works), each with a coloured track header. Used by index.html with css/about.css (.flow) and css/projects.css (cards). */
+/* Used by index.html with css/about.css (.flow) and css/projects.css (project cards). */
 
 
 .hub-hero { padding-bottom: 20px; }

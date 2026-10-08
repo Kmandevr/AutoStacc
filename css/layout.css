@@ -1,5 +1,5 @@
 /* AutoStacc's frame on every page: skip link, sidebar (drawer on phones), top bar and footer. */
-/* AutoStacc's frame on every page (drawn by js/layout.js): skip link, the sidebar with the AutoStacc and Projects groups (always open on desktop, a drawer on phones), the top bar with the tools, and the footer. Uses the platform tokens from css/platform.css, so it looks the same on a project's skinned pages. */
+/* Drawn by js/layout.js; uses the platform tokens, so it looks the same around a project's skinned pages. */
 
 
 :root { --side: 248px; --topbar: 58px; }
@@ -37,6 +37,7 @@ body { padding-left: var(--side); }
   font-family: var(--font);
   view-transition-name: side;
 }
+.side-close { display: none; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; color: var(--text); font-size: 1.2rem; letter-spacing: -.02em; }
 .brand:hover { color: var(--text); background: var(--panel-2); }
 .brand b { color: var(--teal); font-weight: 750; }
@@ -153,6 +154,22 @@ body { padding-left: var(--side); }
     box-shadow: var(--shadow);
   }
   .side.open { transform: none; }
+  .side-close {
+    display: inline-flex;
+    align-self: flex-end;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: -10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
   .side-scrim { position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .45); }
   html.menu-open { overflow: hidden; }
   .topbar { padding: 0 12px; }
@@ -180,8 +197,13 @@ body { padding-left: var(--side); }
   .tool-link, .theme-switch, .snd { padding: 6px 10px; min-height: 40px; }
   .topbar-tools { gap: 4px; }
 }
+/* the narrowest phones: the top bar keeps every tool on screen (project pages add the sound switch) */
 @media (max-width: 380px) {
-  .snd { font-size: .7rem; padding: 6px 8px; }
+  .topbar { gap: 6px; padding: 0 8px; }
+  .topbar-brand { display: none; }
+  .topbar-tools { gap: 3px; min-width: 0; }
+  .tool-link, .theme-switch, .snd { padding: 6px 8px; font-size: .82rem; }
+  .snd { font-size: .68rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .side { transition: none; }

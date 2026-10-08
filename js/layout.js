@@ -41,10 +41,12 @@
   }
 
   const header = $("#site-header");
+  const footer = $("#site-footer");
   if (header) {
     header.className = "site-frame";
     header.innerHTML = `
-      <div class="side" id="side">
+      <div class="side" id="side" aria-label="Menu">
+        <button class="side-close" type="button"><span aria-hidden="true">&times;</span><span class="sr-only">Close menu</span></button>
         <a class="brand" href="/"${body.page === "home" ? ' aria-current="page"' : ""}>${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
         <nav class="side-nav" aria-label="Main">
           <p class="side-label" id="side-platform">AutoStacc</p>
@@ -68,24 +70,32 @@
         </div>
       </div>`;
 
-    // On phones the sidebar is a drawer over the page; Escape or the scrim closes it.
+    // On phones the sidebar is a drawer over the page. Closed, it is inert (no hidden links to Tab into); open, the
+    // rest of the page is inert, focus moves into it, and the close button, Escape or the scrim close it.
     const toggle = $(".menu-toggle", header);
     const side = $(".side", header);
     const scrim = $(".side-scrim", header);
-    const setOpen = (open) => {
+    const narrow = matchMedia("(max-width: 900px)");
+    const behind = () => [$(".topbar", header), main, footer].filter(Boolean);
+    const setOpen = (open, refocus = true) => {
       side.classList.toggle("open", open);
       scrim.hidden = !open;
       document.documentElement.classList.toggle("menu-open", open);
       toggle.setAttribute("aria-expanded", String(open));
+      side.inert = narrow.matches && !open;
+      behind().forEach((el) => (el.inert = open));
+      if (open) $(".side-close", side).focus();
+      else if (refocus && narrow.matches) toggle.focus();
     };
-    toggle.addEventListener("click", () => setOpen(!side.classList.contains("open")));
+    setOpen(false, false);
+    // Widening past the drawer breakpoint closes it, so it doesn't reappear open when narrowed again.
+    narrow.addEventListener("change", () => setOpen(false, false));
+    toggle.addEventListener("click", () => setOpen(true));
+    $(".side-close", side).addEventListener("click", () => setOpen(false));
     scrim.addEventListener("click", () => setOpen(false));
-    side.addEventListener("click", (ev) => { if (ev.target.closest("a")) setOpen(false); });
+    side.addEventListener("click", (ev) => { if (ev.target.closest("a")) setOpen(false, false); });
     addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && side.classList.contains("open")) {
-        setOpen(false);
-        toggle.focus();
-      }
+      if (ev.key === "Escape" && side.classList.contains("open")) setOpen(false);
     });
 
     // Cart size from this browser's cart (js/util.js); updates live when anything is added or removed.
@@ -100,7 +110,6 @@
   }
 
   // Footer: AutoStacc's links; on a project's pages, that project's official profiles too.
-  const footer = $("#site-footer");
   if (footer) {
     const project = PROJECTS.find((p) => p.id === body.project);
     const socials = project ? (project.socials || []).filter((s) => isSet(s.url)) : [];

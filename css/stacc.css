@@ -1,5 +1,5 @@
 /* Your Stacc (library page): view switch, filters, the project/Stacclet/Pac tree, asset rows, selection bar. */
-/* Your Stacc (library page): view switch and filters, the project → Stacclet → Pac tree, content-type groups, asset rows with checkboxes, the selection bar and the "from projects you follow" list. */
+/* Rendered by js/library-view.js from GS.stacc (js/stacc-model.js). */
 
 
 .stacc-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 18px; margin: 0 0 14px; }

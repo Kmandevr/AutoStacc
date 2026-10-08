@@ -1,5 +1,5 @@
 /* Core: reset, type, buttons, sections and shared pieces, written only against tokens. Every page. */
-/* Core: reset, type, buttons, sections and small shared pieces, written only against the tokens. Loaded on every page after the look that sets the tokens: css/platform.css (AutoStacc) and, inside a project's pages, its skin. */
+/* Loaded after the look that sets the tokens: css/platform.css (AutoStacc) and, in a project's pages, its skin. */
 
 
 * { box-sizing: border-box; }
