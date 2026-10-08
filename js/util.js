@@ -147,7 +147,7 @@ const GS = (function () {
     const p = (window.PROJECTS || []).find((x) => x.id === projectId);
     if (!p || !p.skin) return "";
     const href = `/css/projects/${p.id}/look.css`;
-    if (!document.querySelector(`link[href="${href}"]`)) document.head.insertAdjacentHTML("beforeend", `<link rel="stylesheet" href="${href}">`);
+    if (!document.querySelector(`link[href^="${href}"]`)) document.head.insertAdjacentHTML("beforeend", `<link rel="stylesheet" href="${href}">`);
     return `look-${p.id}`;
   };
   // Where a store item opens: the store filtered to its project, with the item selected at the top.

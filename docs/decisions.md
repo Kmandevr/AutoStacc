@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Fingerprinted asset links
+
+`Cache-Control: no-cache` in `_headers` wasn't enough: Cloudflare's zone setting Browser Cache TTL (4 hours) overrides it on autostacc.com, and a browser that kept an old `js/util.js` beside new pages lost both nav bars. The deploy copy (`scripts/dist.js`) now appends `?v=<content hash>` to every `/js`, `/css` and `/data` link in every page, so a changed file always has a new address and unchanged ones stay cached. The repository keeps plain links. Setting Browser Cache TTL to "Respect existing headers" in Cloudflare is still worth doing.
+
 ## 2026-10-08: Store items wear their project's look; everything becomes drop-in modules
 
 The owner: a project's store items (its Pacs, as they called them) should look like the project they came from wherever they appear, clicking one should show the project's other items, and all functionality must be modular so it can be used anywhere. Agreed in a round of questions: the store items, in their project's style everywhere (store, hub, product page); a click opens the store filtered to the project with the item selected at the top; build the new pieces as drop-in modules now and audit the rest. Built: `look.css` per skinned project + `GS.look`, `js/shop.js` as the `[data-shop]` browser, `js/product-card.js`. The pattern and the audit: [modules](modules.md).
