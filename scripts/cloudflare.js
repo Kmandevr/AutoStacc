@@ -82,6 +82,21 @@ async function store() {
   }
   if (missing.length) console.log(`::warning::Store secrets not in GitHub yet: ${missing.join(", ")}. Until they are set the store answers "offline"; the site itself is fine.`);
   await checkSecrets(toml, present);
+  recentEmailFailures();
+}
+
+// Mail that the store couldn't send is recorded with the provider's reason. Show the latest in the deploy log
+// (kind, time and reason only, never addresses), so a broken sender or key is visible without the database console.
+function recentEmailFailures() {
+  try {
+    const out = wrangler(["d1", "execute", "DB", "--remote", "--env", "production", "--json", "--command",
+      "SELECT kind, error, created_at FROM email_events WHERE status = 'failed' ORDER BY created_at DESC LIMIT 5"]);
+    const rows = JSON.parse(out)[0]?.results || [];
+    for (const r of rows) console.log(`::warning::Email not sent (${r.kind}, ${r.created_at}): ${r.error}`);
+    if (!rows.length) console.log("cloudflare: no failed emails recorded");
+  } catch (e) {
+    console.log(`cloudflare: couldn't read email failures (${String(e.message || e).split("\n")[0]})`);
+  }
 }
 
 function staticOnly() {

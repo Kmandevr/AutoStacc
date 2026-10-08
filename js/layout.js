@@ -1,7 +1,8 @@
-// Renders AutoStacc's frame on every page: the sidebar (AutoStacc: Store, Your Stacc, About; Projects: each project
-// from data/projects.js with its own pages), the top bar (menu button on phones, account, cart count, and the slots
-// js/theme.js and js/sound.js fill) and the footer, plus the skip link. <body data-page> marks the current platform
-// page; on a project's pages <body data-project="<id>" data-project-page="music"> marks the project and its page.
+// Renders AutoStacc's frame on every page: the sidebar (AutoStacc: Store, Your Stacc, About; Projects: one link per
+// project in data/projects.js), the top bar (menu button on phones, account, cart count, and the slot js/theme.js
+// fills), on a project's pages its project bar (its pages as tabs, and the slot js/sound.js fills), the footer and the
+// skip link. <body data-page> marks the current platform page; on a project's pages
+// <body data-project="<id>" data-project-page="music"> marks the project and its page.
 // Needs data/site.js, data/projects.js and js/util.js. Structured data is static, from scripts/build.js.
 (function () {
   "use strict";
@@ -29,16 +30,23 @@
     });
   }
 
-  function projectGroup(p) {
-    const here = body.project === p.id;
-    const pages = (p.pages || [{ label: "Home", path: "" }]).map((pg) => {
-      const on = here && (body.projectPage || "") === pg.path;
+  // The sidebar lists each project once; its own pages are tabs in the project bar on its pages, not in the sidebar.
+  const projectLink = (p) => `<li><a href="${e(projectHref(p))}"${body.project === p.id ? ' aria-current="true"' : ""}><span class="side-chip" aria-hidden="true"></span>${e(p.name)}</a></li>`;
+
+  // On a project's pages: a bar under the top bar with its name, its pages as tabs and a slot for its own tools
+  // (js/sound.js puts the sound switch there).
+  function projectBar(p) {
+    const tabs = (p.pages || [{ label: "Home", path: "" }]).map((pg) => {
+      const on = !pg.path.startsWith("#") && (body.projectPage || "") === pg.path;
       return `<li><a href="${e(projectHref(p, pg.path))}"${on ? ' aria-current="page"' : ""}>${e(pg.label)}</a></li>`;
     }).join("");
-    return `<li class="side-project"><details${here ? " open" : ""}>
-      <summary${here ? ' aria-current="true"' : ""}><span class="side-chip" aria-hidden="true"></span>${e(p.name)}</summary>
-      <ul class="side-sub">${pages}</ul></details></li>`;
+    return `<nav class="project-bar" aria-label="${e(p.name)}">
+        <span class="project-bar-name"><span class="side-chip" aria-hidden="true"></span>${e(p.name)}</span>
+        <div class="project-bar-tools"></div>
+        <ul class="project-tabs">${tabs}</ul>
+      </nav>`;
   }
+  const PROJECT = PROJECTS.find((p) => p.id === body.project);
 
   const header = $("#site-header");
   const footer = $("#site-footer");
@@ -55,7 +63,7 @@
           </ul>
           <p class="side-label" id="side-projects">Projects</p>
           <ul aria-labelledby="side-projects">
-            ${PROJECTS.map(projectGroup).join("")}
+            ${PROJECTS.map(projectLink).join("")}
             <li><a href="/projects"${current("projects")}><span class="side-icon side-icon-all" aria-hidden="true"></span>All projects</a></li>
           </ul>
         </nav>
@@ -68,7 +76,8 @@
           <a class="tool-link" href="/account"${current("account")}>Account</a>
           <a class="tool-link cart-link" href="/cart"${current("cart")}>Cart<span class="cart-count" aria-hidden="true"></span><span class="sr-only cart-count-sr"></span></a>
         </div>
-      </div>`;
+      </div>
+      ${PROJECT ? projectBar(PROJECT) : ""}`;
 
     // On phones the sidebar is a drawer over the page. Closed, it is inert (no hidden links to Tab into); open, the
     // rest of the page is inert, focus moves into it, and the close button, Escape or the scrim close it.
@@ -76,7 +85,7 @@
     const side = $(".side", header);
     const scrim = $(".side-scrim", header);
     const narrow = matchMedia("(max-width: 900px)");
-    const behind = () => [$(".topbar", header), main, footer].filter(Boolean);
+    const behind = () => [$(".topbar", header), $(".project-bar", header), main, footer].filter(Boolean);
     const setOpen = (open, refocus = true) => {
       side.classList.toggle("open", open);
       scrim.hidden = !open;
@@ -111,7 +120,7 @@
 
   // Footer: AutoStacc's links; on a project's pages, that project's official profiles too.
   if (footer) {
-    const project = PROJECTS.find((p) => p.id === body.project);
+    const project = PROJECT;
     const socials = project ? (project.socials || []).filter((s) => isSet(s.url)) : [];
     footer.className = "site-footer";
     footer.innerHTML = `

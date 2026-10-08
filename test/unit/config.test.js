@@ -24,6 +24,8 @@ test("production refuses test keys, mock payments, the log mailer and plain http
   assert.match(problems({ ...prod, SITE_URL: "http://autostacc.com" }).join(), /https/);
   assert.match(problems({ ...prod, STRIPE_WEBHOOK_SECRET: "" }).join(), /STRIPE_WEBHOOK_SECRET/);
   assert.match(problems({ ...prod, BREVO_API_KEY: "" }).join(), /BREVO_API_KEY/);
+  assert.match(problems({ ...prod, BREVO_API_KEY: "xsmtpsib-abc" }).join(), /SMTP key/);
+  assert.match(problems({ ...prod, BREVO_API_KEY: "abc" }).join(), /BREVO_API_KEY/);
 });
 
 test("the fake Stripe address is ignored outside development and test", () => {
