@@ -141,6 +141,18 @@ const GS = (function () {
     addEventListener("storage", (ev) => ev.key === "gs:cart" && draw());
   };
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject, skipLink, showCartCount };
+  // A project's look (its colours, type and tiles) for anything of its shown outside its own pages: returns the class
+  // to add ("look-<id>", or "" for a project without a skin) and loads css/projects/<id>/look.css once.
+  const look = (projectId) => {
+    const p = (window.PROJECTS || []).find((x) => x.id === projectId);
+    if (!p || !p.skin) return "";
+    const href = `/css/projects/${p.id}/look.css`;
+    if (!document.querySelector(`link[href="${href}"]`)) document.head.insertAdjacentHTML("beforeend", `<link rel="stylesheet" href="${href}">`);
+    return `look-${p.id}`;
+  };
+  // Where a store item opens: the store filtered to its project, with the item selected at the top.
+  const shopItemPath = (p) => `/shop?project=${encodeURIComponent(p.project || "")}&item=${encodeURIComponent(p.id)}`;
+
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath };
 })();
 window.GS = GS;

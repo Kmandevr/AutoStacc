@@ -121,3 +121,17 @@ a.owned-badge:hover { color: var(--bg); background: var(--accent); text-shadow: 
   100% { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) { .stitched { animation: none; } }
+
+/* ---------- the store browser (js/shop.js): who made it, details link, and the selected item at the top ---------- */
+.card-by { color: var(--muted); font-size: .85rem; flex: 0; }
+.card-more { align-self: flex-start; font-size: .9rem; padding-block: 4px; }
+.shop-from { margin: -12px 0 18px; }
+.shop-selected:not(:empty) { margin-bottom: 26px; }
+.card.selected { flex-direction: row; border-color: var(--accent-2); }
+.card.selected .cover { width: min(42%, 380px); flex: none; border-bottom: 0; border-right: 1px solid var(--line); }
+.card.selected .card-body { padding: 24px; }
+.card.selected .card-body :is(h2, h3) { font-size: 1.35rem; }
+@media (max-width: 640px) {
+  .card.selected { flex-direction: column; }
+  .card.selected .cover { width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+}
