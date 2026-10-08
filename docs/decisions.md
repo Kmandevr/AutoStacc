@@ -1,10 +1,14 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Decisions
+
+## 2026-10-08: A project's pages live in its project bar, not the sidebar
+
+The owner found the sidebar cluttered with every project's news, shows and press, and the phone menu too big. A project's pages should only be reachable under the project. The sidebar now has one link per project; on a project's pages a bar under the top bar holds its name, its pages as tabs and its sound switch (sounds belong to the project). The phone drawer is narrower and tighter.
 
 ## 2026-10-08: The site is AutoStacc; Glitches & Stitches moves under its project (#47)
 

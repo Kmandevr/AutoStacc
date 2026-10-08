@@ -15,7 +15,11 @@ async function brevo(config, msg) {
       tags: msg.tags
     })
   });
-  if (!res.ok) throw new Error(`Brevo responded ${res.status}`);
+  // Brevo's reason (e.g. unauthorised IP, unverified sender) is kept in email_events.error; it never holds the key.
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Brevo responded ${res.status}${err.code ? ` ${err.code}` : ""}${err.message ? `: ${String(err.message).slice(0, 200)}` : ""}`);
+  }
   const body = await res.json().catch(() => ({}));
   return { id: body.messageId || "" };
 }

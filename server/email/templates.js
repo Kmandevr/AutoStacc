@@ -20,7 +20,7 @@ const para = (s) => `<p style="line-height:1.6;margin:0 0 12px">${esc(s)}</p>`;
 
 export const templates = {
   "verify-email": ({ url }) => ({
-    subject: "Confirm your email — Glitches & Stitches",
+    subject: "Confirm your email — AutoStacc",
     text: `Confirm your email to finish creating your account:\n${url}\n\nThe link works for 24 hours.\nDidn't sign up? Don't click: confirming gives that account anything bought with this email. Ignore this mail and nothing happens.`,
     html: layout("confirm your email", para("One click and your account is stitched together.") + button(url, "Confirm email") +
       para("The link works for 24 hours.") + para("Didn't sign up? Don't click: confirming gives that account anything bought with this email. Ignore this mail and nothing happens."))
@@ -28,21 +28,21 @@ export const templates = {
 
   // After guest purchases join an account (confirmed email or password reset).
   "purchases-linked": ({ count, libraryUrl, resetUrl }) => ({
-    subject: "Your purchases joined your account — Glitches & Stitches",
+    subject: "Your purchases joined your account — AutoStacc",
     text: `${count} purchase${count === 1 ? "" : "s"} made with this email ${count === 1 ? "is" : "are"} now in your account library: ${libraryUrl}\n\nDidn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`,
     html: layout("stitched in", para(`${count} purchase${count === 1 ? "" : "s"} made with this email ${count === 1 ? "is" : "are"} now in your account library.`) +
       button(libraryUrl, "Open your library") + para(`Didn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`))
   }),
 
   "reset-password": ({ url }) => ({
-    subject: "Reset your password — Glitches & Stitches",
+    subject: "Reset your password — AutoStacc",
     text: `Someone asked to reset the password for this email. If it was you:\n${url}\n\nThe link works for 1 hour. If it wasn't you, ignore this; nothing changes.`,
     html: layout("reset your password", para("Someone asked to reset the password for this email. If it was you:") + button(url, "Choose a new password") + para("The link works for 1 hour. If it wasn't you, ignore this; nothing changes."))
   }),
 
   // Sent instead of an error when someone signs up with an email that already has an account (no account enumeration).
   "account-exists": ({ loginUrl, resetUrl }) => ({
-    subject: "You already have an account — Glitches & Stitches",
+    subject: "You already have an account — AutoStacc",
     text: `Someone tried to create an account with this email, but you already have one.\nLog in: ${loginUrl}\nForgot your password? ${resetUrl}`,
     html: layout("you already have an account", para("Someone tried to create an account with this email, but you already have one.") + button(loginUrl, "Log in") + para(`Forgot your password? ${resetUrl}`))
   }),
