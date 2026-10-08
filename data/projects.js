@@ -51,7 +51,7 @@ window.PROJECTS = [
     image: { src: "img/projects/glitches-and-stitches/og.png", width: 1200, height: 630, alt: "The Glitches & Stitches logo: Glitches over Stitches in green pixel type, a purple thread through the ampersand, framed by a line that sweeps up to the right" },
     logo: "img/projects/glitches-and-stitches/icon.png",
     logoFull: { src: "img/projects/glitches-and-stitches/logo.png", width: 1600, height: 760 },
-    email: "",
+    email: "support@autostacc.com",
     pressKitUrl: "",
     newsletterAction: "",
     socials: [
