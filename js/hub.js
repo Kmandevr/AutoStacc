@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const { $, escapeHTML: e, api, projectPath, fmtDate, money } = window.GS;
+  const { $, escapeHTML: e, api, projectPath, fmtDate, money, look, shopItemPath } = window.GS;
   const stacc = $("#hub-stacc");
   const feed = $("#hub-releases");
   if (!stacc || !feed) return;
@@ -45,19 +45,20 @@
     return { owned: new Set() };
   }
 
-  // Releases (dated) and products (newest data first), from every project; followed projects rise to the top.
+  // Releases (dated) and products (newest data first), from every project; followed projects rise to the top. Each row
+  // wears its project's look; a store item opens the store filtered to its project with it selected.
   function drawFeed(owned, followed) {
     const releases = ((window.MUSIC || {}).releases || []).filter((r) => !r.draft).map((r) => ({
       href: projectPath(r.project, "music", r.id), title: r.title, project: r.project, tag: r.type, track: "midi", meta: fmtDate(r.date), date: r.date
     }));
     const products = (window.PRODUCTS || []).map((p) => ({
-      href: `/shop/${p.id}`, title: p.title, project: p.project, tag: (TYPES[p.type] || {}).label || p.type, track: p.type === "presets" ? "presets" : p.type === "music" ? "midi" : "samples",
+      href: shopItemPath(p), title: p.title, project: p.project, tag: (TYPES[p.type] || {}).label || p.type, track: p.type === "presets" ? "presets" : p.type === "music" ? "midi" : "samples",
       meta: owned.has(p.id) ? "In your Stacc ✓" : p.draft ? "Coming soon" : p.price ? money(p.price) : "Free", date: ""
     }));
     const rows = [...releases.sort((a, b) => b.date.localeCompare(a.date)), ...products]
       .map((x, i) => ({ ...x, rank: (followed.has(x.project) ? 0 : 1) * 1000 + i }))
       .sort((a, b) => a.rank - b.rank).slice(0, 6);
-    feed.innerHTML = rows.map((x) => `<li data-track="${x.track}"><a class="clip" href="${e(x.href)}">
+    feed.innerHTML = rows.map((x) => `<li class="${look(x.project)}" data-track="${x.track}"><a class="clip" href="${e(x.href)}">
       <span class="clip-title">${e(x.title)}</span>
       <span class="clip-meta"><span class="tag">${e(x.tag)}</span> ${e(projectName(x.project))}${followed.has(x.project) ? " · following" : ""}</span>
       <span class="clip-end">${e(x.meta)}</span></a></li>`).join("") || `<li class="small-print">Nothing released yet.</li>`;

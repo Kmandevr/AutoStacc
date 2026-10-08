@@ -23,15 +23,15 @@
       let first = true;
       try { first = !sessionStorage.getItem("gs:done:" + o.id); sessionStorage.setItem("gs:done:" + o.id, "1"); } catch {}
       if (first) { sound("cinch"); track("purchase_complete"); }
-      root.innerHTML = state("CINCHED.", false, `<p>Payment confirmed. Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
-        ${lines(o)}<div class="actions"><a class="btn" href="/library">Open my library</a><a class="btn ghost" href="/shop">Back to the shop</a></div>`);
+      root.innerHTML = state("Payment confirmed", false, `<p>Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
+        ${lines(o)}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>`);
     } else if (o.status === "failed") {
-      root.innerHTML = state("PAYMENT FAILED", true, `<p>The payment didn't go through, so nothing is owed. Your cart is still here.</p>
+      root.innerHTML = state("Payment didn't go through", true, `<p>The payment didn't go through, so nothing is owed. Your cart is still here.</p>
         <div class="actions"><a class="btn" href="/cart">Back to cart</a></div>`);
     } else if (o.status === "cancelled") {
-      root.innerHTML = state("CHECKOUT CANCELLED", true, `<p>That checkout expired or was cancelled. Nothing was charged.</p><div class="actions"><a class="btn" href="/cart">Back to cart</a></div>`);
+      root.innerHTML = state("Checkout cancelled", true, `<p>That checkout expired or was cancelled. Nothing was charged.</p><div class="actions"><a class="btn" href="/cart">Back to cart</a></div>`);
     } else if (o.status === "refunded") {
-      root.innerHTML = state("REFUNDED", true, `<p>This order was refunded, so its files left your library.</p>${lines(o)}`);
+      root.innerHTML = state("Refunded", true, `<p>This order was refunded, so its files were removed from Your Stacc.</p>${lines(o)}`);
     }
     // Move focus to the outcome so screen readers announce it.
     const big = $(".big", root);
@@ -41,7 +41,7 @@
   // Drawn once; later polls only change the message, so the panel doesn't re-glitch and screen readers hear each change once.
   function waiting(o, slow) {
     if (!$("[data-waiting]", root)) {
-      root.innerHTML = state("STITCHING…", false, `<p class="msg pending" role="status" data-waiting></p>${lines(o)}
+      root.innerHTML = state("Confirming your payment…", false, `<p class="msg pending" role="status" data-waiting></p>${lines(o)}
         <div class="actions" hidden data-slow><button class="btn ghost" type="button" data-recheck>Check again</button></div>`);
     }
     const text = slow
@@ -68,7 +68,7 @@
         if (o.status !== "pending") return show(o);
         waiting(o, false);
       } else if (res.status === 0 && i > 2) {
-        root.innerHTML = `<p class="msg error">Signal lost while checking your order. Your payment is safe either way. <button class="link-btn" type="button" data-recheck>Check again</button></p>`;
+        root.innerHTML = `<p class="msg error">We couldn't reach the store to check your order. Your payment is safe either way. <button class="link-btn" type="button" data-recheck>Check again</button></p>`;
         return;
       }
       await new Promise((r) => setTimeout(r, i < 5 ? 1500 : 3000));

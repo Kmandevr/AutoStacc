@@ -9,7 +9,7 @@ export function createAuth(app) {
   const { config, env, ctx } = app;
   const later = (promise) => (ctx && ctx.waitUntil ? ctx.waitUntil(promise) : promise);
   return betterAuth({
-    appName: "Glitches & Stitches",
+    appName: "AutoStacc",
     baseURL: config.siteUrl,
     basePath: "/api/auth",
     secret: config.authSecret,

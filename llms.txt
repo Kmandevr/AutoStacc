@@ -1,0 +1,38 @@
+# AutoStacc
+
+> AutoStacc sells and delivers sample packs, presets, stems, music and visuals from the projects that make them, and keeps everything you own sorted in Your Stacc.
+
+AutoStacc is the site at https://autostacc.com: a store and a library in one. Projects (artists and creators) make music, samples, presets, stems and visuals; AutoStacc sells and delivers them and keeps what each customer owns organized. A project is never the site; each one has its own pages under https://autostacc.com/projects/<project>.
+
+## Platform
+
+- [Home](https://autostacc.com/): new releases, projects and how AutoStacc works
+- [Store](https://autostacc.com/shop): digital downloads, delivered right after checkout (payments by Stripe)
+- [About](https://autostacc.com/about): how AutoStacc works and what its words mean
+- [Projects](https://autostacc.com/projects): every project on AutoStacc
+
+## Words
+
+- Your Stacc: a customer's library of everything they own, from every project.
+- Stacclet: a collection of related Pacs from one project.
+- Pac: a folder of content (MIDI, samples, loops, presets and more).
+- Auto-Stacc: adds a followed project's free releases to Your Stacc automatically; paid content is never added without buying it.
+
+## Projects
+
+### Glitches & Stitches
+
+> An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.
+
+- [Home](https://autostacc.com/projects/glitches-and-stitches)
+- [Music](https://autostacc.com/projects/glitches-and-stitches/music)
+- [News](https://autostacc.com/projects/glitches-and-stitches/news)
+- [Press](https://autostacc.com/projects/glitches-and-stitches/press)
+
+Releases:
+
+- [HAIL](https://autostacc.com/projects/glitches-and-stitches/music/hail) (single, 2025-10-15): HAIL is a single by Glitches & Stitches, released on 15 October 2025. One track, 2:27, streaming on Apple Music, YouTube Music and Deezer.
+
+## Optional
+
+- [Sitemap](https://autostacc.com/sitemap.xml)

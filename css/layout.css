@@ -1,8 +1,9 @@
-/* AutoStacc's frame on every page: skip link, sidebar (drawer on phones), top bar and footer. */
-/* Drawn by js/layout.js; uses the platform tokens, so it looks the same around a project's skinned pages. */
+/* AutoStacc's frame: skip link, sidebar (an icon rail that expands on computers, a drawer on phones), top bar, tool */
+/* buttons and footer. Drawn by js/layout.js on platform pages; project pages add css/project-frame.css. */
 
 
-:root { --side: 248px; --topbar: 58px; }
+:root { --side-wide: 248px; --side-rail: 68px; --side: var(--side-rail); --topbar: 58px; }
+.side-open { --side: var(--side-wide); }
 
 /* ---------- skip link: hidden until a keyboard user tabs to it ---------- */
 .skip-link {
@@ -20,8 +21,9 @@
 .skip-link:focus { transform: none; color: var(--on-accent); }
 
 /* the page fills the window, so a short page keeps its footer at the bottom */
-body { padding-left: var(--side); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
-.site-frame ~ main { flex: 1 0 auto; }
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.site-frame ~ main, .project-frame ~ main { flex: 1 0 auto; }
+body:has(> .site-frame) { padding-left: var(--side); }
 
 /* ---------- sidebar ---------- */
 .side {
@@ -77,11 +79,39 @@ body { padding-left: var(--side); min-height: 100vh; min-height: 100dvh; display
 /* the current page reads like a selected track: tinted row with a coloured edge */
 .side-nav [aria-current] { background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
 .side-nav [aria-current]::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--teal); }
-.side-icon, .side-chip { width: 10px; height: 14px; border-radius: 3px; flex: none; background: var(--teal); box-shadow: 0 4px 0 -1px color-mix(in srgb, currentColor 18%, transparent); }
-.side-icon-stacc { background: var(--amber); }
-.side-icon-about { background: var(--violet); }
-.side-icon-all { background: var(--lime); }
-.side-chip { background: var(--coral); }
+.side-icon { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--teal); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.side-icon-stacc { stroke: var(--amber); }
+.side-icon-about { stroke: var(--violet); }
+.side-icon-all { stroke: var(--lime); }
+.side-chip { display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; margin-inline: -1px; border-radius: 6px; background: var(--coral); color: #fff; font-size: .78rem; font-weight: 750; }
+/* expand/collapse, at the foot of the sidebar (computers only) */
+.side-collapse {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 550;
+  cursor: pointer;
+}
+.side-collapse:hover { background: var(--panel-2); color: var(--text); }
+.side-collapse-icon { width: 20px; display: grid; place-items: center; }
+.side-collapse-icon::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .2s var(--snap); }
+.side-open .side-collapse-icon::before { transform: rotate(135deg); }
+/* the rail: icons only, names on hover (title) and for screen readers */
+@media (min-width: 901px) {
+  :root:not(.side-open) .side { padding-inline: 10px; align-items: stretch; }
+  :root:not(.side-open) .side .side-text,
+  :root:not(.side-open) .side-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :root:not(.side-open) .side-nav a, :root:not(.side-open) .side-collapse, :root:not(.side-open) .brand { justify-content: center; padding-inline: 0; }
+  :root:not(.side-open) .side-nav ul + .side-label + ul { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+}
 
 /* ---------- top bar ---------- */
 .site-frame { display: contents; }
@@ -129,36 +159,6 @@ body { padding-left: var(--side); min-height: 100vh; min-height: 100dvh; display
 .theme-switch[data-mode="light"] .theme-icon { background: transparent; }
 .theme-switch[data-mode="dark"] .theme-icon { background: currentColor; }
 
-/* ---------- project bar: a project's name, its pages as tabs and its own tools (sound), on its pages only ---------- */
-.project-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 18px;
-  padding: 0 20px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  font-family: var(--font);
-}
-.project-bar-name { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; color: var(--text); white-space: nowrap; }
-.project-tabs { order: 1; display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
-.project-tabs::-webkit-scrollbar { display: none; }
-.project-tabs a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 46px;
-  padding: 0 12px;
-  color: var(--muted);
-  font-weight: 550;
-  white-space: nowrap;
-  text-shadow: none;
-  box-shadow: inset 0 -2px 0 transparent;
-  transition: color .15s, box-shadow .15s;
-}
-.project-tabs a:hover { color: var(--text); }
-.project-tabs a[aria-current] { color: var(--text); box-shadow: inset 0 -2px 0 var(--coral); }
-.project-bar-tools { order: 2; margin-left: auto; display: flex; gap: 6px; }
-
 /* ---------- footer ---------- */
 .site-footer { border-top: 1px solid var(--line); padding: 28px 0 36px; background: var(--panel); color: var(--muted); font-family: var(--font); font-size: .92rem; }
 .site-footer .wrap { display: grid; gap: 14px; }
@@ -170,8 +170,8 @@ body { padding-left: var(--side); min-height: 100vh; min-height: 100dvh; display
 
 /* ---------- phones and small tablets: the sidebar becomes a drawer ---------- */
 @media (max-width: 900px) {
-  body { padding-left: 0; }
-  .side {
+  body:has(> .site-frame) { padding-left: 0; }
+  .side, .side-open .side {
     width: min(78vw, 280px);
     gap: 10px;
     padding: 12px 10px 20px;
@@ -201,13 +201,10 @@ body { padding-left: var(--side); min-height: 100vh; min-height: 100dvh; display
   .side-scrim { position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .45); }
   html.menu-open { overflow: hidden; }
   .side-close:hover { background: var(--panel-2); }
+  .side-collapse { display: none; }
   .side .brand { padding-right: 48px; }
   .side-label { margin-top: 6px; }
   .topbar { padding: 0 12px; }
-  .project-bar { padding: 0 12px; gap: 0 12px; }
-  .project-bar-name { min-height: 44px; }
-  .project-tabs { order: 3; flex: 1 0 100%; margin: 0 -12px; padding: 0 6px; border-top: 1px solid var(--line); }
-  .project-tabs a { min-height: 42px; padding: 0 10px; }
   .menu-toggle {
     display: inline-flex;
     align-items: center;

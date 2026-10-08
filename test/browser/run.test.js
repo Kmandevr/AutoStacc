@@ -32,9 +32,11 @@ async function open(device = PHONE) {
   page.errors = [];
   page.on("pageerror", (e) => page.errors.push(e.message));
   // Newer Chromium logs an aborted page-change animation (the tests navigate faster than a view transition) as an
-  // error; it isn't the page's error, so it doesn't count. CSP violations and script errors still do.
+  // error; it isn't the page's error, so it doesn't count. Nor do messages from other sites' frames (the YouTube and
+  // Deezer players probe features our Permissions-Policy denies). CSP violations and script errors on our pages still do.
   const NOT_OURS = /Failed to load resource|Transition was aborted because of invalid state/;
-  page.on("console", (m) => { if (m.type() === "error" && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
+  const ours = (m) => { const u = m.location().url; return !u || u.startsWith(base) || !/^https?:/.test(u); };
+  page.on("console", (m) => { if (m.type() === "error" && ours(m) && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
   return { ctx, page };
 }
 const ordersFor = (email) => sql(stateDir, `SELECT id, status FROM orders WHERE email = '${email}'`);
@@ -68,11 +70,11 @@ describe("store in the browser", () => {
     const email = unique("phone-buyer");
     await toMockPay(page, email, "stems-patchwork");
     await page.click("[data-mock=paid]");
-    await page.waitForSelector("text=CINCHED.");
+    await page.waitForSelector("text=Payment confirmed");
     assert.equal(await page.evaluate(() => localStorage.getItem("gs:cart")), "[]");
     // Refresh after success: still paid, nothing doubled.
     await page.reload();
-    await page.waitForSelector("text=CINCHED.");
+    await page.waitForSelector("text=Payment confirmed");
     assert.deepEqual(ordersFor(email).map((o) => o.status), ["paid"]);
     await page.goto("/shop/stems-patchwork");
     await page.waitForSelector("[data-buy] .owned-badge");
@@ -119,7 +121,7 @@ describe("store in the browser", () => {
     await toMockPay(page, email);
     await page.reload();
     await page.click("[data-mock=expired]");
-    await page.waitForSelector("text=CHECKOUT CANCELLED");
+    await page.waitForSelector("text=Checkout cancelled");
     assert.equal(ordersFor(email)[0].status, "cancelled");
     await page.click("text=Back to cart");
     await page.waitForSelector(".cart-line");
@@ -131,7 +133,7 @@ describe("store in the browser", () => {
     const email = unique("declined");
     await toMockPay(page, email);
     await page.click("[data-mock=failed]");
-    await page.waitForSelector("text=PAYMENT FAILED");
+    await page.waitForSelector("text=Payment didn't go through");
     assert.equal(ordersFor(email)[0].status, "failed");
     const lib = await page.request.get("/api/library");
     assert.equal((await lib.json()).items.length, 0);
@@ -147,7 +149,7 @@ describe("store in the browser", () => {
     await page.fill("#cart-email", email);
     await ctx.setOffline(true);
     await page.click("#checkout-btn");
-    await page.waitForSelector("text=Signal lost");
+    await page.waitForSelector("text=We couldn't reach the store");
     assert.equal(ordersFor(email).length, 0);
     await ctx.setOffline(false);
     await page.click("#checkout-btn");
@@ -216,7 +218,7 @@ describe("store in the browser", () => {
   test("empty states: cart, library when logged out, library with nothing in it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/cart");
-    await page.waitForSelector("text=Nothing stitched in here yet.");
+    await page.waitForSelector("text=Your cart is empty");
     await page.goto("/library");
     await page.waitForSelector("text=Locked");
     await signUp(page, unique("empty"));
@@ -261,7 +263,7 @@ describe("store in the browser", () => {
 
   test("phone menu: the closed drawer can't be tabbed into; opening moves focus in; Escape closes and returns focus", async () => {
     const { ctx, page } = await open(PHONE);
-    await page.goto("/projects/glitches-and-stitches");
+    await page.goto("/");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
     await page.click(".menu-toggle");
     await page.waitForSelector(".side.open");
@@ -272,6 +274,60 @@ describe("store in the browser", () => {
     await page.keyboard.press("Escape");
     assert.equal(await page.evaluate(() => document.activeElement.className), "menu-toggle");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("a project's own menu on a phone: opens below its header, the page behind is inert, Escape closes and returns focus", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/projects/glitches-and-stitches/music");
+    assert.equal(await page.locator(".side").count(), 0, "no AutoStacc sidebar inside a project");
+    assert.equal(await page.getAttribute(".as-home", "href"), "/", "the AutoStacc logo goes to the hub");
+    assert.equal(await page.getAttribute(".ph-logo", "href"), "/projects/glitches-and-stitches", "the project's logo goes to its home");
+    assert.equal(await page.locator(".ph-logo .ph-mark").count(), 1);
+    assert.equal(await page.locator(".ph-nav").isVisible(), false);
+    await page.click(".ph-toggle");
+    await page.waitForSelector(".ph-nav.open");
+    assert.equal(await page.getAttribute(".ph-toggle", "aria-expanded"), "true");
+    assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
+    assert.equal(await page.getAttribute(".ph-nav a[aria-current]", "href"), "/projects/glitches-and-stitches/music");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "ph-toggle");
+    assert.equal(await page.evaluate(() => !document.querySelector(".ph-nav.open") && !document.querySelector("main").inert), true);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("computer sidebar: an icon rail that expands, and the choice is remembered", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/about");
+    const width = () => page.evaluate(() => document.querySelector(".side").getBoundingClientRect().width);
+    assert.ok((await width()) < 100, "starts as a rail");
+    assert.equal(await page.getAttribute(".side-collapse", "aria-expanded"), "false");
+    await page.click(".side-collapse");
+    await page.waitForFunction(() => document.querySelector(".side").getBoundingClientRect().width > 200);
+    await page.goto("/shop");
+    assert.ok((await width()) > 200, "stays expanded on the next page");
+    assert.equal(await page.getAttribute(".side-collapse", "aria-expanded"), "true");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("store browser: a card opens its project's items with it selected; the address keeps the state; Back undoes it", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/shop");
+    const first = await page.locator(".grid .card").count();
+    await page.click('.grid .card [data-select="serum-presets"]');
+    await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
+    assert.match(page.url(), /\/shop\?project=glitches-and-stitches&item=serum-presets$/);
+    assert.ok((await page.getAttribute(".shop-selected .card", "class")).includes("look-glitches-and-stitches"), "wears its project's look");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.select), "serum-presets");
+    assert.equal(await page.locator('[data-filter=project] [aria-pressed=true]').innerText(), "Glitches & Stitches");
+    await page.reload();
+    await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
+    await page.goBack();
+    await page.waitForFunction(() => !document.querySelector(".shop-selected .card"));
+    assert.equal(await page.locator(".grid .card").count(), first);
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

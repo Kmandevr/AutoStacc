@@ -12,7 +12,7 @@
   const day = (iso) => fmtDate(iso.slice(0, 10));
 
   function orders(list) {
-    if (!list.length) return `<p>No orders yet. <a href="/shop">Find something to tear apart.</a></p>`;
+    if (!list.length) return `<p>No orders yet. <a href="/shop">Browse the store</a>.</p>`;
     return `<ul class="orders">${list.map((o) => `<li class="order status-${escapeHTML(o.status)}">
         <div class="order-head"><strong>${escapeHTML(o.id)}</strong><span>${day(o.createdAt)}</span><span class="order-status">${escapeHTML(STATUS[o.status] || o.status)}</span><span class="price">${cents(o.totalCents, o.currency)}</span></div>
         <ul class="order-items">${o.items.map((i) => `<li><a href="/shop/${escapeHTML(i.productId)}">${escapeHTML(i.title)}</a>${i.quantity > 1 ? ` ×${i.quantity}` : ""}</li>`).join("")}</ul>

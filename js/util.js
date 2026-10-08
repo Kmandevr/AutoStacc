@@ -64,7 +64,7 @@ const GS = (function () {
       const data = await res.json().catch(() => ({}));
       return { ok: res.ok, status: res.status, data, error: res.ok ? null : apiError(res.status, data) };
     } catch {
-      return { ok: false, status: 0, data: {}, error: { code: "network", message: "Signal lost. Check your connection and try again." } };
+      return { ok: false, status: 0, data: {}, error: { code: "network", message: "Couldn't connect. Check your connection and try again." } };
     } finally {
       clearTimeout(timer);
     }
@@ -115,6 +115,44 @@ const GS = (function () {
   // The project whose page this is (<body data-project>, an entry of data/projects.js), or {} on platform pages.
   const currentProject = () => (window.PROJECTS || []).find((p) => p.id === document.body.dataset.project) || {};
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject };
+  // Frame pieces shared by js/layout.js (platform pages) and js/project-frame.js (a project's pages).
+  // A "Skip to content" link for keyboard users that focuses the page's <main> (returned, or null if there is none).
+  const skipLink = () => {
+    const main = $("main");
+    if (!main) return null;
+    main.id = main.id || "main";
+    document.body.insertAdjacentHTML("afterbegin", `<a class="skip-link" href="#${main.id}">Skip to content</a>`);
+    $(".skip-link").addEventListener("click", (ev) => {
+      ev.preventDefault();
+      main.tabIndex = -1;
+      main.focus();
+    });
+    return main;
+  };
+  // Keeps root's .cart-count (visible) and .cart-count-sr (screen readers) showing this browser's cart size.
+  const showCartCount = (root) => {
+    const draw = () => {
+      const n = cart.count();
+      $(".cart-count", root).textContent = n ? ` ${n}` : "";
+      $(".cart-count-sr", root).textContent = n ? `, ${n} item${n === 1 ? "" : "s"}` : "";
+    };
+    draw();
+    addEventListener("gs:cart", draw);
+    addEventListener("storage", (ev) => ev.key === "gs:cart" && draw());
+  };
+
+  // A project's look (its colours, type and tiles) for anything of its shown outside its own pages: returns the class
+  // to add ("look-<id>", or "" for a project without a skin) and loads css/projects/<id>/look.css once.
+  const look = (projectId) => {
+    const p = (window.PROJECTS || []).find((x) => x.id === projectId);
+    if (!p || !p.skin) return "";
+    const href = `/css/projects/${p.id}/look.css`;
+    if (!document.querySelector(`link[href="${href}"]`)) document.head.insertAdjacentHTML("beforeend", `<link rel="stylesheet" href="${href}">`);
+    return `look-${p.id}`;
+  };
+  // Where a store item opens: the store filtered to its project, with the item selected at the top.
+  const shopItemPath = (p) => `/shop?project=${encodeURIComponent(p.project || "")}&item=${encodeURIComponent(p.id)}`;
+
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath };
 })();
 window.GS = GS;

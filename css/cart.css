@@ -22,8 +22,8 @@
 
 /* checkout result */
 .checkout-state { display: grid; gap: 14px; }
-.checkout-state .big { font-family: var(--display); font-size: clamp(2.4rem, 8vw, 4.2rem); line-height: 1; margin: 0; color: var(--accent); text-shadow: 2px 0 var(--accent-2), var(--glow); }
-.checkout-state .big.bad { color: var(--accent-2); text-shadow: -2px 0 var(--accent), var(--glow-2); }
+.checkout-state .big { font-family: var(--display); font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.1; margin: 0; color: var(--accent); text-shadow: var(--glow); }
+.checkout-state .big.bad { color: var(--accent-2); text-shadow: var(--glow-2); }
 .order-lines { list-style: none; margin: 0; padding: 0; }
 .order-lines li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .mock-pay { border-color: var(--accent-2); }

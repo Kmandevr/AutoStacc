@@ -8,9 +8,10 @@
 //   title, description: the project home page's search title and description.
 //   features: the platform features it uses: "releases", "news", "shows", "store", "polls", "relationships".
 //     Polls and relationships are refused by the build for projects that don't list them.
-//   pages: its own pages, listed under it in the sidebar: [{ label, path }], path relative to /projects/<id>
-//     ("" = its home, "music", "#shows").
-//   skin: true = its pages load css/projects/<id>.css (its own look). sounds: true = its pages load the UI sounds
+//   pages: its own pages, the nav of its own header: [{ label, path }], path relative to /projects/<id>
+//     ("" = its home, "music", "#shows"). wordmark: optional lettering for its header logo (else its name).
+//     Its pages wear its own header and footer (js/project-frame.js) under a thin AutoStacc strip.
+//   skin: true = its pages, header and footer load css/projects/<id>/skin.css (its own look). sounds: true = its pages load the UI sounds
 //     and easter eggs (js/sound.js, eggs.js, terminal.js). Platform pages never play sounds.
 //   entity: schema.org type for structured data ("MusicGroup", "Person", "Organization").
 //   bio, tagline, genres, alternateNames (search only, never shown), image { src, width, height, alt }, logo,
@@ -22,9 +23,10 @@ window.PROJECTS = [
   {
     id: "glitches-and-stitches",
     name: "Glitches & Stitches",
+    wordmark: "GLITCHES&STITCHES",
     summary: "An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.",
     title: "Glitches & Stitches — Experimental electronic music · AutoStacc",
-    description: "Glitches & Stitches on AutoStacc: experimental electronic music built from broken pieces. Releases, stems, sample packs and presets.",
+    description: "Glitches & Stitches on AutoStacc: experimental electronic music built from broken pieces. Releases, news and press.",
     features: ["releases", "news", "shows", "store", "polls", "relationships"],
     pages: [
       { label: "Home", path: "" },

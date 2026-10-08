@@ -1,5 +1,6 @@
 # Crawl rules: all public pages (and the CSS, JS and data they need to render) are open; private areas never are.
-# Account and store pages (also noindex) and the store API are never crawled.
+# Account and store pages (also noindex) and the store API are never crawled. AI crawlers are welcome on the public
+# pages; /llms.txt summarizes the site for them.
 User-agent: *
 Allow: /
 Disallow: /account

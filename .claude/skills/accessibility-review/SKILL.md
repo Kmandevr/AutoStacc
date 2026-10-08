@@ -5,7 +5,7 @@ description: Review AutoStacc for accessibility (WCAG 2.2 AA basics). Use only w
 
 # Accessibility review
 
-Start with `verify-site` (alt text, `lang`, tap targets, overflow). Then review only what it can't see. Find the code with the repo map and Serena; don't read every file. The pages are the root `*.html` files plus the generated release, product and post pages (templates in `scripts/lib/pages.js`, styles in `css/detail.css`). Markup for the header, footer and nav is in `js/layout.js`, cards in `js/shop.js`, news in `js/news.js`, shows in `js/shows.js`, release cards in `js/releases.js`. Heading order and alt text are already checked by `verify-site`.
+Start with `verify-site` (alt text, `lang`, tap targets, overflow). Then review only what it can't see. Find the code with the repo map and Serena; don't read every file. The pages are the root `*.html` files plus the generated release, product and post pages (templates in `scripts/lib/pages.js`, styles in `css/detail.css`). Markup for the header, footer and nav is in `js/layout.js` (platform pages) and `js/project-frame.js` (a project's pages), cards in `js/shop.js`, news in `js/news.js`, shows in `js/shows.js`, release cards in `js/releases.js`. Heading order and alt text are already checked by `verify-site`.
 
 | Area | Look for |
 | --- | --- |
