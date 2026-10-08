@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Creator pages are sandboxed (planned)
+
+PLANNED / NOT IMPLEMENTED. The owner wants creators to customise their pages (HTML and CSS first, JavaScript later) without their code touching AutoStacc. Design in [creator pages](creator-pages.md). Choices made with the owner: addresses stay `/projects/<id>` (superseded the same day by `/<creator>/<project>`, see the creators decision); creator content runs in iframes from `sandbox.autostacc.com` (a subdomain, because the owner doesn't want a second domain), made safe by opaque-origin sandboxing (`sandbox` without `allow-same-origin`, also sent as a CSP header), host-only cookies and the exact-origin API check; AutoStacc keeps the frame, store, cart, account and everything search engines read; creator code only gets yes/no answers about the visitor; only curated embeds and no third-party analytics; Levels 1–2 publish instantly, Level 3 needs approval; Glitches & Stitches moves into the sandbox too, at a `first-party` trust level that relaxes rules but not the boundary. A second domain was rejected on cost; what it would have added (separate browser processes for Level 3 code) is recorded in the note. Free vs paid tiers are left to the owner.
+
 ## 2026-10-08: Public pitch is "straight from the artists"
 
 The owner found "Stacc it once. Auto handles the rest." odd, then rejected a library-led replacement ("Buy it once. Find it every time."): advertising that AutoStacc has a library is not the pitch. Chosen with the owner: the home page leads with "Sounds, presets and music, straight from the artists who make them", then the artists, the store and free releases (Auto-Stacc). Your Stacc stays the signed-in library, described plainly where it's used, not sold on public pages. Voice: [autostacc](autostacc.md).

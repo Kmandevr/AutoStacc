@@ -59,7 +59,7 @@ Code: `studio.html`, `js/studio.js` (overview), `js/studio-editor.js` (editor), 
 - **Limits hold under load.** The creator and project limits are checked inside the insert, so parallel requests can't exceed them.
 - **The project directory, follows and polls** cover first-party projects only until Studio creators can sell.
 
-Future custom HTML/CSS needs its own model before it's allowed: a separate sandboxed origin for creator code, never autostacc.com, where logins and checkout live. The block document is the extension point. A "custom section" block can be added there later without changing anything else.
+Future custom HTML/CSS needs its own model before it's allowed: creator code runs only in a sandboxed iframe on its own origin (`sandbox.autostacc.com`, opaque-origin sandbox), never on autostacc.com where logins and checkout live. The plan: [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED). The block document is the extension point: a "custom section" block can be added there later without changing anything else.
 
 ## How they stay cheap
 
