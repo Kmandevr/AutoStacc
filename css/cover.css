@@ -9,6 +9,7 @@
 .cover-lead { font-size: clamp(1.02rem, 1.6vw, 1.18rem); max-width: 54ch; color: var(--muted); margin: 0 0 24px; }
 .cover-actions { margin-bottom: 14px; }
 .cover-note { margin: 0; }
+.cover-note a { display: inline-block; padding-block: 3px; }
 
 /* four clips stacking into the AutoStacc mark: offset widths, track colours, a meter running inside each */
 .cover-stack { display: grid; gap: 14px; padding: 8px 0; }
