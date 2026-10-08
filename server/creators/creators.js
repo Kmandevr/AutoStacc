@@ -98,3 +98,6 @@ export const sellersOfProducts = (db, productIds) => productIds.length
 
 export const publicCreator = (c) => ({ id: c.id, slug: c.slug, name: c.name, status: c.status, trusted: Boolean(c.trusted), source: c.source });
 export const publicProject = (p) => ({ id: p.id, slug: p.slug, name: p.name, published: Boolean(p.published), source: p.source });
+
+// Account deletion: the account leaves every creator it belongs to. Callers refuse first if it still owns a live one.
+export const leaveAllCreatorsStmt = (db, userId) => stmt(db, "DELETE FROM creator_members WHERE user_id = ?", userId);

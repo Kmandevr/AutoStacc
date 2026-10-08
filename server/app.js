@@ -15,6 +15,9 @@ import { routes as payments } from "./payments/routes.js";
 import { routes as library } from "./entitlements/routes.js";
 import { routes as downloads } from "./downloads/routes.js";
 import { routes as account } from "./account/routes.js";
+import { routes as accountSettings } from "./account/settings.js";
+import { routes as accountExport } from "./account/export.js";
+import { routes as accountDelete } from "./account/delete.js";
 import { routes as admin } from "./admin/routes.js";
 import { routes as analytics } from "./analytics/routes.js";
 import { routes as dev } from "./dev/routes.js";
@@ -32,7 +35,7 @@ import { routes as adminCreators } from "./admin/creators.js";
 import { routes as adminFiles } from "./admin/files.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
-const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, admin, analytics, projects, polls,
+const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, admin, analytics, projects, polls,
   impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, adminCreators, adminFiles, dev]);
 
 export async function handleApi(request, env, ctx) {

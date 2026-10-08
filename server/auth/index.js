@@ -26,7 +26,9 @@ export function createAuth(app) {
     trustedOrigins: [config.siteUrl],
     // On-demand confirmation mails would let whoever pre-registered an address mail its owner repeatedly; the one
     // mail at sign-up and password reset (which also verifies) cover every real need.
-    disabledPaths: ["/send-verification-email"],
+    // /list-sessions would hand every session's token to the browser; Settings lists devices without them
+    // (server/account/settings.js).
+    disabledPaths: ["/send-verification-email", "/list-sessions"],
     emailAndPassword: {
       enabled: true,
       // Purchases attach to an account by email, so the email must be proven before anything is linked.

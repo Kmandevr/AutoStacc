@@ -1,6 +1,6 @@
 // Generic polls (data/polls.js, synced by db/catalog.sql): reading a poll with its tally, and recording one vote per
 // verified account. A poll is visible only if it is published and its project is published and uses "polls".
-import { all, first, run, now, parseJson } from "../lib/db.js";
+import { all, first, run, stmt, now, parseJson } from "../lib/db.js";
 import { getVisibleProject, usesFeature } from "../projects/projects.js";
 
 export async function getVisiblePoll(db, pollId) {
@@ -30,3 +30,8 @@ export const castVote = (db, pollId, userId, optionId) =>
   run(db, `INSERT INTO poll_votes (poll_id, user_id, option_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT (poll_id, user_id) DO UPDATE SET option_id = excluded.option_id, updated_at = excluded.updated_at`,
     pollId, userId, optionId, now(), now());
+
+// Every vote this account cast (the data export), and removing them all (account deletion).
+export const votesOfUser = (db, userId) =>
+  all(db, "SELECT poll_id, option_id, created_at, updated_at FROM poll_votes WHERE user_id = ? ORDER BY created_at", userId);
+export const removeVotesStmt = (db, userId) => stmt(db, "DELETE FROM poll_votes WHERE user_id = ?", userId);

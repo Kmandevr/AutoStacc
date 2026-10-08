@@ -1,4 +1,4 @@
-// Server-side gate for the account pages (/dashboard, /account, /settings, /studio), run by their Pages Functions before the
+// Server-side gate for the account pages (/dashboard, /settings and its sections, /studio), run by their Pages Functions before the
 // static page is served. Without a signed-in session (or when the store can't check one) the answer is a redirect to
 // /login?next=<that page>, so a signed-out visitor never receives the app at all. Signed in, the static page is
 // served marked no-store, so no shared or back/forward cache replays it after sign-out. The pages hold no private data
@@ -10,8 +10,12 @@
 import { loadConfig } from "../lib/config.js";
 import { currentUser, isAdmin } from "../auth/session.js";
 
-export const GATED = new Set(["/dashboard", "/account", "/settings", "/studio"]);
+export const GATED = new Set(["/dashboard", "/settings", "/studio"]);
+// Settings is one page (settings.html) with a section per address: /settings/profile, /settings/security, ...
+export const SETTINGS_SECTIONS = ["profile", "security", "orders", "email", "privacy"];
 const HOME = "/dashboard";
+const settingsSection = (path) => (path.match(/^\/settings\/([a-z]+)$/) || [])[1];
+const isGated = (path) => GATED.has(path) || SETTINGS_SECTIONS.includes(settingsSection(path));
 
 // The same test the login page uses (GET /api/account has a user), so the gate and login never disagree and bounce
 // a visitor between them.
@@ -58,7 +62,7 @@ export async function guardAdminPage(context) {
 // Where to come back to after logging in: this page and its query, never anything else (no open redirects).
 export function loginRedirect(url) {
   const path = url.pathname.replace(/(.)\/+$/, "$1");
-  const page = GATED.has(path) ? path + url.search : HOME;
+  const page = isGated(path) ? path + url.search : HOME;
   return `/login?next=${encodeURIComponent(page)}`;
 }
 
@@ -68,4 +72,16 @@ export async function guardPage(context) {
     return new Response(null, { status: 302, headers: { Location: loginRedirect(url), "Cache-Control": "no-store" } });
   }
   return noStore(await context.next());
+}
+
+// /settings and /settings/<section>: the same gate, then the one Settings page for every known section (the page
+// reads its section from the address). An unknown section is the site's 404, signed in or not.
+export async function guardSettingsPage(context) {
+  const url = new URL(context.request.url);
+  const path = url.pathname.replace(/(.)\/+$/, "$1");
+  if (path !== "/settings" && !SETTINGS_SECTIONS.includes(settingsSection(path))) return notFound(context);
+  if (!(await signedIn(context))) {
+    return new Response(null, { status: 302, headers: { Location: loginRedirect(url), "Cache-Control": "no-store" } });
+  }
+  return noStore(await context.env.ASSETS.fetch(new URL("/settings", url)));
 }

@@ -25,8 +25,8 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | Module | Owns | Routes |
 | --- | --- | --- |
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
-| `account/` | who is signed in | `GET /api/account` |
-| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/account`, `/settings`, `/studio`, `/admin` (Pages Functions in `functions/`) |
+| `account/` | who is signed in; Settings: devices, email preferences, the data export, deleting the account ([below](#accounts)) | `GET /api/account`, `/api/account/devices` (+ `/:id/sign-out`, `/sign-out-others`), `GET`/`PUT /api/account/email-preferences`, `POST /api/account/export`, `POST /api/account/delete` |
+| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/settings` and `/settings/<section>`, `/studio`, `/admin` (Pages Functions in `functions/`) |
 | `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
@@ -53,7 +53,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
-Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, sign-out), `js/dashboard.js`, `js/account.js`, `js/settings.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-promotions.js`, `js/admin-creators.js`, `js/admin-audit.js`, `js/impersonation.js` (banner), `js/studio.js` + `js/studio-editor.js`, `js/studio-blocks.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
+Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, the account menu, sign-out), `js/dashboard.js`, `js/settings.js` (the Settings shell) + one script per section (`js/settings-profile.js`, `-security.js`, `-orders.js`, `-email.js`, `-privacy.js`), `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-promotions.js`, `js/admin-creators.js`, `js/admin-audit.js`, `js/impersonation.js` (banner), `js/studio.js` + `js/studio-editor.js`, `js/studio-blocks.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
 
 ## Platform layer
 
@@ -79,7 +79,18 @@ Releases stay in `data/music.js` (title, slug/id, artwork, date, description, tr
 - Sign-up with an existing email answers exactly like a new sign-up and mails the owner of that email instead (no account enumeration); password reset answers the same for unknown emails.
 - Reset links last 1 hour, verification links 24 hours; a reset logs out every session. Sessions last 30 days.
 - Email changes are off (purchases are tied to the address). `role` is server-only.
-- The account pages (`/dashboard`, `/account`, `/settings`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` answers the site's 404 page to anyone not signed in to an admin account (`guardAdminPage`), and the admin API answers 404 too. Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
+- The account pages (`/dashboard`, `/settings` and its sections, `/studio`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` answers the site's 404 page to anyone not signed in to an admin account (`guardAdminPage`), and the admin API answers 404 too. Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
+
+
+### Settings
+
+One area, `/settings`, with a page per section: Profile (name; the email can't change), Security (password, signed-in devices), Orders, Emails, Privacy and data. `settings.html` is served for each known section by `functions/settings/[[path]].js` (`guardSettingsPage`: the same gate; an unknown section is the 404 page), and by a `_redirects` rewrite when the store is off. Computers show the section list beside the open section (`/settings` opens Profile); phones show the list at `/settings` and one section per page with a breadcrumb back. The old `/account` is a 301 to `/settings/orders`. Every section saves on its own; email switches save as they flip.
+
+- **Devices:** `server/auth/devices.js` lists the account's live sessions (a device label guessed from the browser, IP, sign-in and last-active times) without ever returning a token; signing one out finds its token server-side and calls Better Auth's `revokeSession`, which checks it is this account's. Better Auth's own `/list-sessions` (which returns tokens) is switched off.
+- **Email preferences:** `email_preferences` (`db/migrations/0007_account.sql`, `server/email/preferences.js`): `newReleases` and `platformNews`, both off until switched on, no row = all off. Nothing sends those kinds yet; a sender checks `wants()` first. Receipts and security mail have no switch.
+- **Download your data:** `POST /api/account/export` returns one JSON file (account, email choices, devices without tokens, orders by account or email, library, follows, poll votes, creator memberships, which emails were sent). Each module answers for its own tables.
+- **Delete your account:** the person types their email and password (checked with Better Auth's server-only `verifyPassword`). In one transaction: orders by account or email stay as sales records with `user_id` cleared, the email replaced by `deleted-<random>@deleted.invalid` and their guest keys cleared; entitlements are revoked and anonymised the same way; the email log keeps kinds and dates but not the address or body; follows, votes, email preferences, creator memberships, sessions, the password login, reset tokens and the user row are deleted; Better Auth's cookies are expired. The audit log is append-only and keeps its entries. Refused (409) for admin accounts, while the account owns a live creator space, and while a checkout of theirs could still be paid (a pending order under 35 minutes old), so a late payment never lands on an erased account. Password guesses are limited per client and per account. The same email can sign up again as a new account with nothing.
+- **Never for support:** an impersonating admin can't see devices, export, delete or change anything here (writes are refused by the impersonation policy; the device list and export refuse themselves).
 
 ## Cart and checkout
 
@@ -110,7 +121,7 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 ## Email
 
-`server/email/index.js` sends a template through a provider and logs it in `email_events` (dedupe key so a receipt goes out once; failures are logged, never block a payment; the admin can resend). Templates (`server/email/templates.js`): verify email, reset password, account exists, purchase confirmation, in the terminal style. Providers (`server/email/providers.js`): `brevo` (production) and `log` (development: bodies kept in the database, readable at `/api/dev/outbox`). Another provider or a new kind of mail (abandoned cart, release announcement, newsletter) is one function or one template.
+`server/email/index.js` sends a template through a provider and logs it in `email_events` (dedupe key so a receipt goes out once; failures are logged, never block a payment; the admin can resend). Templates (`server/email/templates.js`): verify email, reset password, account exists, purchase confirmation, in the terminal style. Optional kinds (new releases, AutoStacc news) are opt-in per account ([settings](#settings)). Providers (`server/email/providers.js`): `brevo` (production) and `log` (development: bodies kept in the database, readable at `/api/dev/outbox`). Another provider or a new kind of mail (abandoned cart, release announcement, newsletter) is one function or one template.
 
 ## Admin
 

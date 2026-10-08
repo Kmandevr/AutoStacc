@@ -60,3 +60,12 @@ export async function usableEntitlement(db, access, entitlementId) {
   if (!c) return null;
   return first(db, `SELECT e.* FROM entitlements e WHERE e.id = ? AND ${ACTIVE} AND ${c.sql}`, entitlementId, now(), ...c.params);
 }
+
+// Everything this person was ever granted, by account or by email, oldest first (the data export).
+export const entitlementsOfPerson = (db, userId, email) =>
+  all(db, "SELECT * FROM entitlements WHERE user_id = ? OR email = ? ORDER BY granted_at", userId, email);
+
+// Account deletion: access ends and the rows no longer name anyone. Earlier revocations keep their own reason.
+export const eraseEntitlementsStmt = (db, userId, email, anon) =>
+  stmt(db, `UPDATE entitlements SET user_id = NULL, email = ?, status = 'revoked', revoked_at = COALESCE(revoked_at, ?),
+             revoke_reason = COALESCE(revoke_reason, 'account_deleted') WHERE user_id = ? OR email = ?`, anon, now(), userId, email);
