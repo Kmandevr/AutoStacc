@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { loginRedirect, GATED } from "../../server/pages/guard.js";
+import { loginRedirect, GATED, SETTINGS_SECTIONS } from "../../server/pages/guard.js";
 
 // js/util.js is a browser script: run it in a bare context and take its GS.
 const sandbox = { window: {}, document: {} };
@@ -12,13 +12,16 @@ vm.runInNewContext(readFileSync(new URL("../../js/util.js", import.meta.url), "u
 const { safeNext, loginPath } = sandbox.window.GS;
 
 test("the gate sends each account page to login and back to itself, query included", () => {
-  assert.deepEqual([...GATED], ["/dashboard", "/account", "/settings", "/studio"]);
-  for (const p of GATED) assert.equal(loginRedirect(new URL(`https://autostacc.com${p}`)), `/login?next=${encodeURIComponent(p)}`);
-  assert.equal(loginRedirect(new URL("https://autostacc.com/account/?tab=orders")), "/login?next=%2Faccount%3Ftab%3Dorders");
+  assert.deepEqual([...GATED], ["/dashboard", "/settings", "/studio"]);
+  for (const p of [...GATED, ...SETTINGS_SECTIONS.map((s) => `/settings/${s}`)]) {
+    assert.equal(loginRedirect(new URL(`https://autostacc.com${p}`)), `/login?next=${encodeURIComponent(p)}`);
+  }
+  assert.equal(loginRedirect(new URL("https://autostacc.com/settings/orders/?page=2")), "/login?next=%2Fsettings%2Forders%3Fpage%3D2");
 });
 
 test("the gate never returns anywhere but its own pages", () => {
-  for (const u of ["https://autostacc.com//evil.example/account", "https://autostacc.com/elsewhere", "https://autostacc.com/login"]) {
+  for (const u of ["https://autostacc.com//evil.example/settings", "https://autostacc.com/elsewhere", "https://autostacc.com/login", "https://autostacc.com/account",
+    "https://autostacc.com/settings/nope", "https://autostacc.com/settings/security/x", "https://autostacc.com/settings//evil.example"]) {
     assert.equal(loginRedirect(new URL(u)), "/login?next=%2Fdashboard", u);
   }
 });
@@ -34,4 +37,14 @@ test("login returns only to paths on this site, never to itself; the dashboard o
 test("login links carry the way back, encoded", () => {
   assert.equal(loginPath("/account?tab=orders"), "/login?next=%2Faccount%3Ftab%3Dorders");
   assert.equal(loginPath("/library", "signup"), "/login?next=%2Flibrary#signup");
+});
+
+test("the SEO link check, the page and the store-off rewrites know exactly the Settings sections the server serves", () => {
+  const seo = readFileSync(new URL("../../scripts/seo-test.js", import.meta.url), "utf8");
+  const listed = JSON.parse(seo.match(/const SETTINGS_SECTIONS = (\[[^\]]*\]);/)[1]);
+  assert.deepEqual(listed, SETTINGS_SECTIONS);
+  const page = readFileSync(new URL("../../settings.html", import.meta.url), "utf8");
+  assert.deepEqual([...page.matchAll(/href="\/settings\/([a-z]+)" data-section="\1"/g)].map((m) => m[1]), SETTINGS_SECTIONS, "the page lists every section, in order");
+  const rewrites = readFileSync(new URL("../../_redirects", import.meta.url), "utf8").split("\n").map((l) => l.trim().split(/\s+/)).filter(([, to, code]) => code === "200" && to === "/settings");
+  assert.deepEqual(rewrites.map(([from]) => from), SETTINGS_SECTIONS.map((x) => `/settings/${x}`), "the store-off rewrites cover exactly the sections");
 });

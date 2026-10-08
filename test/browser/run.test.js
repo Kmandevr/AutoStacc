@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { execSync } from "node:child_process";
 import path from "node:path";
+import fs from "node:fs";
 import { ROOT, outbox, linkIn, sql, unique } from "../support/client.js";
 
 const require = createRequire(import.meta.url);
@@ -44,6 +45,12 @@ async function open(device = PHONE) {
   const ours = (m) => { const u = m.location().url; return !u || u.startsWith(base) || !/^https?:/.test(u); };
   page.on("console", (m) => { if (m.type() === "error" && ours(m) && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
   return { ctx, page };
+}
+// Log out the way a visitor does: the account menu in the top bar, then Log out.
+async function logOut(page, bar = ".topbar") {
+  await page.click(`${bar} .account-button`);
+  await page.click(`${bar} .account-panel [data-signout]`);
+  await page.waitForURL(base + "/");
 }
 const ordersFor = (email) => sql(stateDir, `SELECT id, status FROM orders WHERE email = '${email}'`);
 const setCart = (page, items) => page.evaluate((i) => localStorage.setItem("gs:cart", JSON.stringify(i)), items);
@@ -240,23 +247,97 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(DESK);
     const email = unique("expiry");
     await signUp(page, email);
-    await page.goto("/account");
-    await page.waitForSelector("text=Orders");
+    await page.goto("/settings/orders");
+    await page.waitForSelector("text=No orders yet.");
     sql(stateDir, `UPDATE session SET expiresAt = '2000-01-01T00:00:00.000Z' WHERE userId = (SELECT id FROM "user" WHERE email = '${email}')`);
-    await page.goto("/account");
-    await page.waitForURL(/\/login\?next=%2Faccount$/);
+    await page.goto("/settings/orders");
+    await page.waitForURL(/\/login\?next=%2Fsettings%2Forders$/);
     await ctx.close();
   });
 
-  test("settings: rename, then log out from the account page", async () => {
+  test("settings on a computer: devices, an email switch, the data download, then deleting the account", async () => {
+    const { ctx, page } = await open({ ...DESK, acceptDownloads: true });
+    const email = unique("settings");
+    await signUp(page, email);
+    // A second device, signed in elsewhere.
+    const other = await browser.newContext({ baseURL: base });
+    const tab = await other.newPage();
+    await tab.goto("/login");
+    await tab.fill("#email", email);
+    await tab.fill("#password", "browser-pass-123");
+    await tab.click("button[type=submit]");
+    await tab.waitForURL(base + "/dashboard");
+
+    await page.goto("/settings/security");
+    await page.waitForSelector(".device-here");
+    assert.equal(await page.locator(".device").count(), 2);
+    await page.click("[data-sign-out-others]");
+    await page.waitForSelector("[data-devices] .msg:has-text('Every other device is signed out.')");
+    assert.equal(await page.locator(".device").count(), 1);
+    await tab.goto("/settings");
+    await tab.waitForURL(/\/login\?next=%2Fsettings$/);
+    await other.close();
+
+    await page.goto("/settings/email");
+    const sw = page.locator("#pref-newReleases");
+    assert.equal(await sw.isChecked(), false, "off until you turn it on");
+    await sw.click();
+    await page.waitForSelector(".panel .msg:has-text('Saved.')");
+    await page.reload();
+    await page.waitForSelector("#pref-newReleases");
+    assert.equal(await page.locator("#pref-newReleases").isChecked(), true, "and it stays on");
+
+    await page.goto("/settings/privacy");
+    const [file] = await Promise.all([page.waitForEvent("download"), page.click("[data-export-now]")]);
+    assert.match(file.suggestedFilename(), /^autostacc-data-\d{4}-\d\d-\d\d\.json$/);
+    const data = JSON.parse(fs.readFileSync(await file.path(), "utf8"));
+    assert.equal(data.account.email, email);
+    assert.equal(data.emailPreferences.newReleases, true);
+
+    // The danger zone: closed, then the button only wakes once the email typed matches.
+    assert.equal(await page.locator("[data-form=delete]").isVisible(), false);
+    await page.click("[data-delete-start]");
+    const go = page.locator("[data-form=delete] button[type=submit]");
+    await page.fill("#delete-password", "browser-pass-123");
+    await page.fill("#delete-email", "someone@else.dev");
+    assert.equal(await go.isDisabled(), true);
+    await page.fill("#delete-email", email);
+    await page.fill("#delete-password", "wrong-password-9");
+    await go.click();
+    await page.waitForSelector("[data-delete] .msg.error:has-text(\"That password isn't right.\")");
+    await page.fill("#delete-password", "browser-pass-123");
+    await go.click();
+    await page.waitForSelector("h2:has-text('Your account is deleted')");
+    await page.goto("/settings");
+    await page.waitForURL(/\/login\?next=%2Fsettings$/);
+    assert.equal(sql(stateDir, `SELECT COUNT(*) AS n FROM "user" WHERE email = '${email}'`)[0].n, 0);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("settings on a phone: the list, one section at a time with the way back, rename, log out from the account menu", async () => {
     const { ctx, page } = await open(PHONE);
     await signUp(page, unique("account"));
     await page.goto("/settings");
+    assert.ok(await page.locator(".settings-nav a[href='/settings/security']").isVisible(), "the list of sections");
+    assert.equal(await page.locator("#settings-app").isVisible(), false, "no section yet");
+    assert.equal(new URL(page.url()).pathname, "/settings");
+    await page.click(".settings-nav a[href='/settings/profile']");
+    await page.waitForURL(base + "/settings/profile");
+    await page.waitForSelector("[data-form=profile]");
+    assert.equal(await page.locator(".settings-nav").isVisible(), false, "one level at a time");
+    assert.ok(await page.locator(".crumbs a[href='/settings']").isVisible(), "the way back");
+    assert.equal(await page.locator("h1").textContent(), "Profile");
+    assert.equal(await page.title(), "Profile · Settings · AutoStacc");
     await page.fill("#name", "Renamed Human");
     await page.click("[data-form=profile] button[type=submit]");
     await page.waitForSelector("[data-form=profile] .msg:has-text('Saved.')");
     await page.goto("/account");
-    await page.click("#account-app [data-signout]");
+    await page.waitForURL(base + "/settings/orders");
+    await page.waitForSelector("text=No orders yet.");
+    await page.click(".topbar .account-button");
+    assert.ok(await page.locator(".account-panel >> text=Renamed Human").isVisible(), "the menu says who you are");
+    await page.click(".topbar .account-panel [data-signout]");
     await page.waitForURL(base + "/");
     await page.goto("/library");
     await page.waitForSelector("text=Locked");
@@ -399,11 +480,11 @@ describe("store in the browser", () => {
     await page.waitForSelector("main >> text=straight from the artists");
     assert.ok(await page.locator("main a[href='/login#signup']").first().isVisible(), "Create account on the cover");
     assert.ok(await page.locator(".topbar a[href='/login']").isVisible(), "Log in in the top bar");
-    assert.equal(await page.locator(".topbar [data-signout]").isVisible(), false, "no Log out for a stranger");
+    assert.equal(await page.locator(".topbar .account-button").isVisible(), false, "no account menu for a stranger");
     assert.equal(await page.locator(".side a[href='/dashboard']").isVisible(), false, "no app links for a stranger");
     assert.ok(await page.locator("[data-shop] .card").count() > 0, "featured products from the catalog");
     assert.deepEqual(privateCalls, [], "the cover asks nothing about the visitor's things");
-    for (const p of ["/dashboard", "/account", "/settings"]) {
+    for (const p of ["/dashboard", "/settings", "/settings/security"]) {
       await page.goto(p);
       await page.waitForURL(new RegExp(`/login\\?next=${encodeURIComponent(p)}$`));
       await page.waitForSelector("[data-form=signin]");
@@ -415,15 +496,14 @@ describe("store in the browser", () => {
     // An account, signed out, then back in through the gate: login returns to the page that asked.
     const email = unique("gate");
     await signUp(page, email);
-    await page.click(".topbar [data-signout]");
-    await page.waitForURL(base + "/");
-    await page.goto("/settings");
-    await page.waitForURL(/\/login\?next=%2Fsettings$/);
+    await logOut(page);
+    await page.goto("/settings/security");
+    await page.waitForURL(/\/login\?next=%2Fsettings%2Fsecurity$/);
     await page.fill("#email", email);
     await page.fill("#password", "browser-pass-123");
     await page.click("button[type=submit]");
-    await page.waitForURL(base + "/settings");
-    await page.waitForSelector("[data-form=profile]");
+    await page.waitForURL(base + "/settings/security");
+    await page.waitForSelector("[data-form=password]");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
@@ -434,19 +514,37 @@ describe("store in the browser", () => {
     await page.waitForSelector("h1:has-text('Dashboard')");
     await page.waitForSelector("[data-dashboard-stacc] >> text=Nothing in Your Stacc yet.");
     assert.ok(await page.locator(".side a[href='/dashboard'][aria-current=page]").isVisible(), "the app group in the sidebar");
-    assert.ok(await page.locator(".side a[href='/settings']").isVisible());
+    assert.ok(await page.locator(".side a[href='/library']").isVisible());
     assert.equal(await page.locator(".topbar a[href='/login']").isVisible(), false, "no Log in once signed in");
-    assert.ok(await page.locator(".topbar [data-signout]").isVisible());
+    // The account menu: closed until asked, then every account destination (no Control Center for a customer).
+    const menu = page.locator(".topbar .account-panel");
+    assert.equal(await menu.isVisible(), false);
+    await page.click(".topbar .account-button");
+    assert.equal(await page.getAttribute(".topbar .account-button", "aria-expanded"), "true");
+    for (const href of ["/dashboard", "/library", "/studio", "/settings"]) assert.ok(await menu.locator(`a[href='${href}']`).isVisible(), href);
+    assert.equal(await menu.locator("a[href='/admin']").count(), 0);
+    assert.ok(await menu.locator("a[href='/dashboard'][aria-current=page]").isVisible(), "the menu marks where you are");
+    await page.keyboard.press("Escape");
+    assert.equal(await menu.isVisible(), false, "Escape closes it");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "account-button", "and gives focus back");
+    await page.click(".topbar .account-button");
+    await page.click("main h1");
+    assert.equal(await menu.isVisible(), false, "a click elsewhere closes it");
     await page.goto("/");
     assert.ok(await page.locator("main a[href='/dashboard']").first().isVisible(), "the cover offers the dashboard");
     assert.equal(await page.locator("main a[href='/login#signup']").first().isVisible(), false);
-    for (const [p, ready] of [["/account", "text=Orders"], ["/settings", "[data-form=password]"], ["/library", "text=Nothing owned yet."]]) {
+    for (const [p, ready] of [["/settings/orders", "text=No orders yet."], ["/settings/security", "[data-form=password]"], ["/settings/email", ".switch"],
+      ["/settings/privacy", "[data-export-now]"], ["/library", "text=Nothing owned yet."]]) {
       await page.goto(p);
       await page.waitForSelector(ready);
       assert.equal(new URL(page.url()).pathname, p);
     }
-    await page.click(".topbar [data-signout]");
-    await page.waitForURL(base + "/");
+    // On a computer, Settings opens Profile beside the list, at Profile's own address.
+    await page.goto("/settings");
+    await page.waitForSelector("[data-form=profile]");
+    assert.equal(new URL(page.url()).pathname, "/settings/profile");
+    assert.ok(await page.locator(".settings-nav a[href='/settings/profile'][aria-current=page]").isVisible());
+    await logOut(page);
     await page.waitForSelector(".topbar a[href='/login']:visible");
     await page.goto("/dashboard");
     await page.waitForURL(/\/login\?next=%2Fdashboard$/);
@@ -457,7 +555,7 @@ describe("store in the browser", () => {
   test("the signed-in pages fit a phone: no sideways scroll, no tiny buttons, no CSP errors", async () => {
     const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });
     await signUp(page, unique("app-phone"));
-    for (const p of ["/dashboard", "/account", "/settings", "/studio", "/library", "/"]) {
+    for (const p of ["/dashboard", "/settings", "/settings/security", "/settings/privacy", "/studio", "/library", "/"]) {
       await page.goto(p);
       await page.waitForTimeout(700);
       const facts = await page.evaluate(() => ({
