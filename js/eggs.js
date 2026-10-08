@@ -82,7 +82,7 @@
   // Leave the tab and the signal drops.
   const title = document.title;
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) document.title = "[signal lost] · G&S";
+    if (document.hidden) document.title = "[signal lost] · Glitches & Stitches · AutoStacc";
     else {
       document.title = "[signal restored]";
       setTimeout(() => (document.title = title), 1200);

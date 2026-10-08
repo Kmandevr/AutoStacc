@@ -64,7 +64,7 @@ const GS = (function () {
       const data = await res.json().catch(() => ({}));
       return { ok: res.ok, status: res.status, data, error: res.ok ? null : apiError(res.status, data) };
     } catch {
-      return { ok: false, status: 0, data: {}, error: { code: "network", message: "Signal lost. Check your connection and try again." } };
+      return { ok: false, status: 0, data: {}, error: { code: "network", message: "Couldn't connect. Check your connection and try again." } };
     } finally {
       clearTimeout(timer);
     }

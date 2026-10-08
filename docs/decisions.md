@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Platform voice, AI access and no stale scripts
+
+The owner: AutoStacc's text should be friendly but more professional and to the point; the `$` prompts and all-caps headings read as weird on platform pages, and the site should be readable by AI. Platform and store copy (cart, checkout, account, login, library, 404) dropped the Glitches & Stitches loop words and terminal headings; `--heading-case` keeps all-caps inside the G&S skin only. `llms.txt` is generated from `data/` for AI assistants. Scripts, styles and data are served with `Cache-Control: no-cache` (revalidated, cheap 304s) because their URLs aren't versioned and a phone kept the old header for hours after the rebrand.
+
 ## 2026-10-08: Every title ends with AutoStacc
 
 The owner: the site is AutoStacc; Glitches & Stitches is a project, not the site or the site's name. Project pages were titled only with the project ("HAIL (single) · Glitches & Stitches", home "Glitches & Stitches — Official Site"). Now every title ends "· AutoStacc" and project pages name the project before it; no project copy calls itself the official site. The SEO test enforces it.

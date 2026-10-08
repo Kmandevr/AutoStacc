@@ -54,4 +54,4 @@ Stacked and modular, like a DAW (think REAPER) but prettier: neutral panels on a
 
 ## Voice
 
-The platform's own copy is clear and practical; each project brings its own voice on its own content. Glitches & Stitches' terminal look is the current site skin and stays, but platform copy shouldn't borrow its loop vocabulary (tear, stitch, glitch) for platform features.
+The platform's own copy is friendly but professional and to the point: plain sentences, sentence-case headings (no all-caps, no `$` prompts or terminal flourishes), "Your Stacc" for the library, "store" for the shop. Each project brings its own voice on its own pages; Glitches & Stitches' terminal look and loop vocabulary (tear, stitch, glitch, cinch) stay inside its skin and never appear on platform pages, store pages or AutoStacc email.
