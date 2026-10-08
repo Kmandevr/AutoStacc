@@ -11,6 +11,12 @@
   const settle = (t) => t && [t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
   addEventListener("pagereveal", (ev) => settle(ev.viewTransition));
   addEventListener("pageswap", (ev) => settle(ev.viewTransition));
+  // Some browsers also abort a transition before either event hands it over (a navigation that turns into a download,
+  // the next page not opting in yet). That rejection is the browser's, not the page's, so it is settled here too; any
+  // other unhandled rejection is still reported.
+  addEventListener("unhandledrejection", (ev) => {
+    if (ev.reason instanceof DOMException && /^Transition was aborted/.test(ev.reason.message)) ev.preventDefault();
+  });
 
   const KEY = "as-theme";
   const root = document.documentElement;

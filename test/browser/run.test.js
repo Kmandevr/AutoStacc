@@ -263,6 +263,18 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("an aborted page-change animation is never an uncaught error; real errors still are", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/");
+    await page.evaluate(() => { Promise.reject(new DOMException("Transition was aborted because of invalid state. ViewTransition opt-in disabled", "InvalidStateError")); });
+    await page.waitForTimeout(200);
+    assert.deepEqual(page.errors, []);
+    await page.evaluate(() => { Promise.reject(new Error("a real bug")); });
+    await page.waitForTimeout(200);
+    assert.deepEqual(page.errors, ["a real bug"]);
+    await ctx.close();
+  });
+
   test("an expired download link explains itself", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/api/downloads/eyJmIjoicGZfeCIsIngiOjF9.bad");
