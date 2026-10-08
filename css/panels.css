@@ -22,8 +22,8 @@
   background: linear-gradient(90deg, color-mix(in srgb, var(--track) 22%, var(--panel)) 0 6px, var(--panel-2) 6px);
   border-bottom: 1px solid var(--line);
 }
-.mix-head h2 { margin: 0; font-size: 1rem; letter-spacing: 0; display: flex; align-items: center; gap: 8px; }
-.mix-head h2::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--track); }
+.mix-head :is(h2, h3) { margin: 0; font-size: 1rem; letter-spacing: 0; display: flex; align-items: center; gap: 8px; }
+.mix-head :is(h2, h3)::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--track); }
 .mix-head a { font-size: .9rem; font-weight: 600; padding-block: 6px; display: inline-block; }
 
 .mix-panel .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }

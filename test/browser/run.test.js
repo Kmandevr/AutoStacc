@@ -384,7 +384,7 @@ describe("store in the browser", () => {
     const privateCalls = [];
     page.on("request", (r) => { if (/\/api\/(library|orders|projects)/.test(r.url())) privateCalls.push(r.url()); });
     await page.goto("/");
-    await page.waitForSelector("main >> text=Buy it once.");
+    await page.waitForSelector("main >> text=straight from the artists");
     assert.ok(await page.locator("main a[href='/login#signup']").first().isVisible(), "Create account on the cover");
     assert.ok(await page.locator(".topbar a[href='/login']").isVisible(), "Log in in the top bar");
     assert.equal(await page.locator(".topbar [data-signout]").isVisible(), false, "no Log out for a stranger");
