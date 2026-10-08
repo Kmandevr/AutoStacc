@@ -219,7 +219,7 @@ export default (ctx) => describe("creators", () => {
   test("paid files: a pending upload never reaches a customer until it is published; odd file types are refused", async () => {
     const admin = await adminClient(ctx.mock.url);
     assert.equal((await admin.req("PUT", "/api/admin/products/vj-loops/files?filename=evil.exe", { raw: "MZ", headers: { "Content-Type": "application/octet-stream" } })).status, 415);
-    const up = await admin.req("PUT", "/api/admin/products/vj-loops/files?filename=held.zip&status=pending", { raw: "zip bytes", headers: { "Content-Type": "application/zip" } });
+    const up = await admin.req("PUT", "/api/admin/products/vj-loops/files?filename=held.zip&status=pending", { raw: Buffer.from("PK\u0003\u0004 zip bytes", "latin1"), headers: { "Content-Type": "application/zip" } });
     assert.equal(up.status, 201);
     assert.equal(up.data.status, "pending");
     const { c } = await newBuyer(ctx.mock.url, "pending-file");

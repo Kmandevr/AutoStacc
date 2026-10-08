@@ -42,7 +42,7 @@
     const res = await api("/api/admin/products");
     if (!res.ok) { panel.innerHTML = `<p class="msg error">${escapeHTML(res.error.message)}</p>`; return; }
     panel.innerHTML = `
-      <p class="small-print">Titles, prices and descriptions live in data/products.js (edit, run the build, deploy). Here: sales switch, paid files, previews.</p>
+      <p class="small-print">Here you can change a price, take a product out of draft or hide it, remove it, pause sales, and manage its paid files. Titles and descriptions still live in data/products.js. Changes here are kept when the site is redeployed.</p>
       <form class="panel wide" data-preview-upload><h2>Preview clip</h2>
         <p>Upload an audio clip (MP3/M4A/OGG/WAV, under 20 MB), then set <code>preview: { file: "name.mp3" }</code> on the product in data/products.js.</p>
         <div class="field"><label for="preview-file">Audio file</label><input id="preview-file" type="file" accept="audio/*" required></div>
@@ -51,7 +51,12 @@
         <div class="admin-row"><strong>${escapeHTML(p.title)}</strong><span class="tag">${escapeHTML((TYPES[p.type] || {}).label || p.type)}</span>
           <span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span>
           <span class="admin-flags">${p.deleted ? "removed" : p.published ? "published" : "draft"}${p.salesPaused ? " · sales paused" : ""}</span>
-          ${p.deleted ? "" : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>`}</div>
+          ${p.deleted ? `<button class="btn ghost" type="button" data-product-set='{"deleted":false}'>Restore</button>` : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>
+          <button class="btn ghost" type="button" data-product-set='{"published":${p.published ? "false" : "true"}}'>${p.published ? "Hide from store" : "Publish (out of draft)"}</button>
+          <button class="btn ghost" type="button" data-product-remove>Remove</button>`}</div>
+        ${p.deleted ? "" : `<form class="admin-upload" data-price-form><label for="pr-${escapeHTML(p.id)}">Price (${escapeHTML(p.currency)}, 0 = free)</label>
+          <input id="pr-${escapeHTML(p.id)}" type="number" min="0" max="10000" step="0.01" inputmode="decimal" value="${(p.priceCents / 100).toFixed(2)}" required>
+          <button class="btn ghost" type="submit">Save price</button><span class="small-print" role="status"></span></form>`}
         <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.pac_id ? ` · ${escapeHTML(pacTitle(f.pac_id))}` : ""}${f.kind ? ` · ${escapeHTML((KINDS[f.kind] || {}).label || f.kind)}` : ""}${f.active ? (f.status && f.status !== "published" ? ` · <strong>${escapeHTML(f.status)}</strong>` : "") : " · deactivated"}</span>
           ${f.active && f.status === "pending" ? `<button class="link-btn" type="button" data-publish-file="${escapeHTML(f.id)}">publish</button>` : ""}
           ${f.active ? `<button class="link-btn" type="button" data-remove-file="${escapeHTML(f.id)}">deactivate</button>` : ""}</li>`).join("") || "<li class=\"small-print\">No files yet: buyers would get an empty library entry.</li>"}</ul>
@@ -85,6 +90,18 @@
 
   root.addEventListener("submit", async (e) => {
     const form = e.target;
+    if (form.matches("[data-price-form]")) {
+      e.preventDefault();
+      const btn = $("button[type=submit]", form), note = $("[role=status]", form);
+      const priceCents = Math.round(Number($("input", form).value) * 100);
+      if (btn.disabled || !Number.isInteger(priceCents) || priceCents < 0) { note.textContent = "Enter a price like 9.99."; return; }
+      btn.disabled = true;
+      const res = await api(`/api/admin/products/${encodeURIComponent(form.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: { priceCents } });
+      if (res.ok) return products();
+      btn.disabled = false;
+      note.textContent = res.error.message;
+      return;
+    }
     if (!form.matches("[data-upload], [data-preview-upload]")) return;
     e.preventDefault();
     const btn = $("button[type=submit]", form);
@@ -110,6 +127,21 @@
   root.addEventListener("click", async (e) => {
     const tab = e.target.closest("[role=tab]");
     if (tab) return selectTab(tab.id.slice(4));
+    const set = e.target.closest("[data-product-set]");
+    if (set) {
+      set.disabled = true;
+      await api(`/api/admin/products/${encodeURIComponent(set.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: JSON.parse(set.dataset.productSet) });
+      return products();
+    }
+    // Removing hides the product and stops sales; people who already bought it keep their files. It can be restored.
+    const rm = e.target.closest("[data-product-remove]");
+    if (rm) {
+      const li = rm.closest("[data-product]");
+      if (!confirm(`Remove "${li.querySelector("strong").textContent}" from the store? People who already bought it keep their files. You can restore it later.`)) return;
+      rm.disabled = true;
+      await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}`, { method: "PATCH", body: { deleted: true } });
+      return products();
+    }
     const pause = e.target.closest("[data-pause]");
     if (pause) {
       pause.disabled = true;
