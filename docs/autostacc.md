@@ -40,7 +40,7 @@ Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) 
 
 ## Site structure
 
-`/` is the AutoStacc hub (a dashboard: Your Stacc at a glance, new releases, projects rack, how it works). Platform pages: `/shop`, `/library`, `/about`, `/projects`. Each project lives under `/projects/<id>` with its own pages (`/projects/glitches-and-stitches/music/hail`). Navigation is a sidebar in two groups, **AutoStacc** (Store, Your Stacc, About) and **Projects** (one link per project): open on desktop, a compact drawer on phones. Account, cart and the theme switch sit top right. A project's own pages (music, shows, news, press) are reachable only inside it: on its pages a project bar under the top bar shows its name, its pages as tabs and its own tools (the sound switch).
+`/` is the AutoStacc hub (a dashboard: Your Stacc at a glance, new releases, projects rack, how it works). Platform pages: `/shop`, `/library`, `/about`, `/projects`. Each project lives under `/projects/<id>` with its own pages (`/projects/glitches-and-stitches/music/hail`). On platform pages navigation is a sidebar in two groups, **AutoStacc** (Store, Your Stacc, About) and **Projects** (one link per project): on a computer an icon rail that expands (the choice is remembered), on phones a compact drawer. Account, cart and the theme switch sit top right. A project is its own mini-site: its pages have no sidebar, only a thin AutoStacc strip on top (home, Store, Your Stacc, Projects, theme, account, cart), then the project's own header in its own theme (its logo and wordmark linking to its home, its pages as nav, its tools such as the sound switch; a menu button on phones) and its own footer with a "Sold and delivered by AutoStacc" line (`js/project-frame.js`, `css/project-frame.css`, restyled by its skin). Its music, shows, news and press are reachable only inside it.
 
 ## Visual identity (placeholder logo)
 
@@ -54,4 +54,4 @@ Stacked and modular, like a DAW (think REAPER) but prettier: neutral panels on a
 
 ## Voice
 
-The platform's own copy is clear and practical; each project brings its own voice on its own content. Glitches & Stitches' terminal look is the current site skin and stays, but platform copy shouldn't borrow its loop vocabulary (tear, stitch, glitch) for platform features.
+The platform's own copy is friendly but professional and to the point: plain sentences, sentence-case headings (no all-caps, no `$` prompts or terminal flourishes), "Your Stacc" for the library, "store" for the shop. Each project brings its own voice on its own pages; Glitches & Stitches' terminal look and loop vocabulary (tear, stitch, glitch, cinch) stay inside its skin and never appear on platform pages, store pages or AutoStacc email.

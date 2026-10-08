@@ -29,7 +29,7 @@
   const PROBLEMS = {
     not_found: "This piece isn't in the store anymore.",
     unavailable: "Not for sale right now.",
-    owned: "Already in your library.",
+    owned: "Already in Your Stacc.",
     free: "It's free: claim it on its page instead.",
     quantity: "Too many of these in one order.",
     currency_mismatch: "Mixed currencies can't share one checkout."
@@ -54,8 +54,8 @@
     ? `<p class="msg">Checkout cancelled. Nothing was charged, and your cart is still here.</p>` : "";
 
   function empty() {
-    root.innerHTML = `${notice()}<div class="panel appear"><h2>Empty</h2><p>Nothing stitched in here yet.</p>
-      <div class="actions"><a class="btn" href="/shop">Browse the shop</a><a class="btn ghost" href="/library">My library</a></div></div>`;
+    root.innerHTML = `${notice()}<div class="panel appear"><h2>Your cart is empty</h2><p>Add something from the store and it will show up here.</p>
+      <div class="actions"><a class="btn" href="/shop">Browse the store</a><a class="btn ghost" href="/library">Your Stacc</a></div></div>`;
   }
 
   function line(l) {
@@ -78,7 +78,7 @@
     const c = priced;
     const blocked = c.problems.length > 0;
     const who = account && account.user
-      ? `<p class="small-print">Checking out as <strong>${escapeHTML(account.user.email)}</strong>. Your files land in your library.</p>`
+      ? `<p class="small-print">Checking out as <strong>${escapeHTML(account.user.email)}</strong>. Your files will be in Your Stacc.</p>`
       : `<div class="field"><label for="cart-email">Email for your receipt and files</label>
            <input id="cart-email" type="email" autocomplete="email" inputmode="email" required value="${escapeHTML(sessionValue("gs:email"))}">
            <span class="hint">No account needed. <a href="/login?next=/cart">Log in</a> instead, or create an account with this email later to keep your files.</span></div>`;
@@ -140,7 +140,7 @@
     const err = res.error;
     if (err.code === "checkout_finished") { forgetKey(); return load(); }
     if (err.code === "cart_changed" && err.cart) { priced = err.cart; return render(`<p class="msg error">${escapeHTML(err.message)}</p>`); }
-    const text = res.status === 0 ? "Signal lost before checkout opened. Nothing was charged; try again."
+    const text = res.status === 0 ? "We couldn't reach the store before checkout opened. Nothing was charged; please try again."
       : res.status === 401 || res.status === 403 ? `${escapeHTML(err.message)} <a href="/login?next=/cart">Log in</a>` : escapeHTML(err.message);
     render(`<p class="msg error">${text}</p>`);
   }

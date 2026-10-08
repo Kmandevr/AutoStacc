@@ -14,6 +14,15 @@ https://:version.:project.pages.dev/*
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 
+# Scripts, styles and data change with each deploy but keep the same URLs, so browsers re-check them on every visit
+# (a quick "not modified" when unchanged). Without this a phone can keep old files for hours and show a mix of versions.
+/js/*
+  Cache-Control: no-cache
+/css/*
+  Cache-Control: no-cache
+/data/*
+  Cache-Control: no-cache
+
 # Account and store pages: only this site's own scripts may run, and they may only talk to this site.
 /cart
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'

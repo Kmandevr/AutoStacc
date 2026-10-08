@@ -1,0 +1,95 @@
+/* Glitches & Stitches' look: its colours, fonts, buttons and product tiles, portable to any page. Its pages get it */
+/* through .skin-glitches-and-stitches; anything of its shown elsewhere (a store card, a hub row, a product page) */
+/* wears .look-glitches-and-stitches (js/util.js GS.look loads this sheet). Page effects stay in skin.css. */
+@import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+.skin-glitches-and-stitches, .look-glitches-and-stitches {
+  --bg: #000;
+  --panel: #0b0812;
+  --text: #f2f2f2;
+  --muted: #b8b8c0;
+  --accent: #33ff66;
+  --accent-dim: #24b350;
+  --accent-2: #bf5fff;
+  --line: #1f5c33;
+  --heading: var(--accent);
+  --link: var(--accent-2);
+  --link-hover: var(--accent);
+  --focus: var(--accent);
+  --btn-bg: var(--accent-2);
+  --on-accent: var(--bg);
+  --ghost-border: var(--accent);
+  --stack: var(--accent);
+  --glow: 0 0 6px rgba(51,255,102,.45);
+  --glow-2: 0 0 8px rgba(191,95,255,.6);
+  --radius: 0;
+  --font: "JetBrains Mono", ui-monospace, monospace;
+  --mono: var(--font);
+  --display: "VT323", var(--font);
+  --display-weight: 400;
+  --display-tracking: .02em;
+  --section-size: clamp(2.2rem, 5vw, 3.2rem);
+  --section-case: uppercase;
+  --stamp-size: 1.25rem;
+  --btn-case: uppercase;
+  --btn-tracking: .06em;
+  --prompt: "$ ";
+  --heading-case: uppercase;
+  --btn-prefix: "> ";
+  --msg-ok: "[ok] ";
+  --msg-err: "[err] ";
+  --msg-pending: "[..] ";
+  color-scheme: dark;
+}
+/* on another page, the tile itself switches to the project's type and colours */
+.look-glitches-and-stitches { color: var(--text); font-family: var(--font); }
+.card.look-glitches-and-stitches { background: var(--panel); }
+/* a whole platform page in its look (its product pages): its dark screen behind the content */
+main.look-glitches-and-stitches { background: var(--bg); }
+
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) .btn:hover { box-shadow: 4px 4px 0 var(--accent); }
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) .btn.ghost:hover { box-shadow: 4px 4px 0 var(--accent-2); }
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) .owned-badge { box-shadow: 3px -2px 0 rgba(191,95,255,.45); }
+
+/* ---------- generated product covers: a glowing CRT tile, green or purple by the product's hue ---------- */
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) .cover {
+  place-items: center;
+  text-align: center;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-size: 2rem;
+  color: var(--accent);
+  text-shadow: 2px 0 var(--accent-2), var(--glow);
+  background: radial-gradient(circle at 50% 40%, rgb(191 95 255 / .3), transparent 70%), repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px), var(--bg);
+}
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) .cover.tint-green { background: radial-gradient(circle at 50% 40%, rgb(51 255 102 / .3), transparent 70%), repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px), var(--bg); }
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) .cover::after {
+  inset: -6px 0 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 6px);
+}
+:is(.skin-glitches-and-stitches .card, .look-glitches-and-stitches .card, .card.look-glitches-and-stitches):hover .cover::after { animation: scan-drift .6s linear infinite; transform: none; }
+:is(.skin-glitches-and-stitches .card, .look-glitches-and-stitches .card, .card.look-glitches-and-stitches):hover .cover span { animation: jitter .35s steps(1); }
+@keyframes scan-drift { to { transform: translateY(6px); } }
+
+/* a quick slice-jitter: tile titles on hover, and titles js/motion.js zaps on its pages */
+@keyframes jitter {
+  0% { transform: translate(-3px, 1px) skewX(-6deg); }
+  30% { transform: translate(3px, -1px); }
+  60% { transform: translate(-1px, 0) skewX(4deg); }
+  100% { transform: none; }
+}
+
+/* a row in the hub's releases feed */
+.look-glitches-and-stitches .clip { background: var(--panel); border-color: var(--line); color: var(--text); border-radius: 0; }
+.look-glitches-and-stitches .clip::before { background: var(--accent); box-shadow: var(--glow); }
+.look-glitches-and-stitches .clip:hover { border-color: var(--accent); }
+.look-glitches-and-stitches .clip-title { color: var(--accent); text-shadow: var(--glow); }
+.look-glitches-and-stitches .clip-meta, .look-glitches-and-stitches .clip-end { color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.skin-glitches-and-stitches .card, .look-glitches-and-stitches .card, .card.look-glitches-and-stitches):hover .cover::after,
+  :is(.skin-glitches-and-stitches .card, .look-glitches-and-stitches .card, .card.look-glitches-and-stitches):hover .cover span { animation: none; }
+}
