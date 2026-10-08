@@ -29,10 +29,12 @@ const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;7
 
 // The whole document. project: the project whose page this is (its frame, skin and sounds), or null for a platform
 // page. projectPage: which of the project's pages lights up in its header ("music", "news").
-function shell(SITE, { page, section, styles, scripts, main, project = null, projectPage = "" }) {
+// look: on a platform page, the project whose look it wears (a product page wears its creator's look).
+function shell(SITE, { page, section, styles, scripts, main, project = null, projectPage = "", look = null }) {
   const skin = project && project.skin;
+  const lookOf = skin ? project : look && look.skin ? look : null;
   const sounds = project && project.sounds;
-  const css = ["core", "platform", "layout", ...(project ? ["project-frame"] : []), ...styles, ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
+  const css = ["core", "platform", "layout", ...(project ? ["project-frame"] : []), ...styles, ...(lookOf ? [`projects/${lookOf.id}/look`] : []), ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
   const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js",
     ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js"];
   return `<!doctype html>
@@ -55,7 +57,7 @@ ${css.map((s) => `  <link rel="stylesheet" href="/css/${s}.css">`).join("\n")}
 <body data-page="${section}-item" data-section="${section}"${project ? ` data-project="${esc(project.id)}" data-project-page="${esc(projectPage)}"` : ""}>
   <header id="site-header"></header>
 
-  <main id="main" class="${skin ? `skin-${esc(project.id)}` : "platform"}">
+  <main id="main" class="${skin ? `skin-${esc(project.id)}` : `platform${lookOf ? ` look-${esc(lookOf.id)}` : ""}`}">
 ${main}
   </main>
 
@@ -130,8 +132,10 @@ function relationsSection(data, ref) {
 
 const linkButtons = (links) => links.map((l) => `<a class="btn ghost" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>`).join("");
 
+// A store item opens the store filtered to its project with it selected (the same address js/util.js shopItemPath makes).
+const shopItemPath = (p) => `/shop?project=${encodeURIComponent(p.project || "")}&item=${encodeURIComponent(p.id)}`;
 function productTile(p) {
-  return `<li><a class="tile" href="/shop/${esc(p.id)}"><span class="tag">${esc(p.category)}</span><strong>${esc(p.title)}</strong><span class="price">${p.price ? money(p.price) : "Free"}</span></a></li>`;
+  return `<li><a class="tile" href="${esc(shopItemPath(p))}"><span class="tag">${esc(p.category)}</span><strong>${esc(p.title)}</strong><span class="price">${p.price ? money(p.price) : "Free"}</span></a></li>`;
 }
 
 // ---------- release ----------
@@ -228,13 +232,13 @@ ${relationsSection(data, "release:" + r.id)}${related.length ? `
 // Get it free, OWNED + library link) from the store API. Drafts stay "Coming soon".
 function productPage(SITE, data, p) {
   const url = abs(SITE, "/shop/" + p.id);
-  const crumbs = [["Home", "/"], ["Shop", "/shop"], [p.title, "/shop/" + p.id]];
+  const crumbs = [["Home", "/"], ["Store", "/shop"], [p.title, "/shop/" + p.id]];
   const release = data.releases.find((r) => r.id === p.release);
   const buyable = !p.draft;
   const type = data.productTypes[p.type] || {};
   const price = p.price ? money(p.price) : "Free";
-  const more = data.products.filter((x) => x.id !== p.id && x.type === p.type).slice(0, 3);
-  const others = more.length ? more : data.products.filter((x) => x.id !== p.id).slice(0, 3);
+  // More from the same project first, so the page reads as part of the project's catalog.
+  const others = data.products.filter((x) => x.id !== p.id && x.project === p.project).slice(0, 3);
   const title = `${p.title}${suffix(SITE.name)}`;
   const creator = creatorOf(data, p);
   // What the product delivers, as Pacs within their Stacclets (data/pacs.js): products expose their contents.
@@ -296,12 +300,12 @@ function productPage(SITE, data, p) {
 ${others.length ? `
     <section class="alt">
       <div class="wrap">
-        <div class="section-head"><h2>More downloads</h2><a href="/shop">Everything &rarr;</a></div>
+        <div class="section-head"><h2>More from ${esc(creator.name)}</h2><a href="/shop?project=${esc(encodeURIComponent(creator.id))}">All of it &rarr;</a></div>
         <ul class="tiles">${others.map(productTile).join("")}</ul>
       </div>
     </section>
 ` : ""}`;
-  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/store.js"], main }) };
+  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/store.js"], main, look: creator }) };
 }
 
 // ---------- news post ----------

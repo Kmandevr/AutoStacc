@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Store items wear their project's look; everything becomes drop-in modules
+
+The owner: a project's store items (its Pacs, as they called them) should look like the project they came from wherever they appear, clicking one should show the project's other items, and all functionality must be modular so it can be used anywhere. Agreed in a round of questions: the store items, in their project's style everywhere (store, hub, product page); a click opens the store filtered to the project with the item selected at the top; build the new pieces as drop-in modules now and audit the rest. Built: `look.css` per skinned project + `GS.look`, `js/shop.js` as the `[data-shop]` browser, `js/product-card.js`. The pattern and the audit: [modules](modules.md).
+
 ## 2026-10-08: Projects are mini-sites; the sidebar is a rail
 
 The owner: the big sidebar should collapse on a computer, and a project can't feel like a page inside AutoStacc's frame; each project is its own environment with its own header and nav. Agreed in a round of questions: on a computer the sidebar is an icon rail that expands, and the choice is remembered. A project's pages drop the sidebar for a thin AutoStacc strip (home, Store, Your Stacc, Projects, theme, account, cart), then the project's own header in its own style, then its own footer with a small "Sold and delivered by AutoStacc" line. Glitches & Stitches gets back the terminal header it had before AutoStacc. Built as `js/project-frame.js` + `css/project-frame.css`, restyled by each project's skin, so a new project needs no frame code.

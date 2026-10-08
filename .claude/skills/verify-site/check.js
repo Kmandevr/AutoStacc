@@ -80,7 +80,7 @@ const SEO = require("./seo-browser.js");
         overflow: document.documentElement.scrollWidth - innerWidth,
         header: (!!document.querySelector(".side-nav") && !!document.querySelector(".topbar")) || (!!document.querySelector(".as-strip") && !!document.querySelector(".project-header")),
         footer: !!document.querySelector(".site-footer .wrap"),
-        empty: [...document.querySelectorAll("[id$='-list'],[id$='-grid'],[id^='featured'],[id^='latest']")].filter((e) => !e.children.length).map((e) => "#" + e.id),
+        empty: [...document.querySelectorAll("[id$='-list'],[id$='-grid'],[id^='featured'],[id^='latest'],[data-shop] .grid")].filter((e) => !e.children.length).map((e) => "#" + e.id),
         smallTargets: [...document.querySelectorAll("a,button")].filter((e) => { const r = e.getBoundingClientRect(); return r.width && (r.height < 24 || r.width < 24); }).length
       }));
       if (facts.overflow > 0) problems.push(["FAIL", `overflow-${width}`, `page is ${facts.overflow}px wider than the viewport`]);
@@ -98,7 +98,7 @@ const SEO = require("./seo-browser.js");
       }
       if (page === "shop.html" && width === 1280) {
         const before = await tab.locator(".card").count();
-        const buttons = tab.locator("#shop-filters button");
+        const buttons = tab.locator("[data-filter=type] button");
         if ((await buttons.count()) > 2) {
           await buttons.nth(1).click();
           await tab.waitForTimeout(300); // the filter swaps cards inside a view transition, a frame or two later

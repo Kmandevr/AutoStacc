@@ -310,6 +310,25 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("store browser: a card opens its project's items with it selected; the address keeps the state; Back undoes it", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/shop");
+    const first = await page.locator(".grid .card").count();
+    await page.click('.grid .card [data-select="serum-presets"]');
+    await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
+    assert.match(page.url(), /\/shop\?project=glitches-and-stitches&item=serum-presets$/);
+    assert.ok((await page.getAttribute(".shop-selected .card", "class")).includes("look-glitches-and-stitches"), "wears its project's look");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.select), "serum-presets");
+    assert.equal(await page.locator('[data-filter=project] [aria-pressed=true]').innerText(), "Glitches & Stitches");
+    await page.reload();
+    await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
+    await page.goBack();
+    await page.waitForFunction(() => !document.querySelector(".shop-selected .card"));
+    assert.equal(await page.locator(".grid .card").count(), first);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
   test("keyboard only: add to cart and reach checkout", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/shop/sample-pack-vol1");
