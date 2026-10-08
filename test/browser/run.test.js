@@ -31,7 +31,10 @@ async function open(device = PHONE) {
   const page = await ctx.newPage();
   page.errors = [];
   page.on("pageerror", (e) => page.errors.push(e.message));
-  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) page.errors.push(m.text()); });
+  // Newer Chromium logs an aborted page-change animation (the tests navigate faster than a view transition) as an
+  // error; it isn't the page's error, so it doesn't count. CSP violations and script errors still do.
+  const NOT_OURS = /Failed to load resource|Transition was aborted because of invalid state/;
+  page.on("console", (m) => { if (m.type() === "error" && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
   return { ctx, page };
 }
 const ordersFor = (email) => sql(stateDir, `SELECT id, status FROM orders WHERE email = '${email}'`);
