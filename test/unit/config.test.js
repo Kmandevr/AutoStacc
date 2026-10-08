@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { loadConfig, ConfigError } from "../../server/lib/config.js";
 
 const S = "x".repeat(40), D = "y".repeat(40);
-const base = { DB: {}, FILES: {}, BETTER_AUTH_SECRET: S, DOWNLOAD_SIGNING_SECRET: D, EMAIL_FROM: "G&S <store@autostacc.com>" };
+const base = { DB: {}, FILES: {}, BETTER_AUTH_SECRET: S, DOWNLOAD_SIGNING_SECRET: D, EMAIL_FROM: "AutoStacc <store@autostacc.com>", EMAIL_FROM_NOREPLY: "AutoStacc <noreply@autostacc.com>" };
 const prod = { ...base, APP_ENV: "production", SITE_URL: "https://autostacc.com", PAYMENT_PROVIDER: "stripe", EMAIL_PROVIDER: "brevo",
   STRIPE_SECRET_KEY: "sk_live_abc", STRIPE_WEBHOOK_SECRET: "whsec_abc", BREVO_API_KEY: "xkeysib-abc" };
 const problems = (env) => { try { loadConfig(env); return []; } catch (e) { assert.ok(e instanceof ConfigError); return e.problems; } };
@@ -24,6 +24,8 @@ test("production refuses test keys, mock payments, the log mailer and plain http
   assert.match(problems({ ...prod, SITE_URL: "http://autostacc.com" }).join(), /https/);
   assert.match(problems({ ...prod, STRIPE_WEBHOOK_SECRET: "" }).join(), /STRIPE_WEBHOOK_SECRET/);
   assert.match(problems({ ...prod, BREVO_API_KEY: "" }).join(), /BREVO_API_KEY/);
+  assert.match(problems({ ...prod, BREVO_API_KEY: "xsmtpsib-abc" }).join(), /SMTP key/);
+  assert.match(problems({ ...prod, BREVO_API_KEY: "abc" }).join(), /BREVO_API_KEY/);
 });
 
 test("the fake Stripe address is ignored outside development and test", () => {

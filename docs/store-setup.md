@@ -26,7 +26,7 @@ R2 must be enabled once in the dashboard (Cloudflare → R2 → Purchase/enable;
 | `DOWNLOAD_SIGNING_SECRET` | Signs download links (must differ from the one above) | `openssl rand -hex 32` |
 | `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with Checkout Sessions write is better) | Stripe → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` of the webhook endpoint in step 3 | Stripe → Developers → Webhooks → the endpoint → Signing secret |
-| `BREVO_API_KEY` | Transactional email key | Brevo → SMTP & API → API keys |
+| `BREVO_API_KEY` | API key `xkeysib-...` (not the SMTP key `xsmtpsib-...`; the deploy refuses that) | Brevo → SMTP & API → API keys |
 | `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified | You |
 
 Then **Variables** tab: add `STORE_ENABLED` = `true`. The next deploy (push to `main`, or Actions → Deploy → Run workflow) provisions D1 and R2, applies migrations, syncs the catalog, sets the secrets in Cloudflare and checks `https://autostacc.com/api/account` answers. If a secret is missing, the deploy warns and the store stays "offline"; the site is unaffected.
@@ -45,8 +45,11 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 ## 4. Brevo
 
 1. Senders, domains & dedicated IPs → Domains: add `autostacc.com` and add the DNS records Brevo shows (in Cloudflare DNS) so mail is authenticated (SPF/DKIM/DMARC).
-2. Add the sender `store@autostacc.com` (or change `EMAIL_FROM` in `wrangler.toml` to the address you want; it must be a verified sender).
+2. Senders → add both senders (they must be verified, or be on the authenticated domain): `store@autostacc.com` sends purchase mail (receipts, "your purchases joined your account"; `EMAIL_FROM` in `wrangler.toml`), `noreply@autostacc.com` sends automated mail (confirm email, password reset, account exists, store alerts; `EMAIL_FROM_NOREPLY`).
 3. Create the API key (step 2 table).
+4. Security → Authorised IPs: deactivate the IP blocking. The store sends from Cloudflare's servers, whose addresses change, so with blocking on Brevo refuses every mail (401 "unrecognised IP address").
+
+If mail doesn't arrive: each deploy prints the store's latest failed sends with Brevo's reason ("Email not sent ..." warnings in the "Store resources" step); `/admin` shows them per order. 401 = wrong key type or IP blocking, 400 = sender or domain not verified.
 
 ## 5. First admin and products
 
