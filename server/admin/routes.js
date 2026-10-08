@@ -1,20 +1,18 @@
 // Admin API (owner only; every route starts with requireAdmin, which answers 404 to everyone else).
 // Catalog content and prices live in data/products.js (reviewed in git, shown on the static pages); here the owner
-// pauses sales, uploads paid files and previews, and manages orders, customers and entitlements. Every change is
+// pauses sales and manages orders, customers and entitlements (paid files and previews: admin/files.js). Every change is
 // written to the audit log (server/audit/log.js) under the admin's name.
 import { json, fail, readJson, str, email as emailField, id } from "../lib/http.js";
-import { all, first, run, newId, now, parseJson } from "../lib/db.js";
+import { all, first, run, newId, now } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
 import { getProduct, publicProduct } from "../catalog/products.js";
 import { getOrder, orderItems, publicOrder } from "../orders/orders.js";
 import { sendConfirmation } from "../orders/fulfilment.js";
 import { grant, revokeById } from "../entitlements/grants.js";
 import { verifiedUserIdForEmail } from "../entitlements/claim.js";
-import { newFileKey, putFile, previewKey, putPreview, safeFilename } from "../storage/buckets.js";
 import { audit } from "../audit/log.js";
 import { paymentProvider } from "../payments/index.js";
 
-const MAX_UPLOAD = 95 * 1024 * 1024; // Workers request bodies stop at 100 MB.
 const like = (q) => `%${String(q || "").replace(/[%_]/g, "")}%`;
 
 async function summary(app) {
@@ -35,7 +33,7 @@ async function summary(app) {
 async function products(app) {
   await requireAdmin(app);
   const rows = await all(app.db, "SELECT * FROM products ORDER BY deleted_at IS NOT NULL, title");
-  const files = await all(app.db, "SELECT id, product_id, filename, label, size_bytes, active, created_at, pac_id, kind FROM product_files ORDER BY sort, filename");
+  const files = await all(app.db, "SELECT id, product_id, filename, label, size_bytes, active, status, created_at, pac_id, kind FROM product_files ORDER BY sort, filename");
   return json({
     products: rows.map((p) => ({ ...publicProduct(p), published: Boolean(p.published), salesPaused: Boolean(p.sales_paused), deleted: Boolean(p.deleted_at),
       updatedAt: p.updated_at, createdAt: p.created_at, files: files.filter((f) => f.product_id === p.id) }))
@@ -50,61 +48,6 @@ async function updateProduct(app, { productId }) {
   if (!res.meta.changes) fail(404, "not_found", "No product with that id.");
   await audit(app, body.salesPaused ? "product.sales_paused" : "product.sales_resumed", { targetType: "product", targetId: productId });
   return json({ ok: true });
-}
-
-// Raw upload: PUT the file bytes with ?filename=...&label=...&pac=...&kind=... . Stored privately under a random key.
-// &replaces=<fileId> (a file of the same product) deactivates that file once the new one is stored: a new version.
-// pac (optional) must be one of the product's Pacs (data/products.js `pacs`); kind (optional) is a content kind key
-// from data/content-types.js. They only organize the file in Your Stacc; access is still per product.
-async function uploadFile(app, { productId }) {
-  await requireAdmin(app);
-  const p = await getProduct(app.db, id(productId));
-  if (!p) fail(404, "not_found", "No product with that id.");
-  const url = new URL(app.request.url);
-  const filename = safeFilename(str(url.searchParams.get("filename") || "", "filename", { max: 160 }));
-  const label = (url.searchParams.get("label") || "").slice(0, 120);
-  const pacId = url.searchParams.get("pac") ? id(url.searchParams.get("pac"), "pac") : null;
-  if (pacId && !parseJson(p.pacs, []).includes(pacId)) fail(400, "invalid_pac", "That Pac isn't one of this product's Pacs.");
-  const kind = url.searchParams.get("kind") ? str(url.searchParams.get("kind"), "kind", { max: 30, pattern: /^[a-z0-9]+(-[a-z0-9]+)*$/ }) : "";
-  const replaces = url.searchParams.get("replaces") ? str(url.searchParams.get("replaces"), "replaces", { max: 40, pattern: /^pf_[a-z2-7]+$/ }) : null;
-  if (replaces && !(await first(app.db, "SELECT id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", replaces, p.id))) {
-    fail(404, "not_found", "The file to replace isn't an active file of this product.");
-  }
-  const size = Number(app.request.headers.get("content-length") || 0);
-  if (!size || size > MAX_UPLOAD) fail(413, "too_large", "Files must be under 95 MB per upload.");
-  const contentType = (app.request.headers.get("content-type") || "application/octet-stream").slice(0, 100);
-  const key = newFileKey(p.id, filename);
-  const object = await putFile(app.env, key, app.request.body, contentType);
-  const fileId = newId("pf");
-  await run(app.db, `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?, ?)`, fileId, p.id, key, filename, label, contentType, object.size, now(), pacId, kind);
-  if (replaces) await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", replaces);
-  await audit(app, replaces ? "product.file_replaced" : "product.file_added", { targetType: "product", targetId: p.id,
-    detail: { fileId, filename, sizeBytes: object.size, replaced: replaces } });
-  return json({ ok: true, fileId, sizeBytes: object.size, replaced: replaces }, 201);
-}
-
-// Files are deactivated, not deleted: the object stays in R2 for the record, but no new download can reach it.
-async function removeFile(app, { fileId }) {
-  await requireAdmin(app);
-  const res = await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", str(fileId, "fileId", { max: 40 }));
-  if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
-  await audit(app, "product.file_deactivated", { targetType: "file", targetId: fileId });
-  return json({ ok: true });
-}
-
-async function uploadPreview(app) {
-  await requireAdmin(app);
-  const url = new URL(app.request.url);
-  const filename = str(url.searchParams.get("filename") || "", "filename", { max: 120, pattern: /^[\w.\- ()]+\.(mp3|m4a|ogg|wav)$/i });
-  const size = Number(app.request.headers.get("content-length") || 0);
-  if (!size || size > 20 * 1024 * 1024) fail(413, "too_large", "Previews must be under 20 MB.");
-  const contentType = (app.request.headers.get("content-type") || "audio/mpeg").slice(0, 60);
-  if (!contentType.startsWith("audio/")) fail(415, "unsupported_media_type", "Previews must be audio.");
-  const key = previewKey(filename);
-  await putPreview(app.env, key, app.request.body, contentType);
-  await audit(app, "preview.uploaded", { targetType: "preview", targetId: key, detail: { filename } });
-  return json({ ok: true, path: `/media/${key}` }, 201);
 }
 
 async function orders(app) {
@@ -202,9 +145,6 @@ export const routes = [
   ["GET", "/api/admin/summary", summary],
   ["GET", "/api/admin/products", products],
   ["PATCH", "/api/admin/products/:productId", updateProduct],
-  ["PUT", "/api/admin/products/:productId/files", uploadFile],
-  ["DELETE", "/api/admin/files/:fileId", removeFile],
-  ["PUT", "/api/admin/previews", uploadPreview],
   ["GET", "/api/admin/orders", orders],
   ["GET", "/api/admin/orders/:orderId", order],
   ["POST", "/api/admin/orders/:orderId/resend", resendConfirmation],

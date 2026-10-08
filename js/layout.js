@@ -20,13 +20,14 @@
     account: svg("account", '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>'),
     settings: svg("settings", '<path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="8" cy="17" r="1.8"/>'),
     stacc: svg("stacc", '<rect x="4" y="4" width="16" height="4.5" rx="1.5"/><rect x="4" y="10" width="16" height="4.5" rx="1.5"/><rect x="4" y="16" width="16" height="4" rx="1.5"/>'),
+    studio: svg("studio", '<path d="M5 19l1-4L15.5 5.5a2.1 2.1 0 0 1 3 3L9 18z"/><path d="M13.5 7.5l3 3"/>'),
     home: svg("home", '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9.5h11V10"/>'),
     about: svg("about", '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.4"/>'),
     all: svg("all", '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>')
   };
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
   const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"],
-    ["/account", "Account", "account", "account"], ["/settings", "Settings", "settings", "settings"]];
+    ["/studio", "Studio", "studio", "studio"], ["/account", "Account", "account", "account"], ["/settings", "Settings", "settings", "settings"]];
   const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/about", "About", "about", "about"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");

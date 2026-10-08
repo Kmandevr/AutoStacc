@@ -1,9 +1,12 @@
-// Projects: the creators on AutoStacc. Everything a project publishes names it with `project: "<id>"` (products,
-// releases, news posts, Stacclets, polls), so adding a project is data, not code. Each project lives at
-// /projects/<id> (its hand-written pages are in projects/<id>.html and projects/<id>/), and is synced into the store
-// database by db/catalog.sql (`node scripts/build.js`). Model: docs/architecture.md; contract: docs/projects.md.
+// Projects: the creative work on AutoStacc, each owned by a creator (data/creators.js). Everything a project publishes
+// names it with `project: "<id>"` (products, releases, news posts, Stacclets, polls), so adding a project is data, not
+// code. A project lives at /<creator>/<id> (hand-written pages <creator>/<id>.html and <creator>/<id>/); it is synced
+// into the store database by db/catalog.sql (`node scripts/build.js`). Projects made in the Studio are database-only.
+// Model: docs/architecture.md; contract: docs/projects.md.
 // Fields:
-//   id: lowercase-hyphenated, permanent (the address). name: as the project writes it (shown as "by <name>").
+//   id: lowercase-hyphenated, permanent, unique (store-wide for these first-party projects; within its creator, ignoring
+//     case, for Studio projects). name: as the project writes it (shown as "by <name>").
+//   creator: id of the creator that owns it (data/creators.js).
 //   summary: one plain-text line for the directory and dashboard, confirmed facts only.
 //   title, description: the project home page's search title and description.
 //   features: the platform features it uses: "releases", "news", "shows", "store", "polls", "relationships".
@@ -24,6 +27,7 @@ window.PROJECTS = [
   {
     id: "glitches-and-stitches",
     name: "Glitches & Stitches",
+    creator: "autostacc",
     wordmark: "GLITCHES&STITCHES",
     summary: "An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.",
     title: "Glitches & Stitches — Experimental electronic music · AutoStacc",

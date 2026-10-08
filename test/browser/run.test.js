@@ -302,17 +302,17 @@ describe("store in the browser", () => {
 
   test("a project's own menu on a phone: opens below its header, the page behind is inert, Escape closes and returns focus", async () => {
     const { ctx, page } = await open(PHONE);
-    await page.goto("/projects/glitches-and-stitches/music");
+    await page.goto("/autostacc/glitches-and-stitches/music");
     assert.equal(await page.locator(".side").count(), 0, "no AutoStacc sidebar inside a project");
     assert.equal(await page.getAttribute(".as-home", "href"), "/", "the AutoStacc logo goes to the home page");
-    assert.equal(await page.getAttribute(".ph-logo", "href"), "/projects/glitches-and-stitches", "the project's logo goes to its home");
+    assert.equal(await page.getAttribute(".ph-logo", "href"), "/autostacc/glitches-and-stitches", "the project's logo goes to its home");
     assert.equal(await page.locator(".ph-logo .ph-mark").count(), 1);
     assert.equal(await page.locator(".ph-nav").isVisible(), false);
     await page.click(".ph-toggle");
     await page.waitForSelector(".ph-nav.open");
     assert.equal(await page.getAttribute(".ph-toggle", "aria-expanded"), "true");
     assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
-    assert.equal(await page.getAttribute(".ph-nav a[aria-current]", "href"), "/projects/glitches-and-stitches/music");
+    assert.equal(await page.getAttribute(".ph-nav a[aria-current]", "href"), "/autostacc/glitches-and-stitches/music");
     await page.keyboard.press("Escape");
     assert.equal(await page.evaluate(() => document.activeElement.className), "ph-toggle");
     assert.equal(await page.evaluate(() => !document.querySelector(".ph-nav.open") && !document.querySelector("main").inert), true);
@@ -457,7 +457,7 @@ describe("store in the browser", () => {
   test("the signed-in pages fit a phone: no sideways scroll, no tiny buttons, no CSP errors", async () => {
     const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });
     await signUp(page, unique("app-phone"));
-    for (const p of ["/dashboard", "/account", "/settings", "/library", "/"]) {
+    for (const p of ["/dashboard", "/account", "/settings", "/studio", "/library", "/"]) {
       await page.goto(p);
       await page.waitForTimeout(700);
       const facts = await page.evaluate(() => ({
@@ -479,7 +479,7 @@ describe("store in the browser", () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/projects/glitches-and-stitches"]) {
+      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/autostacc/glitches-and-stitches"]) {
         await page.goto(p);
         await page.waitForTimeout(700);
         const facts = await page.evaluate(() => ({
@@ -512,7 +512,7 @@ describe("store in the browser", () => {
     page.once("dialog", (d) => d.accept());
     await page.click("[data-impersonate]");
     await page.waitForURL((u) => u.pathname === "/dashboard");
-    for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/projects/glitches-and-stitches"]) {
+    for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/autostacc/glitches-and-stitches"]) {
       await page.goto(path);
       const bar = page.locator("#impersonation-bar.imp-active");
       await bar.waitFor();
@@ -580,5 +580,44 @@ describe("store in the browser", () => {
     } finally {
       sql(stateDir, `UPDATE promotions SET ends_at = ${T} WHERE id IN ('promo_browsersale', 'promo_browsercode')`);
     }
+  });
+  test("Studio on a phone: claim a name, build a two-page site from blocks, publish it, and it is live without any script", async () => {
+    const { ctx, page } = await open();
+    await signUp(page, unique("studio"));
+    await page.goto("/studio");
+    const name = `Phone Creator ${Date.now().toString(36)}`;
+    await page.fill("#cr-name", name);
+    const slug = await page.inputValue("#cr-slug");
+    assert.match(slug, /^phone-creator-/, "the address is suggested from the name");
+    await page.click("form[data-form=creator] button[type=submit]");
+    await page.fill("#pr-name", "Night Shift");
+    await page.click("form[data-form=project] button[type=submit]");
+    await page.waitForSelector(".studio-bar");
+    await page.selectOption("#st-add", "text");
+    await page.click("[data-action=add]");
+    await page.fill("textarea[data-path$='.text']", "Hello from **the Studio**");
+    await page.click("[data-action=page-add]");
+    await page.fill("#st-title", "Events");
+    await page.fill("#st-slug", "events");
+    await page.selectOption("#st-add", "events");
+    await page.click("[data-action=add]");
+    await page.click("[data-action=list-add]");
+    await page.fill("input[type=date]", "2027-03-04");
+    await page.fill("input[data-path$='.items.0.title']", "Warehouse set");
+    await page.click("[data-action=publish]");
+    await page.waitForSelector("text=Published at");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(overflow <= 0, `the editor overflows by ${overflow}px`);
+    const live = await page.goto(`/${slug}/night-shift`);
+    assert.equal(live.status(), 200);
+    assert.match(live.headers()["content-security-policy"], /script-src 'none'/);
+    assert.equal(await page.locator("main strong").first().textContent(), "the Studio");
+    assert.equal(await page.locator("script").count(), 0);
+    await page.click(".cs-nav a:text('Events')");
+    await page.waitForURL((u) => u.pathname === `/${slug}/night-shift/events`);
+    await page.waitForSelector("text=Warehouse set");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "the live page fits a phone");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
   });
 });

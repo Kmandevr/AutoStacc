@@ -3,12 +3,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://autostacc.com/</loc></url>
   <url><loc>https://autostacc.com/about</loc></url>
+  <url><loc>https://autostacc.com/autostacc/glitches-and-stitches</loc></url>
+  <url><loc>https://autostacc.com/autostacc/glitches-and-stitches/music</loc></url>
+  <url><loc>https://autostacc.com/autostacc/glitches-and-stitches/news</loc></url>
+  <url><loc>https://autostacc.com/autostacc/glitches-and-stitches/press</loc></url>
   <url><loc>https://autostacc.com/projects</loc></url>
-  <url><loc>https://autostacc.com/projects/glitches-and-stitches</loc></url>
-  <url><loc>https://autostacc.com/projects/glitches-and-stitches/music</loc></url>
-  <url><loc>https://autostacc.com/projects/glitches-and-stitches/news</loc></url>
-  <url><loc>https://autostacc.com/projects/glitches-and-stitches/press</loc></url>
   <url><loc>https://autostacc.com/shop</loc></url>
-  <url><loc>https://autostacc.com/projects/glitches-and-stitches/music/hail</loc></url>
-  <url><loc>https://autostacc.com/projects/glitches-and-stitches/news/hail-out-now</loc></url>
+  <url><loc>https://autostacc.com/autostacc/glitches-and-stitches/music/hail</loc></url>
+  <url><loc>https://autostacc.com/autostacc/glitches-and-stitches/news/hail-out-now</loc></url>
+  <url><loc>https://autostacc.com/autostacc</loc></url>
 </urlset>

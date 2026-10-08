@@ -1,1 +1,1 @@
-Pages Functions entry points: /api/* and /media/previews/* hand off to server/. No logic here.
+Pages Functions entry points: /api/*, /media/previews/*, /media/sites/*, the gated pages, and [[path]].js for Studio creators' pages (/<creator>/...), all handing off to server/. No logic here.

@@ -3,12 +3,13 @@
 // claiming free products. Paid files are listed by id only; links come from server/downloads. Opening it runs
 // Auto-Stacc first, so free products of followed projects arrive without any other trigger.
 import { json, fail, readJson, id } from "../lib/http.js";
-import { all, parseJson } from "../lib/db.js";
+import { parseJson } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
 import { getProduct, getProducts, isFree, isVisible } from "../catalog/products.js";
 import { limit } from "../lib/ratelimit.js";
+import { deliverableFiles } from "../files/files.js";
 import { autoStacc, AUTO_NOTE } from "./autostacc.js";
 
 async function library(app) {
@@ -17,10 +18,7 @@ async function library(app) {
   const ents = await activeEntitlements(app.db, access);
   const productIds = [...new Set(ents.map((e) => e.product_id))];
   const products = new Map((await getProducts(app.db, productIds)).map((p) => [p.id, p]));
-  const files = productIds.length
-    ? await all(app.db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind FROM product_files
-        WHERE active = 1 AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
-    : [];
+  const files = await deliverableFiles(app.db, productIds);
   const items = productIds.filter((pid) => products.has(pid)).map((pid) => {
     const p = products.get(pid);
     const mine = ents.filter((e) => e.product_id === pid);

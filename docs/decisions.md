@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Creator pages are sandboxed (planned)
+
+PLANNED / NOT IMPLEMENTED. The owner wants creators to customise their pages (HTML and CSS first, JavaScript later) without their code touching AutoStacc. Design in [creator pages](creator-pages.md). Choices made with the owner: addresses stay `/projects/<id>` (superseded the same day by `/<creator>/<project>`, see the creators decision); creator content runs in iframes from `sandbox.autostacc.com` (a subdomain, because the owner doesn't want a second domain), made safe by opaque-origin sandboxing (`sandbox` without `allow-same-origin`, also sent as a CSP header), host-only cookies and the exact-origin API check; AutoStacc keeps the frame, store, cart, account and everything search engines read; creator code only gets yes/no answers about the visitor; only curated embeds and no third-party analytics; Levels 1–2 publish instantly, Level 3 needs approval; Glitches & Stitches moves into the sandbox too, at a `first-party` trust level that relaxes rules but not the boundary. A second domain was rejected on cost; what it would have added (separate browser processes for Level 3 code) is recorded in the note. Free vs paid tiers are left to the owner.
+
 ## 2026-10-08: Public pitch is "straight from the artists"
 
 The owner found "Stacc it once. Auto handles the rest." odd, then rejected a library-led replacement ("Buy it once. Find it every time."): advertising that AutoStacc has a library is not the pitch. Chosen with the owner: the home page leads with "Sounds, presets and music, straight from the artists who make them", then the artists, the store and free releases (Auto-Stacc). Your Stacc stays the signed-in library, described plainly where it's used, not sold on public pages. Voice: [autostacc](autostacc.md).
@@ -179,3 +183,13 @@ The owner wants to run sales and promotions without a developer. Both are rows t
 
 The Control Center page itself (not just its API) is now gated on the server and answers the site's ordinary 404 page, so it doesn't exist for signed-out visitors, customers, or an admin while impersonating.
 
+
+## 2026-10-08: Creators own projects; free no-code creator sites at /<creator>/<project>
+
+The owner set the long-term direction (Steam for independent music and creative content: "start for free, sell something, grow with AutoStacc") and, after two rounds of questions, the first step toward it. Built as [creators](creators.md) describes. Choices:
+- **Creators are their own entity** (D1 `creators`, members by account), separate from projects, because the creator is the seller of record and, later, the payee. AutoStacc itself is the first creator (`autostacc`), and Glitches & Stitches is its project. **Addresses are `/<creator>/<project>[/<page>]`**, so G&S moved from `/projects/glitches-and-stitches` to `/autostacc/glitches-and-stitches` with 301s from every old address. Names are unique (creators site-wide, projects within their creator, ignoring case), platform words are reserved, and renames redirect and hold the old name for 90 days.
+- **Any confirmed account can become a creator for free.** Abuse and cost are bounded by limits (one creator per account, 10 projects, 12 pages, 50 MB of images), by **noindex until an admin trusts the creator**, and by suspension.
+- **Blocks only, for now.** The owner wants custom HTML/CSS eventually. It would run on autostacc.com beside logins and checkout, so it waits for a separate sandboxed origin. Creator pages carry no scripts, forms or payments (strict CSP), and products link to the AutoStacc store, where buyers pay.
+- **Rendered at publish, not per view.** A creator page is a few rows in D1, not a deployment. `_routes.json` keeps static pages away from the catch-all Function, so they cost nothing extra.
+- **The catalog stays in git** for first-party products. A `source` column on creators, projects and products lets the deploy's sync own only its rows, so database-made rows can join later.
+- **Money and files are marketplace-ready, without payouts:** each order line records its seller and how its money splits (platform fee default 0 until pricing is decided, per-creator override). Paid files have a lifecycle (pending → published/rejected), and only published files are delivered. Connected accounts have a table and a provider registry but no provider yet.

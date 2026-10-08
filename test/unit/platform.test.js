@@ -14,9 +14,10 @@ const { catalogSql } = require("../../scripts/lib/catalog.js");
 // A small, complete platform: two projects, one using polls and relationships, one using only the store.
 function fixture() {
   return {
+    creators: [{ id: "autostacc", name: "AutoStacc", firstParty: true }],
     projects: [
-      { id: "glitches-and-stitches", name: "Glitches & Stitches", features: ["store", "polls", "relationships"] },
-      { id: "second-project", name: "Second Project", features: ["store"] }
+      { id: "glitches-and-stitches", name: "Glitches & Stitches", creator: "autostacc", features: ["store", "polls", "relationships"] },
+      { id: "second-project", name: "Second Project", creator: "autostacc", features: ["store"] }
     ],
     stacclets: [
       { id: "frayed-signals", project: "glitches-and-stitches", title: "Frayed Signals" },
@@ -64,7 +65,12 @@ test("a second project is data only: it validates, syncs and keeps its own featu
   assert.deepEqual(validate(data), []);
   assert.equal(pacProject(data, data.products[1].pacs[0]), data.products[1].project);
   const sql = platformSql(data);
-  assert.match(sql, /'second-project', 'Second Project', '\["store"\]', 1/);
+  assert.match(sql, /'second-project', 'Second Project', '\["store"\]', 1, 'autostacc', 'second-project', 'catalog'/);
+  assert.match(sql, /INSERT INTO creators .*'autostacc', 'autostacc', 'AutoStacc', 'catalog', 1/);
+  // The sync owns only first-party rows: Studio creators and projects are never overwritten or removed by it.
+  assert.match(sql, /UPDATE creators SET .* WHERE source = 'catalog' AND deleted_at IS NULL/);
+  assert.match(sql, /UPDATE projects SET .* WHERE source = 'catalog' AND deleted_at IS NULL/);
+  assert.match(sql, /WHERE projects.source = 'catalog' AND \(/);
   assert.match(sql, /id NOT IN \('glitches-and-stitches', 'second-project'\)/);
   // It doesn't use polls or relationships, so it can't publish them.
   const withPoll = fixture();
@@ -87,7 +93,14 @@ test("broken links fail the build", () => {
     [(d) => (d.polls[0].options = [{ id: "only", label: "Only" }]), /needs at least two options/],
     [(d) => (d.relationships[0].to = "release:ghost"), /"release:ghost" doesn't exist/],
     [(d) => (d.relationships[0].type = "invented"), /type is not in RELATIONSHIP_TYPES/],
-    [(d) => (d.projects[1].features = ["telepathy"]), /unknown feature "telepathy"/]
+    [(d) => (d.projects[1].features = ["telepathy"]), /unknown feature "telepathy"/],
+    [(d) => delete d.projects[1].creator, /project second-project: add creator/],
+    [(d) => (d.projects[1].creator = "nobody"), /creator "nobody" is not in data\/creators.js/],
+    [(d) => d.creators.push({ id: "Some_One", name: "X", firstParty: true }), /creator Some_One: id must be lowercase-hyphenated/],
+    [(d) => d.creators.push({ id: "new-label", name: "X", firstParty: true }), /creator new-label: add "new-label" to RESERVED/],
+    [(d) => d.creators.push({ id: "someone", name: "X" }), /creator someone: creators in data\/creators.js are first-party/],
+    [(d) => delete d.creators[0].firstParty, /creator autostacc: id is a reserved platform address/],
+    [(d) => (d.creators[0].draft = true), /published project can't belong to the draft creator/]
   ];
   for (const [breakIt, error] of cases) {
     const d = fixture();

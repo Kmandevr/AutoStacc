@@ -6,7 +6,7 @@ updated: 2026-10-08
 
 # Control Center
 
-`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Test purchases, Audit log. A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
+`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Test purchases, Audit log. A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
 
 ## Statistics (Overview)
 
@@ -81,3 +81,12 @@ It is the production checkout, not a copy: the order is created by `POST /api/ch
 - by the database itself, as "catalog sync": product created, price changed, published, unpublished, removed; project created, published, unpublished
 
 Not recorded here: news and events, which are edited in `data/` and published by deploy. Their history is git's. No passwords, tokens, keys, card data or customer emails are stored in entries; customers are identified by account id and shown by email only when an admin reads the log.
+
+## Creators
+
+Every creator (first-party and Studio) with its address, live and draft projects, storage used, quota and platform fee ([creators](creators.md)). **Trust** lets search engines index a creator's pages (new creators are noindex), **Suspend** takes its pages and images offline at once and stops it publishing, and a quota (MB) or fee (basis points, 100 = 1%) set here overrides the platform default; empty means the default. Every change is audited (`creator.updated`). The Overview's **Creators** statistics show sites, image storage, and paid sales split into platform fees and creators' shares.
+
+## Paid files: hold back, then publish
+
+An upload can be held back ("Hold back until I publish it"): it is stored but reaches no customer until you press **publish** on it. Only published, active files are delivered. Uploads are limited to known file types (audio, MIDI, presets, project files, zip, images, video, documents; `server/files/policy.js`), 95 MB each and 100 per product.
+
