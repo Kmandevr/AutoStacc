@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-08: New Glitches & Stitches logo from the owner's sketch: small mark (pixel G&S tile + the sketch's frame) as `icon.png`, large stacked logo (`logo.png`) as the home hero with burst glitches, framed version as `og.png`; project cards show the logo. Source and renderer in `docs/assets/gs-logo/`.
 - 2026-10-08: After the mini-site deploy the owner's phone showed no nav bars: it kept a 4-hour-old `js/util.js` (Cloudflare's zone Browser Cache TTL overrides the `no-cache` in `_headers`) beside new pages that need its new helpers. `scripts/dist.js` now fingerprints every script, style and data link in the deployed pages (`?v=` + content hash), so a changed file always has a new address.
 - 2026-10-08: Two bars on a project's pages, as the owner asked: the AutoStacc bar for the whole site (its logo to the hub) and the project's bar in its own theme, now with its logo image beside the wordmark, both linking to the project's home.
 - 2026-10-08: Store items wear their project's look everywhere: G&S `look.css` split out of its skin (tokens, buttons, CRT tiles, hub rows), `GS.look` loads it on demand; product pages wear their creator's look and show "More from <project>". `js/shop.js` is a drop-in `[data-shop]` browser (project and type filters, selected item, state in the address) with `js/product-card.js`; cards and hub rows open `/shop?project=&item=`. New note [modules](modules.md) with the audit. Browser test for select/reload/back.

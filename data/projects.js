@@ -43,7 +43,7 @@ window.PROJECTS = [
     tagline: "Tear. Stitch. Glitch. Cinch. Repeat.",
     genres: ["Electronic", "EDM"],
     alternateNames: ["Glitches and Stitches"],
-    image: { src: "img/projects/glitches-and-stitches/og.png", width: 1200, height: 630, alt: "Glitches & Stitches in green pixel type on a black terminal screen" },
+    image: { src: "img/projects/glitches-and-stitches/og.png", width: 1200, height: 630, alt: "The Glitches & Stitches logo: Glitches over Stitches in green pixel type, a purple thread through the ampersand, framed by a line that sweeps up to the right" },
     logo: "img/projects/glitches-and-stitches/icon.png",
     email: "",
     pressKitUrl: "",

@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Glitches & Stitches logo from the owner's sketch
+
+The owner sketched a stacked logo with a thread through the "&" and a sweeping frame, asked for it in the project's style, and reviewed two rounds of drafts. Their calls: combine the original pixel G&S tile with the sketch for the small mark; a simpler, less crowded large logo that fits better and still looks glitchy; mixed case; small mark + text in the project bar; the large logo without the frame on the home hero, glitching in short bursts; used in the project bar, home hero, icon and link preview, and project cards. Details: [brand](brand.md).
+
 ## 2026-10-08: Fingerprinted asset links
 
 `Cache-Control: no-cache` in `_headers` wasn't enough: Cloudflare's zone setting Browser Cache TTL (4 hours) overrides it on autostacc.com, and a browser that kept an old `js/util.js` beside new pages lost both nav bars. The deploy copy (`scripts/dist.js`) now appends `?v=<content hash>` to every `/js`, `/css` and `/data` link in every page, so a changed file always has a new address and unchanged ones stay cached. The repository keeps plain links. Setting Browser Cache TTL to "Respect existing headers" in Cloudflare is still worth doing.
