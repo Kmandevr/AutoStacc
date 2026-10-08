@@ -12,7 +12,7 @@ The website side is done: clean addresses, canonical links, a sitemap, robots.tx
 
 Open each of these in a browser. They should all work:
 
-- https://autostacc.com/ shows the AutoStacc hub (not a redirect to /home)
+- https://autostacc.com/ shows AutoStacc's public home page (not a redirect to /home or to login)
 - https://autostacc.com/projects/glitches-and-stitches/music/hail shows the HAIL page, and the old https://autostacc.com/music/hail redirects there
 - https://autostacc.com/sitemap.xml shows a list of addresses
 - https://autostacc.com/robots.txt ends with `Sitemap: https://autostacc.com/sitemap.xml`

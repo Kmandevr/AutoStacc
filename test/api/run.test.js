@@ -10,9 +10,10 @@ import guests from "./guests.suite.js";
 import hygiene from "./hygiene.suite.js";
 import admin from "./admin.suite.js";
 import platform from "./platform.suite.js";
+import pages from "./pages.suite.js";
 
 const ctx = {};
 before(async () => Object.assign(ctx, await startStores()), { timeout: 240000 });
 after(() => ctx.stop && ctx.stop());
 
-for (const suite of [auth, commerce, webhooks, downloads, guests, hygiene, admin, platform]) suite(ctx);
+for (const suite of [auth, commerce, webhooks, downloads, guests, hygiene, admin, platform, pages]) suite(ctx);

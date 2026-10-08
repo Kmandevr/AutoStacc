@@ -7,5 +7,5 @@ command -v serena >/dev/null 2>&1 || uv tool install -p 3.13 serena-agent >&2 ||
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 if [ -f package-lock.json ] && [ ! -d node_modules ]; then (npm ci --no-audit --no-fund >/dev/null 2>&1 &); fi
 
-echo 'Repo map, top level (layer 0). Stop here if it answers the task. Details: .claude/tools/tree.sh <dir>; questions: .claude/tools/graph.sh query "<keywords>".'
+echo 'Repo map, top level (layer 0). Stop here if it answers the task. Details: .claude/tools/tree.sh <dir>; questions: .claude/tools/graph.sh query "<keywords>", then Serena for symbols (code-nav skill).'
 "$(dirname "$0")/../tools/tree.sh"
