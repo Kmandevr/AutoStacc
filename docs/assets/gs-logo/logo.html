@@ -1,0 +1,73 @@
+<!doctype html>
+<!-- Glitches & Stitches logo source (from the owner's sketch, 2026-10-08). render.cjs turns it into the PNGs in
+     img/projects/glitches-and-stitches/: #mark (icon.png, the small G&S tile with the sketch's frame), #logo (logo.png,
+     the large stacked logo without the frame, transparent) and #og (og.png, the framed logo for link previews). -->
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: transparent; }
+  .word { font-family: "VT323", monospace; }
+  #out { display: inline-block; }
+</style></head>
+<body><div id="out"></div>
+<script>
+const G = "#33ff66", P = "#bf5fff", ns = "http://www.w3.org/2000/svg";
+const glow = (id, d) => `<filter id="${id}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${d}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+
+// The small mark: the original pixel G&S tile with the sketch's frame and sweep, purple offset behind.
+function mark() {
+  return `<svg viewBox="0 0 180 180" width="180" height="180"><defs>${glow("mg", 2.4)}<radialGradient id="mr" cx="50%" cy="45%" r="65%"><stop offset="0" stop-color="#22102f"/><stop offset="1" stop-color="#000"/></radialGradient></defs>
+    <rect width="180" height="180" fill="url(#mr)"/>
+    <g transform="translate(-4 -3)" opacity=".9"><text class="word" x="90" y="112" text-anchor="middle" font-size="78" letter-spacing="2" fill="${P}">G&amp;S</text>
+      <path d="M22 26 L22 152 L104 152 C138 152 152 136 160 96" fill="none" stroke="${P}" stroke-width="7"/></g>
+    <g filter="url(#mg)"><text class="word" x="90" y="112" text-anchor="middle" font-size="78" letter-spacing="2" fill="${G}">G&amp;S</text>
+      <path d="M22 26 L22 152 L104 152 C138 152 152 136 160 96" fill="none" stroke="${G}" stroke-width="7"/></g>
+  </svg>`;
+}
+
+// The large logo: Glitches over Stitches, the t's thread through the &, purple offset and one torn line; framed or not.
+function big(svg, framed, bg) {
+  const W = +svg.getAttribute("width"), H = +svg.getAttribute("height");
+  svg.innerHTML = `<defs>${glow("bg", 3)}<clipPath id="tear"><rect x="0" y="0" width="${W}" height="12"/></clipPath>
+    <radialGradient id="rg" cx="45%" cy="50%" r="60%"><stop offset="0" stop-color="#1a0b26"/><stop offset="1" stop-color="#000"/></radialGradient></defs>
+    ${bg ? `<rect width="${W}" height="${H}" fill="url(#rg)"/>` : ""}<g id="art"><g class="words"></g><g class="frame"></g></g>`;
+  const words = svg.querySelector(".words");
+  const t = (s, x, y) => { const g = document.createElementNS(ns, "g"); g.innerHTML = `<text class="word" x="${x}" y="${y}" font-size="126" letter-spacing="6" fill="${G}">${s}</text>`; return g.firstChild; };
+  const top = t("Glitches", 0, 126), bot = t("Stitches", 0, 310);
+  const fg = document.createElementNS(ns, "g"); fg.setAttribute("filter", "url(#bg)");
+  words.appendChild(fg); fg.append(top, bot);
+  const a = top.getExtentOfChar(3), b = bot.getExtentOfChar(3);
+  const cx = a.x + a.width / 2; bot.setAttribute("x", cx - (b.x + b.width / 2));
+  for (const n of [top, bot]) { const c = n.cloneNode(true); c.setAttribute("fill", P); c.setAttribute("transform", "translate(-5 -3)"); c.setAttribute("opacity", ".85"); words.insertBefore(c, fg); }
+  const tb = top.getBBox();
+  svg.querySelector("#tear rect").setAttribute("y", tb.y + tb.height * 0.58);
+  const tear = document.createElementNS(ns, "g"); tear.setAttribute("clip-path", "url(#tear)"); const tc = top.cloneNode(true); tc.setAttribute("transform", "translate(18 0)"); tear.appendChild(tc); words.appendChild(tear);
+  const th = document.createElementNS(ns, "g"); th.setAttribute("filter", "url(#bg)");
+  th.innerHTML = `<path d="M${cx} 134 L${cx} 174 M${cx} 210 L${cx} 244" stroke="${P}" stroke-width="5"/><text class="word" x="${cx - 20}" y="208" font-size="64" fill="${P}">&amp;</text>`;
+  words.appendChild(th);
+  const box = fg.getBBox();
+  if (framed) {
+    const L = box.x - 34, B = box.y + box.height + 26, R = box.x + box.width + 30, mid = box.x + box.width * 0.42;
+    const f = document.createElementNS(ns, "path");
+    f.setAttribute("d", `M${L} ${box.y - 6} L${L} ${B} L${mid} ${B} C${R - 10} ${B} ${R + 50} ${B - 30} ${R + 78} ${box.y + 4}`);
+    f.setAttribute("fill", "none"); f.setAttribute("stroke", G); f.setAttribute("stroke-width", 6); f.setAttribute("filter", "url(#bg)");
+    const f2 = f.cloneNode(); f2.setAttribute("stroke", P); f2.setAttribute("transform", "translate(-4 -3)"); f2.setAttribute("opacity", ".7"); f2.removeAttribute("filter");
+    svg.querySelector(".frame").append(f2, f);
+  }
+  // centre the artwork in the canvas
+  const art = svg.querySelector("#art"), ab = art.getBBox();
+  const s = Math.min((W * 0.86) / ab.width, (H * (framed ? 0.8 : 0.9)) / ab.height);
+  art.setAttribute("transform", `translate(${(W - ab.width * s) / 2 - ab.x * s} ${(H - ab.height * s) / 2 - ab.y * s}) scale(${s})`);
+}
+
+document.fonts.load('126px "VT323"').then(() => {
+  const out = document.getElementById("out"), kind = location.hash.slice(1) || "mark";
+  if (kind === "mark") out.innerHTML = mark();
+  else {
+    const [w, h] = kind === "og" ? [1200, 630] : [1600, 760];
+    out.innerHTML = `<svg xmlns="${ns}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"></svg>`;
+    big(out.firstChild, kind === "og", kind === "og");
+  }
+  document.body.dataset.ready = kind;
+});
+</script></body></html>

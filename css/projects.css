@@ -3,7 +3,9 @@
 .projects { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 22px; }
 .project-card { background: var(--panel); border: 1px solid var(--line); box-shadow: 5px -4px 0 color-mix(in srgb, var(--accent-2) 30%, transparent); padding: 22px; display: grid; gap: 10px; align-content: start; }
 .project-card h3 { margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); text-transform: uppercase; overflow-wrap: anywhere; }
-.project-card h3 a { color: var(--accent); text-shadow: var(--glow); }
+.project-card h3 a { display: inline-flex; align-items: center; gap: 14px; color: var(--accent); text-shadow: var(--glow); }
+/* the project's own logo beside its name (data/projects.js `logo`) */
+.project-logo { width: 56px; height: 56px; flex: none; border-radius: var(--radius); }
 .project-card p { margin: 0; }
 .project-features { display: flex; flex-wrap: wrap; gap: 6px; }
 .project-card .small-print a { display: inline-block; padding-block: 4px; }

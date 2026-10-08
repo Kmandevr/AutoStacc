@@ -10,6 +10,15 @@ Since 2026-10-08 the site is AutoStacc ([autostacc](autostacc.md) for its look) 
 
 How its pages apply the owner's [identity](identity.md): broken, then deliberately rebuilt. Fragmentation, corruption, stitching, reconstruction, shown through a technical interface. Playful and clever, never generic dark cyberpunk.
 
+## Logo (2026-10-08, from the owner's sketch)
+
+The owner drew it: "Glitches" over "Stitches", a small "&" between them, the **t** of Glitches dropping a thread through the "&" into Stitches, and a frame down the left and along the bottom that sweeps up to the right. Built in the terminal style after two rounds of drafts:
+
+- **Large logo** (`img/projects/glitches-and-stitches/logo.png`, transparent): mixed case, VT323 green, a purple offset copy behind (the glitch), one torn line through "Glitches", the purple thread and "&". No frame on the home hero, where it replaces the old text title and twitches in short bursts (reduced motion: still).
+- **Framed logo** (`og.png`, 1200x630): the same with the sketch's frame and sweep; the link-preview image.
+- **Small mark** (`icon.png`, 180px; `logo` in `data/projects.js`): the original pixel G&S tile with the sketch's frame and sweep added. Shown in the project bar beside the `GLITCHES&STITCHES` text, on project cards and in structured data.
+- Source: `docs/assets/gs-logo/logo.html`; re-render all three with `node docs/assets/gs-logo/render.cjs`.
+
 ## Visual style (as built in `css/projects/glitches-and-stitches/` with the shared feature sheets)
 
 Old-school terminal (owner's choice, 2026-10-07): a glowing CRT screen in three colours.
