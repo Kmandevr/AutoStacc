@@ -1,5 +1,5 @@
 /* AutoStacc's look: light/dark tokens, track colours and the platform touches inside main.platform. */
-/* AutoStacc's look (docs/autostacc.md): stacked, modular, a prettier DAW. Sets the tokens every page uses (light and dark, following the device unless the visitor picks one: js/theme.js sets data-theme on <html>) and the platform touches inside <main class="platform">. A project's own pages override the tokens with their skin. Every page. */
+/* Light and dark follow the device unless the visitor picks one (js/theme.js sets data-theme on <html>). Look: docs/autostacc.md. */
 
 
 :root {
@@ -11,7 +11,7 @@
   --muted: #586174;
   --line: #d9dde5;
   --grid: rgba(22, 26, 34, .045);
-  --teal: #0b7d74;
+  --teal: #0a716a;
   --amber: #b86e00;
   --coral: #d64545;
   --lime: #4f8a10;

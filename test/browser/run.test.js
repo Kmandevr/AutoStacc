@@ -259,6 +259,23 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("phone menu: the closed drawer can't be tabbed into; opening moves focus in; Escape closes and returns focus", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/projects/glitches-and-stitches");
+    assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
+    await page.click(".menu-toggle");
+    await page.waitForSelector(".side.open");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "side-close");
+    assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
+    await page.keyboard.press("Tab");
+    assert.ok(await page.evaluate(() => Boolean(document.activeElement.closest(".side"))), "Tab stays in the drawer");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "menu-toggle");
+    assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
   test("keyboard only: add to cart and reach checkout", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/shop/sample-pack-vol1");

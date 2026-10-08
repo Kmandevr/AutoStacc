@@ -127,7 +127,7 @@
     src.stop(t + len + 0.02);
   }
 
-  // Each sound follows its animation's frames (see css/base.css and css/eggs.css).
+  // Each sound follows its animation's frames (see css/projects/glitches-and-stitches/skin.css and css/eggs.css).
   const SOUNDS = {
     // clicks: a note whose pitch follows where you clicked; now and then it skips
     blip: ({ x }) => pluck(note(2 + Math.round((x + 1) * 2)), 0, { len: 0.18, peak: 0.45, pan: x, grit: 0.4, chop: Math.random() < 0.3 ? 1 : 0 }),
