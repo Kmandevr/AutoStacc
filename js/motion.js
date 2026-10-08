@@ -14,7 +14,7 @@
   // Ambient loops run on wall-clock time, so they carry on from where they were when you change page.
   root.style.setProperty("--clock", `${-(Date.now() % 9000)}ms`);
 
-  const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .loop li, .newsletter form, .listen, .bio, .panel, .flow li, .mix-panel, .cover-card";
+  const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .loop li, .newsletter form, .listen, .bio, .panel, .flow li, .mix-panel";
   const seen = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;

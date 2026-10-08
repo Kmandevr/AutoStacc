@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Public pitch is "straight from the artists"
+
+The owner found "Stacc it once. Auto handles the rest." odd, then rejected a library-led replacement ("Buy it once. Find it every time."): advertising that AutoStacc has a library is not the pitch. Chosen with the owner: the home page leads with "Sounds, presets and music, straight from the artists who make them", then the artists, the store and free releases (Auto-Stacc). Your Stacc stays the signed-in library, described plainly where it's used, not sold on public pages. Voice: [autostacc](autostacc.md).
+
 ## 2026-10-08: A public home page, and the app behind the account wall
 
 The owner asked for `/` to be a real public front page and for the signed-in workspace to be clearly separate, so the site reads as a product with an app behind the account wall rather than a dashboard with a login. This replaces "Home is a hub (dashboard)" below.

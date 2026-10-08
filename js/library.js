@@ -52,7 +52,7 @@
     state.items = items;
     state.assets = stacc.assetsFrom(items, catalog);
     const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
-    root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing owned yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the shop</a></div></div>`) + `<div data-stacc></div>`;
+    root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing owned yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc></div>`;
     if (signedIn) await discover(new Set(items.map((it) => it.productId)));
     render();
   }
