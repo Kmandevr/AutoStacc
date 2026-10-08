@@ -1,0 +1,100 @@
+// Creators and their members as the store keeps them (D1 creators, creator_members), plus the read side of projects.
+// Studio projects are changed in projects.js; renames' slug holds live in holds.js. Slugs are lowercase and unique
+// (creators site-wide, projects within their creator). Catalog creators and projects (data/creators.js,
+// data/projects.js) are read here too, but only the deploy's sync writes them.
+import { all, first, stmt, newId, now } from "../lib/db.js";
+import { fail } from "../lib/http.js";
+import { slugProblem } from "../lib/slugs.js";
+import { LIMITS } from "./policy.js";
+import { creatorSlugFree, holdStmt, taken, isUnique, holdsOf, MAX_HOLDS, namePosesAsFirstParty } from "./holds.js";
+
+const LIVE = "deleted_at IS NULL";
+
+export const getCreator = (db, id) => first(db, `SELECT * FROM creators WHERE id = ? AND ${LIVE}`, id);
+export const getCreatorBySlug = (db, slug) => first(db, `SELECT * FROM creators WHERE slug = ? AND ${LIVE}`, String(slug).toLowerCase());
+export const getProject = (db, id) => first(db, `SELECT * FROM projects WHERE id = ? AND ${LIVE}`, id);
+export const getProjectBySlug = (db, creatorId, slug) =>
+  first(db, `SELECT * FROM projects WHERE creator_id = ? AND slug = ? AND ${LIVE}`, creatorId, String(slug).toLowerCase());
+export const projectsOf = (db, creatorId) => all(db, `SELECT * FROM projects WHERE creator_id = ? AND ${LIVE} ORDER BY name`, creatorId);
+
+// The creators an account belongs to, with its role in each.
+export const creatorsOfUser = (db, userId) => all(db,
+  `SELECT c.*, m.role FROM creator_members m JOIN creators c ON c.id = m.creator_id WHERE m.user_id = ? AND c.${LIVE} ORDER BY c.name`, userId);
+
+export const roleOf = async (db, creatorId, userId) =>
+  ((await first(db, "SELECT role FROM creator_members WHERE creator_id = ? AND user_id = ?", creatorId, userId)) || {}).role || null;
+
+// A Studio creator this account may change (owner, or editor when allowed). Anything else looks like nothing there.
+export async function requireCreator(db, creatorId, user, roles = ["owner", "editor"]) {
+  const creator = typeof creatorId === "string" ? await getCreator(db, creatorId) : null;
+  const role = creator && creator.source === "studio" ? await roleOf(db, creator.id, user.id) : null;
+  if (!role || !roles.includes(role)) fail(404, "not_found", "Nothing here.");
+  if (creator.status !== "active") fail(403, "creator_suspended", "This creator is suspended. Contact AutoStacc support.");
+  return { creator, role };
+}
+
+// A clean slug or a 400 naming what's wrong. Reserved words only matter for creators (they share the top level).
+export function cleanSlug(raw, { creator = false } = {}) {
+  const slug = String(raw || "").trim().toLowerCase();
+  const problem = slugProblem(slug);
+  if (problem === "reserved" && !creator) return slug;
+  if (problem === "length") fail(400, "invalid_slug", "Names in addresses are 3 to 40 characters.", { field: "slug" });
+  if (problem === "format") fail(400, "invalid_slug", "Use lowercase letters, numbers and single hyphens.", { field: "slug" });
+  if (problem === "reserved") fail(409, "slug_taken", "That name is taken.", { field: "slug" });
+  return slug;
+}
+
+const reservedName = () => fail(409, "name_taken", "That name belongs to a project on AutoStacc. Pick another.", { field: "name" });
+
+// The limit is checked inside the insert itself, so parallel requests can't each squeeze in one more creator.
+export async function createCreator(db, user, { slug, name }) {
+  if (!(await creatorSlugFree(db, slug))) taken();
+  if (await namePosesAsFirstParty(db, name)) reservedName();
+  const id = newId("cr");
+  const t = now();
+  let res;
+  try {
+    [res] = await db.batch([
+      stmt(db, `INSERT INTO creators (id, slug, name, source, status, published, created_by, created_at, updated_at)
+        SELECT ?, ?, ?, 'studio', 'active', 1, ?, ?, ?
+        WHERE (SELECT COUNT(*) FROM creator_members WHERE user_id = ? AND role = 'owner') < ?`, id, slug, name, user.id, t, t, user.id, LIMITS.creatorsPerAccount),
+      stmt(db, `INSERT INTO creator_members (creator_id, user_id, role, created_at) SELECT ?, ?, 'owner', ? WHERE EXISTS (SELECT 1 FROM creators WHERE id = ?)`,
+        id, user.id, t, id)
+    ]);
+  } catch (e) {
+    if (isUnique(e)) taken();
+    throw e;
+  }
+  if (!res.meta.changes) fail(409, "limit_reached", "This account already runs a creator.");
+  return getCreator(db, id);
+}
+
+export async function updateCreator(db, creator, { slug, name }) {
+  const t = now();
+  const writes = [];
+  if (name && name !== creator.name && await namePosesAsFirstParty(db, name)) reservedName();
+  if (slug && slug !== creator.slug) {
+    if (!(await creatorSlugFree(db, slug, creator.id))) taken();
+    if (await holdsOf(db, "creator", creator.id) >= MAX_HOLDS) fail(429, "rename_limit", "This creator has been renamed too often lately. Try again later.");
+    writes.push(...holdStmt(db, "creator", "", creator.slug, slug, creator.id));
+  }
+  writes.push(stmt(db, "UPDATE creators SET slug = ?, name = ?, updated_at = ? WHERE id = ?", slug || creator.slug, name || creator.name, t, creator.id));
+  try {
+    await db.batch(writes);
+  } catch (e) {
+    if (isUnique(e)) taken();
+    throw e;
+  }
+  return getCreator(db, creator.id);
+}
+
+// Who sells each product: its project, the project's creator and that creator's fee settings. Products without a
+// project or creator (none today) come back with nulls.
+export const sellersOfProducts = (db, productIds) => productIds.length
+  ? all(db, `SELECT p.id AS product_id, p.project_id, pr.creator_id, c.platform_fee_bps
+      FROM products p LEFT JOIN projects pr ON pr.id = p.project_id LEFT JOIN creators c ON c.id = pr.creator_id
+      WHERE p.id IN (${productIds.map(() => "?").join(",")})`, ...productIds)
+  : Promise.resolve([]);
+
+export const publicCreator = (c) => ({ id: c.id, slug: c.slug, name: c.name, status: c.status, trusted: Boolean(c.trusted), source: c.source });
+export const publicProject = (p) => ({ id: p.id, slug: p.slug, name: p.name, published: Boolean(p.published), source: p.source });

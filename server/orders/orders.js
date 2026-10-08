@@ -12,7 +12,8 @@ export const TRANSITIONS = {
 
 // impersonationId: set when an admin placed it while impersonating (a test purchase), so it never passes as the customer's.
 // Items carry the price charged per unit (after any sale) and the catalog price it came from; discountCents and
-// promotionId are a promo code's, and the total is subtotal minus that discount.
+// promotionId are a promo code's, and the total is subtotal minus that discount. Items attributed by
+// server/revenue/split.js also carry their seller (project, creator), their share of the code and the money split.
 export async function createOrder(db, { userId, email, currency, items, provider, livemode, idempotencyKey, accessKeyHash, impersonationId = null,
   discountCents = 0, promotionId = null, promoCode = null }) {
   const id = newId("ord");
@@ -26,8 +27,10 @@ export async function createOrder(db, { userId, email, currency, items, provider
       id, userId, email, currency, subtotal, discountCents, subtotal - discountCents, provider, livemode ? 1 : 0, idempotencyKey, accessKeyHash, t, t,
       impersonationId, promotionId, promoCode),
     ...items.map((i) => stmt(db,
-      `INSERT INTO order_items (id, order_id, product_id, title, unit_price_cents, quantity, line_total_cents, list_price_cents, sale_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      newId("oi"), id, i.productId, i.title, i.unitPriceCents, i.quantity, i.unitPriceCents * i.quantity, i.listPriceCents ?? i.unitPriceCents, i.saleId || null))
+      `INSERT INTO order_items (id, order_id, product_id, title, unit_price_cents, quantity, line_total_cents, list_price_cents, sale_id,
+        project_id, creator_id, discount_cents, net_cents, platform_fee_cents, creator_share_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      newId("oi"), id, i.productId, i.title, i.unitPriceCents, i.quantity, i.unitPriceCents * i.quantity, i.listPriceCents ?? i.unitPriceCents, i.saleId || null,
+      i.projectId || null, i.creatorId || null, i.discountCents || 0, i.netCents ?? null, i.platformFeeCents ?? null, i.creatorShareCents ?? null))
   ]);
   return getOrder(db, id);
 }
@@ -43,6 +46,13 @@ export const orderItems = (db, orderId) =>
 
 export const attachCheckout = (db, id, sessionId, url) =>
   run(db, "UPDATE orders SET provider_session_id = ?, checkout_url = ?, updated_at = ? WHERE id = ? AND status = 'pending'", sessionId, url, now(), id);
+
+// What the provider says it refunded (cumulative). A full refund also marks every line refunded in full.
+export function recordRefund(db, orderId, amountCents, full) {
+  const writes = [stmt(db, "UPDATE orders SET refunded_cents = MAX(refunded_cents, ?), updated_at = ? WHERE id = ?", Math.max(0, Number(amountCents) || 0), now(), orderId)];
+  if (full) writes.push(stmt(db, "UPDATE order_items SET refunded_cents = COALESCE(net_cents, line_total_cents - discount_cents) WHERE order_id = ?", orderId));
+  return db.batch(writes);
+}
 
 // Returns true if this call moved the order (false: it was already there or the move isn't allowed).
 export async function transition(db, id, to, fields = {}) {

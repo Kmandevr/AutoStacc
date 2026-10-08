@@ -13,6 +13,7 @@ import { activeEntitlements } from "../entitlements/grants.js";
 import { audit } from "../audit/log.js";
 import { impersonableCustomer, beginImpersonation, USER_ID } from "../impersonation/routes.js";
 import { userById } from "../impersonation/sessions.js";
+import { countDeliverable } from "../files/files.js";
 
 export const testPaymentsOnly = (app) => !paymentProvider(app).livemode(app.config);
 
@@ -54,7 +55,7 @@ export async function verifyTestOrder(db, order) {
   out.push(check("library", "Shows in the customer's library", items.every((i) => owned.has(i.product_id)),
     access.user ? `${items.filter((i) => owned.has(i.product_id)).length} of ${items.length} items` : "customer's email isn't verified, so their library is empty"));
   for (const i of items) {
-    const files = await first(db, "SELECT COUNT(*) AS n FROM product_files WHERE product_id = ? AND active = 1", i.product_id);
+    const files = { n: await countDeliverable(db, i.product_id) };
     const allowed = (await activeEntitlements(db, access, i.product_id)).length > 0;
     out.push(check(`download:${i.product_id}`, `Download authorized: ${i.title}`, files.n ? allowed : null,
       files.n ? `${files.n} file(s), ${allowed ? "a download link would be issued" : "a download would be refused"}` : "no files uploaded for this product yet"));

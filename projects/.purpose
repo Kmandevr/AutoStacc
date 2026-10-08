@@ -1,1 +1,0 @@
-Each project's own pages, at /projects/<id>: its hand-written home (<id>.html) and pages (<id>/), plus its generated release and news pages (<id>/music/, <id>/news/; don't edit those, change data/ and rebuild).

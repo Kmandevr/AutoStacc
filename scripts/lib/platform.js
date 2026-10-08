@@ -1,6 +1,8 @@
-// The platform layer's integrity checks and hierarchy (docs/architecture.md): every project, Stacclet, Pac, product,
-// release, news post, poll and relationship link must point at something that exists, and products may only sell
-// their own project's Pacs. Pure functions over loadData() output; build.js fails on any error returned here.
+// The platform layer's integrity checks and hierarchy (docs/architecture.md): every creator, project, Stacclet, Pac,
+// product, release, news post, poll and relationship link must point at something that exists, creators have valid
+// unreserved addresses, and products may only sell their own project's Pacs. Pure functions over loadData() output;
+// build.js fails on any error returned here.
+const { slugProblem } = require("../../server/lib/slugs.js");
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const byId = (list) => new Map(list.map((x) => [x.id, x]));
 const uses = (project, feature) => Boolean(project && (project.features || []).includes(feature));
@@ -40,14 +42,32 @@ function validate(data) {
       seen.add(x.id);
     }
   };
+  unique(data.creators, "creator");
   unique(data.projects, "project");
   unique(data.stacclets, "stacclet");
   unique(data.pacs, "pac");
   unique(data.polls, "poll");
 
+  // A creator's address is /<id>: never a platform word (server/lib/slugs.js) unless it is AutoStacc's own (firstParty).
+  // Its projects live at /<creator>/<project>.
+  const creators = byId(data.creators);
+  const SLUG_PROBLEMS = { length: "must be 3 to 40 characters", format: "must be lowercase-hyphenated", reserved: "is a reserved platform address (server/lib/slugs.js)" };
+  for (const c of data.creators) {
+    const problem = slugProblem(c.id);
+    if (problem && !(problem === "reserved" && c.firstParty === true)) errors.push(`creator ${c.id}: id ${SLUG_PROBLEMS[problem]}`);
+    // A first-party creator's name must be reserved (and deployed) before it is added, or a Studio account could take
+    // it first and the deploy's sync would stop on the clash.
+    if (c.firstParty === true && problem !== "reserved") errors.push(`creator ${c.id}: add "${c.id}" to RESERVED in server/lib/slugs.js and deploy that first`);
+    if (!c.name) errors.push(`creator ${c.id}: add a name`);
+    if (!c.firstParty) errors.push(`creator ${c.id}: creators in data/creators.js are first-party (firstParty: true); others sign up in the Studio`);
+  }
+
   const FEATURES = ["releases", "news", "shows", "store", "polls", "relationships"];
   for (const p of data.projects) {
     if (!p.name) errors.push(`project ${p.id}: add a name`);
+    if (!p.creator) errors.push(`project ${p.id}: add creator (an id in data/creators.js)`);
+    else if (!creators.has(p.creator)) errors.push(`project ${p.id}: creator "${p.creator}" is not in data/creators.js`);
+    else if (!p.draft && creators.get(p.creator).draft) errors.push(`project ${p.id}: a published project can't belong to the draft creator "${p.creator}"`);
     for (const f of p.features || []) if (!FEATURES.includes(f)) errors.push(`project ${p.id}: unknown feature "${f}"`);
     if (p.pages !== undefined && (!Array.isArray(p.pages) || p.pages.some((x) => !x.label || typeof x.path !== "string" || !/^(#[\w-]+|[a-z0-9-]*)$/.test(x.path))))
       errors.push(`project ${p.id}: pages must be [{ label, path }] with path "", a page name like "music" or an anchor like "#shows"`);

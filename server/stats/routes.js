@@ -11,8 +11,9 @@ import products from "./products.js";
 import downloads from "./downloads.js";
 import activity from "./activity.js";
 import promotions from "./promotions.js";
+import creators from "./creators.js";
 
-export const SECTIONS = [sales, customers, products, downloads, promotions, activity];
+export const SECTIONS = [sales, customers, products, downloads, promotions, creators, activity];
 
 function range(app) {
   const url = new URL(app.request.url);

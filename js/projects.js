@@ -1,5 +1,5 @@
-// Project cards with follow and Auto-Stacc controls, in every [data-project-list] on the page (the /projects directory
-// and the dashboard's projects rack): the projects in data/projects.js and, for signed-in customers, a follow button and the
+// Project cards with follow and Auto-Stacc controls, in every [data-project-list] on the page (the /projects directory,
+// the dashboard's projects rack and a creator's profile, which sets data-creator): the projects in data/projects.js and, for signed-in customers, a follow button and the
 // Auto-Stacc switch (free releases of that project are added to Your Stacc automatically). Follow state comes from the
 // store API; without it the cards still show. Needs data/projects.js and js/util.js.
 (function () {
@@ -28,14 +28,15 @@
     const name = (p) => (p.logoFull
       ? `<img class="project-logo-full" src="/${e(p.logoFull.src)}" width="${e(p.logoFull.width)}" height="${e(p.logoFull.height)}" alt="${e(p.name)}">`
       : `${p.logo ? `<img class="project-logo" src="/${e(p.logo)}" width="56" height="56" alt="">` : ""}${e(p.name)}`);
-    const html = projects.map((p) => `<li class="project-card ${window.GS.look(p.id)}" data-project="${e(p.id)}">
+    const card = (p) => `<li class="project-card ${window.GS.look(p.id)}" data-project="${e(p.id)}">
       <h3><a href="${e(window.GS.projectPath(p.id))}">${name(p)}</a></h3>
       <p>${e(p.summary || "")}</p>
       <p class="project-features">${(p.features || []).map((f) => `<span class="tag">${e(FEATURES[f] || f)}</span>`).join(" ")}</p>
       ${controls(p)}
       ${message && message.id === p.id ? `<p class="msg${message.error ? " error" : ""}" role="status">${e(message.text)}</p>` : ""}
-    </li>`).join("");
-    lists.forEach((list) => (list.innerHTML = html));
+    </li>`;
+    // A creator's profile page lists only that creator's projects (<ul data-creator>).
+    lists.forEach((list) => (list.innerHTML = projects.filter((p) => !list.dataset.creator || p.creator === list.dataset.creator).map(card).join("")));
   }
 
   async function load() {

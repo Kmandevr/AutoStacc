@@ -1,0 +1,55 @@
+/* Creator sites made in the Studio (rendered by server/sites/render.js). Standalone: these pages load no other AutoStacc
+   stylesheet, so element selectors here only ever reach creator pages. Themed by the custom properties each page sets
+   (--bg, --surface, --text, --muted, --accent, --font from server/sites/theme.js). No scripts run on these pages. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 1rem/1.6 var(--font); }
+a { color: var(--accent); }
+img { max-width: 100%; height: auto; display: block; border-radius: 10px; }
+
+.cs-strip { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: center; padding: .4rem 16px; font: .75rem/1.4 system-ui, sans-serif;
+  background: color-mix(in srgb, var(--text) 8%, var(--bg)); color: var(--muted); }
+.cs-strip a { color: var(--text); font-weight: 700; text-decoration: none; }
+
+.cs-header, .cs-main, .cs-footer { width: min(100%, 860px); margin: 0 auto; padding-inline: 16px; }
+.cs-header { padding-block: 2.5rem 1rem; }
+.cs-by { margin: 0; color: var(--muted); font-size: .9rem; }
+.cs-by a { color: inherit; }
+.cs-title { margin: .2rem 0 1rem; font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; font-weight: 800; }
+.cs-title a { color: var(--text); text-decoration: none; }
+.cs-nav { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cs-nav a { padding: .35rem .8rem; border-radius: 999px; background: var(--surface); color: var(--text); text-decoration: none; }
+.cs-nav a[aria-current="page"] { background: var(--accent); color: var(--bg); }
+
+.cs-main { padding-block: 1rem 3rem; display: grid; gap: 1.25rem; }
+.cs-main h2 { margin: 1rem 0 0; font-size: 1.6rem; line-height: 1.2; }
+.cs-main h3 { margin: .5rem 0 0; font-size: 1.25rem; }
+.cs-text p { margin: 0 0 .8rem; }
+.cs-muted { color: var(--muted); }
+.cs-image { margin: 0; }
+.cs-image figcaption { color: var(--muted); font-size: .9rem; margin-top: .4rem; }
+.cs-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: .75rem; }
+.cs-gallery figure { margin: 0; }
+.cs-btn { display: inline-block; padding: .6rem 1.2rem; border-radius: 10px; background: var(--accent); color: var(--bg); font-weight: 700; text-decoration: none; }
+.cs-btn.small { padding: .3rem .7rem; font-size: .85rem; }
+.cs-button { margin: 0; }
+.cs-embed iframe { width: 100%; border: 0; border-radius: 12px; background: var(--surface); }
+.cs-events ul, .cs-socials, .cs-products ul, .cs-projects { list-style: none; margin: 0; padding: 0; }
+.cs-events li { display: grid; grid-template-columns: minmax(7rem, auto) 1fr auto; gap: .5rem 1rem; align-items: center; padding: .75rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 15%, transparent); }
+.cs-events time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cs-event-what span { color: var(--muted); }
+.cs-socials { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cs-socials a { display: inline-block; padding: .35rem .8rem; border-radius: 999px; border: 1px solid var(--accent); text-decoration: none; }
+.cs-products ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: .75rem; }
+.cs-products a { display: grid; gap: .3rem; padding: .75rem; border-radius: 12px; background: var(--surface); color: var(--text); text-decoration: none; }
+.cs-products span { color: var(--accent); font-size: .9rem; }
+.cs-projects { display: grid; gap: .5rem; }
+.cs-projects a { display: block; padding: 1rem; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 1.2rem; font-weight: 700; text-decoration: none; }
+hr { width: 100%; border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 15%, transparent); }
+.cs-footer { padding-block: 2rem; color: var(--muted); font-size: .85rem; }
+.cs-footer a { color: inherit; }
+
+@media (max-width: 560px) {
+  .cs-events li { grid-template-columns: 1fr; }
+}

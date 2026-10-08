@@ -2,8 +2,8 @@
 // badge, the tabs and the summary, and manages products: pause/resume sales, upload paid files (or a new version of
 // one) and preview clips, deactivate files. The other tabs start on the "gs:admin" event: statistics
 // (js/admin-stats.js), orders, customers and entitlements (js/admin-records.js), customer preview with impersonation
-// and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), test-purchase checks and
-// the audit log (js/admin-audit.js).
+// and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), creators
+// (js/admin-creators.js), test-purchase checks and the audit log (js/admin-audit.js).
 // Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
 (function () {
   "use strict";
@@ -16,7 +16,7 @@
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
   const TABS = [["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"],
-    ["promotions", "Promotions"], ["tests", "Test purchases"], ["audit", "Audit log"]];
+    ["promotions", "Promotions"], ["creators", "Creators"], ["tests", "Test purchases"], ["audit", "Audit log"]];
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
   function shell(s) {
@@ -52,7 +52,8 @@
           <span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span>
           <span class="admin-flags">${p.deleted ? "removed" : p.published ? "published" : "draft"}${p.salesPaused ? " · sales paused" : ""}</span>
           ${p.deleted ? "" : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>`}</div>
-        <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.pac_id ? ` · ${escapeHTML(pacTitle(f.pac_id))}` : ""}${f.kind ? ` · ${escapeHTML((KINDS[f.kind] || {}).label || f.kind)}` : ""}${f.active ? "" : " · deactivated"}</span>
+        <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.pac_id ? ` · ${escapeHTML(pacTitle(f.pac_id))}` : ""}${f.kind ? ` · ${escapeHTML((KINDS[f.kind] || {}).label || f.kind)}` : ""}${f.active ? (f.status && f.status !== "published" ? ` · <strong>${escapeHTML(f.status)}</strong>` : "") : " · deactivated"}</span>
+          ${f.active && f.status === "pending" ? `<button class="link-btn" type="button" data-publish-file="${escapeHTML(f.id)}">publish</button>` : ""}
           ${f.active ? `<button class="link-btn" type="button" data-remove-file="${escapeHTML(f.id)}">deactivate</button>` : ""}</li>`).join("") || "<li class=\"small-print\">No files yet: buyers would get an empty library entry.</li>"}</ul>
         <form class="admin-upload" data-upload>
           <label class="sr-only" for="f-${escapeHTML(p.id)}">File for ${escapeHTML(p.title)}</label><input id="f-${escapeHTML(p.id)}" type="file" required>
@@ -60,6 +61,7 @@
           ${p.pacs.length ? `<label class="sr-only" for="p-${escapeHTML(p.id)}">Pac</label><select id="p-${escapeHTML(p.id)}" data-pac><option value="">No Pac</option>${p.pacs.map((id) => `<option value="${escapeHTML(id)}">${escapeHTML(pacTitle(id))}</option>`).join("")}</select>` : ""}
           ${p.files.some((f) => f.active) ? `<label class="sr-only" for="r-${escapeHTML(p.id)}">Replaces</label><select id="r-${escapeHTML(p.id)}" data-replaces><option value="">New file</option>${p.files.filter((f) => f.active).map((f) => `<option value="${escapeHTML(f.id)}">New version of ${escapeHTML(f.label || f.filename)}</option>`).join("")}</select>` : ""}
           <label class="sr-only" for="k-${escapeHTML(p.id)}">Content type</label><select id="k-${escapeHTML(p.id)}" data-kind><option value="">Type from file name</option>${Object.entries(KINDS).map(([k, t]) => `<option value="${escapeHTML(k)}">${escapeHTML(t.label)}</option>`).join("")}</select>
+          <label class="admin-hold"><input type="checkbox" data-hold> Hold back until I publish it</label>
           <button class="btn" type="submit">Upload file</button><span class="msg" role="status"></span></form>
       </li>`).join("")}</ul>`;
   }
@@ -98,7 +100,8 @@
       const pac = $("[data-pac]", form) ? $("[data-pac]", form).value : "";
       const kind = $("[data-kind]", form).value;
       const replaces = $("[data-replaces]", form) ? $("[data-replaces]", form).value : "";
-      const query = new URLSearchParams({ filename: file.name, label, ...(pac && { pac }), ...(kind && { kind }), ...(replaces && { replaces }) });
+      const hold = $("[data-hold]", form).checked;
+      const query = new URLSearchParams({ filename: file.name, label, ...(pac && { pac }), ...(kind && { kind }), ...(replaces && { replaces }), ...(hold && { status: "pending" }) });
       if (await upload(`/api/admin/products/${encodeURIComponent(id)}/files?${query}`, file, $(".msg", form))) products();
     }
     btn.disabled = false;
@@ -111,6 +114,13 @@
     if (pause) {
       pause.disabled = true;
       await api(`/api/admin/products/${encodeURIComponent(pause.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: { salesPaused: pause.dataset.pause === "1" } });
+      return products();
+    }
+    // A pending file (uploaded with "hold back") reaches owners only once published.
+    const pub = e.target.closest("[data-publish-file]");
+    if (pub) {
+      pub.disabled = true;
+      await api(`/api/admin/files/${encodeURIComponent(pub.dataset.publishFile)}`, { method: "PATCH", body: { status: "published" } });
       return products();
     }
     const rm = e.target.closest("[data-remove-file]");

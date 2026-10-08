@@ -26,7 +26,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | --- | --- | --- |
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
 | `account/` | who is signed in | `GET /api/account` |
-| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/account`, `/settings`, `/admin` (Pages Functions in `functions/`) |
+| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/account`, `/settings`, `/studio`, `/admin` (Pages Functions in `functions/`) |
 | `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
@@ -34,9 +34,10 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `orders/` | orders, status machine, fulfilment, guest keys | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/guest/key` |
 | `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
 | `downloads/` | signed links, streaming private files | `POST /api/downloads`, `GET /api/downloads/:token` |
+| `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits | (used by downloads, library, admin) |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
-| `admin/` | owner tools, customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
+| `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
 | `analytics/` | daily counters | `POST /api/events` |
 | `stats/` | admin statistics: sections of typed metrics | `GET /api/admin/stats`, `/api/admin/stats/:section` |
 | `impersonation/` | support impersonation: rules, the per-request policy, start and exit | `POST /api/admin/customers/:userId/impersonate`, `POST /api/impersonation/exit` |
@@ -44,10 +45,15 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `promotions/` | sales and promo codes: what's running and what it takes off | `GET`/`POST /api/admin/promotions`, `POST /api/admin/promotions/:id/end` |
 | `projects/` | projects (synced), follows | `GET /api/projects`, `PUT`/`DELETE /api/follows/:projectId` |
 | `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
+| `creators/` | creators, members, Studio projects, slug holds, free-plan limits ([creators](creators.md)) | (used by studio, sites, revenue, admin) |
+| `studio/` | the Studio API: claim a creator, projects, site drafts, preview, publish, images | `/api/studio/*` |
+| `sites/` | creator sites: the document, blocks, embeds, themes, rendering, publishing, images, public pages | `/<creator>[/<project>[/<page>]]` (`functions/[[path]].js`), `/media/sites/:id` |
+| `revenue/` | who sold each order line and how its money splits | (used by checkout) |
+| `integrations/` | connected accounts: the provider registry (none switched on) | |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
-Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, sign-out), `js/dashboard.js`, `js/account.js`, `js/settings.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-audit.js`, `js/impersonation.js` (banner); shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
+Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, sign-out), `js/dashboard.js`, `js/account.js`, `js/settings.js`, `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-promotions.js`, `js/admin-creators.js`, `js/admin-audit.js`, `js/impersonation.js` (banner), `js/studio.js` + `js/studio-editor.js`, `js/studio-blocks.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
 
 ## Platform layer
 

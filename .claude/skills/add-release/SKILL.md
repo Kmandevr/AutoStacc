@@ -5,7 +5,7 @@ description: Add or edit a release (single, EP, album) in AutoStacc. Use when th
 
 # Add or change a release
 
-**Only `data/music.js` and `img/releases/` change.** The release page (`/projects/<project>/music/<id>`), the card on its project's music page, the project home's Listen player (when `featured`), structured data and the sitemap are generated from it.
+**Only `data/music.js` and `img/releases/` change.** The release page (`/<creator>/<project>/music/<id>`), the card on its project's music page, the project home's Listen player (when `featured`), structured data and the sitemap are generated from it.
 
 1. Read the header comment of `data/music.js`: it defines every field. Don't copy the field list elsewhere.
 2. Get the facts from the owner or the distributor's public pages (title, type, date, tracks with durations and ISRCs, UPC, streaming links). **Never invent** credits, descriptions or dates. The `description` states only confirmed facts; ask for anything else.

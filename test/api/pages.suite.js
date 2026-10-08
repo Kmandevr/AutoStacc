@@ -5,7 +5,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
 
-const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/projects/glitches-and-stitches", "/projects/glitches-and-stitches/music", "/about"];
+const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/about"];
 const GATED = ["/dashboard", "/account", "/settings"];
 const goesToLogin = (r, next) => {
   assert.equal(r.status, 302);

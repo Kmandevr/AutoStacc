@@ -1,16 +1,17 @@
 // Generates everything search engines read from data/: each page's <head> metadata, one page per product (shop/) and
-// per project release and news post (projects/<id>/music/, projects/<id>/news/), sitemap.xml, llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
+// per project release and news post (<project address>/music/, <project address>/news/), sitemap.xml, llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
 // Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
 const path = require("path");
-const { ROOT, loadData, abs, projectPath } = require("./lib/data");
+const { ROOT, loadData, abs, projectPath, projectDir } = require("./lib/data");
 const H = require("./lib/head");
 const P = require("./lib/pages");
 const C = require("./lib/catalog");
 const PL = require("./lib/platform");
 const { platformSql } = require("./lib/platform-catalog");
 const { llmsTxt } = require("./lib/llms");
+const { creatorPage, projectCard } = require("./lib/creator-page");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -18,9 +19,11 @@ const { SITE } = data;
 const errors = [];
 const outputs = new Map(); // file -> content
 
-// ---------- hand-written pages: every *.html in the root and under projects/ ----------
+// ---------- hand-written pages: every *.html in the root and in each creator's folder ----------
+// A creator's space is /<creator> (data/creators.js; its profile page <creator>.html is generated below), and each of
+// its projects' pages are <creator>/<project>.html and <creator>/<project>/ (scripts/lib/data.js projectPath).
 // Each writes its own <title> and <meta name="description">, except the home page (from data/site.js) and each
-// project's home, projects/<id>.html (from its entry in data/projects.js); everything else in the head block is
+// project's home, <its folder>.html (from its entry in data/projects.js); everything else in the head block is
 // generated. A page opts out of search with its own <meta name="robots" content="noindex">.
 const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", press: "AboutPage", about: "AboutPage" };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
@@ -29,7 +32,8 @@ const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&
 const htmlUnder = (dir) => (fs.existsSync(path.join(ROOT, dir)) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
 
-const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("projects").filter((f) => !read(f).includes(P.GENERATED))]
+const creatorDirs = data.creators.map((c) => c.id);
+const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...creatorDirs.flatMap(htmlUnder)].filter((f) => !read(f).includes(P.GENERATED))
   .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
 const pages = []; // every page with its metadata, for the sitemap
 const projectById = new Map(data.projects.map((x) => [x.id, x]));
@@ -41,14 +45,14 @@ for (const file of handPages) {
   const key = attr("data-page");
   const project = projectById.get(attr("data-project"));
   const isHome = file === "index.html";
-  const projectHome = project && file === `projects/${project.id}.html` ? project : null;
+  const projectHome = project && file === `${projectDir(project.id)}.html` ? project : null;
   const own = isHome ? SITE : projectHome;
   const title = own ? own.title : decode((rest.match(/<title>([^<]*)<\/title>/) || [])[1] || "");
   const description = own ? own.description : decode((rest.match(/<meta name="description" content="([^"]*)">/) || [])[1] || "");
   if (!title) errors.push(`${file}: add a <title> above the seo block${projectHome ? " (or title in data/projects.js)" : ""}`);
   if (!description) errors.push(`${file}: add a <meta name="description" content="..."> above the seo block`);
   if (own && /<title>/.test(rest)) errors.push(`${file}: this page's title comes from data/ (${isHome ? "site.js" : "projects.js"}); remove its own <title>`);
-  if (file.startsWith("projects/") && !project) errors.push(`${file}: add data-project="<id>" (an id in data/projects.js) to <body>`);
+  if (creatorDirs.some((d) => file.startsWith(d + "/")) && !project) errors.push(`${file}: add data-project="<id>" (an id in data/projects.js) to <body>`);
   if (!html.includes(H.START.slice(0, 15)) || !html.includes(H.END)) {
     errors.push(`${file}: add the two seo markers in <head> (copy them from shop.html)`);
     continue;
@@ -63,7 +67,7 @@ for (const file of handPages) {
     page.schema = [H.website(SITE), H.organization(SITE), H.webPage(SITE, page, "WebPage", { about: { "@id": abs(SITE, "/#organization") } })];
   } else if (page.index) {
     const crumbs = project
-      ? [["Home", "/"], ...(projectHome ? [] : [[project.name, projectPath(project.id)]]), [projectHome ? project.name : name, p]]
+      ? [["Home", "/"], ...P.ownerCrumb(data, project), ...(projectHome ? [] : [[project.name, projectPath(project.id)]]), [projectHome ? project.name : name, p]]
       : [["Home", "/"], [name, p]];
     const ofProject = (x) => !project || x.project === project.id;
     const lists = {
@@ -83,8 +87,7 @@ for (const file of handPages) {
   const block = H.headBlock(SITE, page);
   // A list between <!-- projects:start --> and <!-- projects:end --> gets a plain link per published project, so the
   // project pages are linked in the HTML itself (js/projects.js upgrades the list to cards with follow controls).
-  const projectLinks = data.projects.filter((x) => !x.draft)
-    .map((x) => `<li class="project-card${x.skin ? ` look-${H.esc(x.id)}` : ""}"><h3><a href="${H.esc(projectPath(x.id))}">${x.logoFull ? `<img class="project-logo-full" src="/${H.esc(x.logoFull.src)}" width="${H.esc(x.logoFull.width)}" height="${H.esc(x.logoFull.height)}" alt="${H.esc(x.name)}">` : `${x.logo ? `<img class="project-logo" src="/${H.esc(x.logo)}" width="56" height="56" alt="">` : ""}${H.esc(x.name)}`}</a></h3><p>${H.esc(x.summary || "")}</p></li>`).join("");
+  const projectLinks = data.projects.filter((x) => !x.draft).map(projectCard).join("");
   outputs.set(file, html.replace(new RegExp(`${H.START.slice(0, 15)}[^\\n]*\\n[\\s\\S]*?${H.END}`), () => block)
     .replace(/(<!-- projects:start[^>]*-->)[\s\S]*?(<!-- projects:end -->)/g, (m, a, b) => `${a}${projectLinks}${b}`));
   pages.push(page);
@@ -94,7 +97,8 @@ for (const file of handPages) {
 const generated = [
   ...data.releases.map((r) => P.releasePage(SITE, data, r)),
   ...data.products.map((x) => P.productPage(SITE, data, x)),
-  ...data.news.map((n) => P.newsPage(SITE, data, n))
+  ...data.news.map((n) => P.newsPage(SITE, data, n)),
+  ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c))
 ];
 const seen = new Set();
 for (const g of generated) {
@@ -117,8 +121,9 @@ outputs.set("db/catalog.sql", C.catalogSql(data.products, data.productTypes) + p
 
 // Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
 const stale = [];
-// (music/ and news/ at the root held the pages before they moved under projects/.)
-for (const f of ["music", "shop", "news", "projects"].flatMap(htmlUnder)) {
+// (music/ and news/ at the root, then projects/, held the pages before they moved to their creator's space.)
+const rootHtml = fs.readdirSync(ROOT).filter((f) => f.endsWith(".html"));
+for (const f of [...rootHtml, ...["music", "shop", "news", "projects", ...creatorDirs].flatMap(htmlUnder)]) {
   if (!outputs.has(f) && read(f).includes(P.GENERATED)) stale.push(f);
 }
 
@@ -160,7 +165,7 @@ for (const f of changed) {
 }
 for (const f of stale) {
   fs.unlinkSync(path.join(ROOT, f));
-  // A folder emptied by the removal goes too (music/ and news/ once their pages moved under projects/).
+  // A folder emptied by the removal goes too (music/, news/ and projects/ once their pages moved).
   const dir = path.dirname(path.join(ROOT, f));
   if (!fs.readdirSync(dir).length) fs.rmdirSync(dir);
 }

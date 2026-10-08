@@ -2,13 +2,14 @@
 // /api/downloads/<token> checks the link, the requester and the entitlement again, then streams the private file.
 // Unknown, unowned, unpublished-and-unowned and revoked all fail the same way.
 import { json, fail, readJson, str } from "../lib/http.js";
-import { first, run, newId, now } from "../lib/db.js";
+import { run, newId, now } from "../lib/db.js";
 import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access.js";
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
 import { signDownload, readDownload } from "./tokens.js";
 import { impersonationIdOf } from "../auth/session.js";
 import { getFile, safeFilename } from "../storage/buckets.js";
 import { limit } from "../lib/ratelimit.js";
+import { getDeliverableFile as getActiveFile } from "../files/files.js";
 
 // impersonation_id marks downloads an admin made while impersonating, so they never count as the customer's.
 const logEvent = (app, event, f) =>
@@ -16,7 +17,6 @@ const logEvent = (app, event, f) =>
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     newId("dl"), event, f.productId || null, f.fileId || null, f.entitlementId || null, f.subject || null, f.reason || null, now(), impersonationIdOf(app));
 
-const getActiveFile = (db, fileId) => first(db, "SELECT * FROM product_files WHERE id = ? AND active = 1", fileId);
 
 // Which of the requester's identities an entitlement belongs to (accounts first).
 function subjectFor(access, ent) {
