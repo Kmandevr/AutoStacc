@@ -9,9 +9,16 @@ cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 command -v graphify >/dev/null 2>&1 || uv tool install graphifyy >&2
 
 g=graphify-out/graph.json
-# Rebuild only when a tracked or new, non-ignored file is newer than the graph.
-if [ ! -f "$g" ] || [ -n "$(git ls-files -co --exclude-standard | xargs -r -d '\n' find -newer "$g" -print -quit)" ]; then
-  graphify update . >&2
-fi
+list=graphify-out/files.txt
+files() { git ls-files -co --exclude-standard | while IFS= read -r f; do [ -f "$f" ] && echo "$f"; done | sort -u; }
+# Stale when the set of files changed (added, deleted, renamed) or any file is newer than the graph.
+stale() {
+  [ -f "$g" ] && [ -f "$list" ] && [ "$(files)" = "$(cat "$list")" ] || return 0
+  local f
+  while IFS= read -r f; do [ "$f" -nt "$g" ] && return 0; done < "$list"
+  return 1
+}
+# --force lets the graph shrink after deletions; Graphify skips writing an unchanged graph, so touch it.
+if stale; then graphify update --force . >&2 && touch "$g" && files > "$list"; fi
 
 if [ $# -eq 0 ]; then cat graphify-out/GRAPH_REPORT.md; else exec graphify "$@"; fi
