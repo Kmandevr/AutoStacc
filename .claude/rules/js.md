@@ -6,7 +6,7 @@ paths:
 # Scripts
 
 - One file per feature, wrapped in an IIFE, plain `<script>` (no modules, no build step, so pages work from `file://`). Split a file when it grows past one feature or roughly 150 lines.
-- `js/theme.js` is the one script in `<head>` (sets the theme before paint, then draws its switch). Project paths come from `GS.projectPath(id, ...)` and the open project from `GS.currentProject()`; never hard-code `/projects/...` or read artist fields from `SITE` (that's AutoStacc).
+- `js/theme.js` is the one script in `<head>` (sets the theme before paint, then draws its switch; it also handles aborted page-change animations, which must be caught before the first paint). Project paths come from `GS.projectPath(id, ...)` and the open project from `GS.currentProject()`; never hard-code `/projects/...` or read artist fields from `SITE` (that's AutoStacc).
 - The only global a script adds is `GS` (`js/util.js`, also set as `window.GS`; other scripts read `window.GS`). `js/jsconfig.json` and `js/globals.d.ts` are editor-only so Serena resolves `window.GS` across files; pages never load them. Read data as `window.NAME || []`. Keep state inside the IIFE.
 - A pure model or template module that exactly one feature needs may set one namespace on `GS` and must load before that feature: `js/stacc-model.js` (`GS.stacc`, no DOM, also `require`-able by Node unit tests) and `js/library-view.js` (`GS.libraryView`), both for `js/library.js`.
 - Dependencies point one way: feature script to `util.js`. Features never call each other, so there are no cycles. A helper moves to `util.js` only when a second feature needs it, and check `util.js` first before writing a new one.
