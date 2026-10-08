@@ -24,8 +24,12 @@
   }
 
   function render(message) {
-    const html = projects.map((p) => `<li class="project-card" data-project="${e(p.id)}">
-      <h3><a href="${e(window.GS.projectPath(p.id))}">${p.logo ? `<img class="project-logo" src="/${e(p.logo)}" width="56" height="56" alt="">` : ""}${e(p.name)}</a></h3>
+    // Each card wears its project's look; a project with a full logo shows it as the card's heading.
+    const name = (p) => (p.logoFull
+      ? `<img class="project-logo-full" src="/${e(p.logoFull.src)}" width="${e(p.logoFull.width)}" height="${e(p.logoFull.height)}" alt="${e(p.name)}">`
+      : `${p.logo ? `<img class="project-logo" src="/${e(p.logo)}" width="56" height="56" alt="">` : ""}${e(p.name)}`);
+    const html = projects.map((p) => `<li class="project-card ${window.GS.look(p.id)}" data-project="${e(p.id)}">
+      <h3><a href="${e(window.GS.projectPath(p.id))}">${name(p)}</a></h3>
       <p>${e(p.summary || "")}</p>
       <p class="project-features">${(p.features || []).map((f) => `<span class="tag">${e(FEATURES[f] || f)}</span>`).join(" ")}</p>
       ${controls(p)}

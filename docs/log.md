@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-08: Project cards (hub rack, `/projects`) are fully themed: they wear the project's look (G&S: black screen, purple offset, terminal type) and show its full logo (`logoFull` in `data/projects.js`) as the heading.
 - 2026-10-08: New Glitches & Stitches logo from the owner's sketch: small mark (pixel G&S tile + the sketch's frame) as `icon.png`, large stacked logo (`logo.png`) as the home hero with burst glitches, framed version as `og.png`; project cards show the logo. Source and renderer in `docs/assets/gs-logo/`.
 - 2026-10-08: After the mini-site deploy the owner's phone showed no nav bars: it kept a 4-hour-old `js/util.js` (Cloudflare's zone Browser Cache TTL overrides the `no-cache` in `_headers`) beside new pages that need its new helpers. `scripts/dist.js` now fingerprints every script, style and data link in the deployed pages (`?v=` + content hash), so a changed file always has a new address.
 - 2026-10-08: Two bars on a project's pages, as the owner asked: the AutoStacc bar for the whole site (its logo to the hub) and the project's bar in its own theme, now with its logo image beside the wordmark, both linking to the project's home.

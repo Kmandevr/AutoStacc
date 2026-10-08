@@ -6,6 +6,8 @@
 .project-card h3 a { display: inline-flex; align-items: center; gap: 14px; color: var(--accent); text-shadow: var(--glow); }
 /* the project's own logo beside its name (data/projects.js `logo`) */
 .project-logo { width: 56px; height: 56px; flex: none; border-radius: var(--radius); }
+/* or its full logo as the whole heading (data/projects.js `logoFull`) */
+.project-logo-full { display: block; width: min(100%, 440px); height: auto; }
 .project-card p { margin: 0; }
 .project-features { display: flex; flex-wrap: wrap; gap: 6px; }
 .project-card .small-print a { display: inline-block; padding-block: 4px; }

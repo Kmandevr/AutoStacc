@@ -84,7 +84,7 @@ for (const file of handPages) {
   // A list between <!-- projects:start --> and <!-- projects:end --> gets a plain link per published project, so the
   // project pages are linked in the HTML itself (js/projects.js upgrades the list to cards with follow controls).
   const projectLinks = data.projects.filter((x) => !x.draft)
-    .map((x) => `<li class="project-card"><h3><a href="${H.esc(projectPath(x.id))}">${x.logo ? `<img class="project-logo" src="/${H.esc(x.logo)}" width="56" height="56" alt="">` : ""}${H.esc(x.name)}</a></h3><p>${H.esc(x.summary || "")}</p></li>`).join("");
+    .map((x) => `<li class="project-card${x.skin ? ` look-${H.esc(x.id)}` : ""}"><h3><a href="${H.esc(projectPath(x.id))}">${x.logoFull ? `<img class="project-logo-full" src="/${H.esc(x.logoFull.src)}" width="${H.esc(x.logoFull.width)}" height="${H.esc(x.logoFull.height)}" alt="${H.esc(x.name)}">` : `${x.logo ? `<img class="project-logo" src="/${H.esc(x.logo)}" width="56" height="56" alt="">` : ""}${H.esc(x.name)}`}</a></h3><p>${H.esc(x.summary || "")}</p></li>`).join("");
   outputs.set(file, html.replace(new RegExp(`${H.START.slice(0, 15)}[^\\n]*\\n[\\s\\S]*?${H.END}`), () => block)
     .replace(/(<!-- projects:start[^>]*-->)[\s\S]*?(<!-- projects:end -->)/g, (m, a, b) => `${a}${projectLinks}${b}`));
   pages.push(page);
