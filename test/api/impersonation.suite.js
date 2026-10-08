@@ -17,7 +17,7 @@ async function impersonate(admin, userId, note = "test") {
 // A customer who owns "wallpapers", and a file for it to download.
 async function setup(ctx) {
   const owner = await adminClient(ctx.mock.url);
-  const up = await owner.req("PUT", "/api/admin/products/wallpapers/files?filename=walls.zip&label=Walls", { raw: "zip bytes", headers: { "Content-Type": "application/zip" } });
+  const up = await owner.req("PUT", "/api/admin/products/wallpapers/files?filename=walls.zip&label=Walls", { raw: Buffer.from("PK\u0003\u0004 zip bytes", "latin1"), headers: { "Content-Type": "application/zip" } });
   assert.equal(up.status, 201);
   const { c, user } = await newBuyer(ctx.mock.url, "imp-customer");
   const { orderId } = await mockBuy(c, [{ productId: "wallpapers" }]);

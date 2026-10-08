@@ -56,7 +56,7 @@ function catalogSql(products, types) {
     ...rows.map((r) =>
       `INSERT INTO products (${cols.join(", ")}, created_at, updated_at) VALUES (${cols.map((c) => q(r[c])).join(", ")}, ${NOW}, ${NOW})\n` +
       `  ON CONFLICT (id) DO UPDATE SET ${updates}, deleted_at = NULL, updated_at = ${NOW}\n` +
-      `  WHERE products.source = 'catalog' AND (products.catalog_hash IS NOT excluded.catalog_hash OR products.deleted_at IS NOT NULL);`),
+      `  WHERE products.source = 'catalog' AND products.admin_managed = 0 AND (products.catalog_hash IS NOT excluded.catalog_hash OR products.deleted_at IS NOT NULL);`),
     `UPDATE products SET published = 0, deleted_at = ${NOW}, updated_at = ${NOW} WHERE source = 'catalog' AND deleted_at IS NULL${rows.length ? ` AND id NOT IN (${rows.map((r) => q(r.id)).join(", ")})` : ""};`
   ];
   return out.join("\n") + "\n";

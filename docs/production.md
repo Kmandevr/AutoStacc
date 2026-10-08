@@ -37,6 +37,10 @@ One address, `SITE.email` in `data/site.js` (support@autostacc.com), used by the
 
 Show only facts that exist in `data/products.js` (`includes`, `pacs`, `metadata`, `preview`) or follow from it (type, price, project, licence). Never invent formats, file counts, sizes or specs. Product structured data is only published for products that are for sale (not drafts), with the real price and currency.
 
+## Uploads
+
+Nothing is accepted that isn't on a list. Paid files and previews: only the extensions in `server/files/policy.js`, each with a content type set by the server (never the uploader's) and, where the format has a reliable signature, a check of the file's first bytes; a file that isn't what its name says is deleted and refused (415). No HTML, SVG, scripts or executables. Previews are audio only. Customers' Studio images: PNG, JPEG, GIF or WebP by their bytes (`server/sites/images.js`). Downloads are always attachments with `nosniff`. A new format is one line in `policy.js` plus a test.
+
 ## Accounts and privacy
 
 Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`) and delete their account. Deletion keeps orders only as anonymous sales records ([store](store.md#settings)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track.

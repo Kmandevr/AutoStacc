@@ -18,3 +18,13 @@ export const previewKey = (filename) => `previews/${safeFilename(filename)}`;
 export const getPreview = (env, key, request) => env.PREVIEWS.get(key, { range: request.headers, onlyIf: request.headers });
 
 export const putPreview = (env, key, body, contentType) => env.PREVIEWS.put(key, body, { httpMetadata: { contentType } });
+
+// Just the start of a stored object, to check a file is what its name says; and removing one that isn't.
+const head = async (bucket, key) => {
+  const o = await bucket.get(key, { range: { offset: 0, length: 16 } });
+  return o ? new Uint8Array(await o.arrayBuffer()) : new Uint8Array();
+};
+export const peekFile = (env, key) => head(env.FILES, key);
+export const peekPreview = (env, key) => head(env.PREVIEWS, key);
+export const deleteFile = (env, key) => env.FILES.delete(key);
+export const deletePreview = (env, key) => env.PREVIEWS.delete(key);
