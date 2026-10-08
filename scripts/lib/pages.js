@@ -1,5 +1,5 @@
 // Templates for the generated pages: one per product (/shop/<id>, a platform page), and for each project one per
-// release (/projects/<project>/music/<id>) and news post (/projects/<project>/news/<id>), in the project's skin.
+// release (/<creator>/<project>/music/<id>) and news post (/<creator>/<project>/news/<id>), in the project's skin.
 // Each returns { file, page, html }: `page` is the metadata for lib/head.js, `html` the whole document.
 const { abs, projectPath } = require("./data");
 const H = require("./head");
@@ -99,6 +99,11 @@ const productCover = (p, eager, types) => p.image
   ? `<div class="product-art">${picture(p.image, "(max-width: 860px) 100vw, 480px", eager)}</div>`
   : `<div class="product-art cover tint-${tint(p.hue)}" data-track="${esc(((types || {})[p.type] || {}).track || "")}" aria-hidden="true"><span>${esc(p.title.split(" — ")[0])}</span></div>`;
 
+// The creator that owns a project (data/creators.js), as a breadcrumb: [name, its profile address].
+const ownerCrumb = (data, project) => {
+  const c = (data.creators || []).find((x) => x.id === project.creator);
+  return c ? [[c.name, "/" + c.id]] : [];
+};
 // The project that created something (data/projects.js); the build has already checked the link exists.
 const creatorOf = (data, x) => data.projects.find((p) => p.id === x.project);
 const byline = (c) => `by <a href="${esc(projectPath(c.id))}">${esc(c.name)}</a>`;
@@ -144,7 +149,7 @@ function releasePage(SITE, data, r) {
   const home = projectPath(creator.id);
   const url = abs(SITE, releasePath(r));
   const year = r.date.slice(0, 4);
-  const crumbs = [["Home", "/"], [creator.name, home], ["Music", home + "/music"], [r.title, releasePath(r)]];
+  const crumbs = [["Home", "/"], ...ownerCrumb(data, creator), [creator.name, home], ["Music", home + "/music"], [r.title, releasePath(r)]];
   const title = `${r.title} (${r.type.toLowerCase()})${projectSuffix(SITE, creator.name)}`;
   const links = (r.links || []).filter((l) => isUrl(l.url));
   const tracks = r.tracks || [];
@@ -313,7 +318,7 @@ function newsPage(SITE, data, n) {
   const creator = creatorOf(data, n);
   const home = projectPath(creator.id);
   const url = abs(SITE, newsPath(n));
-  const crumbs = [["Home", "/"], [creator.name, home], ["News", home + "/news"], [n.title, newsPath(n)]];
+  const crumbs = [["Home", "/"], ...ownerCrumb(data, creator), [creator.name, home], ["News", home + "/news"], [n.title, newsPath(n)]];
   const release = data.releases.find((r) => r.id === n.release);
   const image = (release && release.artwork) || creator.image || SITE.image;
   const title = `${n.title}${projectSuffix(SITE, creator.name)}`;
@@ -352,4 +357,4 @@ function newsPage(SITE, data, n) {
   return { file: newsPath(n).slice(1) + ".html", page, html: shell(SITE, { page, section: "news", styles: ["news", "detail"], scripts: [], main, project: creator, projectPage: "news" }) };
 }
 
-module.exports = { GENERATED, releasePage, productPage, newsPage, clip, suffix };
+module.exports = { GENERATED, shell, hero, ownerCrumb, releasePage, productPage, newsPage, clip, suffix };

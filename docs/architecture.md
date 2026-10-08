@@ -1,7 +1,7 @@
 ---
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Architecture
@@ -23,7 +23,8 @@ The platform layer is built **on top** of that store. Authentication, checkout, 
 
 ```
 AutoStacc (platform: data/site.js → SITE.platform)
-└── Project            data/projects.js        creative entity; owns identity and features
+└── Creator            data/creators.js / D1   owns projects; seller of record; address /<creator> (creators.md)
+    └── Project        data/projects.js        creative entity; owns identity and features; /<creator>/<project>
     ├── Release        data/music.js           project: <id>
     ├── News post      data/news.js            project: <id>
     ├── Product        data/products.js        project: <id>, pacs: [<pac id>]  ← what is sold
@@ -38,7 +39,8 @@ Every link is stored once, on the child, as an id. Everything else is derived: a
 
 | Concept | Is | Lives in | Notes |
 | --- | --- | --- | --- |
-| Project | a creator | `data/projects.js` → D1 `projects` | `features` lists which platform features it uses |
+| Creator | who owns projects and sells | `data/creators.js` (first-party) or the Studio → D1 `creators` | [creators](creators.md) |
+| Project | creative work of a creator | `data/projects.js` (or the Studio) → D1 `projects` | `creator`; `features` lists which platform features it uses |
 | Stacclet | a collection of related Pacs | `data/stacclets.js` | not a folder; never holds files directly |
 | Pac | a container of content | `data/pacs.js` | sold through products; its files are assets |
 | Asset | one file (MIDI, WAV, preset, …) | D1 `product_files` (uploaded in `/admin`) | `pac_id`, `kind` (`data/content-types.js`), format from the filename |
@@ -91,5 +93,5 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 - **Pac-level ownership:** access is per product. Bundles that share Pacs across products need a `product_pacs` table and a Pac-aware access check; the entitlement `bundle` source is reserved.
 - **Notifications:** follows record who wants news; nothing sends it yet. A "new release" mail is one template in `server/email/templates.js` plus a send when a product is published.
 - **Licences:** shown per product only as metadata; no licence records.
-- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs.
-- (Resolved 2026-10-08: the site is AutoStacc and projects live under `/projects/<id>`; see [decisions](decisions.md) and [autostacc](autostacc.md#site-structure).)
+- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own no-code sites are built ([creators](creators.md)); the planned design for creator code (sandboxed HTML/CSS, later JavaScript) is in [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED).
+- (Resolved 2026-10-08: the site is AutoStacc; projects live at `/<creator>/<project>` and creators build free sites in the Studio; see [creators](creators.md) and [decisions](decisions.md).)

@@ -1,6 +1,7 @@
 // Generates db/catalog.sql: upserts every product in data/products.js into the store database, so checkout charges
 // exactly the price the pages show. Deterministic (timestamps come from SQLite at apply time, not from this script).
 // Products removed from data/ are unpublished and marked deleted, never dropped: orders and entitlements point at them.
+// Only rows with source 'catalog' are touched: products made elsewhere (the Studio, later) are never overwritten.
 const crypto = require("crypto");
 
 const q = (v) => (v === null || v === undefined ? "NULL" : typeof v === "number" ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
@@ -55,8 +56,8 @@ function catalogSql(products, types) {
     ...rows.map((r) =>
       `INSERT INTO products (${cols.join(", ")}, created_at, updated_at) VALUES (${cols.map((c) => q(r[c])).join(", ")}, ${NOW}, ${NOW})\n` +
       `  ON CONFLICT (id) DO UPDATE SET ${updates}, deleted_at = NULL, updated_at = ${NOW}\n` +
-      `  WHERE products.catalog_hash IS NOT excluded.catalog_hash OR products.deleted_at IS NOT NULL;`),
-    `UPDATE products SET published = 0, deleted_at = ${NOW}, updated_at = ${NOW} WHERE deleted_at IS NULL${rows.length ? ` AND id NOT IN (${rows.map((r) => q(r.id)).join(", ")})` : ""};`
+      `  WHERE products.source = 'catalog' AND (products.catalog_hash IS NOT excluded.catalog_hash OR products.deleted_at IS NOT NULL);`),
+    `UPDATE products SET published = 0, deleted_at = ${NOW}, updated_at = ${NOW} WHERE source = 'catalog' AND deleted_at IS NULL${rows.length ? ` AND id NOT IN (${rows.map((r) => q(r.id)).join(", ")})` : ""};`
   ];
   return out.join("\n") + "\n";
 }

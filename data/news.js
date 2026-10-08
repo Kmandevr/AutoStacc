@@ -14,7 +14,7 @@ window.NEWS = [
     tag: "Release",
     release: "hail",
     summary: "The single HAIL is out on Apple Music, YouTube Music, Deezer and more.",
-    body: "<p>HAIL is out now. Play it on the <a href=\"/projects/glitches-and-stitches/music/hail\">HAIL release page</a>, or stream it on <a href=\"https://music.apple.com/us/album/hail/1847091235?i=1847091237\" target=\"_blank\" rel=\"noopener\">Apple Music</a>, <a href=\"https://music.youtube.com/watch?v=EzVo6Mc8Yt0\" target=\"_blank\" rel=\"noopener\">YouTube Music</a> and <a href=\"https://www.deezer.com/album/838974702\" target=\"_blank\" rel=\"noopener\">Deezer</a>.</p>"
+    body: "<p>HAIL is out now. Play it on the <a href=\"/autostacc/glitches-and-stitches/music/hail\">HAIL release page</a>, or stream it on <a href=\"https://music.apple.com/us/album/hail/1847091235?i=1847091237\" target=\"_blank\" rel=\"noopener\">Apple Music</a>, <a href=\"https://music.youtube.com/watch?v=EzVo6Mc8Yt0\" target=\"_blank\" rel=\"noopener\">YouTube Music</a> and <a href=\"https://www.deezer.com/album/838974702\" target=\"_blank\" rel=\"noopener\">Deezer</a>.</p>"
   },
   {
     id: "fall-tour-dates",

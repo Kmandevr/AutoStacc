@@ -1,4 +1,4 @@
-// Server-side gate for the account pages (/dashboard, /account, /settings), run by their Pages Functions before the
+// Server-side gate for the account pages (/dashboard, /account, /settings, /studio), run by their Pages Functions before the
 // static page is served. Without a signed-in session (or when the store can't check one) the answer is a redirect to
 // /login?next=<that page>, so a signed-out visitor never receives the app at all. Signed in, the static page is
 // served marked no-store, so no shared or back/forward cache replays it after sign-out. The pages hold no private data
@@ -10,7 +10,7 @@
 import { loadConfig } from "../lib/config.js";
 import { currentUser, isAdmin } from "../auth/session.js";
 
-export const GATED = new Set(["/dashboard", "/account", "/settings"]);
+export const GATED = new Set(["/dashboard", "/account", "/settings", "/studio"]);
 const HOME = "/dashboard";
 
 // The same test the login page uses (GET /api/account has a user), so the gate and login never disagree and bounce

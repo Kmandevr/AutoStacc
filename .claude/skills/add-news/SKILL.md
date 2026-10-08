@@ -5,7 +5,7 @@ description: Add, edit or remove a news post (or tour date) in AutoStacc. Use fo
 
 # Add or change news
 
-**Only `data/news.js` changes** (tour dates: `data/shows.js`), plus generated files. Each post names its `project`; that project's news list and its home page's latest three are rendered from it by `js/news.js`, newest first; each post's page `/projects/<project>/news/<id>` by `scripts/build.js`. Don't edit HTML, CSS or scripts.
+**Only `data/news.js` changes** (tour dates: `data/shows.js`), plus generated files. Each post names its `project`; that project's news list and its home page's latest three are rendered from it by `js/news.js`, newest first; each post's page `/<creator>/<project>/news/<id>` by `scripts/build.js`. Don't edit HTML, CSS or scripts.
 
 1. Read the top of `data/news.js` (the comment and one entry). That file defines the fields; don't copy them elsewhere.
 2. Get the content from the user: date, title, tag, summary, body. **Never invent** releases, dates or details. If something is missing, ask, or open a GitHub issue for it.

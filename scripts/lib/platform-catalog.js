@@ -1,12 +1,15 @@
-// The platform part of db/catalog.sql: upserts projects (data/projects.js) and polls (data/polls.js) into the store
-// database, so the API can check follows and votes against them. Same rules as the product sync (lib/catalog.js):
-// deterministic, drafts unpublished, removed entries marked deleted and never dropped (follows and votes point at them).
+// The platform part of db/catalog.sql: upserts first-party creators (data/creators.js), projects (data/projects.js) and
+// polls (data/polls.js) into the store database, so the API can check ownership, follows and votes against them. Same
+// rules as the product sync (lib/catalog.js): deterministic, drafts unpublished, removed entries marked deleted and
+// never dropped (follows and votes point at them), and rows the Studio made (source 'studio') never touched.
 const crypto = require("crypto");
 const { q, NOW } = require("./catalog");
 
 const hash = (values) => crypto.createHash("sha256").update(JSON.stringify(values)).digest("hex").slice(0, 16);
 
-function upserts(table, cols, rows) {
+// sourced: the table has a source column; only its 'catalog' rows belong to the sync.
+function upserts(table, cols, rows, sourced = false) {
+  const mine = sourced ? `${table}.source = 'catalog' AND ` : "";
   const all = [...cols, "catalog_hash"];
   const updates = all.filter((c) => c !== "id").map((c) => `${c} = excluded.${c}`).join(", ");
   return [
@@ -14,15 +17,16 @@ function upserts(table, cols, rows) {
       r.catalog_hash = hash(cols.map((c) => r[c]));
       return `INSERT INTO ${table} (${all.join(", ")}, created_at, updated_at) VALUES (${all.map((c) => q(r[c])).join(", ")}, ${NOW}, ${NOW})\n` +
         `  ON CONFLICT (id) DO UPDATE SET ${updates}, deleted_at = NULL, updated_at = ${NOW}\n` +
-        `  WHERE ${table}.catalog_hash IS NOT excluded.catalog_hash OR ${table}.deleted_at IS NOT NULL;`;
+        `  WHERE ${mine}(${table}.catalog_hash IS NOT excluded.catalog_hash OR ${table}.deleted_at IS NOT NULL);`;
     }),
-    `UPDATE ${table} SET published = 0, deleted_at = ${NOW}, updated_at = ${NOW} WHERE deleted_at IS NULL${rows.length ? ` AND id NOT IN (${rows.map((r) => q(r.id)).join(", ")})` : ""};`
+    `UPDATE ${table} SET published = 0, deleted_at = ${NOW}, updated_at = ${NOW} WHERE ${sourced ? "source = 'catalog' AND " : ""}deleted_at IS NULL${rows.length ? ` AND id NOT IN (${rows.map((r) => q(r.id)).join(", ")})` : ""};`
   ];
 }
 
 function platformSql(data) {
+  const creators = (data.creators || []).map((c) => ({ id: c.id, slug: c.id, name: c.name, source: "catalog", published: c.draft ? 0 : 1 }));
   const projects = data.projects.map((p) => ({
-    id: p.id, name: p.name, features: JSON.stringify(p.features || []), published: p.draft ? 0 : 1
+    id: p.id, name: p.name, features: JSON.stringify(p.features || []), published: p.draft ? 0 : 1, creator_id: p.creator || null, slug: p.id, source: "catalog"
   }));
   const polls = data.polls.map((p) => ({
     id: p.id, project_id: p.project, question: p.question,
@@ -32,8 +36,9 @@ function platformSql(data) {
     published: p.draft ? 0 : 1
   }));
   return [
-    "-- Platform sync: projects and polls (data/projects.js, data/polls.js).",
-    ...upserts("projects", ["id", "name", "features", "published"], projects),
+    "-- Platform sync: creators, projects and polls (data/creators.js, data/projects.js, data/polls.js).",
+    ...upserts("creators", ["id", "slug", "name", "source", "published"], creators, true),
+    ...upserts("projects", ["id", "name", "features", "published", "creator_id", "slug", "source"], projects, true),
     ...upserts("polls", ["id", "project_id", "question", "options", "opens_at", "closes_at", "published"], polls)
   ].join("\n") + "\n";
 }
