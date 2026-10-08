@@ -21,6 +21,17 @@ The owner asked for the site's layout to follow current conventions for settings
 
 PLANNED / NOT IMPLEMENTED. The owner wants creators to customise their pages (HTML and CSS first, JavaScript later) without their code touching AutoStacc. Design in [creator pages](creator-pages.md). Choices made with the owner: addresses stay `/projects/<id>` (superseded the same day by `/<creator>/<project>`, see the creators decision); creator content runs in iframes from `sandbox.autostacc.com` (a subdomain, because the owner doesn't want a second domain), made safe by opaque-origin sandboxing (`sandbox` without `allow-same-origin`, also sent as a CSP header), host-only cookies and the exact-origin API check; AutoStacc keeps the frame, store, cart, account and everything search engines read; creator code only gets yes/no answers about the visitor; only curated embeds and no third-party analytics; Levels 1–2 publish instantly, Level 3 needs approval; Glitches & Stitches moves into the sandbox too, at a `first-party` trust level that relaxes rules but not the boundary. A second domain was rejected on cost; what it would have added (separate browser processes for Level 3 code) is recorded in the note. Free vs paid tiers are left to the owner.
 
+## 2026-10-08: Scheduled Claude routines for bugs, polish and security
+
+The owner asked for light automated upkeep. Four claude.ai routines (Claude Code on the web, each run a fresh session, times in America/Denver, push and email summaries) work from GitHub Issues through the `tasks` skill:
+
+- Health check, Mon and Thu 6:52: build, SEO tests, `verify-site`, `store-check` and `npm audit` on main; files bugs.
+- Bug fixer, Mon and Thu 8:47: fixes the top `bug` + `status: ready` issue.
+- Polish pass, Tue and Fri 8:47: one `improvement` or P3 issue, or a frontend and accessibility review that files up to 3 issues.
+- Security audit, Wed and Sat 8:46: `security-reviewer`, `store-check` and `npm audit`; files `Security:` issues and may open one fix PR.
+
+The owner chose "moderate" auto-merge: a routine may squash-merge its own PR only if it touches 10 files or fewer (generated output not counted), nothing under `server/`, `functions/`, `db/`, `.github/`, `.claude/`, `_headers`, `_redirects`, `wrangler.toml` or `package*.json`, is not a security, auth, checkout, payment, entitlement or download change, CI is green and `code-reviewer` finds no defects. Everything else waits for the owner as a PR with `status: review`. Security fixes are never auto-merged, because merging deploys the live site. The routines and their prompts are edited in claude.ai, not in this repo.
+
 ## 2026-10-08: Public pitch is "straight from the artists"
 
 The owner found "Stacc it once. Auto handles the rest." odd, then rejected a library-led replacement ("Buy it once. Find it every time."): advertising that AutoStacc has a library is not the pitch. Chosen with the owner: the home page leads with "Sounds, presets and music, straight from the artists who make them", then the artists, the store and free releases (Auto-Stacc). Your Stacc stays the signed-in library, described plainly where it's used, not sold on public pages. Voice: [autostacc](autostacc.md).
