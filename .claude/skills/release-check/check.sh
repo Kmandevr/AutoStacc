@@ -11,7 +11,8 @@ for f in docs/*.md; do
   grep -q '^summary:' "$f" || report FAIL notes-frontmatter "missing summary: ($f)"
   grep -q '^updated:' "$f" || report FAIL notes-frontmatter "missing updated: ($f)"
 done
-grep -l '\[\[' docs/*.md 2>/dev/null | while read -r f; do report WARN wikilink "[[wikilink]] found ($f)"; done
+# Code spans are dropped first: `functions/[[path]].js` is a file name, not a wikilink.
+for f in docs/*.md; do sed 's/`[^`]*`//g' "$f" | grep -q '\[\[' && report WARN wikilink "[[wikilink]] found ($f)"; done
 
 for d in graphify-out .serena/cache .serena/logs .serena/memories; do
   git ls-files --error-unmatch "$d" >/dev/null 2>&1 && report FAIL generated-tracked "$d is tracked"

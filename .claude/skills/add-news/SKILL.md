@@ -12,7 +12,7 @@ description: Add, edit or remove a news post (or tour date) in AutoStacc. Use fo
 3. Edit:
    - `id`: lowercase-hyphenated, never changed once published. `release`: the release id if the post is about one.
    - `date`: `YYYY-MM-DD`. Order in the file doesn't matter, the script sorts.
-   - Links in `body` are root-relative clean addresses (`/music/hail`, `/shop`), never `*.html`.
+   - Links in `body` are root-relative clean addresses (`/autostacc/glitches-and-stitches/music/hail`, `/shop`), never `*.html`.
    - `summary` is plain text, shown on the home page. `body` may contain simple HTML, shown on the news page; keep it to `<p>`, `<a>`, `<strong>`, `<em>`, and escape quotes.
    - Reuse an existing `tag` unless the user wants a new one.
    - Shows: `date`, `city`, `venue`, `ticketUrl` (`""` shows "Tickets soon"). Past dates hide automatically.

@@ -46,7 +46,7 @@ Bindings: `DB` (D1), `FILES` (private R2), `PREVIEWS` (R2 for preview clips).
 
 ## Database
 
-Schema changes are new files in `db/migrations/` (`0003_....sql`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
+Schema changes are new files in `db/migrations/` with the next number (`0007_....sql`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
 
 ## Tests
 
