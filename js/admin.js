@@ -134,11 +134,11 @@
       return products();
     }
     // Removing hides the product and stops sales; people who already bought it keep their files. It can be restored.
-    const rm = e.target.closest("[data-product-remove]");
-    if (rm) {
-      const li = rm.closest("[data-product]");
+    const rmProduct = e.target.closest("[data-product-remove]");
+    if (rmProduct) {
+      const li = rmProduct.closest("[data-product]");
       if (!confirm(`Remove "${li.querySelector("strong").textContent}" from the store? People who already bought it keep their files. You can restore it later.`)) return;
-      rm.disabled = true;
+      rmProduct.disabled = true;
       await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}`, { method: "PATCH", body: { deleted: true } });
       return products();
     }
