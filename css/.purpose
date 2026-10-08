@@ -1,1 +1,1 @@
-Stylesheets, one per feature; each page loads only the ones it uses.
+Stylesheets, one per feature; each page loads only the ones it uses. core + platform (AutoStacc, light/dark) + layout everywhere; a project's skin and own sheets in projects/<id>/.

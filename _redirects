@@ -2,3 +2,12 @@
 # When a public page is removed or renamed, add a 301 here from its old address (scripts/seo-test.js checks this).
 /home       /  301
 /home.html  /  301
+# 2026-10-08: the site became AutoStacc and Glitches & Stitches moved under its project (docs/decisions.md).
+/music      /projects/glitches-and-stitches/music  301
+/music/*    /projects/glitches-and-stitches/music/:splat  301
+/news       /projects/glitches-and-stitches/news  301
+/news/*     /projects/glitches-and-stitches/news/:splat  301
+/press      /projects/glitches-and-stitches/press  301
+/music.html /projects/glitches-and-stitches/music  301
+/news.html  /projects/glitches-and-stitches/news  301
+/press.html /projects/glitches-and-stitches/press  301

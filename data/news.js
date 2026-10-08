@@ -1,7 +1,8 @@
-// News and updates. Order doesn't matter, newest is shown first. Each published post gets its own page at /news/<id>.
+// News and updates. Order doesn't matter, newest is shown first. Each published post gets its own page at
+// /projects/<project>/news/<id>.
 // `id`: lowercase-hyphenated, the page address. Never change it once published.
 // `summary` is plain text (home page and search description). `body` may contain simple HTML (news page and post page).
-// `project`: optional id of the project the post is from (data/projects.js).
+// `project`: id of the project the post is from (data/projects.js). Required: the post lives at /projects/<project>/news/<id>.
 // `release`: optional id of the release in data/music.js the post is about (linked from the post).
 // `draft: true`: placeholder, not real news. Hidden on the site and kept out of search until it is real.
 window.NEWS = [
@@ -13,7 +14,7 @@ window.NEWS = [
     tag: "Release",
     release: "hail",
     summary: "The single HAIL is out on Apple Music, YouTube Music, Deezer and more.",
-    body: "<p>HAIL is out now. Play it on the <a href=\"/music/hail\">HAIL release page</a>, or stream it on <a href=\"https://music.apple.com/us/album/hail/1847091235?i=1847091237\" target=\"_blank\" rel=\"noopener\">Apple Music</a>, <a href=\"https://music.youtube.com/watch?v=EzVo6Mc8Yt0\" target=\"_blank\" rel=\"noopener\">YouTube Music</a> and <a href=\"https://www.deezer.com/album/838974702\" target=\"_blank\" rel=\"noopener\">Deezer</a>.</p>"
+    body: "<p>HAIL is out now. Play it on the <a href=\"/projects/glitches-and-stitches/music/hail\">HAIL release page</a>, or stream it on <a href=\"https://music.apple.com/us/album/hail/1847091235?i=1847091237\" target=\"_blank\" rel=\"noopener\">Apple Music</a>, <a href=\"https://music.youtube.com/watch?v=EzVo6Mc8Yt0\" target=\"_blank\" rel=\"noopener\">YouTube Music</a> and <a href=\"https://www.deezer.com/album/838974702\" target=\"_blank\" rel=\"noopener\">Deezer</a>.</p>"
   },
   {
     id: "fall-tour-dates",

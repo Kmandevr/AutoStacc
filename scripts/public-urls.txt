@@ -7,3 +7,10 @@ https://autostacc.com/shop
 https://autostacc.com/music/hail
 https://autostacc.com/news/hail-out-now
 https://autostacc.com/projects
+https://autostacc.com/about
+https://autostacc.com/projects/glitches-and-stitches
+https://autostacc.com/projects/glitches-and-stitches/music
+https://autostacc.com/projects/glitches-and-stitches/news
+https://autostacc.com/projects/glitches-and-stitches/press
+https://autostacc.com/projects/glitches-and-stitches/music/hail
+https://autostacc.com/projects/glitches-and-stitches/news/hail-out-now

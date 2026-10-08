@@ -109,6 +109,12 @@ const GS = (function () {
     } catch {}
   };
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track };
+  // A project's pages live under /projects/<id>: projectPath("x", "music", "hail") -> "/projects/x/music/hail".
+  const projectPath = (id, ...rest) => ["/projects", id, ...rest].filter((x) => x !== "" && x !== undefined).join("/");
+
+  // The project whose page this is (<body data-project>, an entry of data/projects.js), or {} on platform pages.
+  const currentProject = () => (window.PROJECTS || []).find((p) => p.id === document.body.dataset.project) || {};
+
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject };
 })();
 window.GS = GS;

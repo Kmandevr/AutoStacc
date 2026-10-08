@@ -5,6 +5,7 @@
   const { $, escapeHTML, parseDate, fmtDate, isSet, jsonLd } = window.GS;
   // Drafts are placeholders, never shown or announced.
   const SHOWS = (window.SHOWS || []).filter((s) => !s.draft);
+  const PROJECT = window.GS.currentProject();
   const SITE = window.SITE || {};
 
   const el = $("#show-list");
@@ -40,12 +41,12 @@
       ticketed.map((s) => ({
         "@context": "https://schema.org",
         "@type": "MusicEvent",
-        name: `${SITE.artist} live in ${s.city}`,
+        name: `${PROJECT.name} live in ${s.city}`,
         startDate: s.date,
         eventStatus: "https://schema.org/EventScheduled",
         eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
         location: { "@type": "Place", name: s.venue, address: s.city },
-        performer: { "@type": "MusicGroup", name: SITE.artist, url: SITE.url },
+        performer: { "@type": PROJECT.entity || "MusicGroup", name: PROJECT.name, url: SITE.url + window.GS.projectPath(PROJECT.id) },
         offers: { "@type": "Offer", url: s.ticketUrl }
       }))
     );

@@ -10,19 +10,18 @@ const { execFileSync } = require("child_process");
 const root = process.cwd();
 const { createServer } = require(path.join(root, "scripts/serve.js"));
 const { loadData } = require(path.join(root, "scripts/lib/data.js"));
-const allPages = [
-  ...fs.readdirSync(root).filter((f) => f.endsWith(".html")),
-  ...["music", "shop", "news"].filter((d) => fs.existsSync(d)).flatMap((d) => fs.readdirSync(d).filter((f) => f.endsWith(".html")).map((f) => `${d}/${f}`))
-];
+const htmlUnder = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : [])
+  .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
+const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("projects")];
 const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
-const { SITE, products } = loadData(root);
+const { SITE, products, projects } = loadData(root);
 const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
 const PRIVATE = /^\/(account|login|library|admin|checkout|cart)(\/|$)/;
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
-const DATA_GLOBALS = { SITE: "data/site.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js", MUSIC: "data/music.js" };
+const DATA_GLOBALS = { SITE: "data/site.js", PROJECTS: "data/projects.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js", MUSIC: "data/music.js" };
 
 // ---------- static checks: no browser needed ----------
 for (const f of ["js", "data"].flatMap((d) => fs.readdirSync(path.join(root, d)).filter((n) => n.endsWith(".js")).map((n) => `${d}/${n}`))) {
@@ -76,10 +75,10 @@ const SEO = require("./seo-browser.js");
       const res = await tab.goto(base + urlOf(page));
       if (page === "404.html" && res.status() !== 404) problems.push(["FAIL", "404-status", `unknown address returned ${res.status()}, not 404`]);
       await tab.waitForTimeout(250);
-      if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) || PRIVATE.test(urlOf(page)) })) problems.push(p);
+      if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, projects, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) || PRIVATE.test(urlOf(page)) })) problems.push(p);
       const facts = await tab.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - innerWidth,
-        header: !!document.querySelector(".site-header .nav"),
+        header: !!document.querySelector(".side-nav") && !!document.querySelector(".topbar"),
         footer: !!document.querySelector(".site-footer .wrap"),
         empty: [...document.querySelectorAll("[id$='-list'],[id$='-grid'],[id^='featured'],[id^='latest']")].filter((e) => !e.children.length).map((e) => "#" + e.id),
         smallTargets: [...document.querySelectorAll("a,button")].filter((e) => { const r = e.getBoundingClientRect(); return r.width && (r.height < 24 || r.width < 24); }).length
@@ -89,10 +88,10 @@ const SEO = require("./seo-browser.js");
       for (const id of facts.empty) problems.push(["WARN", "empty-container", `${id} rendered nothing`]);
       if (width === 390 && facts.smallTargets) problems.push(["WARN", "tap-targets", `${facts.smallTargets} links/buttons smaller than 24px`]);
       if (width === 390) {
-        const toggle = tab.locator(".nav-toggle");
+        const toggle = tab.locator(".menu-toggle");
         if (await toggle.isVisible()) {
           await toggle.click();
-          if (!(await tab.locator(".nav.open").count())) problems.push(["FAIL", "nav-toggle", "menu did not open"]);
+          if (!(await tab.locator(".side.open").count())) problems.push(["FAIL", "nav-toggle", "sidebar drawer did not open"]);
         } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
       }
       if (page === "shop.html" && width === 1280) {
@@ -108,7 +107,7 @@ const SEO = require("./seo-browser.js");
           if ((await tab.locator(".card").count()) !== before) problems.push(["FAIL", "shop-filter", "'All' did not restore the full list"]);
         } else problems.push(["WARN", "shop-filter", "fewer than two categories, filter not exercised"]);
       }
-      if (page === "index.html" && width === 1280 && (await tab.locator("#newsletter-form").count())) {
+      if (width === 1280 && (await tab.locator("#newsletter-form").count())) {
         await tab.fill("#newsletter-form input[type=email]", "test@example.com");
         await tab.click("#newsletter-form button");
         if (!(await tab.locator("#newsletter-msg").innerText()).trim() && !(await tab.url()).includes("?")) problems.push(["WARN", "newsletter", "submitting showed no message"]);

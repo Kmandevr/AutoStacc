@@ -1,22 +1,22 @@
 ---
 title: Search Console
 summary: Step-by-step for the owner: set up Google Search Console for autostacc.com, submit the sitemap, request indexing, and point every official profile back to the site.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Google Search Console and profile checklist
 
-The website side is done: clean addresses, canonical links, a sitemap, robots.txt and structured data saying who the artist is (details in [seo](seo.md)). Two things only the owner can do: tell Google the site is yours, and make every official profile link back to it. No one can guarantee a #1 result; these steps give Google every legitimate reason to treat autostacc.com as the official home of Glitches & Stitches.
+The website side is done: clean addresses, canonical links, a sitemap, robots.txt and structured data saying who AutoStacc and each project are (details in [seo](seo.md)). Two things only the owner can do: tell Google the site is yours, and make every official profile link back to it. No one can guarantee a #1 result; these steps give Google every legitimate reason to treat autostacc.com as AutoStacc's site and its Glitches & Stitches page as the artist's official home.
 
 ## Before you start: quick checks (2 minutes)
 
 Open each of these in a browser. They should all work:
 
-- https://autostacc.com/ shows the home page (not a redirect to /home)
-- https://autostacc.com/music/hail shows the HAIL page
+- https://autostacc.com/ shows the AutoStacc hub (not a redirect to /home)
+- https://autostacc.com/projects/glitches-and-stitches/music/hail shows the HAIL page, and the old https://autostacc.com/music/hail redirects there
 - https://autostacc.com/sitemap.xml shows a list of addresses
 - https://autostacc.com/robots.txt ends with `Sitemap: https://autostacc.com/sitemap.xml`
-- https://autostacc.com/this-does-not-exist shows the "NOT FOUND" page
+- https://autostacc.com/this-does-not-exist shows the "Not found" page
 - http://autostacc.com (no s) and https://www.autostacc.com both end up on https://autostacc.com/. If `www` doesn't work: Cloudflare dashboard → autostacc.com → DNS, add a proxied `CNAME` record `www` → `autostacc.com`, then Rules → Redirect Rules → "Redirect from WWW to root" template. "Always Use HTTPS" is under SSL/TLS → Edge Certificates; turn it on if it isn't.
 
 ## 1. Add autostacc.com as a Domain property
@@ -52,7 +52,7 @@ Do the same (paste the address, Request indexing if needed) for:
 - https://autostacc.com/shop
 - https://autostacc.com/news
 
-When a new release or real product goes live, inspect its page (`/music/<name>` or `/shop/<name>`) the same way. Google allows a limited number of requests per day; only request the pages that matter.
+When a new release or real product goes live, inspect its page (`/projects/glitches-and-stitches/music/<name>` or `/shop/<name>`) the same way. Google allows a limited number of requests per day; only request the pages that matter.
 
 ## 6. Watch indexing coverage (weekly for the first month, then monthly)
 
@@ -74,15 +74,15 @@ Search Console emails you when something breaks. **Enhancements** (or "Experienc
 
 Optional, same idea for Bing (also powers DuckDuckGo and others): https://www.bing.com/webmasters → **Import from Google Search Console**.
 
-## Profiles that should point back to autostacc.com
+## Profiles that should point back to the official page
 
-Search engines connect an artist to their official site when the site links to the profiles (done: footer, music and press pages, structured data) **and the profiles link back**. Add `https://autostacc.com` wherever a profile has a website or links field. When a profile exists, put its address in `socials` in `data/site.js` (or send it to whoever updates the site).
+Search engines connect an artist to their official site when the site links to the profiles (done: footer, music and press pages, structured data) **and the profiles link back**. Add `https://autostacc.com/projects/glitches-and-stitches` (the artist's official page since 2026-10-08) wherever a profile has a website or links field. When a profile exists, put its address in the project's `socials` in `data/projects.js` (or send it to whoever updates the site).
 
 | Profile | Status | What to do |
 | --- | --- | --- |
 | Deezer artist page | Linked from the site | Deezer for Creators (via DistroKid's artist tools): add the website if offered |
 | Apple Music artist page | Linked from the site | The artist name is spelled "Glitches & Stiches" there. Ask DistroKid support to correct it to "Glitches & Stitches" (issue #10). Apple Music for Artists: claim the profile; it has no website field |
-| Spotify | Not found yet | Find the artist page (or ask DistroKid), claim it in Spotify for Artists, add autostacc.com in the bio. Then add the URL to `data/site.js` and HAIL's Spotify link in `data/music.js` |
+| Spotify | Not found yet | Find the artist page (or ask DistroKid), claim it in Spotify for Artists, add autostacc.com in the bio. Then add the URL to the project's `socials` in `data/projects.js` and HAIL's Spotify link in `data/music.js` |
 | YouTube | HAIL is on the auto-generated "Release - Topic" channel | If there's an own channel: add autostacc.com under Customization → Links, then add the channel URL to `data/site.js` |
 | SoundCloud | Not set | Profile → Edit → Your links: add autostacc.com |
 | Bandcamp | Not set | Profile → Edit profile → Website |

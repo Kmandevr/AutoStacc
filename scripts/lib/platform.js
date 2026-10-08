@@ -49,6 +49,8 @@ function validate(data) {
   for (const p of data.projects) {
     if (!p.name) errors.push(`project ${p.id}: add a name`);
     for (const f of p.features || []) if (!FEATURES.includes(f)) errors.push(`project ${p.id}: unknown feature "${f}"`);
+    if (p.pages !== undefined && (!Array.isArray(p.pages) || p.pages.some((x) => !x.label || typeof x.path !== "string" || !/^(#[\w-]+|[a-z0-9-]*)$/.test(x.path))))
+      errors.push(`project ${p.id}: pages must be [{ label, path }] with path "", a page name like "music" or an anchor like "#shows"`);
   }
   const needProject = (what, x, required) => {
     if (!x.project) { if (required) errors.push(`${what} ${x.id}: add project (an id in data/projects.js)`); return; }
@@ -56,7 +58,7 @@ function validate(data) {
   };
   for (const s of data.stacclets) needProject("stacclet", s, true);
   for (const r of data.allReleases) needProject("release", r, true);
-  for (const n of data.allNews) needProject("news post", n, false);
+  for (const n of data.allNews) needProject("news post", n, true);
   for (const p of data.pacs) if (!stacclets.has(p.stacclet)) errors.push(`pac ${p.id}: stacclet "${p.stacclet}" is not in data/stacclets.js`);
 
   for (const x of data.products) {

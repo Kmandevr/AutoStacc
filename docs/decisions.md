@@ -6,6 +6,18 @@ updated: 2026-10-07
 
 # Decisions
 
+## 2026-10-08: The site is AutoStacc; Glitches & Stitches moves under its project (#47)
+
+The owner decided the site-wide identity: autostacc.com is AutoStacc, the platform, and Glitches & Stitches is a project on it. Agreed with the owner in a round of questions:
+
+- **Addresses:** `/` is the AutoStacc hub. Platform pages: `/shop` (store, all projects), `/library` (Your Stacc), `/about` (AutoStacc), `/projects` (directory). A project lives under `/projects/<id>`; Glitches & Stitches' home, music, news, shows and press move to `/projects/glitches-and-stitches/...` (releases at `.../music/<id>`, posts at `.../news/<id>`). Every old address (`/music`, `/music/hail`, `/news`, `/news/*`, `/press`) 301-redirects to its new one, so no search history is lost. Products stay at `/shop/<id>` (the store is the platform's).
+- **Navigation:** a sidebar with two groups, AutoStacc (Store, Your Stacc, About) and Projects (each project, expandable to its own pages). Always open on desktop, a drawer on phones. Account, cart and the theme switch sit in a top-right utility bar.
+- **Home is a hub (dashboard):** Your Stacc at a glance, a new releases feed (followed projects first), a projects rack with follow and Auto-Stacc, and a short animated "how it works".
+- **Brand:** a new AutoStacc look, stacked and modular, like a DAW (REAPER) but prettier: neutral panels, light and dark themes following the device (switch remembered), signal colours (teal accent plus amber, coral, violet and lime "track" colours that tag content types). Fun and animated, more professional than the project pages. A placeholder stacked-blocks wordmark until the owner supplies a logo.
+- **Projects keep their skin:** Glitches & Stitches' pages keep the glitch-terminal look, its UI sounds and easter eggs. Sounds are project-only; platform pages are silent.
+- **Search identity:** AutoStacc is the WebSite and Organization; Glitches & Stitches is a MusicGroup at its project page. Platform page titles end in "AutoStacc"; project pages name their project.
+This replaces "Home page and site-wide identity unchanged for now" in the platform decision below. Details: [autostacc](autostacc.md), [architecture](architecture.md).
+
 ## 2026-10-07: AutoStacc is the platform, Glitches & Stitches its first project (#46)
 
 The owner set the long-term model: AutoStacc is the business and platform (store, accounts, library, delivery, discovery); projects create the content; Glitches & Stitches is the first project and must not be hard-coded into the core. The store was kept and extended, not rebuilt (owner's instruction): auth, checkout, payments, entitlements, download security and their tests are unchanged.
