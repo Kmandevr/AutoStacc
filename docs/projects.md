@@ -22,7 +22,7 @@ A project is a creator on AutoStacc: it publishes releases, products, Stacclets 
 | `skin` | `true`: its pages load `css/projects/<id>/skin.css` (its own look inside the AutoStacc frame) |
 | `sounds` | `true`: its pages load the UI sounds and easter eggs. Platform pages never play sounds |
 | `entity` | its schema.org type (`MusicGroup`, `Person`, `Organization`) |
-| `bio`, `tagline`, `genres`, `alternateNames`, `image`, `logo` | identity for its pages and structured data (alternate names only for search engines) |
+| `bio`, `tagline`, `genres`, `alternateNames`, `image`, `logo` | identity for its pages and structured data (alternate names only for search engines); `logo` also sits beside the wordmark in its header, linking to its home |
 | `email`, `pressKitUrl`, `newsletterAction`, `socials` | its own contact, press kit, newsletter form and official profiles (empty = not set; never made up) |
 | `draft` | `true` keeps it out of the directory and the database sync |
 
