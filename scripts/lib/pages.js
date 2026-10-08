@@ -35,7 +35,7 @@ function shell(SITE, { page, section, styles, scripts, main, project = null, pro
   const lookOf = skin ? project : look && look.skin ? look : null;
   const sounds = project && project.sounds;
   const css = ["core", "platform", "layout", ...(project ? ["project-frame"] : []), ...styles, ...(lookOf ? [`projects/${lookOf.id}/look`] : []), ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js",
+  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js",
     ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js"];
   return `<!doctype html>
 ${GENERATED}

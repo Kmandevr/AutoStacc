@@ -81,63 +81,124 @@
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/about.css">
   <link rel="stylesheet" href="/css/projects.css">
-  <link rel="stylesheet" href="/css/hub.css">
+  <link rel="stylesheet" href="/css/shop.css">
+  <link rel="stylesheet" href="/css/panels.css">
+  <link rel="stylesheet" href="/css/cover.css">
 </head>
 <body data-page="home">
   <header id="site-header"></header>
 
-  <main id="main" class="platform hub">
-    <div class="page-hero hub-hero">
-      <div class="wrap">
-        <p class="hub-kicker">AutoStacc</p>
-        <h1 class="glitch" data-text="Stacc it once. Auto handles the rest.">Stacc it once. Auto handles the rest.</h1>
-        <p>Sample packs, presets, stems, music and visuals from the projects that make them, delivered and kept organized in Your Stacc.</p>
+  <main id="main" class="platform home-cover">
+    <section class="cover-hero" aria-labelledby="cover-title">
+      <div class="wrap cover-hero-grid">
+        <div class="cover-copy">
+          <p class="cover-kicker">AutoStacc</p>
+          <h1 id="cover-title" class="glitch" data-text="Stacc it once. Auto handles the rest.">Stacc it once. Auto handles the rest.</h1>
+          <p class="cover-lead">AutoStacc is a store and library for sample packs, presets, stems, music and visuals, straight from the projects that make them. Buy something once and it lands in Your Stacc, sorted and ready to download.</p>
+          <div class="actions cover-actions">
+            <a class="btn" href="/login#signup" data-auth="out">Create account</a>
+            <a class="btn ghost" href="/login" data-auth="out">Log in</a>
+            <a class="btn" href="/dashboard" data-auth="in" hidden>Open your dashboard</a>
+            <a class="btn ghost" href="/shop">Browse the store</a>
+          </div>
+          <p class="small-print cover-note">No account needed to browse or buy. An account keeps everything you own in one place.</p>
+        </div>
+        <div class="cover-stack" aria-hidden="true">
+          <span class="cover-block" data-track="midi"><span>MIDI</span><i></i></span>
+          <span class="cover-block" data-track="samples"><span>Samples</span><i></i></span>
+          <span class="cover-block" data-track="loops"><span>Loops</span><i></i></span>
+          <span class="cover-block" data-track="presets"><span>Presets</span><i></i></span>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="wrap hub-grid">
-      <section class="hub-panel hub-stacc" data-track="samples" aria-labelledby="hub-stacc-title">
-        <div class="hub-panel-head"><h2 id="hub-stacc-title">Your Stacc</h2><a href="/library">Open &rarr;</a></div>
-        <div id="hub-stacc"><p class="small-print">Everything you own, sorted by project, Stacclet, Pac and content type. <a href="/library">Open Your Stacc</a></p></div>
-      </section>
+    <section class="alt" aria-labelledby="cover-what-title">
+      <div class="wrap">
+        <div class="section-head"><h2 id="cover-what-title">What AutoStacc does</h2><a href="/about">About AutoStacc &rarr;</a></div>
+        <ul class="cover-cards">
+          <li class="cover-card" data-track="samples">
+            <h3>A store for what projects make</h3>
+            <p>Sample packs, presets, stems, music and visuals. Every product names the project that made it.</p>
+            <a href="/shop">Browse the store</a>
+          </li>
+          <li class="cover-card" data-track="presets">
+            <h3>Your Stacc keeps it organized</h3>
+            <p>Everything you own, sorted by project, Stacclet, Pac and content type. Download one file or a whole Pac.</p>
+            <a href="/login#signup" data-auth="out">Create an account</a><a href="/library" data-auth="in" hidden>Open Your Stacc</a>
+          </li>
+          <li class="cover-card" data-track="midi">
+            <h3>Projects, each in their own look</h3>
+            <p>The artists and creators behind the content, with their music, news and releases on their own pages.</p>
+            <a href="/projects">See the projects</a>
+          </li>
+          <li class="cover-card" data-track="loops">
+            <h3>Auto handles the rest</h3>
+            <p>Follow a project and switch on Auto-Stacc: its free releases are added to your Stacc as they come out.</p>
+            <a href="/about">How Auto-Stacc works</a>
+          </li>
+        </ul>
+      </div>
+    </section>
 
-      <section class="hub-panel hub-releases" data-track="midi" aria-labelledby="hub-releases-title">
-        <div class="hub-panel-head"><h2 id="hub-releases-title">New releases</h2><a href="/shop">Store &rarr;</a></div>
-        <ul class="hub-feed" id="hub-releases"></ul>
-      </section>
+    <section aria-labelledby="cover-store-title">
+      <div class="wrap">
+        <div class="section-head"><h2 id="cover-store-title">From the store</h2><a href="/shop">Everything &rarr;</a></div>
+        <div class="shop" data-shop data-featured data-limit="3"></div>
+      </div>
+    </section>
 
-      <section class="hub-panel hub-projects" data-track="presets" aria-labelledby="hub-projects-title">
-        <div class="hub-panel-head"><h2 id="hub-projects-title">Projects</h2><a href="/projects">All projects &rarr;</a></div>
-        <ul class="projects rack" data-project-list><!-- projects:start · generated by scripts/build.js from data/projects.js --><li class="project-card look-glitches-and-stitches"><h3><a href="/projects/glitches-and-stitches"><img class="project-logo-full" src="/img/projects/glitches-and-stitches/logo.png" width="1600" height="760" alt="Glitches &amp; Stitches"></a></h3><p>An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.</p></li><!-- projects:end --></ul>
-      </section>
+    <section class="alt" aria-label="Projects and new releases">
+      <div class="wrap cover-grid">
+        <section class="mix-panel cover-projects" data-track="presets" aria-labelledby="cover-projects-title">
+          <div class="mix-head"><h2 id="cover-projects-title">Projects</h2><a href="/projects">All projects &rarr;</a></div>
+          <ul class="projects rack" data-project-list><!-- projects:start · generated by scripts/build.js from data/projects.js --><li class="project-card look-glitches-and-stitches"><h3><a href="/projects/glitches-and-stitches"><img class="project-logo-full" src="/img/projects/glitches-and-stitches/logo.png" width="1600" height="760" alt="Glitches &amp; Stitches"></a></h3><p>An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.</p></li><!-- projects:end --></ul>
+        </section>
+        <section class="mix-panel cover-releases" data-track="midi" aria-labelledby="cover-new-title">
+          <div class="mix-head"><h2 id="cover-new-title">New releases</h2><a href="/shop">Store &rarr;</a></div>
+          <ul class="clip-feed" data-release-feed data-limit="6"></ul>
+        </section>
+      </div>
+    </section>
 
-      <section class="hub-panel hub-how" data-track="loops" aria-labelledby="hub-how-title">
-        <div class="hub-panel-head"><h2 id="hub-how-title">How it works</h2><a href="/about">More &rarr;</a></div>
-        <ol class="flow flow-compact">
+    <section aria-labelledby="cover-how-title">
+      <div class="wrap">
+        <div class="section-head"><h2 id="cover-how-title">How it works</h2><a href="/about">More &rarr;</a></div>
+        <ol class="flow">
           <li data-track="presets"><span class="flow-step">01</span><strong>A project creates</strong><span>Music, samples, MIDI, presets, stems, visuals.</span></li>
           <li data-track="samples"><span class="flow-step">02</span><strong>AutoStacc sells it</strong><span>Every product names who made it.</span></li>
           <li data-track="loops"><span class="flow-step">03</span><strong>It lands in Your Stacc</strong><span>Sorted by project, Pac and content type.</span></li>
           <li data-track="midi"><span class="flow-step">04</span><strong>Auto handles the rest</strong><span>Follow a project; Auto-Stacc adds its free releases.</span></li>
         </ol>
-      </section>
-    </div>
+      </div>
+    </section>
+
+    <section class="alt cover-end" aria-labelledby="cover-end-title">
+      <div class="wrap">
+        <h2 id="cover-end-title">Start your Stacc</h2>
+        <p>Create a free account to keep everything you buy or claim in one place, or look around the store first.</p>
+        <div class="actions">
+          <a class="btn" href="/login#signup" data-auth="out">Create account</a>
+          <a class="btn" href="/dashboard" data-auth="in" hidden>Open your dashboard</a>
+          <a class="btn ghost" href="/shop">Browse the store</a>
+          <a class="btn ghost" href="/projects">See the projects</a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer id="site-footer"></footer>
 
   <script src="/data/site.js"></script>
   <script src="/data/projects.js"></script>
-  <script src="/data/stacclets.js"></script>
-  <script src="/data/pacs.js"></script>
-  <script src="/data/content-types.js"></script>
   <script src="/data/product-types.js"></script>
   <script src="/data/products.js"></script>
   <script src="/data/music.js"></script>
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
-  <script src="/js/stacc-model.js"></script>
-  <script src="/js/hub.js"></script>
-  <script src="/js/projects.js"></script>
+  <script src="/js/account-nav.js"></script>
+  <script src="/js/product-card.js"></script>
+  <script src="/js/shop.js"></script>
+  <script src="/js/release-feed.js"></script>
   <script src="/js/motion.js"></script>
 </body>
 </html>

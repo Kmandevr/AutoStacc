@@ -18,7 +18,7 @@ const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-addre
 const { SITE, products, projects } = loadData(root);
 const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
-const PRIVATE = /^\/(account|login|library|admin|checkout|cart)(\/|$)/;
+const PRIVATE = /^\/(dashboard|account|settings|login|library|admin|checkout|cart)(\/|$)/;
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
 const DATA_GLOBALS = { SITE: "data/site.js", PROJECTS: "data/projects.js", PRODUCTS: "data/products.js", NEWS: "data/news.js", SHOWS: "data/shows.js", MUSIC: "data/music.js" };
