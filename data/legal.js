@@ -143,7 +143,7 @@ window.LEGAL = [
         "AutoStacc may suspend or close an account that breaks these terms, for example by sharing paid files, fraud or abuse. Where it can, AutoStacc will tell you why first."
       ] },
       { id: "availability", heading: "Availability", body: [
-        "AutoStacc aims to keep the site and your downloads available, but can't promise it will never be down. Keep your own copies of files you rely on. The [status page](/status) shows what's working right now."
+        "AutoStacc aims to keep the site and your downloads available, but can't promise it will never be down. Keep your own copies of files you rely on."
       ] },
       { id: "liability", heading: "Liability", body: [
         "Files are provided as described on their product page. As far as the law allows, AutoStacc isn't liable for indirect losses, such as lost profits or lost work, from using or being unable to use the site or the files. Nothing in these terms limits rights you have under consumer law where you live."
@@ -235,7 +235,7 @@ window.LEGAL = [
     review: "",
     sections: [
       { id: "first", heading: "Quick answers", body: [
-        "The [help pages](/help) cover downloads, guest purchases, payments, refunds and accounts. The [status page](/status) shows whether the store is working right now."
+        "The [help pages](/help) cover downloads, guest purchases, payments, refunds and accounts."
       ] },
       { id: "write", heading: "Write to AutoStacc", body: [
         "{contact}",
@@ -249,7 +249,7 @@ window.LEGAL = [
         ] }
       ] },
       { id: "projects", heading: "Artists and projects", body: [
-        "To reach an artist, use the links on their project's page. To publish your own work, see [selling on AutoStacc](/sell)."
+        "To reach an artist, use the links on their project's page. To publish your own work, start a free creator space in the [Studio](/studio)."
       ] }
     ]
   }

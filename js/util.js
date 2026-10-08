@@ -45,7 +45,7 @@ const GS = (function () {
 
   // Store errors are { error: { code, message } }; account (Better Auth) errors are { code, message }.
   const apiError = (status, data) =>
-    data.error || (data.message ? { code: data.code || "http_" + status, message: data.message } : { code: "http_" + status, message: "Something went wrong." });
+    data.error || (data.message ? { code: data.code || "http_" + status, message: data.message } : { code: "http_" + status, message: status >= 500 ? "The store hit a problem on its side. Nothing was charged or lost; try again in a moment." : "That didn't work. Reload the page and try again." });
 
   // Calls the store API (/api/...). Never throws: returns { ok, status, data, error }. status 0 = network failure or timeout.
   const api = async (path, { method = "GET", body, headers = {}, timeout = 15000 } = {}) => {

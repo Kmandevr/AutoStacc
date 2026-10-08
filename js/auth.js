@@ -37,6 +37,7 @@
         ${field("name", "Name", "text", 'autocomplete="name" maxlength="80"')}
         ${email}${field("password", "Password (10+ characters)", "password", 'autocomplete="new-password" minlength="10" maxlength="128"')}
         <div class="actions"><button class="btn" type="submit">Create account</button></div>
+        <p class="small-print">By creating an account you agree to the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a>.</p>
         <p class="small-print">Bought something as a guest? Use the same email: once you confirm it, those purchases join this account.</p>
         <p class="small-print">Have an account? <a href="#signin">Log in</a></p>
       </form>`,
