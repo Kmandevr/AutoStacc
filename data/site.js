@@ -16,5 +16,5 @@ window.SITE = {
   // Currency of the prices in data/products.js.
   currency: "USD",
   // Platform support contact (footer). Empty hides it; never put a made-up address here.
-  email: ""
+  email: "support@autostacc.com"
 };
