@@ -36,8 +36,11 @@ function loadData(root = ROOT) {
   };
 }
 
+// Where a project's pages live: /projects/<id>, /projects/<id>/music/<release>, ...
+const projectPath = (id, ...rest) => ["/projects", id, ...rest].filter((x) => x !== "" && x !== undefined).join("/");
+
 // The site's address without a trailing slash, and absolute URLs built from it.
 const origin = (SITE) => String(SITE.url || "").replace(/\/+$/, "");
 const abs = (SITE, p) => (/^https?:\/\//.test(p) ? p : origin(SITE) + "/" + String(p).replace(/^\/+/, ""));
 
-module.exports = { ROOT, loadData, origin, abs };
+module.exports = { ROOT, loadData, origin, abs, projectPath };

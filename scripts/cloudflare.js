@@ -19,8 +19,10 @@ const TOML = path.join(ROOT, "wrangler.toml");
 const PROD = { db: "autostacc", placeholder: "00000000-0000-0000-0000-000000000002", buckets: ["autostacc-files", "autostacc-previews"] };
 const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "BREVO_API_KEY", "ADMIN_EMAILS"];
 
+// quiet: capture and return the output; otherwise it goes straight to the deploy log (execFileSync then returns null,
+// so this returns "").
 const wrangler = (args, quiet = true) =>
-  execFileSync(WRANGLER, args, { cwd: ROOT, stdio: quiet ? ["ignore", "pipe", "pipe"] : "inherit", env: { ...process.env, CI: "1", WRANGLER_SEND_METRICS: "false" } }).toString();
+  String(execFileSync(WRANGLER, args, { cwd: ROOT, stdio: quiet ? ["ignore", "pipe", "pipe"] : "inherit", env: { ...process.env, CI: "1", WRANGLER_SEND_METRICS: "false" } }) ?? "");
 
 function store() {
   const toml = fs.readFileSync(TOML, "utf8");

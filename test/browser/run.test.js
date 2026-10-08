@@ -31,7 +31,10 @@ async function open(device = PHONE) {
   const page = await ctx.newPage();
   page.errors = [];
   page.on("pageerror", (e) => page.errors.push(e.message));
-  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) page.errors.push(m.text()); });
+  // Newer Chromium logs an aborted page-change animation (the tests navigate faster than a view transition) as an
+  // error; it isn't the page's error, so it doesn't count. CSP violations and script errors still do.
+  const NOT_OURS = /Failed to load resource|Transition was aborted because of invalid state/;
+  page.on("console", (m) => { if (m.type() === "error" && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
   return { ctx, page };
 }
 const ordersFor = (email) => sql(stateDir, `SELECT id, status FROM orders WHERE email = '${email}'`);
@@ -256,6 +259,23 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("phone menu: the closed drawer can't be tabbed into; opening moves focus in; Escape closes and returns focus", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/projects/glitches-and-stitches");
+    assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
+    await page.click(".menu-toggle");
+    await page.waitForSelector(".side.open");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "side-close");
+    assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
+    await page.keyboard.press("Tab");
+    assert.ok(await page.evaluate(() => Boolean(document.activeElement.closest(".side"))), "Tab stays in the drawer");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "menu-toggle");
+    assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
   test("keyboard only: add to cart and reach checkout", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/shop/sample-pack-vol1");
@@ -298,7 +318,7 @@ describe("store in the browser", () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects"]) {
+      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/projects/glitches-and-stitches"]) {
         await page.goto(p);
         await page.waitForTimeout(700);
         const facts = await page.evaluate(() => ({

@@ -3,7 +3,7 @@
   "use strict";
 
   const { $ } = window.GS;
-  const SITE = window.SITE || {};
+  const SITE = window.GS.currentProject(); // the project's own newsletter
 
   const form = $("#newsletter-form");
   if (!form) return;

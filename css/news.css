@@ -1,27 +1,27 @@
-/* News list items. Used by news.html and the latest news on home.html. */
+/* News list items. Used by a project's news page and the latest news on its home page. */
 
 /* ---------- news ---------- */
 .news-list { display: flex; flex-direction: column; gap: 18px; }
 .news-item {
   border: 1px solid var(--line);
-  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
+  box-shadow: 4px -3px 0 color-mix(in srgb, var(--accent-2) 28%, transparent);
   transition: box-shadow .18s var(--snap), border-color .15s;
   border-radius: var(--radius);
   padding: 22px 24px;
-  background: var(--bg-2);
+  background: var(--panel);
 }
 .alt .news-item { background: var(--bg); }
-.news-item:hover { box-shadow: 0 0 0 rgba(191,95,255,0); border-color: var(--purple); }
+.news-item:hover { box-shadow: 0 0 0 color-mix(in srgb, var(--accent-2) 0%, transparent); border-color: var(--accent-2); }
 .news-item :is(h2, h3) { margin: 6px 0 8px; font-family: var(--font); font-size: 1.15rem; letter-spacing: 0; }
 .news-item :is(h2, h3) a { display: inline-block; padding-block: 2px; color: inherit; text-shadow: inherit; }
-.news-item :is(h2, h3) a:hover { color: var(--purple); text-shadow: var(--glow-purple); }
+.news-item :is(h2, h3) a:hover { color: var(--accent-2); text-shadow: var(--glow-2); }
 .news-item .meta { display: flex; gap: 14px; align-items: center; }
-.news-item time { color: var(--green-dim); font-size: .85rem; }
+.news-item time { color: var(--accent-dim); font-size: .85rem; }
 .news-item p { margin: 0; color: var(--muted); }
 .news-item .body { margin-top: 12px; color: var(--text); }
 .news-item .body p { color: var(--text); margin: 0 0 10px; }
 .news-item .body a { display: inline-block; padding-block: 2px; }
 
 @media (max-width: 600px) {
-  .news-item { padding: 18px; box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .news-item { padding: 18px; box-shadow: 3px -2px 0 color-mix(in srgb, var(--accent-2) 28%, transparent); }
 }

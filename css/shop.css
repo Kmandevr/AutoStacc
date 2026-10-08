@@ -1,4 +1,4 @@
-/* Product cards, grid and shop filters. Used by shop.html and the featured products on home.html. */
+/* Product cards, grid and shop filters. Used by shop.html and the featured products on a project's home page. */
 
 /* ---------- cards / grid ---------- */
 .grid {
@@ -7,54 +7,65 @@
   gap: 22px;
 }
 .card {
-  background: var(--bg-2);
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 4px -3px 0 rgba(191,95,255,.28);
+  box-shadow: 4px -3px 0 color-mix(in srgb, var(--accent-2) 28%, transparent);
   transition: border-color .15s, box-shadow .2s var(--snap), transform .2s var(--snap);
 }
 .alt .card { background: var(--bg); }
-.card:hover, .card:focus-within { border-color: var(--purple); box-shadow: 0 0 18px rgba(191,95,255,.35); transform: translateY(-5px); }
-/* on hover the cover's scanlines scroll and its title twitches once */
-.card:hover .cover::after { animation: scan-drift .6s linear infinite; }
-.card:hover .cover span { animation: jitter .35s steps(1); }
-@keyframes scan-drift { to { transform: translateY(6px); } }
+.card:hover, .card:focus-within { border-color: var(--accent-2); box-shadow: 0 0 18px color-mix(in srgb, var(--accent-2) 35%, transparent); transform: translateY(-5px); }
 @media (prefers-reduced-motion: reduce) {
   .card { transition: none; }
   .card:hover, .card:focus-within { transform: none; }
-  .card:hover .cover::after, .card:hover .cover span { animation: none; }
+  .card:hover .cover::after { transform: none; }
 }
 
+/* Generated cover (products without artwork): a track-colour tile with stacked clips, in AutoStacc's look. A project
+   skin restyles it inside its pages (css/projects/<id>/skin.css). */
 .cover {
   aspect-ratio: 1 / 1;
   position: relative;
   display: grid;
-  place-items: center;
+  place-items: end start;
   overflow: hidden;
-  font-family: var(--display);
-  color: var(--green);
-  text-align: center;
   padding: 20px;
-  font-size: 2rem;
+  font-family: var(--display);
+  font-weight: 750;
+  letter-spacing: -.02em;
+  font-size: 1.7rem;
   line-height: 1.1;
-  text-shadow: 2px 0 var(--purple), var(--glow);
+  color: #fff;
+  /* deep tones of the track colour, so the white title reads on every colour in both themes (4.5:1 or more) */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--track, var(--teal)) 55%, #000) 0%, color-mix(in srgb, var(--track, var(--teal)) 32%, #000) 100%);
   border-bottom: 1px solid var(--line);
 }
+/* three stacked clips in the corner, the AutoStacc mark's shape */
 .cover::after {
   content: "";
   position: absolute;
-  inset: -6px 0 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 6px);
+  top: 18px;
+  right: 18px;
+  width: 38%;
+  height: 30%;
+  background:
+    linear-gradient(rgba(255,255,255,.55), rgba(255,255,255,.55)) 0 0 / 70% 22% no-repeat,
+    linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 100% 50% / 80% 22% no-repeat,
+    linear-gradient(rgba(255,255,255,.22), rgba(255,255,255,.22)) 0 100% / 55% 22% no-repeat;
+  border-radius: 4px;
+  transition: transform .3s var(--snap);
 }
+.card:hover .cover::after { transform: translateX(-6px); }
+.cover span { text-shadow: 0 1px 12px rgba(0,0,0,.25); }
 .cover span { position: relative; z-index: 1; }
 
 .card-body { padding: 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .card-body :is(h2, h3) { margin: 0; font-family: var(--font); font-size: 1rem; line-height: 1.4; letter-spacing: 0; }
 .card-body :is(h2, h3) a { display: inline-block; padding-block: 2px; color: inherit; text-shadow: inherit; }
-.card-body :is(h2, h3) a:hover { color: var(--purple); text-shadow: var(--glow-purple); }
+.card-body :is(h2, h3) a:hover { color: var(--accent-2); text-shadow: var(--glow-2); }
 .card-body p { margin: 0; color: var(--muted); font-size: .95rem; flex: 1; }
 .card-foot {
   display: flex;
@@ -69,7 +80,7 @@
 .filters button {
   background: transparent;
   border: 1px solid var(--line);
-  color: var(--green-dim);
+  color: var(--accent-dim);
   border-radius: var(--radius);
   padding: 7px 16px;
   font: inherit;
@@ -78,8 +89,8 @@
   transition: background-color .12s, color .12s, border-color .12s, transform .1s var(--snap);
 }
 .filters button:active { transform: scale(.95); }
-.filters button:hover { color: var(--green); border-color: var(--green); }
-.filters button.active { background: var(--green); color: var(--bg); border-color: var(--green); text-shadow: none; }
+.filters button:hover { color: var(--accent); border-color: var(--accent); }
+.filters button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); text-shadow: none; }
 
 /* ---------- phones: filters become one swipeable row, slimmer offset layer ---------- */
 @media (max-width: 600px) {
@@ -94,15 +105,15 @@
   }
   .filters::-webkit-scrollbar { display: none; }
   .filters button { flex: none; scroll-snap-align: start; }
-  .card { box-shadow: 3px -2px 0 rgba(191,95,255,.28); }
+  .card { box-shadow: 3px -2px 0 color-mix(in srgb, var(--accent-2) 28%, transparent); }
   .card-foot .btn { padding: 10px 14px; font-size: .85rem; }
 }
 
-/* ---------- store controls (js/store.js): buy slot, the "stitched" snap after adding (OWNED badge: base.css) ---------- */
+/* ---------- store controls (js/store.js): buy slot, the "stitched" snap after adding (OWNED badge: core.css) ---------- */
 .buy { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .detail-buy.buy { justify-content: flex-start; }
-a.owned-badge:hover { color: var(--bg); background: var(--green); text-shadow: none; }
-.btn.in-cart { border-color: var(--purple); color: var(--purple); text-shadow: var(--glow-purple); }
+a.owned-badge:hover { color: var(--bg); background: var(--accent); text-shadow: none; }
+.btn.in-cart { border-color: var(--accent-2); color: var(--accent-2); text-shadow: var(--glow-2); }
 .stitched { animation: stitch-in .32s var(--snap); }
 @keyframes stitch-in {
   0% { transform: translateX(-6px) skewX(-12deg); opacity: .4; }

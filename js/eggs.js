@@ -19,7 +19,7 @@
   // Shared with the hidden terminal (js/terminal.js) through events, so the features stay independent.
   function hail() {
     sound("hail");
-    toast(`&gt; HAIL: out now. <a href="/music/hail">listen</a>`);
+    toast(`&gt; HAIL: out now. <a href="${window.GS.projectPath(window.GS.currentProject().id, "music", "hail")}">listen</a>`);
     if (calm) return;
     const storm = document.createElement("div");
     storm.className = "hail";
@@ -108,7 +108,7 @@
     "color:#33ff66;font-family:monospace;font-size:14px;text-shadow:0 0 6px #33ff66"
   );
   console.log(
-    "%cbuilt from broken pieces. press ~ on the page for a terminal.\nbookings and collabs: see /press",
+    "%cbuilt from broken pieces. press ~ on the page for a terminal.\nbookings and collabs: see the press page",
     "color:#bf5fff;font-family:monospace"
   );
 })();
