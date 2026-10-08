@@ -282,6 +282,9 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/projects/glitches-and-stitches/music");
     assert.equal(await page.locator(".side").count(), 0, "no AutoStacc sidebar inside a project");
+    assert.equal(await page.getAttribute(".as-home", "href"), "/", "the AutoStacc logo goes to the hub");
+    assert.equal(await page.getAttribute(".ph-logo", "href"), "/projects/glitches-and-stitches", "the project's logo goes to its home");
+    assert.equal(await page.locator(".ph-logo .ph-mark").count(), 1);
     assert.equal(await page.locator(".ph-nav").isVisible(), false);
     await page.click(".ph-toggle");
     await page.waitForSelector(".ph-nav.open");

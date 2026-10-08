@@ -1,5 +1,5 @@
-// The frame on a project's pages: a thin AutoStacc strip (home, Store, Your Stacc, Projects, account, cart and the slot
-// js/theme.js fills), then the project's own header (its wordmark, its pages as nav, a menu button on phones and the
+// The frame on a project's pages: a thin AutoStacc strip (its logo to the hub, Store, Your Stacc, Projects, account,
+// cart and the slot js/theme.js fills), then the project's own header in its theme (its logo and wordmark to its home, its pages as nav, a menu button on phones and the
 // slot js/sound.js fills) and its own footer with an AutoStacc line. The header and footer carry the project's skin
 // class, so each project styles them in its own look (css/projects/<id>/skin.css); without a skin they use
 // css/project-frame.css. <body data-project="<id>" data-project-page="music"> marks the project and page.
@@ -38,7 +38,7 @@
     </div>
     <div class="project-header${skin}">
       <div class="ph-wrap">
-        <a class="ph-logo" href="${e(href())}" aria-label="${e(P.name)}, home">${wordmark}</a>
+        <a class="ph-logo" href="${e(href())}" aria-label="${e(P.name)}, home">${P.logo ? `<img class="ph-mark" src="/${e(P.logo)}" width="40" height="40" alt="">` : ""}<span class="ph-word">${wordmark}</span></a>
         <button class="ph-toggle" type="button" aria-expanded="false" aria-controls="ph-nav"><span class="ph-toggle-icon" aria-hidden="true"></span><span class="sr-only">${e(P.name)} menu</span></button>
         <nav class="ph-nav" id="ph-nav" aria-label="${e(P.name)}">
           ${(P.pages || [{ label: "Home", path: "" }]).map((pg) =>

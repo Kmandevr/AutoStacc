@@ -34,8 +34,9 @@
   view-transition-name: project-header;
 }
 .ph-wrap { display: flex; align-items: center; gap: 24px; min-height: 64px; padding: 0 20px; }
-.ph-logo { font-family: var(--display); font-weight: var(--display-weight, 700); font-size: 1.4rem; color: var(--heading); white-space: nowrap; }
+.ph-logo { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-family: var(--display); font-weight: var(--display-weight, 700); font-size: 1.4rem; color: var(--heading); white-space: nowrap; }
 .ph-logo:hover { color: var(--heading); }
+.ph-mark { width: 40px; height: 40px; flex: none; border-radius: var(--radius); }
 .ph-nav { display: flex; align-items: center; gap: 22px; margin-left: auto; }
 .ph-nav a { color: var(--muted); font-weight: 550; text-shadow: none; }
 .ph-nav a:hover, .ph-nav a[aria-current] { color: var(--accent); }
@@ -51,6 +52,7 @@
 @media (max-width: 900px) {
   .as-strip { gap: 10px; padding: 0 12px; }
   .ph-wrap { min-height: 56px; padding: 0 12px; justify-content: space-between; }
+  .ph-mark { width: 34px; height: 34px; }
   .ph-toggle {
     display: inline-grid;
     place-items: center;

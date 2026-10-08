@@ -127,13 +127,15 @@ html:has(.skin-glitches-and-stitches):active-view-transition-type(page)::view-tr
 @media (prefers-reduced-motion: reduce) {
   .skin-glitches-and-stitches::before { display: none; }
   .skin-glitches-and-stitches .glitch, .skin-glitches-and-stitches .glitch::before, .skin-glitches-and-stitches .glitch::after,
-  .skin-glitches-and-stitches .cursor::after, .skin-glitches-and-stitches .zap { animation: none; }
+  .skin-glitches-and-stitches .cursor::after, .skin-glitches-and-stitches .zap, .skin-glitches-and-stitches .ph-logo:hover .ph-mark { animation: none; }
 }
 
 /* ---------- its own header (js/project-frame.js): the glitch-terminal header it had before AutoStacc ---------- */
 .skin-glitches-and-stitches.project-header { background: rgba(0, 0, 0, .88); backdrop-filter: blur(8px); }
 .skin-glitches-and-stitches .ph-logo { font-family: var(--display); font-size: 1.6rem; letter-spacing: .04em; color: var(--accent); text-shadow: var(--glow); }
 .skin-glitches-and-stitches .ph-amp { color: var(--accent-2); text-shadow: var(--glow-2); }
+.skin-glitches-and-stitches .ph-mark { box-shadow: 0 0 10px rgba(51,255,102,.25); }
+.skin-glitches-and-stitches .ph-logo:hover .ph-mark { animation: jitter .35s steps(1); }
 .skin-glitches-and-stitches .ph-nav a {
   color: var(--accent-dim);
   font-weight: 500;
