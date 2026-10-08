@@ -1,8 +1,16 @@
 // Light/dark theme for AutoStacc: follows the device until the visitor picks one, then remembers it. Loaded in <head>
 // (before the page paints, so there's no flash) on every page; draws its switch into the top bar once the page is
-// ready. css/platform.css reads <html data-theme>. Needs nothing.
+// ready. css/platform.css reads <html data-theme>. It also settles aborted page-change animations (below), which must
+// be handled before the page first paints, so it lives in the one script that runs that early. Needs nothing.
 (function () {
   "use strict";
+
+  // Page changes animate (css/core.css @view-transition). When the browser aborts one (a fast second navigation, the
+  // next page not ready), it rejects the transition's promises at the first paint, before end-of-page scripts run;
+  // handle them here so an aborted animation isn't an uncaught error.
+  const settle = (t) => t && [t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
+  addEventListener("pagereveal", (ev) => settle(ev.viewTransition));
+  addEventListener("pageswap", (ev) => settle(ev.viewTransition));
 
   const KEY = "as-theme";
   const root = document.documentElement;
