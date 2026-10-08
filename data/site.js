@@ -7,9 +7,9 @@ window.SITE = {
   // The live address. Canonical links, the sitemap and link previews are built from it.
   url: "https://autostacc.com",
   // The home page's title and description (search results and link previews). Other pages write their own.
-  title: "AutoStacc — Samples, presets, stems and music, organized for you",
-  description: "AutoStacc sells and delivers sample packs, presets, stems, music and visuals from the projects that make them, and keeps everything you own sorted in Your Stacc.",
-  tagline: "Stacc it once. Auto handles the rest.",
+  title: "AutoStacc — Sample packs, presets and music, straight from the artists",
+  description: "AutoStacc sells sample packs, presets, stems and music straight from the artists who make them. Follow projects and get their free releases as they drop.",
+  tagline: "Straight from the artists.",
   // Link-preview picture for pages without their own artwork, and the organization's logo in structured data.
   image: { src: "img/og.png", width: 1200, height: 630, alt: "The AutoStacc logo, four stacked colour blocks, beside the AutoStacc wordmark" },
   logo: "img/apple-touch-icon.png",

@@ -230,7 +230,7 @@ describe("store in the browser", () => {
     await page.waitForSelector("text=Locked");
     await signUp(page, unique("empty"));
     await page.waitForSelector("text=Email confirmed");
-    await page.waitForSelector("text=Nothing in your Stacc yet.");
+    await page.waitForSelector("text=Nothing in Your Stacc yet.");
     await page.goto("/library");
     await page.waitForSelector("text=Nothing owned yet.");
     await ctx.close();
@@ -260,6 +260,18 @@ describe("store in the browser", () => {
     await page.waitForURL(base + "/");
     await page.goto("/library");
     await page.waitForSelector("text=Locked");
+    await ctx.close();
+  });
+
+  test("an aborted page-change animation is never an uncaught error; real errors still are", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/");
+    await page.evaluate(() => { Promise.reject(new DOMException("Transition was aborted because of invalid state. ViewTransition opt-in disabled", "InvalidStateError")); });
+    await page.waitForTimeout(200);
+    assert.deepEqual(page.errors, []);
+    await page.evaluate(() => { Promise.reject(new Error("a real bug")); });
+    await page.waitForTimeout(200);
+    assert.deepEqual(page.errors, ["a real bug"]);
     await ctx.close();
   });
 
@@ -384,7 +396,7 @@ describe("store in the browser", () => {
     const privateCalls = [];
     page.on("request", (r) => { if (/\/api\/(library|orders|projects)/.test(r.url())) privateCalls.push(r.url()); });
     await page.goto("/");
-    await page.waitForSelector("main >> text=Stacc it once.");
+    await page.waitForSelector("main >> text=straight from the artists");
     assert.ok(await page.locator("main a[href='/login#signup']").first().isVisible(), "Create account on the cover");
     assert.ok(await page.locator(".topbar a[href='/login']").isVisible(), "Log in in the top bar");
     assert.equal(await page.locator(".topbar [data-signout]").isVisible(), false, "no Log out for a stranger");
@@ -420,7 +432,7 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, unique("app"));
     await page.waitForSelector("h1:has-text('Dashboard')");
-    await page.waitForSelector("[data-dashboard-stacc] >> text=Nothing in your Stacc yet.");
+    await page.waitForSelector("[data-dashboard-stacc] >> text=Nothing in Your Stacc yet.");
     assert.ok(await page.locator(".side a[href='/dashboard'][aria-current=page]").isVisible(), "the app group in the sidebar");
     assert.ok(await page.locator(".side a[href='/settings']").isVisible());
     assert.equal(await page.locator(".topbar a[href='/login']").isVisible(), false, "no Log in once signed in");

@@ -20,7 +20,7 @@
     }));
     const products = (window.PRODUCTS || []).map((p) => ({
       href: shopItemPath(p), title: p.title, project: p.project, tag: (TYPES[p.type] || {}).label || p.type, track: p.type === "presets" ? "presets" : p.type === "music" ? "midi" : "samples",
-      meta: owned.has(p.id) ? "In your Stacc ✓" : p.draft ? "Coming soon" : p.price ? money(p.price) : "Free", date: ""
+      meta: owned.has(p.id) ? "In Your Stacc ✓" : p.draft ? "Coming soon" : p.price ? money(p.price) : "Free", date: ""
     }));
     const rows = [...releases.sort((a, b) => b.date.localeCompare(a.date)), ...products]
       .map((x, i) => ({ ...x, rank: (followed.has(x.project) ? 0 : 1) * 1000 + i }))
