@@ -124,7 +124,7 @@
           <button class="btn" type="button" id="checkout-btn"${blocked ? " disabled" : ""}>Checkout</button>
           <a class="btn ghost" href="/shop">Keep browsing</a>
         </div>
-        <p class="small-print">Payment happens on Stripe. Prices above come from the store, not from this page.</p>
+        <p class="small-print">Payment happens on Stripe. Prices above come from the store, not from this page. By checking out you agree to the <a href="/terms">terms</a>, the <a href="/refunds">refund policy</a> and each product's <a href="/license">licence</a>.</p>
       </div>`;
   }
 

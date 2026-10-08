@@ -16,6 +16,7 @@ It is a static site (HTML, CSS and JavaScript, no framework), hosted on Cloudfla
 | `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` | Glitches & Stitches' home, music, news and press pages, in its own skin |
 | `dashboard.html`, `library.html`, `settings.html`, `studio.html` | The signed-in app: dashboard, Your Stacc, Settings (one page for `/settings/profile`, `/security`, `/orders`, `/email`, `/privacy`), the Studio (kept out of search) |
 | `cart.html`, `login.html`, `checkout.html`, `admin.html` | Cart, sign-in, checkout status and the owner's Control Center (kept out of search) |
+| `privacy.html`, `terms.html`, `refunds.html`, `security.html`, `contact.html`, `help.html`, `license.html` | Generated trust pages from `data/legal.js`, `data/help.js` and `data/licenses.js` ([docs/production.md](docs/production.md)). Don't edit; change the data and rebuild |
 | `404.html` | Shown for any address that doesn't exist |
 | `shop/`, `<creator>/<project>/music/`, `<creator>/<project>/news/` | Generated: one page per product (`/shop/<id>`), release and news post. Don't edit; change `data/` and rebuild |
 

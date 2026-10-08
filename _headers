@@ -6,13 +6,17 @@ https://:project.pages.dev/*
 https://:version.:project.pages.dev/*
   X-Robots-Tag: noindex
 
-# Every page: no framing by other sites (clickjacking), no MIME sniffing, no full URLs leaked to other sites,
-# no camera/microphone/location.
+# Every page: HTTPS only (browsers remember it for a year), no framing by other sites (clickjacking), no MIME
+# sniffing, no full URLs leaked to other sites, no camera/microphone/location, and a baseline content policy (no
+# plugins, no <base> hijacking, no framing elsewhere). Public pages embed music players from several services, so
+# they don't restrict scripts further; account and store pages below add a strict policy (docs/production.md).
 /*
+  Strict-Transport-Security: max-age=31536000
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'self'
 
 # Scripts, styles and data change with each deploy but keep the same URLs, so browsers re-check them on every visit
 # (a quick "not modified" when unchanged). Without this a phone can keep old files for hours and show a mix of versions.
@@ -22,6 +26,10 @@ https://:version.:project.pages.dev/*
   Cache-Control: no-cache
 /data/*
   Cache-Control: no-cache
+
+# Images keep their names when replaced, so browsers keep them for a day, not forever.
+/img/*
+  Cache-Control: public, max-age=86400
 
 # Account and store pages: only this site's own scripts may run, and they may only talk to this site.
 /cart
