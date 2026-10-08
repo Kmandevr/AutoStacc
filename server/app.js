@@ -31,16 +31,12 @@ import { routes as stats } from "./stats/routes.js";
 import { routes as promotions } from "./promotions/routes.js";
 import { routes as studioCreators } from "./studio/creators.js";
 import { routes as studioSites } from "./studio/sites.js";
-import { routes as studioProducts } from "./studio/products.js";
-import { routes as studioProductFiles } from "./studio/product-files.js";
-import { routes as studioEarnings } from "./studio/earnings.js";
-import { routes as adminPayouts } from "./admin/payouts.js";
 import { routes as adminCreators } from "./admin/creators.js";
 import { routes as adminFiles } from "./admin/files.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, adminCreators, adminPayouts, adminFiles, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, adminCreators, adminFiles, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

@@ -40,8 +40,8 @@ async function products(app) {
   });
 }
 
-// PATCH any of { salesPaused, priceCents, published, deleted, title, description }: the owner's controls over a product. A
-// change to price, published, deleted, title or description marks the row admin-managed, so the next deploy's catalog sync (scripts/lib/catalog.js) leaves
+// PATCH any of { salesPaused, priceCents, published, deleted }: the owner's controls over a product. A change to price,
+// published or deleted marks the row admin-managed, so the next deploy's catalog sync (scripts/lib/catalog.js) leaves
 // it alone. Price, publishing and removal are recorded in the audit log by database triggers (migration 0004).
 async function updateProduct(app, { productId }) {
   await requireAdmin(app);
@@ -63,17 +63,12 @@ async function updateProduct(app, { productId }) {
     if (!Number.isInteger(body.priceCents) || body.priceCents < 0 || body.priceCents > 1000000) fail(400, "invalid_field", "priceCents must be a whole number of cents from 0 to 1,000,000.");
     sets.push("price_cents = ?"); args.push(body.priceCents);
   }
-  if (body.title !== undefined) { sets.push("title = ?"); args.push(str(body.title, "title", { min: 3, max: 80 }).trim()); }
-  if (body.description !== undefined) {
-    if (typeof body.description !== "string" || body.description.length > 2000) fail(400, "invalid_field", "The description can be up to 2,000 characters.");
-    sets.push("description = ?"); args.push(body.description.trim());
-  }
   if (!sets.length) fail(400, "invalid_field", "Nothing to change.");
-  if (["priceCents", "published", "deleted", "title", "description"].some((k) => body[k] !== undefined)) sets.push("admin_managed = 1");
+  if (["priceCents", "published", "deleted"].some((k) => body[k] !== undefined)) sets.push("admin_managed = 1");
   const res = await run(app.db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), id(productId));
   if (!res.meta.changes) fail(404, "not_found", "No product with that id.");
   if (body.salesPaused !== undefined) await audit(app, body.salesPaused ? "product.sales_paused" : "product.sales_resumed", { targetType: "product", targetId: productId });
-  const changed = ["priceCents", "published", "deleted", "title", "description"].filter((k) => body[k] !== undefined);
+  const changed = ["priceCents", "published", "deleted"].filter((k) => body[k] !== undefined);
   if (changed.length) await audit(app, "product.changed_by_admin", { targetType: "product", targetId: productId, detail: Object.fromEntries(changed.map((k) => [k, body[k]])) });
   return json({ ok: true });
 }

@@ -15,7 +15,6 @@ import { renderPage, PAGE_HEADERS } from "../sites/render.js";
 import { publishProject, unpublishProject } from "../sites/publish.js";
 import { listImages, ownImages, uploadImage, deleteImage, imageSrc, usageOf } from "../sites/images.js";
 import { listProjectProducts } from "../catalog/products.js";
-import { productPath } from "../creators/products.js";
 import { safeFilename } from "../storage/buckets.js";
 
 async function getSite(app, { projectId }) {
@@ -62,7 +61,7 @@ async function preview(app, { projectId }) {
   const projects = await projectsOf(app.db, creator.id);
   const images = await ownImages(app.db, creator.id, [...assets]);
   const products = await listProjectProducts(app.db, projects.map((p) => p.id));
-  const ctx = { images: new Map(images.map((x) => [x.id, imageSrc(x.id)])), products: new Map(products.map((p) => [p.id, { title: p.title, path: productPath(p), artwork: p.artwork }])) };
+  const ctx = { images: new Map(images.map((x) => [x.id, imageSrc(x.id)])), products: new Map(products.map((p) => [p.id, { title: p.title, path: `/shop/${p.id}`, artwork: p.artwork }])) };
   const html = renderPage({ siteUrl: app.config.siteUrl, creator, project, doc, page, ctx, indexable: false });
   return new Response(html, { headers: { ...PAGE_HEADERS, "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
 }

@@ -5,10 +5,9 @@ import { json, fail, readJson, str, id } from "../lib/http.js";
 import { first, run, newId, now, parseJson } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
 import { getProduct } from "../catalog/products.js";
-import { newFileKey, previewKey, putPreview, safeFilename, peekPreview, deletePreview } from "../storage/buckets.js";
-import { putVerifiedFile } from "../files/upload.js";
+import { newFileKey, putFile, previewKey, putPreview, safeFilename, peekFile, peekPreview, deleteFile, deletePreview } from "../storage/buckets.js";
 import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
-import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
+import { countKept, setStatus } from "../files/files.js";
 import { audit } from "../audit/log.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
@@ -34,8 +33,14 @@ async function uploadFile(app, { productId }) {
     fail(404, "not_found", "The file to replace isn't an active file of this product.");
   }
   checkUpload({ filename, sizeBytes: Number(app.request.headers.get("content-length") || 0), existing: await countKept(app.db, p.id) - (replaces ? 1 : 0) });
+  const contentType = contentTypeFor(filename);
   const key = newFileKey(p.id, filename);
-  const { object, contentType } = await putVerifiedFile(app, key, filename, app.request.body);
+  const object = await putFile(app.env, key, app.request.body, contentType);
+  // The name is only a claim: if the stored bytes aren't that kind of file, nothing of it is kept.
+  if (!looksLike(filename, await peekFile(app.env, key))) {
+    await deleteFile(app.env, key);
+    fail(415, "content_mismatch", "That file isn't really the kind its name says. Check it opens, then upload it again.");
+  }
   const fileId = newId("pf");
   const t = now();
   await run(app.db, `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind, status, status_at)
@@ -55,7 +60,6 @@ async function fileStatus(app, { fileId }) {
   const note = typeof body.note === "string" ? body.note.slice(0, 200) : null;
   const res = await setStatus(app.db, fid, status, note);
   if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
-  await unpublishEmptyStudioProducts(app.db);
   await audit(app, `product.file_${status}`, { targetType: "file", targetId: fid });
   return json({ ok: true, status });
 }
@@ -65,7 +69,6 @@ async function removeFile(app, { fileId }) {
   await requireAdmin(app);
   const res = await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", str(fileId, "fileId", { max: 40 }));
   if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
-  await unpublishEmptyStudioProducts(app.db);
   await audit(app, "product.file_deactivated", { targetType: "file", targetId: fileId });
   return json({ ok: true });
 }

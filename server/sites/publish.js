@@ -8,7 +8,6 @@ import { cleanDocument } from "./document.js";
 import { renderPage } from "./render.js";
 import { ownImages, imageSrc } from "./images.js";
 import { listProjectProducts } from "../catalog/products.js";
-import { productPath } from "../creators/products.js";
 import { projectsOf, getCreator } from "../creators/creators.js";
 import { setProjectPublished } from "../creators/projects.js";
 
@@ -18,7 +17,7 @@ async function contextFor(db, creator, refs) {
   const products = refs.products.size ? await listProjectProducts(db, projects.map((p) => p.id)) : [];
   return {
     images: new Map(images.map((x) => [x.id, imageSrc(x.id)])),
-    products: new Map(products.filter((p) => refs.products.has(p.id)).map((p) => [p.id, { title: p.title, path: productPath(p), artwork: p.artwork }]))
+    products: new Map(products.filter((p) => refs.products.has(p.id)).map((p) => [p.id, { title: p.title, path: `/shop/${p.id}`, artwork: p.artwork }]))
   };
 }
 
