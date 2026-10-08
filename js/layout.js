@@ -1,53 +1,33 @@
-// Renders AutoStacc's frame on every page: the sidebar (AutoStacc: Store, Your Stacc, About; Projects: one link per
+// AutoStacc's frame on platform pages: the sidebar (AutoStacc: Store, Your Stacc, About; Projects: one link per
 // project in data/projects.js), the top bar (menu button on phones, account, cart count, and the slot js/theme.js
-// fills), on a project's pages its project bar (its pages as tabs, and the slot js/sound.js fills), the footer and the
-// skip link. <body data-page> marks the current platform page; on a project's pages
-// <body data-project="<id>" data-project-page="music"> marks the project and its page.
+// fills), the footer and the skip link. On a computer the sidebar is an icon rail that expands (remembered); on phones
+// it is a drawer. <body data-page> marks the current page. A project's pages use js/project-frame.js instead.
 // Needs data/site.js, data/projects.js and js/util.js. Structured data is static, from scripts/build.js.
 (function () {
   "use strict";
 
   const GS = window.GS;
-  const { $, escapeHTML: e, isSet } = GS;
+  const { $, escapeHTML: e } = GS;
   const SITE = window.SITE || {};
   const PROJECTS = (window.PROJECTS || []).filter((p) => !p.draft);
   const body = document.body.dataset;
+  const KEY = "gs:side";
+  const svg = (key, paths) => `<svg class="side-icon side-icon-${key}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
+  const ICONS = {
+    store: svg("store", '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>'),
+    stacc: svg("stacc", '<rect x="4" y="4" width="16" height="4.5" rx="1.5"/><rect x="4" y="10" width="16" height="4.5" rx="1.5"/><rect x="4" y="16" width="16" height="4" rx="1.5"/>'),
+    about: svg("about", '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.4"/>'),
+    all: svg("all", '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>')
+  };
   const PLATFORM = [["/shop", "Store", "shop", "store"], ["/library", "Your Stacc", "library", "stacc"], ["/about", "About", "about", "about"]];
-  const projectHref = (p, path = "") => `/projects/${p.id}${path ? (path.startsWith("#") ? path : "/" + path) : ""}`;
-  // Pages inside a section (a product, a release) light up their section's link without claiming to be it.
+  // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
+  const item = (href, label, icon, attrs = "") =>
+    `<li><a href="${e(href)}" title="${e(label)}"${attrs}>${icon}<span class="side-text">${e(label)}</span></a></li>`;
+  const projectChip = (p) => `<span class="side-chip" aria-hidden="true">${e((p.name || "?").charAt(0))}</span>`;
 
-  // Keyboard users can jump past the frame straight to the page content.
-  const main = $("main");
-  if (main) {
-    main.id = main.id || "main";
-    document.body.insertAdjacentHTML("afterbegin", `<a class="skip-link" href="#${main.id}">Skip to content</a>`);
-    $(".skip-link").addEventListener("click", (ev) => {
-      ev.preventDefault();
-      main.tabIndex = -1;
-      main.focus();
-    });
-  }
-
-  // The sidebar lists each project once; its own pages are tabs in the project bar on its pages, not in the sidebar.
-  const projectLink = (p) => `<li><a href="${e(projectHref(p))}"${body.project === p.id ? ' aria-current="true"' : ""}><span class="side-chip" aria-hidden="true"></span>${e(p.name)}</a></li>`;
-
-  // On a project's pages: a bar under the top bar with its name, its pages as tabs and a slot for its own tools
-  // (js/sound.js puts the sound switch there).
-  function projectBar(p) {
-    const tabs = (p.pages || [{ label: "Home", path: "" }]).map((pg) => {
-      const on = !pg.path.startsWith("#") && (body.projectPage || "") === pg.path;
-      return `<li><a href="${e(projectHref(p, pg.path))}"${on ? ' aria-current="page"' : ""}>${e(pg.label)}</a></li>`;
-    }).join("");
-    return `<nav class="project-bar" aria-label="${e(p.name)}">
-        <span class="project-bar-name"><span class="side-chip" aria-hidden="true"></span>${e(p.name)}</span>
-        <div class="project-bar-tools"></div>
-        <ul class="project-tabs">${tabs}</ul>
-      </nav>`;
-  }
-  const PROJECT = PROJECTS.find((p) => p.id === body.project);
-
+  const main = GS.skipLink();
   const header = $("#site-header");
   const footer = $("#site-footer");
   if (header) {
@@ -55,18 +35,19 @@
     header.innerHTML = `
       <div class="side" id="side" aria-label="Menu">
         <button class="side-close" type="button"><span aria-hidden="true">&times;</span><span class="sr-only">Close menu</span></button>
-        <a class="brand" href="/"${body.page === "home" ? ' aria-current="page"' : ""}>${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
+        <a class="brand" href="/" title="${e(SITE.name || "Home")}"${body.page === "home" ? ' aria-current="page"' : ""}>${MARK}<span class="brand-name side-text">Auto<b>Stacc</b></span></a>
         <nav class="side-nav" aria-label="Main">
           <p class="side-label" id="side-platform">AutoStacc</p>
           <ul aria-labelledby="side-platform">
-            ${PLATFORM.map(([href, label, key, icon]) => `<li><a href="${href}"${current(key)}><span class="side-icon side-icon-${icon}" aria-hidden="true"></span>${label}</a></li>`).join("")}
+            ${PLATFORM.map(([href, label, key, icon]) => item(href, label, ICONS[icon], current(key))).join("")}
           </ul>
           <p class="side-label" id="side-projects">Projects</p>
           <ul aria-labelledby="side-projects">
-            ${PROJECTS.map(projectLink).join("")}
-            <li><a href="/projects"${current("projects")}><span class="side-icon side-icon-all" aria-hidden="true"></span>All projects</a></li>
+            ${PROJECTS.map((p) => item(GS.projectPath(p.id), p.name, projectChip(p))).join("")}
+            ${item("/projects", "All projects", ICONS.all, current("projects"))}
           </ul>
         </nav>
+        <button class="side-collapse" type="button" aria-controls="side"><span class="side-collapse-icon" aria-hidden="true"></span><span class="side-text">Collapse</span></button>
       </div>
       <div class="side-scrim" hidden></div>
       <div class="topbar">
@@ -76,20 +57,38 @@
           <a class="tool-link" href="/account"${current("account")}>Account</a>
           <a class="tool-link cart-link" href="/cart"${current("cart")}>Cart<span class="cart-count" aria-hidden="true"></span><span class="sr-only cart-count-sr"></span></a>
         </div>
-      </div>
-      ${PROJECT ? projectBar(PROJECT) : ""}`;
+      </div>`;
 
-    // On phones the sidebar is a drawer over the page. Closed, it is inert (no hidden links to Tab into); open, the
-    // rest of the page is inert, focus moves into it, and the close button, Escape or the scrim close it.
-    const toggle = $(".menu-toggle", header);
+    const root = document.documentElement;
     const side = $(".side", header);
-    const scrim = $(".side-scrim", header);
     const narrow = matchMedia("(max-width: 900px)");
-    const behind = () => [$(".topbar", header), $(".project-bar", header), main, footer].filter(Boolean);
+
+    // Computer: an icon rail by default; the button at its foot expands it and the choice is remembered.
+    const collapse = $(".side-collapse", side);
+    let wide = false;
+    try { wide = localStorage.getItem(KEY) === "open"; } catch { /* storage blocked: rail */ }
+    const setWide = (on) => {
+      wide = on;
+      root.classList.toggle("side-open", on);
+      collapse.setAttribute("aria-expanded", String(on));
+      collapse.title = on ? "Collapse the menu" : "Expand the menu";
+      $(".side-text", collapse).textContent = on ? "Collapse" : "Expand";
+    };
+    setWide(wide);
+    collapse.addEventListener("click", () => {
+      setWide(!wide);
+      try { localStorage.setItem(KEY, wide ? "open" : "rail"); } catch { /* not remembered */ }
+    });
+
+    // Phones: a drawer over the page. Closed, it is inert (no hidden links to Tab into); open, the rest of the page is
+    // inert, focus moves into it, and the close button, Escape or the scrim close it.
+    const toggle = $(".menu-toggle", header);
+    const scrim = $(".side-scrim", header);
+    const behind = () => [$(".topbar", header), main, footer].filter(Boolean);
     const setOpen = (open, refocus = true) => {
       side.classList.toggle("open", open);
       scrim.hidden = !open;
-      document.documentElement.classList.toggle("menu-open", open);
+      root.classList.toggle("menu-open", open);
       toggle.setAttribute("aria-expanded", String(open));
       side.inert = narrow.matches && !open;
       behind().forEach((el) => (el.inert = open));
@@ -97,7 +96,7 @@
       else if (refocus && narrow.matches) toggle.focus();
     };
     setOpen(false, false);
-    // Widening past the drawer breakpoint closes it, so it doesn't reappear open when narrowed again.
+    // Crossing the drawer breakpoint closes it, so it doesn't reappear open when narrowed again.
     narrow.addEventListener("change", () => setOpen(false, false));
     toggle.addEventListener("click", () => setOpen(true));
     $(".side-close", side).addEventListener("click", () => setOpen(false));
@@ -107,26 +106,13 @@
       if (ev.key === "Escape" && side.classList.contains("open")) setOpen(false);
     });
 
-    // Cart size from this browser's cart (js/util.js); updates live when anything is added or removed.
-    const showCount = () => {
-      const n = GS.cart.count();
-      $(".cart-count", header).textContent = n ? ` ${n}` : "";
-      $(".cart-count-sr", header).textContent = n ? `, ${n} item${n === 1 ? "" : "s"}` : "";
-    };
-    showCount();
-    addEventListener("gs:cart", showCount);
-    addEventListener("storage", (ev) => ev.key === "gs:cart" && showCount());
+    GS.showCartCount(header);
   }
 
-  // Footer: AutoStacc's links; on a project's pages, that project's official profiles too.
   if (footer) {
-    const project = PROJECT;
-    const socials = project ? (project.socials || []).filter((s) => isSet(s.url)) : [];
     footer.className = "site-footer";
     footer.innerHTML = `
       <div class="wrap">
-        ${project ? `<div class="footer-project"><span>${e(project.name)}</span>${socials.length ? `<div class="socials" role="group" aria-label="${e(project.name)} profiles">
-          ${socials.map((s) => `<a href="${e(s.url)}" target="_blank" rel="me noopener">${e(s.name)}</a>`).join("")}</div>` : ""}</div>` : ""}
         <div class="footer-platform">
           <span>&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</span>
           <a href="/about">About</a><a href="/projects">Projects</a><a href="/shop">Store</a>

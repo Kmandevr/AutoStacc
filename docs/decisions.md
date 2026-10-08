@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Projects are mini-sites; the sidebar is a rail
+
+The owner: the big sidebar should collapse on a computer, and a project can't feel like a page inside AutoStacc's frame; each project is its own environment with its own header and nav. Agreed in a round of questions: on a computer the sidebar is an icon rail that expands, and the choice is remembered. A project's pages drop the sidebar for a thin AutoStacc strip (home, Store, Your Stacc, Projects, theme, account, cart), then the project's own header in its own style, then its own footer with a small "Sold and delivered by AutoStacc" line. Glitches & Stitches gets back the terminal header it had before AutoStacc. Built as `js/project-frame.js` + `css/project-frame.css`, restyled by each project's skin, so a new project needs no frame code.
+
 ## 2026-10-08: Platform voice, AI access and no stale scripts
 
 The owner: AutoStacc's text should be friendly but more professional and to the point; the `$` prompts and all-caps headings read as weird on platform pages, and the site should be readable by AI. Platform and store copy (cart, checkout, account, login, library, 404) dropped the Glitches & Stitches loop words and terminal headings; `--heading-case` keeps all-caps inside the G&S skin only. `llms.txt` is generated from `data/` for AI assistants. Scripts, styles and data are served with `Cache-Control: no-cache` (revalidated, cheap 304s) because their URLs aren't versioned and a phone kept the old header for hours after the rebrand.
