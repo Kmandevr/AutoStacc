@@ -1,3 +1,4 @@
+/* Creator sites made in the Studio (rendered by server/sites/render.js): one standalone sheet for every creator. */
 /* Creator sites made in the Studio (rendered by server/sites/render.js). Standalone: these pages load no other AutoStacc
    stylesheet, so element selectors here only ever reach creator pages. Themed by the custom properties each page sets
    (--bg, --surface, --text, --muted, --accent, --font from server/sites/theme.js). No scripts run on these pages. */
