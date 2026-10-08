@@ -2,7 +2,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, unique } from "../support/client.js";
-import { newBuyer, adminClient, mockBuy } from "../support/flows.js";
+import { newBuyer, adminClient, freshAdmin, mockBuy } from "../support/flows.js";
 
 export default (ctx) => describe("admin", () => {
   test("customers get 404 on every admin route", async () => {
@@ -43,5 +43,28 @@ export default (ctx) => describe("admin", () => {
     assert.equal(d.data.order.status, "paid");
     assert.ok(d.data.events.some((e) => e.outcome === "paid"));
     assert.equal(d.data.entitlements.length, 1);
+  });
+
+  test("/admin is the site's 404 page unless you're signed in to an admin account", async () => {
+    const notFound = (r, who) => {
+      assert.equal(r.status, 404, who);
+      assert.doesNotMatch(String(r.data), /admin-app|Control Center/, who);
+      assert.match(String(r.data), /<html/, `${who}: the site's own 404 page`);
+    };
+    notFound(await new Client(ctx.mock.url).get("/admin"), "signed out");
+    const { c, user } = await newBuyer(ctx.mock.url, "admin-page-customer");
+    notFound(await c.get("/admin"), "customer");
+    const anonHtml = await new Client(ctx.mock.url).get("/admin.html");
+    assert.doesNotMatch(String(anonHtml.data), /admin-app/, "no way round it through the .html address");
+    const admin = await freshAdmin(ctx.mock.url);
+    const page = await admin.get("/admin");
+    assert.equal(page.status, 200);
+    assert.match(String(page.data), /id="admin-app"/);
+    assert.equal(page.headers.get("cache-control"), "no-store");
+    // While impersonating, the admin is the customer: no Control Center until they exit.
+    await admin.post(`/api/admin/customers/${user.id}/impersonate`, {});
+    notFound(await admin.get("/admin"), "impersonating");
+    await admin.post("/api/impersonation/exit", {});
+    assert.equal((await admin.get("/admin")).status, 200);
   });
 });

@@ -7,7 +7,7 @@
   const { $, escapeHTML: e, cents, api } = window.GS;
   const root = $("#admin-app");
   if (!root) return;
-  const ACTIONS = ["", "admin", "impersonation", "test_purchase", "customer", "order", "entitlement", "product", "preview", "project"];
+  const ACTIONS = ["", "admin", "impersonation", "test_purchase", "customer", "order", "entitlement", "promotion", "product", "preview", "project"];
   const when = (iso) => e(String(iso || "").slice(0, 19).replace("T", " "));
   const mark = (ok) => (ok === true ? "✔ pass" : ok === false ? "✖ fail" : "– n/a");
 

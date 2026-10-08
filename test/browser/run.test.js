@@ -543,4 +543,42 @@ describe("store in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
+
+  test("sales and promo codes: the struck-through price on the page, the code in the cart, and checkout charges the discounted total", async () => {
+    const T = "strftime('%Y-%m-%dT%H:%M:%fZ','now')";
+    sql(stateDir, `INSERT INTO promotions (id, kind, name, percent_off, scope, scope_ids, starts_at, created_at, updated_at)
+      VALUES ('promo_browsersale', 'sale', 'Browser sale', 50, 'products', '["vj-loops"]', ${T}, ${T}, ${T});
+      INSERT INTO promotions (id, kind, name, code, percent_off, scope, starts_at, created_at, updated_at)
+      VALUES ('promo_browsercode', 'code', 'Browser code', 'BROWSER10', 10, 'all', ${T}, ${T}, ${T});`);
+    try {
+      const { ctx, page } = await open(PHONE);
+      await page.goto("/shop/vj-loops");
+      await page.waitForSelector("[data-price] .price-was");
+      assert.match(await page.locator("[data-price]").first().innerText(), /\$14\.99.*\$7\.50.*Browser sale/s);
+      await page.locator("[data-buy] [data-add-to-cart]").click();
+      await page.goto("/cart");
+      await page.waitForSelector(".cart-line .price-sale");
+      await page.fill("#promo-code", "browser10");
+      await page.click(".cart-promo button[type=submit]");
+      await page.waitForSelector("text=Discount (BROWSER10)");
+      assert.match(await page.locator(".cart-totals .price").innerText(), /\$6\.75/);
+      const email = unique("promo-browser");
+      await page.fill("#cart-email", email);
+      await page.click("#checkout-btn");
+      await page.waitForURL(/\/checkout\?order=.*mock=/);
+      assert.deepEqual(sql(stateDir, `SELECT total_cents, discount_cents, promo_code FROM orders WHERE email = '${email}'`),
+        [{ total_cents: 675, discount_cents: 75, promo_code: "BROWSER10" }]);
+      // A code that doesn't exist says so and holds checkout back.
+      await page.goto("/cart");
+      await page.click("[data-promo-remove]");
+      await page.fill("#promo-code", "NOPE-NOT-A-CODE");
+      await page.click(".cart-promo button[type=submit]");
+      await page.waitForSelector("text=That code doesn't exist.");
+      assert.equal(await page.locator("#checkout-btn").isDisabled(), true);
+      assert.deepEqual(page.errors, []);
+      await ctx.close();
+    } finally {
+      sql(stateDir, `UPDATE promotions SET ends_at = ${T} WHERE id IN ('promo_browsersale', 'promo_browsercode')`);
+    }
+  });
 });

@@ -1,12 +1,12 @@
 ---
 title: Control Center
-summary: The owner's admin (/admin): statistics and where each number comes from, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
+summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 updated: 2026-10-08
 ---
 
 # Control Center
 
-`/admin`, for verified admin accounts (see [store](store.md#admin)). Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Test purchases, Audit log. A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
+`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Test purchases, Audit log. A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
 
 ## Statistics (Overview)
 
@@ -25,6 +25,22 @@ updated: 2026-10-08
 - No statistic names a customer: sections return counts and product titles only.
 - Adding a metric: add it to a section's `metrics()` (or a new section file in `SECTIONS`), returning one of the shapes in `server/stats/metric.js`; the page draws it without changes. Put its SQL in the section's `queries` so the plan test checks it.
 - Cost: every range query searches an index (`db/migrations/0004_admin_ops.sql`); only the all-time totals (accounts, accounts without purchases, people who own something) read a whole index, a covering one. `test/api/stats.suite.js` fails if a query starts scanning a growing table.
+
+## Sales and promo codes (Promotions)
+
+Two kinds, both set up in the Promotions tab and applied by the store itself (`server/promotions/`, `server/cart/pricing.js`):
+
+- **Sale:** prices drop on their own while it runs. Cards, product pages and the cart show the catalog price struck through, the sale price and the sale's name. If two sales cover one product, the lower price wins.
+- **Promo code:** the buyer types it in the cart; it takes money off the order. Codes are case-insensitive, unique and never reused. Limits: total uses, and once per customer (by email, accounts and guests alike). A code applies on top of sale prices.
+
+Each one is a percentage (1–90%) or an amount, on everything, chosen products, or one project's products, from a start (now or later) to an optional end. Floors: a sale never takes a paid product below $0.50, and a code never takes an order below $0.50 (Stripe's minimum). Giving something away for free is an entitlement grant (Entitlements tab), not a promotion.
+
+- **Can't be gamed from the browser:** the browser only sends the code; the store prices everything. Trying codes is rate limited, and a code that hasn't started answers like one that doesn't exist.
+- **Usage limits:** a use is a paid (or refunded) order, or another signed-in buyer's open payment page. They're checked when the cart is priced and again by the database as the order is written, so two signed-in buyers reaching for the last use at once can't both get it. Unpaid guest checkouts never hold a use and once-per-customer counts paid orders only, so nobody can lock a code up, or spend someone else's, with throwaway checkouts. The cost: two guests paying at the very same moment could take a limited code one use over. Once per customer matches the exact email, so `name+tag@` addresses count as different people.
+- **Charged exactly:** Stripe is sent each line at the price charged, with a code's share folded into the line, so the payment equals the order total to the cent (anything else is refused, as before).
+- **Recorded:** each order keeps the catalog price and sale per line, and the code and discount; the receipt shows the discount. The tab lists every promotion with its status (scheduled, running, ended), paid orders and how much it took off; the Overview has a "Sales & promo codes" section. Creating and ending one are in the audit log.
+- **Not edited, ended:** "end now" (or "cancel" before it starts) stops it at once; orders already placed keep what they got. To change terms, end it and create another, so every order points at the terms it actually got.
+- **Static pages:** the price written into the static product pages and search results stays the catalog price; the live price on the page (and what checkout charges) is the sale price.
 
 ## Customer preview
 

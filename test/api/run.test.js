@@ -13,9 +13,10 @@ import platform from "./platform.suite.js";
 import pages from "./pages.suite.js";
 import impersonation from "./impersonation.suite.js";
 import stats from "./stats.suite.js";
+import promotions from "./promotions.suite.js";
 
 const ctx = {};
 before(async () => Object.assign(ctx, await startStores()), { timeout: 240000 });
 after(() => ctx.stop && ctx.stop());
 
-for (const suite of [auth, commerce, webhooks, downloads, guests, hygiene, admin, platform, pages, impersonation, stats]) suite(ctx);
+for (const suite of [auth, commerce, webhooks, downloads, guests, hygiene, admin, platform, pages, impersonation, stats, promotions]) suite(ctx);

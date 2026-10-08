@@ -36,3 +36,9 @@
   .cart-qty:empty { display: none; }
   .cart-line .link-btn { grid-column: 2; justify-self: end; }
 }
+
+/* Promo code: a one-line form under the totals, or the applied code with "remove". */
+.cart-promo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 18px; }
+.cart-promo label { flex: 1 0 100%; color: var(--muted); font-size: .85rem; }
+.cart-promo input { flex: 1 1 160px; min-height: 44px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; text-transform: uppercase; }
+.cart-promo .cart-problem { flex: 1 0 100%; }

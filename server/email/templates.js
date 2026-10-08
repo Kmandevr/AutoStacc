@@ -59,6 +59,9 @@ export const templates = {
 
   "purchase-confirmation": ({ order, items, libraryUrl, guestUrl }) => {
     const lines = items.map((i) => `${i.title}${i.quantity > 1 ? ` ×${i.quantity}` : ""} — ${money(i.line_total_cents, order.currency)}`);
+    // A promo code's discount, as its own line before the total.
+    const discount = order.discount_cents > 0 ? { label: `Discount${order.promo_code ? ` (${order.promo_code})` : ""}`, amount: `−${money(order.discount_cents, order.currency)}` } : null;
+    if (discount) lines.push(`${discount.label} — ${discount.amount}`);
     const access = guestUrl
       ? `Download from Your Stacc: ${guestUrl}\n(This link works for 30 days. Create an account with this email to keep your files forever: ${libraryUrl})`
       : `Download from Your Stacc: ${libraryUrl}`;
@@ -69,6 +72,7 @@ export const templates = {
         para(`Order ${order.id} is paid. These are yours now:`) +
         `<table style="width:100%;border-collapse:collapse;margin:0 0 12px">${items.map((i) =>
           `<tr><td style="padding:6px 0;border-bottom:1px solid #dde2e7">${esc(i.title)}${i.quantity > 1 ? ` ×${i.quantity}` : ""}</td><td style="padding:6px 0;border-bottom:1px solid #dde2e7;text-align:right">${money(i.line_total_cents, order.currency)}</td></tr>`).join("")}
+        ${discount ? `<tr><td style="padding:6px 0;border-bottom:1px solid #dde2e7">${esc(discount.label)}</td><td style="padding:6px 0;border-bottom:1px solid #dde2e7;text-align:right">${esc(discount.amount)}</td></tr>` : ""}
         <tr><td style="padding:8px 0">Total</td><td style="padding:8px 0;text-align:right;font-weight:bold">${money(order.total_cents, order.currency)}</td></tr></table>` +
         button(guestUrl || libraryUrl, "Open Your Stacc") +
         (guestUrl ? para(`This link works for 30 days. Create an account with ${order.email} to keep your files: ${libraryUrl}`) : ""))

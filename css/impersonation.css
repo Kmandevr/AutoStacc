@@ -1,5 +1,4 @@
-/* Impersonation banner (js/impersonation.js): loaded only while an admin impersonates a customer. Deliberately
-   outside every theme and project skin: hazard yellow and black, a fixed bar and a frame around the whole window. */
+/* Impersonation banner (js/impersonation.js), only while an admin impersonates: hazard colours, outside every theme. */
 
 #impersonation-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;

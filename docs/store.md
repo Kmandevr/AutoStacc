@@ -26,7 +26,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | --- | --- | --- |
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
 | `account/` | who is signed in | `GET /api/account` |
-| `pages/` | the server-side gate for the account pages | `/dashboard`, `/account`, `/settings` (Pages Functions in `functions/`) |
+| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/account`, `/settings`, `/admin` (Pages Functions in `functions/`) |
 | `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
@@ -41,6 +41,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `stats/` | admin statistics: sections of typed metrics | `GET /api/admin/stats`, `/api/admin/stats/:section` |
 | `impersonation/` | support impersonation: rules, the per-request policy, start and exit | `POST /api/admin/customers/:userId/impersonate`, `POST /api/impersonation/exit` |
 | `audit/` | the append-only admin audit log | `GET /api/admin/audit` |
+| `promotions/` | sales and promo codes: what's running and what it takes off | `GET`/`POST /api/admin/promotions`, `POST /api/admin/promotions/:id/end` |
 | `projects/` | projects (synced), follows | `GET /api/projects`, `PUT`/`DELETE /api/follows/:projectId` |
 | `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
@@ -72,7 +73,7 @@ Releases stay in `data/music.js` (title, slug/id, artwork, date, description, tr
 - Sign-up with an existing email answers exactly like a new sign-up and mails the owner of that email instead (no account enumeration); password reset answers the same for unknown emails.
 - Reset links last 1 hour, verification links 24 hours; a reset logs out every session. Sessions last 30 days.
 - Email changes are off (purchases are tied to the address). `role` is server-only.
-- The account pages (`/dashboard`, `/account`, `/settings`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` keeps its own check (the admin API answers 404). Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
+- The account pages (`/dashboard`, `/account`, `/settings`) are gated on the server: `server/pages/guard.js` (run by `functions/dashboard.js` etc.) asks Better Auth for the session and answers 302 to `/login?next=<page>` without one (same test as the login page's "already signed in", so the two can't bounce a visitor between them), or serves the static page `Cache-Control: no-store`. The pages hold no data; it comes from the API. `/library` isn't gated (guest receipt links, see Entitlements); `/admin` answers the site's 404 page to anyone not signed in to an admin account (`guardAdminPage`), and the admin API answers 404 too. Login returns only to same-site paths (`GS.safeNext`), else to `/dashboard`.
 
 ## Cart and checkout
 
@@ -128,4 +129,4 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 ## Not built yet
 
-Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts have a column (`discount_cents`) but no codes. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.
+Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts are sales and promo codes ([control center](admin.md#sales-and-promo-codes-promotions)); there are no automatic bundle or quantity discounts. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.
