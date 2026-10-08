@@ -19,7 +19,7 @@ Example: *Frayed Signals — Sample Pack*, created by Glitches & Stitches, sold 
 
 ## Auto
 
-"Auto" is a product promise: AutoStacc does the repetitive work. Purchases land in Your Stacc; eligible free content can be added automatically for followers; products expose what's inside; content is filed by project, Stacclet, Pac, kind and format. Philosophy: **Stacc it once. Auto handles the rest.** Use the line where it explains something (the platform intro, Auto-Stacc settings), not on every button.
+"Auto" is a product promise: AutoStacc does the repetitive work. Purchases land in Your Stacc; eligible free content can be added automatically for followers; products expose what's inside; content is filed by project, Stacclet, Pac, kind and format. The tagline is **Buy it once. Find it every time.** (2026-10-08: the owner dropped "Stacc it once. Auto handles the rest." as reading oddly). Say what Auto does in plain words ("free releases are added automatically"); don't personify it ("Auto handles…").
 
 ## Stacc vocabulary
 

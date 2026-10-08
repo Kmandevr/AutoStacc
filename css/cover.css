@@ -5,7 +5,9 @@
 .cover-hero { padding: clamp(40px, 8vw, 88px) 0 clamp(32px, 6vw, 64px); }
 .cover-hero-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 5vw, 64px); }
 .cover-kicker { margin: 0 0 10px; font-family: var(--mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
-.cover-copy h1 { font-size: clamp(2.3rem, 5.6vw, 4rem); max-width: 14ch; margin: 0 0 18px; }
+.cover-copy h1 { font-size: clamp(2.3rem, 5.6vw, 4rem); margin: 0 0 18px; }
+/* each sentence of the headline stays on its own line where there is room for it */
+.cover-line { display: inline-block; }
 .cover-lead { font-size: clamp(1.02rem, 1.6vw, 1.18rem); max-width: 54ch; color: var(--muted); margin: 0 0 24px; }
 .cover-actions { margin-bottom: 14px; }
 .cover-note { margin: 0; }

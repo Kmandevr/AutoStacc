@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Tagline "Buy it once. Find it every time."
+
+The owner found "Stacc it once. Auto handles the rest." odd, and asked for platform copy that reads professional and to the point. The new line states the actual promise (everything you buy stays sorted and findable) without personifying "Auto". Auto-Stacc is described in plain words ("free releases are added automatically"). Voice: [autostacc](autostacc.md).
+
 ## 2026-10-08: A public home page, and the app behind the account wall
 
 The owner asked for `/` to be a real public front page and for the signed-in workspace to be clearly separate, so the site reads as a product with an app behind the account wall rather than a dashboard with a login. This replaces "Home is a hub (dashboard)" below.
