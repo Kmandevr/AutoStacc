@@ -67,5 +67,6 @@ export const routes = [
   ["GET", "/api/orders", mine],
   ["POST", "/api/guest/key", redeemGuestKey],
   ["GET", "/api/orders/:orderId", one],
-  ["POST", "/api/orders/:orderId/reconcile", reconcile]
+  // Asks the provider for a payment's real state; safe (and useful) while impersonating.
+  ["POST", "/api/orders/:orderId/reconcile", reconcile, { impersonation: "allow" }]
 ];

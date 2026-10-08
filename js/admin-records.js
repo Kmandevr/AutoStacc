@@ -1,6 +1,6 @@
-// Admin records: orders (with payment events, entitlements and a resend-receipt button), customers, entitlements
-// (grant manual/promo/replacement access, revoke) and the daily analytics counters. Starts when js/admin.js fires
-// "gs:admin" after the access check. Needs js/util.js.
+// Admin records: orders (with payment events, entitlements and a resend-receipt button), customers (each with a
+// Preview button that js/admin-ops.js answers) and entitlements (grant manual/promo/replacement access, revoke).
+// Starts when js/admin.js fires "gs:admin" after the access check. Needs js/util.js.
 (function () {
   "use strict";
 
@@ -37,8 +37,9 @@
     const el = $("#admin-customers");
     const res = await api(`/api/admin/customers${q ? `?q=${encodeURIComponent(q)}` : ""}`);
     if (!res.ok) return fail(el, res);
-    el.innerHTML = search("customers", "Search customers", "email or name") + table(["Email", "Name", "Verified", "Role", "Paid orders", "Owned", "Joined"],
-      res.data.customers.map((c) => `<tr><td>${escapeHTML(c.email)}</td><td>${escapeHTML(c.name)}</td><td>${c.verified ? "yes" : "no"}</td><td>${escapeHTML(c.role || "customer")}</td><td>${c.paidOrders}</td><td>${c.owned}</td><td>${escapeHTML(String(c.createdAt).slice(0, 10))}</td></tr>`));
+    el.innerHTML = search("customers", "Search customers", "email or name") + table(["Email", "Name", "Verified", "Role", "Paid orders", "Owned", "Joined", ""],
+      res.data.customers.map((c) => `<tr><td>${escapeHTML(c.email)}</td><td>${escapeHTML(c.name)}</td><td>${c.verified ? "yes" : "no"}</td><td>${escapeHTML(c.role || "customer")}</td><td>${c.paidOrders}</td><td>${c.owned}</td><td>${escapeHTML(String(c.createdAt).slice(0, 10))}</td>
+        <td><button class="link-btn" type="button" data-preview="${escapeHTML(c.id)}">preview</button></td></tr>`)) + `<div id="customer-preview"></div>`;
   }
 
   async function entitlements(email = "") {
@@ -56,16 +57,8 @@
         <td>${e.status === "active" ? `<button class="link-btn" type="button" data-revoke="${escapeHTML(e.id)}">revoke</button>` : ""}</td></tr>`));
   }
 
-  async function analytics() {
-    const el = $("#admin-analytics");
-    const res = await api("/api/admin/analytics?days=30");
-    if (!res.ok) return fail(el, res);
-    el.innerHTML = `<p class="small-print">Last 30 days, counted per day with no cookies or personal data.</p>` +
-      table(["Event", "Item", "Count"], res.data.rows.map((r) => `<tr><td>${escapeHTML(r.event)}</td><td>${escapeHTML(r.subject || "—")}</td><td>${r.count}</td></tr>`));
-  }
-
   addEventListener("gs:admin", () => {
-    orders(); customers(); entitlements(); analytics();
+    orders(); customers(); entitlements();
     const root = $("#admin-app");
     root.addEventListener("click", async (e) => {
       const o = e.target.closest("[data-order]");

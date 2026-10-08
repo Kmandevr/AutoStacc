@@ -4,7 +4,7 @@
 import { json, readJson, fail, email as emailField, str } from "../lib/http.js";
 import { sha256 } from "../lib/crypto.js";
 import { parseItems, priceCart } from "../cart/pricing.js";
-import { currentUser } from "../auth/session.js";
+import { currentUser, impersonationIdOf } from "../auth/session.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { createOrder, attachCheckout, transition, findReusablePending, getOrderByIdempotencyKey } from "../orders/orders.js";
 import { newGuestKey, guestCookie, guestKeysFromRequest } from "../orders/guest.js";
@@ -37,7 +37,9 @@ async function checkout(app) {
   if (cart.totalCents <= 0) fail(409, "cart_changed", "Nothing in the cart costs money; claim free items from their page.");
 
   const lines = cart.lines.map((l) => ({ productId: l.productId, title: l.title, unitPriceCents: l.unitPriceCents, quantity: l.quantity }));
-  const reusable = await findReusablePending(db, user && user.id, lines, config.checkoutTtlMinutes - 5);
+  // An admin's test purchase never picks up the customer's own pending order (or the other way round).
+  const impersonationId = impersonationIdOf(app);
+  const reusable = impersonationId ? null : await findReusablePending(db, user && user.id, lines, config.checkoutTtlMinutes - 5);
   if (reusable) return json({ orderId: reusable.id, url: reusable.checkout_url, reused: true });
 
   const provider = paymentProvider(app);
@@ -46,7 +48,7 @@ async function checkout(app) {
   try {
     order = await createOrder(db, {
       userId: user ? user.id : null, email, currency: cart.currency, items: lines, provider: provider.name,
-      livemode: provider.livemode(config), idempotencyKey: idemKey, accessKeyHash: guestKey ? guestKey.hash : null
+      livemode: provider.livemode(config), idempotencyKey: idemKey, accessKeyHash: guestKey ? guestKey.hash : null, impersonationId
     });
   } catch (e) {
     // Lost a race with an identical request carrying the same Idempotency-Key.
@@ -74,4 +76,5 @@ async function checkout(app) {
   return json({ orderId: order.id, url: session.url }, 201, headers);
 }
 
-export const routes = [["POST", "/api/checkout", checkout]];
+// Allowed while impersonating only with test payments (server/impersonation/policy.js refuses live ones).
+export const routes = [["POST", "/api/checkout", checkout, { impersonation: "test-payments" }]];

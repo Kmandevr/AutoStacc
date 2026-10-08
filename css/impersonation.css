@@ -1,0 +1,37 @@
+/* Impersonation banner (js/impersonation.js): loaded only while an admin impersonates a customer. Deliberately
+   outside every theme and project skin: hazard yellow and black, a fixed bar and a frame around the whole window. */
+
+#impersonation-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
+  padding: 8px 16px; min-height: 52px;
+  font: 600 .9rem/1.3 system-ui, sans-serif; letter-spacing: 0; text-transform: none;
+  color: #000; background: #ffd400;
+  border-bottom: 4px solid #000;
+  box-shadow: 0 2px 0 #ffd400, 0 6px 18px rgba(0, 0, 0, .45);
+}
+#impersonation-bar.imp-ended { background: #ff5a36; }
+#impersonation-bar .imp-flag {
+  padding: 4px 10px; color: #ffd400; background: #000; text-transform: uppercase; letter-spacing: .06em;
+}
+#impersonation-bar.imp-ended .imp-flag { color: #ff5a36; }
+#impersonation-bar b { font-weight: 800; overflow-wrap: anywhere; }
+#impersonation-bar .imp-time { font-weight: 500; }
+#impersonation-bar .imp-exit {
+  margin-left: auto; min-height: 40px; padding: 6px 14px; cursor: pointer;
+  font: 800 .9rem/1 system-ui, sans-serif; color: #ffd400; background: #000; border: 2px solid #000;
+}
+#impersonation-bar .imp-exit:hover, #impersonation-bar .imp-exit:focus-visible { color: #000; background: #fff; outline: 3px solid #000; }
+
+/* Room for the bar, and a striped frame so even a screenshot of any corner shows it isn't a normal session. */
+body.is-impersonating { padding-top: var(--imp-h, 64px); }
+body.is-impersonating::after {
+  content: ""; position: fixed; inset: 0; z-index: 2147482999; pointer-events: none;
+  border: 6px solid transparent;
+  border-image: repeating-linear-gradient(45deg, #ffd400 0 14px, #000 14px 28px) 6;
+}
+
+@media (max-width: 600px) {
+  #impersonation-bar { font-size: .8rem; padding: 6px 10px; }
+  #impersonation-bar .imp-exit { margin-left: 0; width: 100%; }
+}
