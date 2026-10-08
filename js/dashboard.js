@@ -18,7 +18,7 @@
   function drawStacc(items) {
     const assets = window.GS.stacc.assetsFrom(items, catalog);
     if (!assets.length) {
-      stacc.innerHTML = `<p>${items.length ? "Your items are in; their files are on the way." : "Nothing in your Stacc yet. Everything you buy, claim or Auto-Stacc lands here, sorted for you."}</p>
+      stacc.innerHTML = `<p>${items.length ? "Your items are in. Their files are on the way." : "Nothing in Your Stacc yet. Everything you buy or claim lands here, sorted for you."}</p>
         <div class="actions"><a class="btn" href="/shop">Browse the store</a><a class="btn ghost" href="/projects">Follow projects</a></div>`;
       return;
     }
@@ -40,6 +40,6 @@
       hello.textContent = welcome ? "Email confirmed. Welcome in." : `Welcome back, ${me.data.user.name || "you"}.`;
     }
     if (library.ok) return drawStacc(library.data.items);
-    stacc.innerHTML = `<p class="small-print">${library.status === 503 ? "The store is offline for maintenance; your files are safe." : "Couldn't reach the store right now."} <a href="/library">Open Your Stacc</a></p>`;
+    stacc.innerHTML = `<p class="small-print">${library.status === 503 ? "The store is offline for maintenance. Your files are safe." : "Couldn't reach the store right now."} <a href="/library">Open Your Stacc</a></p>`;
   })();
 })();

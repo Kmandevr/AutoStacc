@@ -59,7 +59,7 @@
         ? await api(`/api/orders/${encodeURIComponent(orderId)}/reconcile`, { method: "POST", body: {} })
         : await api(`/api/orders/${encodeURIComponent(orderId)}`);
       if (res.status === 404) {
-        root.innerHTML = state("ORDER NOT FOUND", true, `<p>This device can't open that order. Log in with the account that placed it, or use the link in your receipt email.</p>
+        root.innerHTML = state("Order not found", true, `<p>This device can't open that order. Log in with the account that placed it, or use the link in your receipt email.</p>
           <div class="actions"><a class="btn" href="/login?next=/library">Log in</a></div>`);
         return;
       }
@@ -108,7 +108,7 @@
   });
 
   if (!/^ord_[a-z2-7]+$/.test(orderId)) {
-    root.innerHTML = state("NO ORDER HERE", true, `<p>This page shows an order after checkout. Nothing to show right now.</p><div class="actions"><a class="btn" href="/cart">Go to cart</a></div>`);
+    root.innerHTML = state("No order to show", true, `<p>This page shows your order after checkout. There's nothing to show right now.</p><div class="actions"><a class="btn" href="/cart">Go to cart</a></div>`);
   } else if (mockSession) mockPanel();
   else poll();
 })();

@@ -9,7 +9,7 @@ window.SITE = {
   // The home page's title and description (search results and link previews). Other pages write their own.
   title: "AutoStacc — Samples, presets, stems and music, organized for you",
   description: "AutoStacc sells and delivers sample packs, presets, stems, music and visuals from the projects that make them, and keeps everything you own sorted in Your Stacc.",
-  tagline: "Stacc it once. Auto handles the rest.",
+  tagline: "Buy it once. Find it every time.",
   // Link-preview picture for pages without their own artwork, and the organization's logo in structured data.
   image: { src: "img/og.png", width: 1200, height: 630, alt: "The AutoStacc logo, four stacked colour blocks, beside the AutoStacc wordmark" },
   logo: "img/apple-touch-icon.png",
