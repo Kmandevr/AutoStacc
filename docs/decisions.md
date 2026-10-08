@@ -6,6 +6,19 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-08: Support address, who runs AutoStacc, refunds and licences
+
+Chosen by the owner, for the trust pages (`data/legal.js`) and the licences to come:
+
+- **Support:** support@autostacc.com (`data/site.js` `email`), one address for help, refunds, privacy and security reports. The owner is setting up the inbox (e.g. forwarding) before launch.
+- **Who runs it:** an individual in Utah County, Utah, USA. Terms are governed by Utah and US law; consumer protections where the customer lives still apply. The terms say plainly they are general terms, not drafted by a lawyer.
+- **Refunds:** change of mind within 14 days if nothing from the purchase was downloaded; always for duplicate charges, purchases the customer didn't make, and files that are broken or not as described when they can't be fixed.
+- **Licences, by kind of product:**
+  - Samples, loops, sample packs and presets: royalty-free in the buyer's own music, including music they sell or stream, no credit or fees. No sharing, reselling or repackaging the raw files or presets.
+  - Remix stems: remixes may be released and sold if they credit the original artist. No sharing or reselling the stems themselves.
+  - Music: personal listening and DJ sets. No re-uploading, redistribution or resale.
+  - Visuals and VJ loops: the buyer's own live shows and streams. No reselling or sharing the files.
+
 ## 2026-10-08: One Settings area, an account menu, and account deletion that keeps sales records
 
 The owner asked for the site's layout to follow current conventions for settings and navigation, then chose (from researched options): the whole platform frame in scope, keeping AutoStacc's look and modernising the structure; Account and Settings merged into one Settings area with a page per section; Sessions, email preferences, a data export and account deletion added; the account links moved into a menu in the top bar; one pull request.

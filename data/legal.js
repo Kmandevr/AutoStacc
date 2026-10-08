@@ -13,8 +13,11 @@ window.LEGAL = [
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
     updated: "2026-10-08",
-    review: "This policy describes how the site works today. It hasn't been reviewed by a lawyer yet, and AutoStacc's legal name and address are still to be added.",
+    review: "",
     sections: [
+      { id: "who", heading: "Who runs AutoStacc", body: [
+        "AutoStacc is run by an individual based in Utah County, Utah, United States, who decides how the information below is used. Questions about your data: {contact}"
+      ] },
       { id: "short", heading: "The short version", body: [
         { list: [
           "AutoStacc keeps what it needs to run your account, sell you things and deliver your files. Nothing is sold to anyone.",
@@ -99,8 +102,11 @@ window.LEGAL = [
     description: "The general rules for using AutoStacc: accounts, buying and downloading digital products, licences, acceptable use, and what happens when things go wrong.",
     summary: "The general rules for using AutoStacc, in plain words. What you can buy, what you can do with it, and what AutoStacc promises.",
     updated: "2026-10-08",
-    review: "These are general terms written for the site as it works today. They haven't been reviewed by a lawyer, and AutoStacc's legal name, address and governing law are still to be added.",
+    review: "",
     sections: [
+      { id: "about", heading: "About these terms", body: [
+        "AutoStacc is run by an individual based in Utah County, Utah, United States. These are general terms written in plain language for the site as it works today; they weren't drafted by a lawyer. If anything here conflicts with a right the law gives you, the law wins."
+      ] },
       { id: "using", heading: "Using AutoStacc", body: [
         "AutoStacc is a store and library for digital music material (sample packs, presets, stems, music and visuals) made by independent artists and creators. By using the site you agree to these terms, the [privacy policy](/privacy), the [refund policy](/refunds) and the [licences](/license) of what you buy."
       ] },
@@ -145,6 +151,9 @@ window.LEGAL = [
       { id: "changes", heading: "Changes", body: [
         "AutoStacc may change the site and these terms. The date at the top shows the latest version; a change that matters to you will be announced before it applies to new purchases. Purchases keep the licence they were bought under."
       ] },
+      { id: "law", heading: "Governing law", body: [
+        "These terms are governed by the laws of the State of Utah and the United States. This doesn't take away consumer protections you have where you live."
+      ] },
       { id: "contact", heading: "Contact", body: ["{contact}"] }
     ]
   },
@@ -154,7 +163,7 @@ window.LEGAL = [
     description: "When AutoStacc refunds digital purchases: failed and duplicate payments, files that don't work, unauthorized purchases, and how to ask.",
     summary: "Everything AutoStacc sells is a digital download you can use straight away, so refunds work a little differently from physical goods. Here's when you get your money back.",
     updated: "2026-10-08",
-    review: "These are proposed defaults for a digital store. The owner still has to confirm the time limits and cases below.",
+    review: "",
     sections: [
       { id: "default", heading: "Digital downloads", body: [
         "Because files can be downloaded and kept as soon as a purchase completes, purchases are generally final once you've downloaded them. The cases below are the exceptions, and AutoStacc will always fix or refund a purchase that doesn't work as described."
