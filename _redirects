@@ -8,3 +8,6 @@
 /news       /projects/glitches-and-stitches/news  301
 /news/*     /projects/glitches-and-stitches/news/:splat  301
 /press      /projects/glitches-and-stitches/press  301
+/music.html /projects/glitches-and-stitches/music  301
+/news.html  /projects/glitches-and-stitches/news  301
+/press.html /projects/glitches-and-stitches/press  301

@@ -31,7 +31,8 @@ function organization(SITE) {
     image: abs(SITE, SITE.image.src)
   };
 }
-const orgRef = (SITE) => ({ "@id": ids(SITE).org });
+// A named reference, so pages that don't carry the full Organization still say who publishes and sells.
+const orgRef = (SITE) => ({ "@type": "Organization", "@id": ids(SITE).org, name: SITE.name, url: origin(SITE) + "/", logo: abs(SITE, SITE.logo) });
 
 function website(SITE) {
   return {
