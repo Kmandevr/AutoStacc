@@ -5,8 +5,8 @@ import { json, fail, readJson, str, id } from "../lib/http.js";
 import { first, run, newId, now, parseJson } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
 import { getProduct } from "../catalog/products.js";
-import { newFileKey, putFile, previewKey, putPreview, safeFilename } from "../storage/buckets.js";
-import { checkUpload } from "../files/policy.js";
+import { newFileKey, putFile, previewKey, putPreview, safeFilename, peekFile, peekPreview, deleteFile, deletePreview } from "../storage/buckets.js";
+import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { countKept, setStatus } from "../files/files.js";
 import { audit } from "../audit/log.js";
 
@@ -33,9 +33,14 @@ async function uploadFile(app, { productId }) {
     fail(404, "not_found", "The file to replace isn't an active file of this product.");
   }
   checkUpload({ filename, sizeBytes: Number(app.request.headers.get("content-length") || 0), existing: await countKept(app.db, p.id) - (replaces ? 1 : 0) });
-  const contentType = (app.request.headers.get("content-type") || "application/octet-stream").slice(0, 100);
+  const contentType = contentTypeFor(filename);
   const key = newFileKey(p.id, filename);
   const object = await putFile(app.env, key, app.request.body, contentType);
+  // The name is only a claim: if the stored bytes aren't that kind of file, nothing of it is kept.
+  if (!looksLike(filename, await peekFile(app.env, key))) {
+    await deleteFile(app.env, key);
+    fail(415, "content_mismatch", "That file isn't really the kind its name says. Check it opens, then upload it again.");
+  }
   const fileId = newId("pf");
   const t = now();
   await run(app.db, `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind, status, status_at)
@@ -74,10 +79,14 @@ async function uploadPreview(app) {
   const filename = str(url.searchParams.get("filename") || "", "filename", { max: 120, pattern: /^[\w.\- ()]+\.(mp3|m4a|ogg|wav)$/i });
   const size = Number(app.request.headers.get("content-length") || 0);
   if (!size || size > 20 * 1024 * 1024) fail(413, "too_large", "Previews must be under 20 MB.");
-  const contentType = (app.request.headers.get("content-type") || "audio/mpeg").slice(0, 60);
-  if (!contentType.startsWith("audio/")) fail(415, "unsupported_media_type", "Previews must be audio.");
+  const contentType = contentTypeFor(filename);
+  if (!PREVIEW_EXTENSIONS.has(extensionOf(filename)) || !contentType.startsWith("audio/")) fail(415, "unsupported_media_type", "Previews must be audio.");
   const key = previewKey(filename);
   await putPreview(app.env, key, app.request.body, contentType);
+  if (!looksLike(filename, await peekPreview(app.env, key))) {
+    await deletePreview(app.env, key);
+    fail(415, "content_mismatch", "That file isn't really audio of the kind its name says.");
+  }
   await audit(app, "preview.uploaded", { targetType: "preview", targetId: key, detail: { filename } });
   return json({ ok: true, path: `/media/${key}` }, 201);
 }
