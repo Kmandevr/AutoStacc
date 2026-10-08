@@ -45,7 +45,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 ## 4. Brevo
 
 1. Senders, domains & dedicated IPs → Domains: add `autostacc.com` and add the DNS records Brevo shows (in Cloudflare DNS) so mail is authenticated (SPF/DKIM/DMARC).
-2. Add the sender `store@autostacc.com` (or change `EMAIL_FROM` in `wrangler.toml` to the address you want; it must be a verified sender).
+2. Senders → add both senders (they must be verified, or be on the authenticated domain): `store@autostacc.com` sends purchase mail (receipts, "your purchases joined your account"; `EMAIL_FROM` in `wrangler.toml`), `noreply@autostacc.com` sends automated mail (confirm email, password reset, account exists, store alerts; `EMAIL_FROM_NOREPLY`).
 3. Create the API key (step 2 table).
 4. Security → Authorised IPs: deactivate the IP blocking. The store sends from Cloudflare's servers, whose addresses change, so with blocking on Brevo refuses every mail (401 "unrecognised IP address").
 

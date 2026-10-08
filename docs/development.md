@@ -33,7 +33,8 @@ Plain settings are `[vars]` in `wrangler.toml` (per environment: top level = loc
 | `SITE_URL` | var | The site's own address (links in mail, Stripe return URLs, origin checks) |
 | `PAYMENT_PROVIDER` | var | `stripe`, or `mock` (development/test only) |
 | `EMAIL_PROVIDER` | var | `brevo`, or `log` (not in production) |
-| `EMAIL_FROM` | var | `Name <address>` of a Brevo-verified sender |
+| `EMAIL_FROM` | var | `Name <address>` of a Brevo-verified sender for purchase mail (`store@`) |
+| `EMAIL_FROM_NOREPLY` | var | the same for automated mail: account, password reset, alerts (`noreply@`) |
 | `BETTER_AUTH_SECRET` | secret | 32+ chars, signs sessions |
 | `DOWNLOAD_SIGNING_SECRET` | secret | 32+ chars, different, signs download links |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | secret | Stripe keys (`sk_live_` only in production, never elsewhere) |

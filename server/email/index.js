@@ -1,7 +1,7 @@
 // sendEmail: render a template, send it through the configured provider and record it in email_events.
 // A dedupe key makes a send happen once (a replayed webhook never mails twice). Failures are recorded, never thrown,
 // so a mail outage can't fail a payment; an admin can resend later.
-import { render } from "./templates.js";
+import { render, senderOf } from "./templates.js";
 import { providers } from "./providers.js";
 import { first, run, newId, now } from "../lib/db.js";
 
@@ -12,7 +12,7 @@ export async function sendEmail(app, kind, to, data, { dedupeKey } = {}) {
     const prior = await first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", key);
     if (prior && prior.status !== "failed") return { status: "duplicate" };
   }
-  const msg = { from: config.emailFrom, to, tags: [kind], ...render(kind, data) };
+  const msg = { from: senderOf(kind) === "store" ? config.emailFrom : config.emailFromNoreply, to, tags: [kind], ...render(kind, data) };
   let status = config.emailProvider === "log" ? "logged" : "sent";
   let providerId = "", error = null;
   try {
