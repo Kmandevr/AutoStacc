@@ -20,6 +20,17 @@ function client(config) {
 
 const crypto = Stripe.createSubtleCryptoProvider();
 
+// One Checkout line per order line, at the price the store charged (after any sale). A line carrying part of a promo
+// code's discount becomes a single line at its exact discounted amount, so the session total always equals the
+// order total to the cent (server/payments/events.js refuses a payment that doesn't).
+function lineItem(order, i) {
+  const currency = order.currency.toLowerCase();
+  const product_data = { name: i.title, metadata: { product_id: i.productId } };
+  if (!i.discountCents) return { quantity: i.quantity, price_data: { currency, unit_amount: i.unitPriceCents, product_data } };
+  const name = `${i.title}${i.quantity > 1 ? ` × ${i.quantity}` : ""} (${order.promo_code || "discount"})`;
+  return { quantity: 1, price_data: { currency, unit_amount: i.unitPriceCents * i.quantity - i.discountCents, product_data: { ...product_data, name } } };
+}
+
 export const stripeProvider = {
   name: "stripe",
   livemode: (config) => config.stripeLive,
@@ -32,10 +43,7 @@ export const stripeProvider = {
       customer_email: order.email,
       metadata: { order_id: order.id },
       payment_intent_data: { metadata: { order_id: order.id } },
-      line_items: items.map((i) => ({
-        quantity: i.quantity,
-        price_data: { currency: order.currency.toLowerCase(), unit_amount: i.unitPriceCents, product_data: { name: i.title, metadata: { product_id: i.productId } } }
-      })),
+      line_items: items.map((i) => lineItem(order, i)),
       success_url: successUrl,
       cancel_url: cancelUrl,
       expires_at: Math.floor(Date.now() / 1000) + config.checkoutTtlMinutes * 60

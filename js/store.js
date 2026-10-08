@@ -16,7 +16,14 @@
   document.body.append(live);
   const say = (text) => { live.textContent = ""; setTimeout(() => (live.textContent = text), 50); };
 
-  let state = null; // { signedIn, products: { id: { available, free, owned, priceCents, currency } } }
+  let state = null; // { signedIn, products: { id: { available, free, owned, priceCents, listPriceCents, sale, currency } } }
+
+  // The live price; during a sale the catalog price struck through beside it and the sale's name.
+  const priceHTML = (p) => {
+    if (p.free) return "Free";
+    if (!p.sale || p.listPriceCents <= p.priceCents) return escapeHTML(cents(p.priceCents, p.currency));
+    return `<s class="price-was">${escapeHTML(cents(p.listPriceCents, p.currency))}</s> ${escapeHTML(cents(p.priceCents, p.currency))} <span class="price-sale">${escapeHTML(p.sale.name)}</span>`;
+  };
 
   function control(id, detail) {
     const p = state && state.products[id];
@@ -38,7 +45,7 @@
     if (!state) return;
     document.querySelectorAll("[data-price]").forEach((el) => {
       const p = state.products[el.dataset.price];
-      if (p) el.textContent = p.free ? "Free" : cents(p.priceCents, p.currency);
+      if (p && el.innerHTML !== priceHTML(p)) el.innerHTML = priceHTML(p);
     });
     document.querySelectorAll("[data-status]").forEach((el) => {
       const p = state.products[el.dataset.status];

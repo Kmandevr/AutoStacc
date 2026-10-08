@@ -1,7 +1,7 @@
 // Entry point of the store API (Cloudflare Pages Functions call it for /api/*). Loads config, hands /api/auth/* to
 // Better Auth, checks the origin of state-changing requests, applies the impersonation policy, then dispatches to the
 // module that owns the route. Each module (catalog, cart, checkout, orders, payments, entitlements, downloads, account,
-// admin, analytics, projects, polls, impersonation, audit, stats, dev) exports its own route table; adding a feature is
+// admin, analytics, projects, polls, impersonation, audit, stats, promotions, dev) exports its own route table; adding a feature is
 // one import and one line below.
 import { loadConfig, ConfigError } from "./lib/config.js";
 import { createRouter } from "./lib/router.js";
@@ -25,10 +25,11 @@ import { routes as testPurchases } from "./admin/test-purchases.js";
 import { routes as customerPreview } from "./admin/customers.js";
 import { routes as audit } from "./audit/routes.js";
 import { routes as stats } from "./stats/routes.js";
+import { routes as promotions } from "./promotions/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

@@ -65,3 +65,10 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 .admin-checks { list-style: none; padding: 0; display: grid; gap: 6px; }
 .admin-checks [data-ok="false"] strong { color: var(--coral); }
 .admin-as { font-weight: 700; color: var(--coral); }
+
+/* Promotions: the create form's choices, and ended rows faded. */
+.admin-promo-form fieldset { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--line); }
+.admin-promo-form legend { padding: 0 6px; color: var(--muted); }
+.admin-choice label { display: block; margin: 4px 0; }
+.admin-promo-form input[type=number], .admin-promo-form select { min-height: 44px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; }
+.admin-table tr[data-status="ended"] td { color: var(--muted); }

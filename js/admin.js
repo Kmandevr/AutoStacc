@@ -2,7 +2,8 @@
 // badge, the tabs and the summary, and manages products: pause/resume sales, upload paid files (or a new version of
 // one) and preview clips, deactivate files. The other tabs start on the "gs:admin" event: statistics
 // (js/admin-stats.js), orders, customers and entitlements (js/admin-records.js), customer preview with impersonation
-// and test purchases (js/admin-customer.js), test-purchase checks and the audit log (js/admin-audit.js).
+// and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), test-purchase checks and
+// the audit log (js/admin-audit.js).
 // Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
 (function () {
   "use strict";
@@ -15,7 +16,7 @@
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
   const TABS = [["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"],
-    ["tests", "Test purchases"], ["audit", "Audit log"]];
+    ["promotions", "Promotions"], ["tests", "Test purchases"], ["audit", "Audit log"]];
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
   function shell(s) {

@@ -8,7 +8,7 @@ paths:
 
 # Store API
 
-- One folder per area in `server/` (auth, catalog, cart, checkout, payments, orders, entitlements, downloads, storage, email, admin, analytics, stats, impersonation, audit, account, projects, polls, dev; shared `lib/`). A module owns its tables and exports a `routes` table; `server/app.js` only wires them. Put code in the module that owns the data it changes; call another module through its exported functions, never its SQL. A file past ~150 lines or doing two jobs gets split. Map and flows: [docs/store.md](../../docs/store.md).
+- One folder per area in `server/` (auth, catalog, cart, checkout, payments, orders, entitlements, downloads, storage, email, admin, analytics, stats, impersonation, audit, promotions, account, projects, polls, dev; shared `lib/`). A module owns its tables and exports a `routes` table; `server/app.js` only wires them. Put code in the module that owns the data it changes; call another module through its exported functions, never its SQL. A file past ~150 lines or doing two jobs gets split. Map and flows: [docs/store.md](../../docs/store.md).
 - `functions/` holds only thin Pages Function entry points. No logic there.
 - Never trust the browser: prices, totals, titles, ownership, order and payment status come from D1 or a verified provider event. Ownership reads `entitlements` only, never orders. Validate every input with `lib/http.js` helpers (`readJson`, `str`, `id`, `int`, `email`) and answer with `fail(status, code, message)`.
 - Not-yours looks like not-there: other people's orders, unpublished products and admin routes answer 404. No messages that reveal whether an email has an account.
