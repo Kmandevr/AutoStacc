@@ -8,14 +8,9 @@
   const TYPES = window.PRODUCT_TYPES || {};
   const label = (p) => (TYPES[p.type] || {}).label || p.type;
 
-  // The theme only has two colours, so the hue picks one: greens and blues glow green, the rest purple.
-  function coverStyle(hue) {
-    const tint = hue >= 90 && hue < 210 ? "51 255 102" : "191 95 255";
-    return `background:
-      radial-gradient(circle at 50% 40%, rgb(${tint} / .3), transparent 70%),
-      repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px),
-      #000;`;
-  }
+  // Generated covers: a track-colour tile from the product type on platform pages; inside a project skin the skin
+  // restyles it (Glitches & Stitches: the hue picks green or purple glow).
+  const tint = (hue = 300) => (hue >= 90 && hue < 210 ? "green" : "purple");
 
   // `level`: the card's heading level, so it sits under the section it appears in (h2 on the shop, h3 on home).
   function productCard(p, level = 3) {
@@ -25,7 +20,7 @@
       : `<button class="btn" type="button" data-add-to-cart="${escapeHTML(p.id)}">Add to cart</button>`;
     return `
       <article class="card">
-        <div class="cover" style="${coverStyle(p.hue ?? 300)}"><span>${escapeHTML(p.title.split(" — ")[0])}</span></div>
+        <div class="cover tint-${tint(p.hue)}" data-track="${escapeHTML((TYPES[p.type] || {}).track || "")}"><span>${escapeHTML(p.title.split(" — ")[0])}</span></div>
         <div class="card-body">
           <span class="tag">${escapeHTML(label(p))}</span>
           <h${level}><a href="/shop/${escapeHTML(p.id)}">${escapeHTML(p.title)}</a></h${level}>

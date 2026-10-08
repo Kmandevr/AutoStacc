@@ -28,8 +28,9 @@ function createServer(root = path.resolve(__dirname, "..")) {
     let p;
     try { p = decodeURIComponent(rawPath); } catch { return send(res, 404, path.join(root, "404.html")); }
     const qs = query ? "?" + query : "";
-    const rule = rules.find(([from]) => from === p);
-    if (rule) return redirect(res, Number(rule[2] || 302), rule[1] + qs);
+    // Exact rules, and "/old/*  /new/:splat" rules as Cloudflare Pages reads them.
+    const rule = rules.find(([from]) => from === p || (from.endsWith("/*") && p.startsWith(from.slice(0, -1))));
+    if (rule) return redirect(res, Number(rule[2] || 302), rule[1].replace(":splat", rule[0].endsWith("/*") ? p.slice(rule[0].length - 1) : "") + qs);
     if (p.startsWith("/api/") || p.startsWith("/media/")) {
       res.writeHead(503, { "Content-Type": "application/json", "Retry-After": "600" });
       return res.end(JSON.stringify({ error: { code: "store_offline", message: "The store is offline for maintenance. The music isn't." } }));

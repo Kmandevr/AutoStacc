@@ -1,12 +1,13 @@
-// UI sound: a [SND] switch in the header (off by default, remembered) and soft, musical glitch sounds made in the browser.
+// UI sound for projects that use it (data/projects.js sounds: true; never on platform pages): a [SND] switch in the top
+// bar (off by default, remembered) and soft, musical glitch sounds made in the browser.
 // Every note comes from one scale, so overlapping sounds stay in key, and each sound follows the timing of its animation.
 // Other scripts ask for a sound with: document.dispatchEvent(new CustomEvent("gs:sound", { detail: "zap" })),
 // or { detail: { name: "word", n: 2, el } } to pass a step number and the element (for left/right placement).
-// Needs js/layout.js to have drawn the header; the switch goes at the end of the nav (inside the menu on phones).
+// Needs js/layout.js to have drawn the top bar; the switch goes in its tools.
 (function () {
   "use strict";
 
-  const nav = document.querySelector(".site-header .nav");
+  const nav = document.querySelector(".topbar-tools");
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!nav || !AudioCtx) return;
 
@@ -184,7 +185,7 @@
     btn.setAttribute("aria-pressed", String(on));
   };
   draw();
-  nav.append(btn);
+  nav.prepend(btn);
   btn.addEventListener("click", () => {
     on = !on;
     try { localStorage.setItem(KEY, on ? "on" : "off"); } catch { /* not remembered */ }

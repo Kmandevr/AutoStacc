@@ -4,7 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { ROOT, loadData, origin } = require("./lib/data");
+const { ROOT, loadData, origin, projectPath } = require("./lib/data");
 
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
@@ -13,7 +13,9 @@ const exists = (f) => fs.existsSync(path.join(ROOT, f));
 const data = loadData();
 const { SITE } = data;
 const ORIGIN = origin(SITE);
-const ARTIST = SITE.artist;
+const BRAND = SITE.name; // the platform: platform pages are titled "... · AutoStacc"
+// A page under /projects/<id> belongs to that project and is titled with its name.
+const projectOf = (p) => data.projects.find((x) => p && (p === projectPath(x.id) || p.startsWith(projectPath(x.id) + "/")));
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
 
 // ---------- the build is current ----------
@@ -26,10 +28,9 @@ try {
 }
 
 // ---------- pages ----------
-const pageFiles = [
-  ...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")),
-  ...["music", "shop", "news"].filter(exists).flatMap((d) => fs.readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith(".html")).map((f) => `${d}/${f}`))
-];
+const htmlUnder = (dir) => (exists(dir) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
+  .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
+const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("projects")];
 const urlPath = (f) => (f === "index.html" ? "/" : "/" + f.replace(/\.html$/, ""));
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));
@@ -57,7 +58,9 @@ for (const f of pageFiles) {
   if ((head.match(/<title>/g) || []).length !== 1) add("FAIL", "title", `${(head.match(/<title>/g) || []).length} <title> tags`, f);
   if (!title) add("FAIL", "title", "missing", f);
   else {
-    if (!title.includes(ARTIST)) add("FAIL", "title-brand", `"${title}" doesn't name ${ARTIST}`, f);
+    const owner = projectOf(urlPath(f));
+    const name = owner ? owner.name : BRAND;
+    if (!title.includes(name)) add("FAIL", "title-brand", `"${title}" doesn't name ${name}`, f);
     if (title.length > 70) add("WARN", "title-length", `${title.length} chars, search results cut at ~60-70`, f);
   }
   if (descs.length !== 1) add("FAIL", "description", `${descs.length} meta descriptions`, f);
@@ -85,7 +88,7 @@ for (const f of pageFiles) {
   if (ogImage && !ogImage.startsWith(ORIGIN + "/")) add("FAIL", "og-image", `${ogImage} is not on ${ORIGIN}`, f);
   if (ogImage && !exists(ogImage.slice(ORIGIN.length + 1))) add("FAIL", "og-image", `${ogImage} doesn't exist`, f);
   if (!noindex && metaVal(head, "og:url")[0] !== canon[0]) add("FAIL", "og-url", "og:url doesn't match the canonical", f);
-  if (metaVal(head, "og:site_name")[0] && metaVal(head, "og:site_name")[0] !== ARTIST) add("FAIL", "og-site-name", `should be ${ARTIST}`, f);
+  if (metaVal(head, "og:site_name")[0] && metaVal(head, "og:site_name")[0] !== BRAND) add("FAIL", "og-site-name", `should be ${BRAND}`, f);
 
   // Headings written in the HTML (generated lists add theirs at runtime; verify-site checks the rendered page).
   const h1s = (html.match(/<h1\b/g) || []).length;
@@ -114,7 +117,7 @@ for (const [f, p] of Object.entries(pages)) {
 
 // ---------- structured data ----------
 const REQUIRED = {
-  WebSite: ["name", "url"], MusicGroup: ["name", "url"], MusicAlbum: ["name", "url", "byArtist", "datePublished", "track"],
+  WebSite: ["name", "url"], Organization: ["name", "url"], MusicGroup: ["name", "url"], MusicAlbum: ["name", "url", "byArtist", "datePublished", "track"],
   MusicRecording: ["name"], Product: ["name", "description", "offers", "brand", "url"], Offer: ["price", "priceCurrency", "availability"],
   BlogPosting: ["headline", "datePublished", "author", "url"], BreadcrumbList: ["itemListElement"], ItemList: ["itemListElement"],
   WebPage: ["url", "name"], CollectionPage: ["url", "name"], AboutPage: ["url", "name"], ItemPage: ["url", "name"], ListItem: ["position"]
@@ -153,24 +156,28 @@ for (const [f, p] of Object.entries(pages)) {
     if (json["@context"] !== "https://schema.org") add("FAIL", "jsonld-context", "@context should be https://schema.org", f);
     walk(json, f, seen);
     for (const g of [].concat(json["@graph"] || json)) {
-      if (g["@type"] === "MusicGroup" && g.name !== ARTIST) add("FAIL", "jsonld-brand", `MusicGroup name "${g.name}"`, f);
+      if (g["@type"] === "MusicGroup" && !data.projects.some((x) => x.name === g.name)) add("FAIL", "jsonld-brand", `MusicGroup name "${g.name}" isn't a project`, f);
+      if (g["@type"] === "Organization" && g["@id"] === ORIGIN + "/#organization" && g.name !== BRAND) add("FAIL", "jsonld-brand", `Organization name "${g.name}"`, f);
     }
   }
   jsonTypes[f] = seen;
 }
 const needs = (f, type, why) => pages[f] && !jsonTypes[f].has(type) && add("FAIL", "jsonld-missing", `${type} expected (${why})`, f);
 needs("index.html", "WebSite", "home page");
-needs("index.html", "MusicGroup", "home page");
-for (const r of data.releases) needs(`music/${r.id}.html`, "MusicAlbum", "release page");
-for (const n of data.news) needs(`news/${n.id}.html`, "BlogPosting", "news post");
+needs("index.html", "Organization", "home page");
+for (const x of data.projects.filter((p) => !p.draft)) needs(`projects/${x.id}.html`, x.entity || "Organization", "project home page");
+for (const r of data.releases) needs(`${projectPath(r.project, "music", r.id).slice(1)}.html`, "MusicAlbum", "release page");
+for (const n of data.news) needs(`${projectPath(n.project, "news", n.id).slice(1)}.html`, "BlogPosting", "news post");
 for (const pr of data.products) {
   const f = `shop/${pr.id}.html`;
   if (pr.draft && jsonTypes[f] && jsonTypes[f].has("Product")) add("FAIL", "jsonld-draft", "draft product must not publish Product data", f);
   if (!pr.draft) needs(f, "Product", "public product");
 }
 for (const [f, p] of Object.entries(pages)) if (!p.noindex && f !== "index.html") needs(f, "BreadcrumbList", "every indexable page below home");
-const home = pages["index.html"] && pages["index.html"].html;
-if (home && !/"sameAs"/.test(home)) add("WARN", "same-as", "no official profiles in data/site.js socials yet");
+for (const x of data.projects.filter((p) => !p.draft)) {
+  const home = pages[`projects/${x.id}.html`];
+  if (home && !/"sameAs"/.test(home.html)) add("WARN", "same-as", `no official profiles in ${x.id} socials yet`, "data/projects.js");
+}
 
 // ---------- sitemap.xml ----------
 const sitemap = exists("sitemap.xml") ? read("sitemap.xml") : "";
@@ -221,7 +228,7 @@ const allowed = (p) => {
   return hits.some(([k, v]) => v.length === len && k === "allow");
 };
 for (const u of locs) if (!allowed(u.slice(ORIGIN.length))) add("FAIL", "robots-blocks", `${u} is blocked by robots.txt`);
-for (const p of ["/css/base.css", "/js/util.js", "/data/site.js", "/img/og.png"]) if (!allowed(p)) add("FAIL", "robots-blocks", `${p} is blocked (pages need it to render)`);
+for (const p of ["/css/core.css", "/js/util.js", "/data/site.js", "/img/og.png"]) if (!allowed(p)) add("FAIL", "robots-blocks", `${p} is blocked (pages need it to render)`);
 for (const p of ["/account", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
 if (robots && !out.some((l) => /^FAIL robots/.test(l))) add("PASS", "robots", "public pages crawlable, private areas blocked, sitemap declared");
 
@@ -230,12 +237,19 @@ const redirects = exists("_redirects") ? read("_redirects").split("\n").filter((
 for (const [from, to, code] of redirects) {
   if (locs.includes(ORIGIN + from)) add("FAIL", "redirect-public", `${from} is in the sitemap but redirects to ${to}`);
   if (!["301", "308"].includes(code)) add("WARN", "redirect-code", `${from} -> ${to} uses ${code || "302"}; permanent moves should be 301`);
-  if (to !== "/" && !to.startsWith("http") && !servedPaths.has(to)) add("FAIL", "redirect-target", `${from} -> ${to} goes nowhere`);
+  // A "/old/*  /new/:splat" rule must point into a folder that has pages.
+  const target = to.endsWith("/:splat") ? to.slice(0, -"/:splat".length) : to;
+  const lands = to.endsWith("/:splat") ? [...servedPaths].some((s) => s.startsWith(target + "/")) : servedPaths.has(to);
+  if (to !== "/" && !to.startsWith("http") && !lands) add("FAIL", "redirect-target", `${from} -> ${to} goes nowhere`);
 }
 const recorded = exists("scripts/public-urls.txt") ? read("scripts/public-urls.txt").split("\n").filter((l) => l && !l.startsWith("#")) : [];
 for (const u of recorded) {
   const p = u.slice(ORIGIN.length);
-  if (!locs.includes(u) && !redirects.some(([from]) => from === p)) {
+  const redirected = redirects.find(([from]) => from === p || (from.endsWith("/*") && p.startsWith(from.slice(0, -1))));
+  // A wildcard redirect only covers an old address if the page it points to exists.
+  const landing = redirected && (redirected[0].endsWith("/*") ? redirected[1].replace(":splat", p.slice(redirected[0].length - 1)) : redirected[1]);
+  if (redirected && landing !== "/" && !servedPaths.has(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
+  if (!locs.includes(u) && !redirected) {
     add("FAIL", "url-disappeared", `${u} was public and is gone: add a 301 in _redirects, or remove it from scripts/public-urls.txt if that's deliberate`);
   }
 }
@@ -248,15 +262,20 @@ for (const f of ["_headers", "robots.txt", "sitemap.xml", "_redirects"]) if (!di
 
 // ---------- identity data: no placeholders shipped ----------
 const isProfile = (u) => { try { const x = new URL(u); return x.protocol === "https:" && x.pathname.replace(/\/+$/, "") !== ""; } catch { return false; } };
-for (const s of SITE.socials || []) {
-  if (s.url && !isProfile(s.url)) add("FAIL", "placeholder-profile", `${s.name}: "${s.url}" isn't a profile page (leave it "" until it exists)`, "data/site.js");
-  if (s.url && BAD_HOST.test(s.url)) add("FAIL", "placeholder-profile", `${s.name}: ${s.url}`, "data/site.js");
+for (const x of data.projects) for (const s of x.socials || []) {
+  if (s.url && !isProfile(s.url)) add("FAIL", "placeholder-profile", `${x.id} ${s.name}: "${s.url}" isn't a profile page (leave it "" until it exists)`, "data/projects.js");
+  if (s.url && BAD_HOST.test(s.url)) add("FAIL", "placeholder-profile", `${x.id} ${s.name}: ${s.url}`, "data/projects.js");
 }
 for (const r of data.releases) for (const l of r.links || []) if (l.url && !isProfile(l.url)) add("FAIL", "placeholder-link", `${r.id} ${l.name}: "${l.url}"`, "data/music.js");
-if (SITE.email && (BAD_HOST.test(SITE.email) || !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(SITE.email))) add("FAIL", "placeholder-email", `"${SITE.email}" isn't a real address`, "data/site.js");
-if (!SITE.email) add("WARN", "contact", "no booking email set yet (issue #7)", "data/site.js");
+const fakeEmail = (m) => m && (BAD_HOST.test(m) || !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(m));
+if (fakeEmail(SITE.email)) add("FAIL", "placeholder-email", `"${SITE.email}" isn't a real address`, "data/site.js");
+for (const x of data.projects) {
+  if (fakeEmail(x.email)) add("FAIL", "placeholder-email", `${x.id}: "${x.email}" isn't a real address`, "data/projects.js");
+  if (!x.draft && !x.email && (x.pages || []).some((pg) => pg.path === "press")) add("WARN", "contact", `no booking email for ${x.name} yet (issue #7)`, "data/projects.js");
+}
 if (SITE.url !== "https://autostacc.com") add("FAIL", "site-url", `SITE.url is ${SITE.url}`, "data/site.js");
-if (!SITE.title || !SITE.title.startsWith(ARTIST)) add("FAIL", "home-title", "SITE.title must start with the artist name", "data/site.js");
+if (!SITE.title || !SITE.title.startsWith(BRAND)) add("FAIL", "home-title", "SITE.title must start with the platform name", "data/site.js");
+for (const x of data.projects.filter((p) => !p.draft)) if (!x.title || !x.title.includes(x.name)) add("FAIL", "home-title", `${x.id}: its title must name it`, "data/projects.js");
 const drafts = data.products.filter((p) => p.draft).length;
 if (drafts) add("WARN", "drafts", `${drafts} placeholder product(s) kept out of search (issue #5)`, "data/products.js");
 

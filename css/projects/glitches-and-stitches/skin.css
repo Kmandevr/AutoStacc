@@ -1,0 +1,197 @@
+/* Glitches & Stitches' skin: the glitch terminal inside the AutoStacc frame, on its pages only. */
+/* Glitches & Stitches' skin: the glitch terminal (docs/brand.md) inside the AutoStacc frame. Scoped to .skin-glitches-and-stitches, which the project's pages put on <main>, so the sidebar and top bar stay AutoStacc. Loaded on every page of the project (data/projects.js skin: true). */
+
+
+.skin-glitches-and-stitches {
+  --bg: #000;
+  --panel: #0b0812;
+  --text: #f2f2f2;
+  --muted: #b8b8c0;
+  --accent: #33ff66;
+  --accent-dim: #24b350;
+  --accent-2: #bf5fff;
+  --line: #1f5c33;
+  --heading: var(--accent);
+  --link: var(--accent-2);
+  --link-hover: var(--accent);
+  --focus: var(--accent);
+  --btn-bg: var(--accent-2);
+  --on-accent: var(--bg);
+  --ghost-border: var(--accent);
+  --stack: var(--accent);
+  --glow: 0 0 6px rgba(51,255,102,.45);
+  --glow-2: 0 0 8px rgba(191,95,255,.6);
+  --radius: 0;
+  --font: "JetBrains Mono", ui-monospace, monospace;
+  --mono: var(--font);
+  --display: "VT323", var(--font);
+  --display-weight: 400;
+  --display-tracking: .02em;
+  --section-size: clamp(2.2rem, 5vw, 3.2rem);
+  --section-case: uppercase;
+  --stamp-size: 1.25rem;
+  --btn-case: uppercase;
+  --btn-tracking: .06em;
+  --prompt: "$ ";
+  --btn-prefix: "> ";
+  --msg-ok: "[ok] ";
+  --msg-err: "[err] ";
+  --msg-pending: "[..] ";
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  color-scheme: dark;
+}
+.skin-glitches-and-stitches ::selection { background: var(--accent); color: var(--bg); }
+
+/* CRT screen over the project's window: scanlines plus darkened edges, and a faint band rolling down */
+.skin-glitches-and-stitches::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.55) 100%);
+  z-index: 100;
+}
+.skin-glitches-and-stitches::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 30vh;
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(51,255,102,.04), transparent);
+  animation: gs-roll 9s linear var(--clock, 0s) infinite;
+  z-index: 99;
+}
+@keyframes gs-roll { from { top: 0; } to { top: calc(100% - 30vh); } }
+
+/* blinking block cursor, e.g. after the hero tagline */
+.skin-glitches-and-stitches .cursor::after { content: "\2588"; margin-left: .15em; animation: blink 1s steps(1) infinite; }
+
+/* ---------- glitch title: twitches in short bursts ---------- */
+.skin-glitches-and-stitches .glitch { font-weight: 400; line-height: 1; animation: glitch-skew 4.2s .8s steps(1) infinite; }
+@keyframes power-on {
+  0% { scale: 1.15 .02; opacity: 0; }
+  40% { scale: 1.05 .06; opacity: 1; }
+  70% { scale: .98 1.04; }
+  100% { scale: 1 1; opacity: 1; }
+}
+@keyframes glitch-skew {
+  0%, 89%, 100% { transform: none; }
+  90% { transform: skewX(-8deg) translateX(2px); }
+  92% { transform: skewX(5deg) translateX(-3px); }
+  94% { transform: none; }
+  96% { transform: translateX(4px); }
+}
+.skin-glitches-and-stitches .glitch::before,
+.skin-glitches-and-stitches .glitch::after {
+  content: attr(data-text);
+  /* decorative copies: empty alt text keeps screen readers from reading the title three times */
+  content: attr(data-text) / "";
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.skin-glitches-and-stitches .glitch::before {
+  color: var(--accent-2);
+  transform: translate(-3px, 0);
+  clip-path: inset(0 0 55% 0);
+  animation: glitch-a 4.2s .8s infinite steps(1);
+  mix-blend-mode: screen;
+}
+.skin-glitches-and-stitches .glitch::after {
+  color: var(--accent);
+  transform: translate(3px, 0);
+  clip-path: inset(55% 0 0 0);
+  animation: glitch-b 4.2s .8s infinite steps(1);
+  mix-blend-mode: screen;
+}
+@keyframes glitch-a {
+  0%, 89%, 100% { transform: translate(-3px, 0); clip-path: inset(0 0 55% 0); }
+  90% { transform: translate(-10px, -2px); clip-path: inset(20% 0 40% 0); }
+  92% { transform: translate(6px, 1px); clip-path: inset(60% 0 10% 0); }
+  94% { transform: translate(-4px, 0); clip-path: inset(5% 0 80% 0); }
+  96% { transform: translate(8px, 0); clip-path: inset(70% 0 5% 0); }
+}
+@keyframes glitch-b {
+  0%, 89%, 100% { transform: translate(3px, 0); clip-path: inset(55% 0 0 0); }
+  90% { transform: translate(10px, 2px); clip-path: inset(10% 0 70% 0); }
+  93% { transform: translate(-7px, 0); clip-path: inset(40% 0 30% 0); }
+  95% { transform: translate(5px, -1px); clip-path: inset(80% 0 2% 0); }
+}
+/* a quick slice-jitter: card titles on hover, and js/motion.js "zaps" a random visible title now and then */
+@keyframes jitter {
+  0% { transform: translate(-3px, 1px) skewX(-6deg); }
+  30% { transform: translate(3px, -1px); }
+  60% { transform: translate(-1px, 0) skewX(4deg); }
+  100% { transform: none; }
+}
+.skin-glitches-and-stitches .zap { animation: jitter .35s steps(1); }
+
+/* section titles flicker on like a terminal line */
+.motion .skin-glitches-and-stitches .section-head.reveal.in { animation-name: flicker; animation-duration: .5s; }
+@keyframes flicker {
+  0% { opacity: 0; }
+  15% { opacity: .9; }
+  25% { opacity: .15; }
+  45% { opacity: 1; }
+  55% { opacity: .5; }
+  100% { opacity: 1; }
+}
+
+/* Pieces fitted together: alternate panels have a small step in their top and bottom edges. No seam lines. */
+.skin-glitches-and-stitches .alt {
+  clip-path: polygon(0 10px, 37% 10px, 37% 0, 100% 0, 100% calc(100% - 10px), 68% calc(100% - 10px), 68% 100%, 0 100%);
+}
+.skin-glitches-and-stitches .btn:hover { box-shadow: 4px 4px 0 var(--accent); }
+.skin-glitches-and-stitches .btn.ghost:hover { box-shadow: 4px 4px 0 var(--accent-2); }
+.skin-glitches-and-stitches .owned-badge { box-shadow: 3px -2px 0 rgba(191,95,255,.45); }
+
+/* ---------- generated product covers: a glowing CRT tile, green or purple by the product's hue ---------- */
+.skin-glitches-and-stitches .cover {
+  place-items: center;
+  text-align: center;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-size: 2rem;
+  color: var(--accent);
+  text-shadow: 2px 0 var(--accent-2), var(--glow);
+  background: radial-gradient(circle at 50% 40%, rgb(191 95 255 / .3), transparent 70%), repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px), var(--bg);
+}
+.skin-glitches-and-stitches .cover.tint-green { background: radial-gradient(circle at 50% 40%, rgb(51 255 102 / .3), transparent 70%), repeating-linear-gradient(0deg, rgba(51,255,102,.07) 0 1px, transparent 1px 5px), var(--bg); }
+.skin-glitches-and-stitches .cover::after {
+  inset: -6px 0 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 6px);
+}
+.skin-glitches-and-stitches .card:hover .cover::after { animation: scan-drift .6s linear infinite; transform: none; }
+.skin-glitches-and-stitches .card:hover .cover span { animation: jitter .35s steps(1); }
+@keyframes scan-drift { to { transform: translateY(6px); } }
+
+/* ---------- page changes inside the project: the old page slices out, the next one skews in ---------- */
+html:has(.skin-glitches-and-stitches):active-view-transition-type(page)::view-transition-old(root) { animation: page-out .16s steps(3) both; }
+html:has(.skin-glitches-and-stitches):active-view-transition-type(page)::view-transition-new(root) { animation: page-in .3s var(--snap) both; }
+@keyframes page-out {
+  0% { opacity: 1; clip-path: inset(0); transform: none; }
+  34% { clip-path: inset(0 0 42% 0); transform: translateX(-8px); }
+  67% { clip-path: inset(36% 0 8% 0); transform: translateX(10px); }
+  100% { opacity: 0; clip-path: inset(48% 0 48% 0); transform: translateX(-4px); }
+}
+@keyframes page-in {
+  0% { opacity: 0; clip-path: inset(46% 0 46% 0); transform: translateX(-12px) skewX(-5deg); }
+  45% { opacity: 1; clip-path: inset(0); transform: translateX(4px) skewX(2deg); }
+  100% { opacity: 1; clip-path: inset(0); transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skin-glitches-and-stitches::before { display: none; }
+  .skin-glitches-and-stitches .glitch, .skin-glitches-and-stitches .glitch::before, .skin-glitches-and-stitches .glitch::after,
+  .skin-glitches-and-stitches .cursor::after, .skin-glitches-and-stitches .zap,
+  .skin-glitches-and-stitches .card:hover .cover::after, .skin-glitches-and-stitches .card:hover .cover span { animation: none; }
+}

@@ -298,7 +298,7 @@ describe("store in the browser", () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects"]) {
+      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/projects/glitches-and-stitches"]) {
         await page.goto(p);
         await page.waitForTimeout(700);
         const facts = await page.evaluate(() => ({

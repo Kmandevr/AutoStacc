@@ -4,7 +4,8 @@
   "use strict";
 
   const { $, escapeHTML } = window.GS;
-  const SITE = window.SITE || {};
+  const SITE = window.GS.currentProject(); // the open project (this terminal belongs to its pages)
+  const home = window.GS.projectPath(SITE.id);
   const emit = (type, detail) => document.dispatchEvent(new CustomEvent(type, { detail }));
   const go = (href) => () => { location.href = href; return "> opening " + href + " ..."; };
 
@@ -12,10 +13,10 @@
     help: () =>
       "commands: ls, open <page>, play hail, loop, tear, stitch, glitch, cinch, repeat, whoami, about, booking, sound on|off, remix, hail, date, echo, clear, exit",
     ls: () => "home/  music/  shows/  shop/  news/  press/  hail.wav  unfinished_ideas/ (412 files)",
-    open: (a) => ({ home: go("/"), music: go("/music"), shows: go("/#shows"), shop: go("/shop"),
-      news: go("/news"), press: go("/press") }[a] || (() => `open: no such page: ${a || "(nothing)"}. try ls`))(),
+    open: (a) => ({ home: go(home), music: go(home + "/music"), shows: go(home + "#shows"), shop: go("/shop"),
+      news: go(home + "/news"), press: go(home + "/press"), stacc: go("/library"), hub: go("/") }[a] || (() => `open: no such page: ${a || "(nothing)"}. try ls`))(),
     cd: (a) => COMMANDS.open(a.replace(/\/$/, "")),
-    play: (a) => (/hail/i.test(a) ? go("/music/hail")() : "play: try `play hail`"),
+    play: (a) => (/hail/i.test(a) ? go(home + "/music/hail")() : "play: try `play hail`"),
     loop: () => "[01] tear  [02] stitch  [03] glitch  [04] cinch  [05] repeat ↻ 01",
     whoami: () => "guest. or a fragment that hasn't been stitched in yet.",
     about: () => "Glitches & Stitches: unfinished songs are raw material. tear. stitch. glitch. cinch. repeat.",
@@ -24,7 +25,7 @@
     glitch: () => { emit("gs:sound", "zap"); return "> c̷o̴r̶r̸u̵p̶t̷i̵n̴g... perfect."; },
     cinch: () => "> pulled tight. locked in. added to the catalog.",
     repeat: () => "> it's a piece now too. back to: tear.",
-    booking: () => (SITE.email ? `> ${SITE.email} (or /press)` : "> see /press"),
+    booking: () => (SITE.email ? `> ${SITE.email} (or ${home}/press)` : `> see ${home}/press`),
     sound: (a) => {
       if (a !== "on" && a !== "off") return "usage: sound on|off";
       emit("gs:sound-set", a === "on");

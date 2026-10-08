@@ -4,9 +4,9 @@
 .poll h3 { margin: 0 0 12px; }
 .poll-options { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 10px; }
 .poll-options li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 2fr) auto; gap: 12px; align-items: center; }
-.poll-options .picked { background: var(--green); color: var(--bg); text-shadow: none; }
+.poll-options .picked { background: var(--accent); color: var(--bg); text-shadow: none; }
 .poll-bar { height: 8px; border: 1px solid var(--line); }
-.poll-bar span { display: block; height: 100%; background: var(--purple); box-shadow: var(--glow-purple); }
+.poll-bar span { display: block; height: 100%; background: var(--accent-2); box-shadow: var(--glow-2); }
 
 @media (max-width: 600px) {
   .poll-options li { grid-template-columns: 1fr auto; }

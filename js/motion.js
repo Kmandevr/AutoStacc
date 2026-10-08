@@ -9,12 +9,12 @@
   if (!main) return;
 
   const root = document.documentElement;
-  // css/base.css only hides .reveal items under .motion, so the page stays visible if this script never runs.
+  // css/core.css only hides .reveal items under .motion, so the page stays visible if this script never runs.
   root.classList.add("motion");
   // Ambient loops run on wall-clock time, so they carry on from where they were when you change page.
   root.style.setProperty("--clock", `${-(Date.now() % 9000)}ms`);
 
-  const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .loop li, .newsletter form, .listen, .bio, .panel";
+  const ITEMS = ".section-head, .card, .news-item, .show, .about .art, .loop li, .newsletter form, .listen, .bio, .panel, .flow li, .hub-panel";
   const seen = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
@@ -39,7 +39,8 @@
   watch(main);
 
   // Every 6 to 14 seconds one visible title glitches for a moment.
-  const ZAP = ".section-head h2, .bio h2, .panel h2, .cover span, .loop strong, .logo";
+  // Only inside a project skin that animates titles (css/projects/<id>/skin.css); platform pages stay calm.
+  const ZAP = "[class*='skin-'] :is(.section-head h2, .bio h2, .panel h2, .cover span, .loop strong)";
   function zap() {
     const visible = [...document.querySelectorAll(ZAP)].filter((el) => {
       const r = el.getBoundingClientRect();
