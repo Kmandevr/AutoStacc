@@ -25,7 +25,7 @@ export default (ctx) => describe("pages", () => {
     // The home page is the public cover: it offers signing in and creating an account, and the app's links start hidden.
     const home = (await anon.get("/")).data;
     assert.match(home, /href="\/login#signup" data-auth="out"/);
-    assert.match(home, /href="\/login" data-auth="out"/);
+    assert.match(home, /<span data-auth="out">[^<]*<a href="\/login">Log in<\/a>/);
     assert.match(home, /href="\/dashboard" data-auth="in" hidden/);
     assert.doesNotMatch(home, /\/js\/(dashboard|account|settings|store)\.js/, "the cover loads no account or ownership script");
   });
