@@ -23,8 +23,8 @@ window.PROJECTS = [
     id: "glitches-and-stitches",
     name: "Glitches & Stitches",
     summary: "An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.",
-    title: "Glitches & Stitches — Official Site",
-    description: "Official site of Glitches & Stitches: experimental electronic music built from broken pieces. Releases, stems, sample packs and presets.",
+    title: "Glitches & Stitches — Experimental electronic music · AutoStacc",
+    description: "Glitches & Stitches on AutoStacc: experimental electronic music built from broken pieces. Releases, stems, sample packs and presets.",
     features: ["releases", "news", "shows", "store", "polls", "relationships"],
     pages: [
       { label: "Home", path: "" },

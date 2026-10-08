@@ -13,8 +13,8 @@ const exists = (f) => fs.existsSync(path.join(ROOT, f));
 const data = loadData();
 const { SITE } = data;
 const ORIGIN = origin(SITE);
-const BRAND = SITE.name; // the platform: platform pages are titled "... · AutoStacc"
-// A page under /projects/<id> belongs to that project and is titled with its name.
+const BRAND = SITE.name; // the site: every title ends "· AutoStacc"
+// A page under /projects/<id> belongs to that project and also names it ("... · Glitches & Stitches · AutoStacc").
 const projectOf = (p) => data.projects.find((x) => p && (p === projectPath(x.id) || p.startsWith(projectPath(x.id) + "/")));
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
 
@@ -59,8 +59,9 @@ for (const f of pageFiles) {
   if (!title) add("FAIL", "title", "missing", f);
   else {
     const owner = projectOf(urlPath(f));
-    const name = owner ? owner.name : BRAND;
-    if (!title.includes(name)) add("FAIL", "title-brand", `"${title}" doesn't name ${name}`, f);
+    // the hub's title starts with the name; every other page ends with it
+    if (!title.startsWith(BRAND) && !title.endsWith(" · " + BRAND)) add("FAIL", "title-brand", `"${title}" doesn't end with "· ${BRAND}"`, f);
+    if (owner && !title.includes(owner.name)) add("FAIL", "title-brand", `"${title}" doesn't name ${owner.name}`, f);
     if (title.length > 70) add("WARN", "title-length", `${title.length} chars, search results cut at ~60-70`, f);
   }
   if (descs.length !== 1) add("FAIL", "description", `${descs.length} meta descriptions`, f);
@@ -275,7 +276,7 @@ for (const x of data.projects) {
 }
 if (SITE.url !== "https://autostacc.com") add("FAIL", "site-url", `SITE.url is ${SITE.url}`, "data/site.js");
 if (!SITE.title || !SITE.title.startsWith(BRAND)) add("FAIL", "home-title", "SITE.title must start with the platform name", "data/site.js");
-for (const x of data.projects.filter((p) => !p.draft)) if (!x.title || !x.title.includes(x.name)) add("FAIL", "home-title", `${x.id}: its title must name it`, "data/projects.js");
+for (const x of data.projects.filter((p) => !p.draft)) if (!x.title || !x.title.includes(x.name) || !x.title.endsWith(" · " + BRAND)) add("FAIL", "home-title", `${x.id}: its title must name it and end "· ${BRAND}"`, "data/projects.js");
 const drafts = data.products.filter((p) => p.draft).length;
 if (drafts) add("WARN", "drafts", `${drafts} placeholder product(s) kept out of search (issue #5)`, "data/products.js");
 
