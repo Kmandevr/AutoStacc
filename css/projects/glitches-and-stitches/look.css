@@ -82,6 +82,16 @@ main.look-glitches-and-stitches { background: var(--bg); }
   100% { transform: none; }
 }
 
+/* its project card (hub rack, /projects): its screen, border and offset shadow instead of AutoStacc's */
+.project-card.look-glitches-and-stitches {
+  background: radial-gradient(circle at 30% 20%, rgb(191 95 255 / .16), transparent 60%), var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: 5px -4px 0 rgb(191 95 255 / .35);
+}
+.look-glitches-and-stitches .project-card-summary, .project-card.look-glitches-and-stitches > p { color: var(--muted); }
+.project-card.look-glitches-and-stitches h3 a { text-shadow: none; }
+
 /* a row in the hub's releases feed */
 .look-glitches-and-stitches .clip { background: var(--panel); border-color: var(--line); color: var(--text); border-radius: 0; }
 .look-glitches-and-stitches .clip::before { background: var(--accent); box-shadow: var(--glow); }
