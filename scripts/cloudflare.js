@@ -2,7 +2,8 @@
 // CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID environment).
 //   node scripts/cloudflare.js store    create the production D1 database and R2 buckets if missing, point wrangler.toml
 //                                       at the real database id (in the CI checkout only), apply migrations, sync the
-//                                       catalog, and copy store secrets from the environment into the Pages project.
+//                                       catalog, copy store secrets from the environment into the Pages project, and
+//                                       check them against the store's own production rules (server/lib/config.js).
 //   node scripts/cloudflare.js static   set the store aside (functions/ and wrangler.toml) so the deploy is the plain
 //                                       static site, exactly as before the store existed.
 // Never deletes or rewrites data: migrations only add, the catalog sync only upserts and marks removed products.
@@ -24,7 +25,23 @@ const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET
 const wrangler = (args, quiet = true) =>
   String(execFileSync(WRANGLER, args, { cwd: ROOT, stdio: quiet ? ["ignore", "pipe", "pipe"] : "inherit", env: { ...process.env, CI: "1", WRANGLER_SEND_METRICS: "false" } }) ?? "");
 
-function store() {
+// The store refuses to start ("offline") when its production settings break a rule in server/lib/config.js, and only
+// Cloudflare's logs say which. Running the same check here puts the reason in the deploy log: names and rules only,
+// never secret values.
+async function checkSecrets(toml, secrets) {
+  const section = toml.split(/^\[env\.production\.vars\]\s*$/m)[1]?.split(/^\[/m)[0] || "";
+  const vars = Object.fromEntries([...section.matchAll(/^(\w+)\s*=\s*"(.*)"\s*$/gm)].map((m) => [m[1], m[2]]));
+  const { loadConfig, ConfigError } = await import("../server/lib/config.js");
+  try {
+    loadConfig({ ...vars, ...secrets, DB: {}, FILES: {} });
+    console.log("cloudflare: store settings pass the production check");
+  } catch (e) {
+    if (!(e instanceof ConfigError)) throw e;
+    for (const p of e.problems) console.log(`::error::Store offline until fixed: ${p}`);
+  }
+}
+
+async function store() {
   const toml = fs.readFileSync(TOML, "utf8");
   if (!toml.includes(`database_name = "${PROD.db}"`) || !toml.includes(PROD.placeholder)) throw new Error("wrangler.toml [env.production] doesn't match scripts/cloudflare.js");
 
@@ -64,6 +81,7 @@ function store() {
     console.log(`cloudflare: secrets set: ${Object.keys(present).join(", ")}`);
   }
   if (missing.length) console.log(`::warning::Store secrets not in GitHub yet: ${missing.join(", ")}. Until they are set the store answers "offline"; the site itself is fine.`);
+  await checkSecrets(toml, present);
 }
 
 function staticOnly() {
@@ -74,6 +92,6 @@ function staticOnly() {
 }
 
 const mode = process.argv[2];
-if (mode === "store") store();
+if (mode === "store") store().catch((e) => { console.error(e); process.exit(1); });
 else if (mode === "static") staticOnly();
 else { console.error("usage: node scripts/cloudflare.js store|static"); process.exit(2); }

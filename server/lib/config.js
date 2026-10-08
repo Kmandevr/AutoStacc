@@ -37,11 +37,11 @@ export function loadConfig(env) {
   const stripeKey = env.STRIPE_SECRET_KEY || "";
   const stripeWebhookSecret = env.STRIPE_WEBHOOK_SECRET || "";
   if (paymentProvider === "stripe") {
-    if (!/^(sk|rk)_(test|live)_/.test(stripeKey)) problems.push("STRIPE_SECRET_KEY is missing");
-    if (!stripeWebhookSecret.startsWith("whsec_")) problems.push("STRIPE_WEBHOOK_SECRET is missing");
+    if (!/^(sk|rk)_(test|live)_/.test(stripeKey)) problems.push("STRIPE_SECRET_KEY must be a Stripe secret key (sk_live_... or rk_live_...; sk_test_ outside production)");
+    if (!stripeWebhookSecret.startsWith("whsec_")) problems.push("STRIPE_WEBHOOK_SECRET must be a webhook signing secret (whsec_...)");
   }
   const stripeLive = /^(sk|rk)_live_/.test(stripeKey);
-  if (production && paymentProvider === "stripe" && !stripeLive) problems.push("production needs a live Stripe key");
+  if (production && paymentProvider === "stripe" && !stripeLive) problems.push("production needs a live Stripe key (sk_live_ or rk_live_), not a test key");
   if (!production && stripeLive) problems.push("live Stripe keys are only allowed in production");
   // Only for local tests against a fake Stripe server; ignored outside development and test.
   const stripeApiBase = devLike && env.STRIPE_API_BASE ? env.STRIPE_API_BASE : "";
