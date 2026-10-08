@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # AutoStacc vault
@@ -19,6 +19,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Artist](artist.md): confirmed facts and what is still unknown
 - [Brand](brand.md): visual style and tone of voice
 - [Shop](shop.md): the catalogue and what is still placeholder
+- [Creator pages](creator-pages.md): PLANNED / NOT IMPLEMENTED: blueprint for sandboxed creator HTML/CSS (later JavaScript) on project pages
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
 - [Control Center](admin.md): the owner's admin: statistics and their sources, customer preview, support impersonation, test purchases, audit log
 - [Store setup](store-setup.md): the owner's checklist to switch the store on (Cloudflare, Stripe, Brevo, secrets)

@@ -1,7 +1,7 @@
 ---
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Architecture
@@ -91,5 +91,5 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 - **Pac-level ownership:** access is per product. Bundles that share Pacs across products need a `product_pacs` table and a Pac-aware access check; the entitlement `bundle` source is reserved.
 - **Notifications:** follows record who wants news; nothing sends it yet. A "new release" mail is one template in `server/email/templates.js` plus a send when a product is published.
 - **Licences:** shown per product only as metadata; no licence records.
-- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs.
+- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. The planned design for creator-made pages (sandboxed HTML/CSS, later JavaScript) is in [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED).
 - (Resolved 2026-10-08: the site is AutoStacc and projects live under `/projects/<id>`; see [decisions](decisions.md) and [autostacc](autostacc.md#site-structure).)
