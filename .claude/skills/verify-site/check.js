@@ -78,7 +78,7 @@ const SEO = require("./seo-browser.js");
       if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, projects, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) || PRIVATE.test(urlOf(page)) })) problems.push(p);
       const facts = await tab.evaluate(() => ({
         overflow: document.documentElement.scrollWidth - innerWidth,
-        header: !!document.querySelector(".side-nav") && !!document.querySelector(".topbar"),
+        header: (!!document.querySelector(".side-nav") && !!document.querySelector(".topbar")) || (!!document.querySelector(".as-strip") && !!document.querySelector(".project-header")),
         footer: !!document.querySelector(".site-footer .wrap"),
         empty: [...document.querySelectorAll("[id$='-list'],[id$='-grid'],[id^='featured'],[id^='latest']")].filter((e) => !e.children.length).map((e) => "#" + e.id),
         smallTargets: [...document.querySelectorAll("a,button")].filter((e) => { const r = e.getBoundingClientRect(); return r.width && (r.height < 24 || r.width < 24); }).length
@@ -88,10 +88,12 @@ const SEO = require("./seo-browser.js");
       for (const id of facts.empty) problems.push(["WARN", "empty-container", `${id} rendered nothing`]);
       if (width === 390 && facts.smallTargets) problems.push(["WARN", "tap-targets", `${facts.smallTargets} links/buttons smaller than 24px`]);
       if (width === 390) {
-        const toggle = tab.locator(".menu-toggle");
+        // Platform pages open the AutoStacc drawer; a project's pages open the project's own menu.
+        const project = await tab.locator(".ph-toggle").count();
+        const toggle = tab.locator(project ? ".ph-toggle" : ".menu-toggle");
         if (await toggle.isVisible()) {
           await toggle.click();
-          if (!(await tab.locator(".side.open").count())) problems.push(["FAIL", "nav-toggle", "sidebar drawer did not open"]);
+          if (!(await tab.locator(project ? ".ph-nav.open" : ".side.open").count())) problems.push(["FAIL", "nav-toggle", "menu did not open"]);
         } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
       }
       if (page === "shop.html" && width === 1280) {

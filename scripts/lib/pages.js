@@ -27,13 +27,13 @@ const clip = (s, n = 160) => {
 // Fonts: AutoStacc's on every page, plus the pixel font for a project skin that uses it.
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700";
 
-// The whole document. project: the project whose page this is (its skin, sounds and sidebar entry), or null for a
-// platform page. projectPage: which of the project's pages lights up in the sidebar ("music", "news").
+// The whole document. project: the project whose page this is (its frame, skin and sounds), or null for a platform
+// page. projectPage: which of the project's pages lights up in its header ("music", "news").
 function shell(SITE, { page, section, styles, scripts, main, project = null, projectPage = "" }) {
   const skin = project && project.skin;
   const sounds = project && project.sounds;
-  const css = ["core", "platform", "layout", ...styles, ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", "js/layout.js",
+  const css = ["core", "platform", "layout", ...(project ? ["project-frame"] : []), ...styles, ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
+  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js",
     ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js"];
   return `<!doctype html>
 ${GENERATED}

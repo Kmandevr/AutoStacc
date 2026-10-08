@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  const nav = document.querySelector(".project-bar-tools") || document.querySelector(".topbar-tools");
+  const nav = document.querySelector(".project-tools") || document.querySelector(".topbar-tools");
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!nav || !AudioCtx) return;
 
@@ -175,7 +175,7 @@
     if (ctx.state === "running") SOUNDS[d.name]({ x: d.x ?? panOf(d.el), n: d.n ?? 0 });
   }
 
-  // The switch, styled like a terminal flag, in the project bar (sounds belong to the project, not AutoStacc).
+  // The switch, styled like a terminal flag, in the project header (sounds belong to the project, not AutoStacc).
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "snd";

@@ -32,9 +32,11 @@ async function open(device = PHONE) {
   page.errors = [];
   page.on("pageerror", (e) => page.errors.push(e.message));
   // Newer Chromium logs an aborted page-change animation (the tests navigate faster than a view transition) as an
-  // error; it isn't the page's error, so it doesn't count. CSP violations and script errors still do.
+  // error; it isn't the page's error, so it doesn't count. Nor do messages from other sites' frames (the YouTube and
+  // Deezer players probe features our Permissions-Policy denies). CSP violations and script errors on our pages still do.
   const NOT_OURS = /Failed to load resource|Transition was aborted because of invalid state/;
-  page.on("console", (m) => { if (m.type() === "error" && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
+  const ours = (m) => { const u = m.location().url; return !u || u.startsWith(base) || !/^https?:/.test(u); };
+  page.on("console", (m) => { if (m.type() === "error" && ours(m) && !NOT_OURS.test(m.text())) page.errors.push(m.text()); });
   return { ctx, page };
 }
 const ordersFor = (email) => sql(stateDir, `SELECT id, status FROM orders WHERE email = '${email}'`);
@@ -261,7 +263,7 @@ describe("store in the browser", () => {
 
   test("phone menu: the closed drawer can't be tabbed into; opening moves focus in; Escape closes and returns focus", async () => {
     const { ctx, page } = await open(PHONE);
-    await page.goto("/projects/glitches-and-stitches");
+    await page.goto("/");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
     await page.click(".menu-toggle");
     await page.waitForSelector(".side.open");
@@ -272,6 +274,38 @@ describe("store in the browser", () => {
     await page.keyboard.press("Escape");
     assert.equal(await page.evaluate(() => document.activeElement.className), "menu-toggle");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("a project's own menu on a phone: opens below its header, the page behind is inert, Escape closes and returns focus", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/projects/glitches-and-stitches/music");
+    assert.equal(await page.locator(".side").count(), 0, "no AutoStacc sidebar inside a project");
+    assert.equal(await page.locator(".ph-nav").isVisible(), false);
+    await page.click(".ph-toggle");
+    await page.waitForSelector(".ph-nav.open");
+    assert.equal(await page.getAttribute(".ph-toggle", "aria-expanded"), "true");
+    assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
+    assert.equal(await page.getAttribute(".ph-nav a[aria-current]", "href"), "/projects/glitches-and-stitches/music");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.evaluate(() => document.activeElement.className), "ph-toggle");
+    assert.equal(await page.evaluate(() => !document.querySelector(".ph-nav.open") && !document.querySelector("main").inert), true);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("computer sidebar: an icon rail that expands, and the choice is remembered", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/about");
+    const width = () => page.evaluate(() => document.querySelector(".side").getBoundingClientRect().width);
+    assert.ok((await width()) < 100, "starts as a rail");
+    assert.equal(await page.getAttribute(".side-collapse", "aria-expanded"), "false");
+    await page.click(".side-collapse");
+    await page.waitForFunction(() => document.querySelector(".side").getBoundingClientRect().width > 200);
+    await page.goto("/shop");
+    assert.ok((await width()) > 200, "stays expanded on the next page");
+    assert.equal(await page.getAttribute(".side-collapse", "aria-expanded"), "true");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

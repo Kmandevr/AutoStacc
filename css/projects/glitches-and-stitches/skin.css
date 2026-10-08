@@ -1,5 +1,5 @@
-/* Glitches & Stitches' skin: the glitch terminal inside the AutoStacc frame, on its pages only. */
-/* Scoped to .skin-glitches-and-stitches on the project's <main>, so the sidebar and top bar stay AutoStacc. Look: docs/brand.md. */
+/* Glitches & Stitches' skin: the glitch terminal on its pages, header and footer (each scoped to .skin-glitches-and-stitches). */
+/* Its pages sit under a thin AutoStacc strip; everything else is its own. Look: docs/brand.md. */
 
 
 .skin-glitches-and-stitches {
@@ -197,3 +197,46 @@ html:has(.skin-glitches-and-stitches):active-view-transition-type(page)::view-tr
   .skin-glitches-and-stitches .cursor::after, .skin-glitches-and-stitches .zap,
   .skin-glitches-and-stitches .card:hover .cover::after, .skin-glitches-and-stitches .card:hover .cover span { animation: none; }
 }
+
+/* ---------- its own header (js/project-frame.js): the glitch-terminal header it had before AutoStacc ---------- */
+.skin-glitches-and-stitches.project-header { background: rgba(0, 0, 0, .88); backdrop-filter: blur(8px); }
+.skin-glitches-and-stitches .ph-logo { font-family: var(--display); font-size: 1.6rem; letter-spacing: .04em; color: var(--accent); text-shadow: var(--glow); }
+.skin-glitches-and-stitches .ph-amp { color: var(--accent-2); text-shadow: var(--glow-2); }
+.skin-glitches-and-stitches .ph-nav a {
+  color: var(--accent-dim);
+  font-weight: 500;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size .2s var(--snap), color .12s;
+}
+.skin-glitches-and-stitches .ph-nav a:hover { background-size: 100% 1px; }
+.skin-glitches-and-stitches .ph-nav a:hover, .skin-glitches-and-stitches .ph-nav a[aria-current] { color: var(--accent); text-shadow: var(--glow); }
+.skin-glitches-and-stitches .ph-nav a[aria-current]::before { content: "> "; color: var(--accent-2); }
+/* sound switch: a terminal flag, not a pill */
+.skin-glitches-and-stitches .snd { min-height: 36px; padding: 6px 4px; border: 0; border-radius: 0; background: none; color: var(--accent-dim); font-family: var(--font); font-size: .85rem; }
+.skin-glitches-and-stitches .snd[aria-pressed="true"], .skin-glitches-and-stitches .snd:hover { color: var(--accent); text-shadow: var(--glow); }
+.skin-glitches-and-stitches .ph-toggle { border-radius: 0; color: var(--accent); }
+.skin-glitches-and-stitches .ph-toggle-icon::before { content: "[\2261]"; }
+.skin-glitches-and-stitches .ph-toggle[aria-expanded="true"] .ph-toggle-icon::before { content: "[\00d7]"; }
+@media (max-width: 900px) {
+  .skin-glitches-and-stitches .ph-logo { font-size: 1.45rem; }
+  .skin-glitches-and-stitches .ph-nav a {
+    font-family: var(--display);
+    font-size: 2rem;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--accent);
+    text-shadow: var(--glow);
+  }
+  .skin-glitches-and-stitches .ph-nav a::before { content: "> "; color: var(--accent-2); text-shadow: var(--glow-2); }
+  .skin-glitches-and-stitches .ph-nav a:hover { background-size: 0 1px; color: var(--text); }
+  .skin-glitches-and-stitches .ph-nav a[aria-current] { color: var(--text); }
+  .skin-glitches-and-stitches .snd::after { content: " sound effects"; color: var(--accent-dim); text-shadow: none; }
+}
+@media (max-width: 350px) {
+  .skin-glitches-and-stitches .ph-logo { font-size: 1.22rem; letter-spacing: .02em; }
+}
+
+/* ---------- its own footer ---------- */
+.skin-glitches-and-stitches.project-footer { border-top-color: var(--line); color: var(--accent-dim); }
+.skin-glitches-and-stitches.project-footer .footer-project > span { color: var(--accent); font-family: var(--display); font-size: 1.3rem; text-shadow: var(--glow); }

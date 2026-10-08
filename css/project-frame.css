@@ -1,0 +1,96 @@
+/* The frame on a project's pages (js/project-frame.js): the thin AutoStacc strip, then the project's own header */
+/* and footer. The header and footer wear the project's skin class, so its skin restyles them; these are defaults. */
+
+/* ---------- AutoStacc strip: always AutoStacc's look ---------- */
+.project-frame { display: contents; }
+.as-strip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 42px;
+  padding: 0 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font);
+  font-size: .88rem;
+}
+.as-home { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; color: var(--text); font-weight: 700; letter-spacing: -.01em; }
+.as-home:hover { color: var(--text); }
+.as-home .mark { width: 22px; height: 22px; }
+.as-links { display: flex; gap: 16px; }
+.as-links a { color: var(--muted); font-weight: 550; }
+.as-links a:hover { color: var(--text); }
+.as-strip .topbar-tools { gap: 4px; }
+.as-strip .tool-link, .as-strip .theme-switch { min-height: 30px; padding: 4px 10px; font-size: .82rem; }
+
+/* ---------- the project's header: sticky, in the project's own look ---------- */
+.project-frame .project-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  view-transition-name: project-header;
+}
+.ph-wrap { display: flex; align-items: center; gap: 24px; min-height: 64px; padding: 0 20px; }
+.ph-logo { font-family: var(--display); font-weight: var(--display-weight, 700); font-size: 1.4rem; color: var(--heading); white-space: nowrap; }
+.ph-logo:hover { color: var(--heading); }
+.ph-nav { display: flex; align-items: center; gap: 22px; margin-left: auto; }
+.ph-nav a { color: var(--muted); font-weight: 550; text-shadow: none; }
+.ph-nav a:hover, .ph-nav a[aria-current] { color: var(--accent); }
+.project-tools { display: flex; align-items: center; gap: 6px; }
+.ph-toggle { display: none; }
+
+/* ---------- the project's footer ---------- */
+.project-footer { position: relative; background: var(--bg); color: var(--muted); }
+.project-footer a:hover { color: var(--accent); }
+.project-footer .footer-platform { font-size: .85rem; }
+
+/* ---------- phones: the project's nav opens below its header ---------- */
+@media (max-width: 900px) {
+  .as-strip { gap: 10px; padding: 0 12px; }
+  .ph-wrap { min-height: 56px; padding: 0 12px; justify-content: space-between; }
+  .ph-toggle {
+    display: inline-grid;
+    place-items: center;
+    min-width: 48px;
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .ph-toggle-icon::before { content: "\2630"; }
+  .ph-toggle[aria-expanded="true"] .ph-toggle-icon::before { content: "\00d7"; }
+  .ph-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 8px 0 24px;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+  .ph-nav.open { display: flex; }
+  .ph-nav a { padding: 16px 20px; border-bottom: 1px solid var(--line); font-size: 1.3rem; color: var(--text); }
+  .project-tools { padding: 18px 20px 0; }
+  .menu-open { overflow: hidden; }
+}
+@media (max-width: 640px) {
+  .as-links { display: none; }
+  .as-strip .topbar-tools { margin-left: auto; }
+}
+@media (max-width: 360px) {
+  .as-home span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
