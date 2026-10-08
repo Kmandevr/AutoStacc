@@ -1,8 +1,10 @@
 // AutoStacc's frame on platform pages: the sidebar (AutoStacc: Home, Store, About; Projects: one link per project in
-// data/projects.js; You: Dashboard, Your Stacc, Account, Settings), the top bar (menu button on phones, Log in and
-// Create account or Log out, cart count, and the slot js/theme.js fills), the footer and the skip link. Signed-in
-// links carry data-auth="in" and start hidden; js/account-nav.js shows the set that matches the visitor. On a computer the sidebar is an icon rail that expands (remembered); on phones
-// it is a drawer. <body data-page> marks the current page. A project's pages use js/project-frame.js instead.
+// data/projects.js; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
+// Create account, cart count, the slot js/theme.js fills, and the account menu's slot, [data-account-menu], which
+// js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
+// carry data-auth="in" and start hidden; js/account-nav.js shows the set that matches the visitor. On a computer the
+// sidebar is an icon rail that expands (remembered); on phones it is a drawer. <body data-page> marks the current page
+// (and data-section the section it sits in). A project's pages use js/project-frame.js instead.
 // Needs data/site.js, data/projects.js and js/util.js. Structured data is static, from scripts/build.js.
 (function () {
   "use strict";
@@ -26,8 +28,8 @@
     all: svg("all", '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>')
   };
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
-  const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"],
-    ["/studio", "Studio", "studio", "studio"], ["/account", "Account", "account", "account"], ["/settings", "Settings", "settings", "settings"]];
+  // Studio, Settings and the rest of the account live in the top bar's account menu (js/account-nav.js).
+  const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"]];
   const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/about", "About", "about", "about"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
@@ -71,8 +73,8 @@
         <div class="topbar-tools">
           <a class="tool-link" href="/login" data-auth="out"${current("login")}>Log in</a>
           <a class="tool-link tool-cta" href="/login#signup" data-auth="out">Create account</a>
-          <button class="tool-link" type="button" data-auth="in" data-signout hidden>Log out</button>
           <a class="tool-link cart-link" href="/cart"${current("cart")}>Cart<span class="cart-count" aria-hidden="true"></span><span class="sr-only cart-count-sr"></span></a>
+          <div class="account-menu" data-account-menu data-auth="in" hidden></div>
         </div>
       </div>`;
 
@@ -128,13 +130,18 @@
 
   if (footer) {
     footer.className = "site-footer";
+    const col = (title, links) => links.length ? `<nav class="footer-col" aria-label="${e(title)}"><p class="footer-title">${e(title)}</p>
+      <ul>${links.map(([href, label]) => `<li><a href="${e(href)}">${e(label)}</a></li>`).join("")}</ul></nav>` : "";
     footer.innerHTML = `
-      <div class="wrap">
-        <div class="footer-platform">
-          <span>&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</span>
-          <a href="/about">About</a><a href="/projects">Projects</a><a href="/shop">Store</a>
-          ${SITE.email ? `<a href="mailto:${e(SITE.email)}">${e(SITE.email)}</a>` : ""}
+      <div class="wrap footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
+          ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
+        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/about", "About"]])}
+        ${col("Projects", PROJECTS.map((p) => [GS.projectPath(p.id), p.name]))}
+        ${col("Create", [["/studio", "Studio"], ...(SITE.email ? [[`mailto:${SITE.email}`, "Contact"]] : [])])}
+        <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>
       </div>`;
   }
 

@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { RESERVED, slugProblem } from "../../server/lib/slugs.js";
 import { markup, safeUrl } from "../../server/sites/text.js";
 import { embedFor } from "../../server/sites/embeds.js";
@@ -16,7 +17,11 @@ import { sniffImage } from "../../server/sites/images.js";
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
 test("every top-level name the site uses is reserved, so no creator can take it", () => {
-  const top = fs.readdirSync(ROOT).filter((f) => !f.startsWith(".") && !["node_modules", "README.md", "CLAUDE.md", "package.json", "package-lock.json", "wrangler.toml", "test", "docs", "db"].includes(f));
+  // Git-ignored local folders (build output, tool caches such as graphify-out) are never published, so they're skipped.
+  const names = fs.readdirSync(ROOT);
+  let ignored = new Set();
+  try { ignored = new Set(execFileSync("git", ["check-ignore", ...names], { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().split("\n")); } catch { /* none ignored, or no git */ }
+  const top = names.filter((f) => !f.startsWith(".") && !ignored.has(f) && !["node_modules", "README.md", "CLAUDE.md", "package.json", "package-lock.json", "wrangler.toml", "test", "docs", "db"].includes(f));
   const fromFunctions = fs.readdirSync(path.join(ROOT, "functions")).filter((f) => !f.startsWith("[") && !f.startsWith(".") && f !== "package.json");
   const creators = new Set(["autostacc", "autostacc.html"]);
   for (const f of [...top, ...fromFunctions].filter((x) => !creators.has(x))) {

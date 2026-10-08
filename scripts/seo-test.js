@@ -103,7 +103,10 @@ for (const f of pageFiles) {
 }
 
 // ---------- internal links in the HTML resolve to real pages, without redirect hops ----------
-const servedPaths = new Set(Object.values(pages).map((p) => p.path));
+// Settings is one page served at a few more addresses by its Function (server/pages/guard.js SETTINGS_SECTIONS;
+// test/unit/redirects.test.js keeps this list equal to that one).
+const SETTINGS_SECTIONS = ["profile", "security", "orders", "email", "privacy"];
+const servedPaths = new Set([...Object.values(pages).map((p) => p.path), ...SETTINGS_SECTIONS.map((s) => `/settings/${s}`)]);
 for (const [f, p] of Object.entries(pages)) {
   for (const m of p.html.matchAll(/\shref="([^"]+)"/g)) {
     const href = decode(m[1]);
@@ -240,6 +243,7 @@ if (robots && !out.some((l) => /^FAIL robots/.test(l))) add("PASS", "robots", "p
 const redirects = exists("_redirects") ? read("_redirects").split("\n").filter((l) => l.trim() && !l.startsWith("#")).map((l) => l.trim().split(/\s+/)) : [];
 for (const [from, to, code] of redirects) {
   if (locs.includes(ORIGIN + from)) add("FAIL", "redirect-public", `${from} is in the sitemap but redirects to ${to}`);
+  if (code === "200") { if (!servedPaths.has(to)) add("FAIL", "rewrite-target", `${from} serves ${to}, which isn't a page`); continue; }
   if (!["301", "308"].includes(code)) add("WARN", "redirect-code", `${from} -> ${to} uses ${code || "302"}; permanent moves should be 301`);
   // A "/old/*  /new/:splat" rule must point into a folder that has pages.
   const target = to.endsWith("/:splat") ? to.slice(0, -"/:splat".length) : to;

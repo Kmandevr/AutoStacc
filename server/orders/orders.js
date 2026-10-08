@@ -100,3 +100,19 @@ export const publicOrder = (o, items) => ({
   paidAt: o.paid_at,
   items: (items || []).map((i) => ({ productId: i.product_id, title: i.title, unitPriceCents: i.unit_price_cents, quantity: i.quantity, lineTotalCents: i.line_total_cents }))
 });
+
+// Every order this person placed: signed in, or as a guest with their email before or after signing up. Newest first.
+export const ordersOfPerson = (db, userId, email) =>
+  all(db, "SELECT * FROM orders WHERE user_id = ? OR email = ? ORDER BY created_at DESC", userId, email);
+
+// Account deletion: the orders stay (sales records for tax, refunds and disputes) but no longer say whose they were,
+// and no guest key opens them any more.
+export const anonymiseOrdersStmt = (db, userId, email, anon) =>
+  stmt(db, "UPDATE orders SET user_id = NULL, email = ?, access_key_hash = NULL, email_key_hash = NULL, updated_at = ? WHERE user_id = ? OR email = ?",
+    anon, now(), userId, email);
+
+// A checkout this person may still pay: a pending order younger than the 30-minute payment page plus a margin (the
+// same window the promotion limits use). Account deletion waits for it, so a late payment can't land on nobody.
+export const hasOpenCheckout = async (db, userId, email) => Boolean(await first(db,
+  "SELECT 1 FROM orders WHERE (user_id = ? OR email = ?) AND status = 'pending' AND created_at > ? LIMIT 1",
+  userId, email, new Date(Date.now() - 35 * 60000).toISOString()));

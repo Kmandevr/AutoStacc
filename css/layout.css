@@ -1,5 +1,6 @@
 /* AutoStacc's frame: skip link, sidebar (an icon rail that expands on computers, a drawer on phones), top bar, tool */
-/* buttons and footer. Drawn by js/layout.js on platform pages; project pages add css/project-frame.css. */
+/* buttons, the account menu (js/account-nav.js, on platform and project pages) and footer. Drawn by js/layout.js on */
+/* platform pages; project pages add css/project-frame.css. */
 
 
 :root { --side-wide: 248px; --side-rail: 68px; --side: var(--side-rail); --topbar: 58px; }
@@ -163,9 +164,51 @@ body:has(> .site-frame) { padding-left: var(--side); }
 .theme-switch[data-mode="light"] .theme-icon { background: transparent; }
 .theme-switch[data-mode="dark"] .theme-icon { background: currentColor; }
 
+/* ---------- account menu: your initial in the top bar, opening a short list of account destinations ---------- */
+.account-menu { position: relative; }
+.account-button { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); cursor: pointer; }
+.account-button:hover, .account-button[aria-expanded="true"] { border-color: var(--teal); }
+.account-button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.avatar { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--teal); color: var(--on-accent); font-family: var(--font); font-size: .9rem; font-weight: 750; }
+.account-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  width: min(280px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  font-family: var(--font);
+  text-shadow: none;
+}
+.account-who { display: grid; gap: 2px; margin: 0 0 6px; padding: 8px 10px 10px; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.account-who strong { color: var(--text); font-weight: 650; }
+.account-who span { color: var(--muted); font-size: .82rem; overflow-wrap: anywhere; }
+.account-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.account-panel a, .account-signout { display: flex; align-items: center; width: 100%; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
+.account-panel a:hover, .account-signout:hover { background: var(--panel-2); color: var(--text); }
+.account-panel [aria-current] { background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
+.account-signout { margin-top: 6px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .account-panel:not([hidden]) { animation: menu-in .14s var(--snap); }
+}
+@keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
 /* ---------- footer ---------- */
 .site-footer { border-top: 1px solid var(--line); padding: 28px 0 36px; background: var(--panel); color: var(--muted); font-family: var(--font); font-size: .92rem; }
 .site-footer .wrap { display: grid; gap: 14px; }
+/* platform footer: the mark and tagline, then link columns, then the small print */
+.footer-grid { grid-template-columns: minmax(200px, 1.4fr) repeat(3, minmax(120px, 1fr)); gap: 24px 32px; align-items: start; }
+.footer-brand .brand { display: inline-flex; padding: 0; }
+.footer-brand .brand:hover { background: none; }
+.footer-brand p { margin: 8px 0 0; }
+.footer-title { margin: 0 0 6px; font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.footer-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.footer-col a { color: var(--text); }
+.footer-legal { grid-column: 1 / -1; margin: 8px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: .85rem; }
 .footer-project, .footer-platform { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 .footer-project > span { font-weight: 650; color: var(--text); }
 .socials { display: flex; gap: 6px 16px; flex-wrap: wrap; }
@@ -227,6 +270,10 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .menu-bars::after { top: 6px; width: 15px; }
   .topbar-brand { display: inline-flex; padding: 4px; }
   .topbar-brand .mark { width: 32px; height: 32px; }
+}
+@media (max-width: 700px) {
+  .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer-brand { grid-column: 1 / -1; }
 }
 @media (max-width: 520px) {
   .theme-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

@@ -14,3 +14,12 @@
 /press.html /autostacc/glitches-and-stitches/press  301
 /projects/glitches-and-stitches    /autostacc/glitches-and-stitches  301
 /projects/glitches-and-stitches/*  /autostacc/glitches-and-stitches/:splat  301
+# 2026-10-08: Account and Settings became one Settings area with a page per section (docs/decisions.md).
+/account    /settings/orders  301
+# Settings sections (/settings/security, ...) are one page. With the store on, functions/settings/[[path]].js gates and
+# serves them (Cloudflare doesn't apply this file to an address a Function answers); with it off, this serves the page.
+/settings/profile  /settings  200
+/settings/security  /settings  200
+/settings/orders  /settings  200
+/settings/email  /settings  200
+/settings/privacy  /settings  200

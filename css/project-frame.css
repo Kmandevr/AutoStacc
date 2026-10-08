@@ -18,9 +18,8 @@
 .as-home:hover { color: var(--text); }
 .as-home .mark { width: 22px; height: 22px; }
 .as-links { display: flex; gap: 16px; }
-.as-links a, .as-signout { color: var(--muted); font-weight: 550; }
-.as-links a:hover, .as-signout:hover { color: var(--text); }
-.as-signout { padding: 0; border: 0; background: none; font-family: inherit; font-size: inherit; cursor: pointer; }
+.as-links a { color: var(--muted); font-weight: 550; }
+.as-links a:hover { color: var(--text); }
 .as-strip .topbar-tools { gap: 4px; }
 .as-strip .tool-link, .as-strip .theme-switch { min-height: 30px; padding: 4px 10px; font-size: .82rem; }
 
