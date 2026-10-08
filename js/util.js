@@ -153,12 +153,9 @@ const GS = (function () {
   // Where a store item opens: the store filtered to its project, with the item selected at the top.
   const shopItemPath = (p) => `/shop?project=${encodeURIComponent(p.project || "")}&item=${encodeURIComponent(p.id)}`;
 
-  // Page changes animate (css/core.css @view-transition). When the browser aborts one (a fast second navigation, a
-  // page that isn't ready), it rejects the transition's promises; handle them so an aborted animation isn't an error.
-  // In-page swaps go through viewSwap for the same reason.
+  // An in-page swap animated as a view transition; an aborted one rejects its promises, so they're handled (page
+  // changes are handled in js/theme.js, which runs before the first paint).
   const quiet = (t) => t && [t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
-  addEventListener("pagereveal", (ev) => quiet(ev.viewTransition));
-  addEventListener("pageswap", (ev) => quiet(ev.viewTransition));
   const viewSwap = (fn) => (document.startViewTransition ? quiet(document.startViewTransition(fn)) : fn());
 
   return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath, viewSwap };
