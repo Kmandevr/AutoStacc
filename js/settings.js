@@ -1,64 +1,57 @@
-// Settings page: your name and your password, both Better Auth endpoints (/api/auth/update-user, /change-password).
-// The email can't change (purchases are tied to it). The server only serves this page to a signed-in visitor
-// (server/pages/guard.js); this script still sends anyone else to log in. Needs js/util.js.
+// Settings shell (settings.html, served at /settings and /settings/<section>): picks the section from the address,
+// marks it in the section list, sets the breadcrumb, heading and title, and on phones shows the list at /settings and
+// one section per page (computers show Profile beside the list there). It asks the store once who is signed in and
+// hands the answer to the section scripts as a gs:settings event on window; each js/settings-<section>.js draws its
+// section into #settings-app. The server only serves this page to a signed-in visitor (server/pages/guard.js); this
+// script still sends anyone else to log in. Needs js/util.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML, api, loginPath } = window.GS;
-  const root = $("#settings-app");
-  if (!root) return;
-  const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
-  const toLogin = () => location.replace(loginPath("/settings"));
+  const layout = $("[data-settings]");
+  if (!layout) return;
+  const root = $("#settings-app", layout);
 
-  function render(user) {
-    root.innerHTML = `
-      <form class="panel appear" data-form="profile" novalidate>
-        <h2>Profile</h2><p class="msg" role="status"></p>
-        <div class="field"><label for="name">Name</label><input id="name" type="text" autocomplete="name" maxlength="80" required value="${escapeHTML(user.name || "")}"></div>
-        <p class="small-print">Your email (${escapeHTML(user.email)}) can't be changed here: your purchases are tied to it.</p>
-        <div class="actions"><button class="btn" type="submit">Save</button></div>
-      </form>
-      <form class="panel" data-form="password" novalidate>
-        <h2>Password</h2><p class="msg" role="status"></p>
-        <div class="field"><label for="current">Current password</label><input id="current" type="password" autocomplete="current-password" maxlength="128" required></div>
-        <div class="field"><label for="new">New password (10+ characters)</label><input id="new" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></div>
-        <p class="small-print">Saving logs out your other devices.</p>
-        <div class="actions"><button class="btn" type="submit">Change password</button></div>
-      </form>`;
+  const SECTIONS = {
+    profile: ["Profile", "Your name, and the email your purchases are tied to."],
+    security: ["Security", "Your password, and every device signed in to your account."],
+    orders: ["Orders", "Every order and its status. What you own is in Your Stacc."],
+    email: ["Emails", "Receipts and security emails always come. Everything else is up to you."],
+    privacy: ["Privacy and data", "Download everything AutoStacc holds about you, or delete your account."]
+  };
+  const asked = (location.pathname.match(/^\/settings\/([a-z]+)\/?$/) || [])[1];
+  let section = SECTIONS[asked] ? asked : null;
+  // /settings on a computer opens Profile beside the list, at Profile's own address so a reload stays there.
+  if (!section && !matchMedia("(max-width: 760px)").matches) {
+    section = "profile";
+    history.replaceState(history.state, "", "/settings/profile" + location.search);
+  }
+  layout.dataset.view = section ? "section" : "index";
+  root.dataset.section = section || "profile";
+
+  if (section) {
+    const [name, intro] = SECTIONS[section];
+    const link = $(`.settings-nav a[data-section="${section}"]`, layout);
+    if (link) link.setAttribute("aria-current", "page");
+    const title = $("[data-settings-title]");
+    title.textContent = name;
+    title.dataset.text = name;
+    $("[data-settings-intro]").textContent = intro;
+    $("[data-settings-crumb]").textContent = name;
+    $("[data-settings-crumbs]").hidden = false;
+    document.title = `${name} · Settings · AutoStacc`;
   }
 
-  const say = (form, text, error) => {
-    const m = $(".msg", form);
-    m.className = "msg" + (error ? " error" : "");
-    m.setAttribute("role", error ? "alert" : "status");
-    m.textContent = text;
-    if (error) sound("error");
-  };
-
-  root.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const btn = $("button[type=submit]", form);
-    if (btn.disabled) return;
-    if (!form.checkValidity()) return say(form, "Check the fields above.", true);
-    btn.disabled = true;
-    const res = form.dataset.form === "profile"
-      ? await api("/api/auth/update-user", { method: "POST", body: { name: $("#name", form).value.trim() } })
-      : await api("/api/auth/change-password", { method: "POST", body: { currentPassword: $("#current", form).value, newPassword: $("#new", form).value, revokeOtherSessions: true } });
-    btn.disabled = false;
-    if (res.ok) {
-      if (form.dataset.form === "password") form.reset();
-      return say(form, "Saved.");
-    }
-    if (res.status === 401) return toLogin();
-    say(form, res.status === 429 ? "Too many tries. Wait a minute." : res.error.code === "INVALID_PASSWORD" ? "The current password is wrong." : res.error.message, true);
-  });
+  const fail = (text) => { root.innerHTML = `<p class="msg error" role="alert">${escapeHTML(text)}</p>`; };
 
   (async () => {
     const me = await api("/api/account");
-    if (me.status === 503) { root.innerHTML = `<p class="msg error">Accounts are offline for maintenance. Try again soon.</p>`; return; }
-    if (!me.ok) { root.innerHTML = `<p class="msg error">${escapeHTML(me.error.message)}</p>`; return; }
-    if (!me.data.user) return toLogin();
-    render(me.data.user);
+    if (me.status === 503) return fail("Accounts are offline for maintenance. Try again soon.");
+    if (!me.ok) return fail(me.error.message);
+    if (!me.data.user) return location.replace(loginPath(location.pathname));
+    // The section scripts load after this one; on a slow network the answer can beat them, so wait for the page.
+    if (document.readyState === "loading") await new Promise((done) => addEventListener("DOMContentLoaded", done, { once: true }));
+    root.innerHTML = "";
+    dispatchEvent(new CustomEvent("gs:settings", { detail: { user: me.data.user, section: root.dataset.section } }));
   })();
 })();

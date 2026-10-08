@@ -171,6 +171,15 @@ const GS = (function () {
   const quiet = (t) => t && [t.ready, t.finished, t.updateCallbackDone].forEach((p) => p && p.catch(() => {}));
   const viewSwap = (fn) => (document.startViewTransition ? quiet(document.startViewTransition(fn)) : fn());
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath, viewSwap };
+  // A form's or panel's status line (its .msg): announced politely when things went fine, as an alert when not.
+  const say = (root, text, error = false) => {
+    const m = $(".msg", root);
+    if (!m) return;
+    m.className = "msg" + (error ? " error" : "");
+    m.setAttribute("role", error ? "alert" : "status");
+    m.textContent = text;
+  };
+
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath, viewSwap, say };
 })();
 window.GS = GS;

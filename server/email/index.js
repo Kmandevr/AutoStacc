@@ -3,7 +3,7 @@
 // so a mail outage can't fail a payment; an admin can resend later.
 import { render, senderOf } from "./templates.js";
 import { providers } from "./providers.js";
-import { first, run, newId, now } from "../lib/db.js";
+import { all, first, run, stmt, newId, now } from "../lib/db.js";
 
 export async function sendEmail(app, kind, to, data, { dedupeKey } = {}) {
   const { config, db } = app;
@@ -31,3 +31,11 @@ export async function sendEmail(app, kind, to, data, { dedupeKey } = {}) {
     newId("em"), kind, to, config.emailProvider, providerId, status, key, msg.subject, body, error, now());
   return { status };
 }
+
+// What was mailed to this address (kinds, subjects, dates; never bodies), for the data export.
+export const emailsTo = (db, email) =>
+  all(db, "SELECT kind, status, subject, created_at FROM email_events WHERE to_email = ? ORDER BY created_at", email);
+
+// Account deletion: the log keeps that a mail went out, not to whom or what it said.
+export const anonymiseEmailLogStmt = (db, email, anon) =>
+  stmt(db, "UPDATE email_events SET to_email = ?, body_text = NULL WHERE to_email = ?", anon, email);

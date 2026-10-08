@@ -1,5 +1,5 @@
 // Follows: which projects a verified account follows, and whether Auto-Stacc (automatic free grants) is on.
-import { all, run, now } from "../lib/db.js";
+import { all, run, stmt, now } from "../lib/db.js";
 
 export const listFollows = (db, userId) =>
   all(db, "SELECT project_id, auto_stacc, created_at FROM follows WHERE user_id = ? ORDER BY created_at", userId);
@@ -19,3 +19,6 @@ export async function autoStaccProjectIds(db, userId) {
 }
 
 export const publicFollow = (f) => ({ projectId: f.project_id, autoStacc: Boolean(f.auto_stacc), since: f.created_at });
+
+// Account deletion: every follow goes.
+export const removeAllFollowsStmt = (db, userId) => stmt(db, "DELETE FROM follows WHERE user_id = ?", userId);

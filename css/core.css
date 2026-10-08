@@ -57,6 +57,11 @@ img { max-width: 100%; display: block; }
 .page-hero { padding: 72px 0 40px; }
 .page-hero h1 { font-size: clamp(2.2rem, 6vw, 4rem); margin: 0 0 10px; }
 .page-hero p { color: var(--muted); margin: 0; max-width: 70ch; }
+/* breadcrumbs: generated item pages and nested platform pages (Settings sections) */
+.crumbs ol { display: flex; flex-wrap: wrap; gap: 4px 0; list-style: none; margin: 0 0 18px; padding: 0; font-size: .85rem; color: var(--muted); }
+.crumbs li + li::before { content: "/"; margin: 0 10px; color: var(--accent-dim); }
+.crumbs a { display: inline-block; padding-block: 2px; }
+.crumbs [aria-current] { color: var(--accent); text-shadow: var(--glow); }
 
 /* ---------- buttons ---------- */
 .btn {

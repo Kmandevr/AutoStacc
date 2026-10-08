@@ -66,7 +66,9 @@ for (const file of pages(OUT)) {
 const withFunction = new Set(fs.readdirSync(path.join(ROOT, "functions")).filter((f) => f.endsWith(".js") && !f.startsWith("[")).map((f) => f.replace(/\.js$/, "")));
 const staticPages = fs.readdirSync(OUT).filter((f) => f.endsWith(".html")).map((f) => f.replace(/\.html$/, ""))
   .filter((n) => !withFunction.has(n) && !CREATORS.includes(n)).map((n) => (n === "index" ? "/" : "/" + n));
-const redirected = fs.readFileSync(path.join(ROOT, "_redirects"), "utf8").split("\n").map((l) => l.trim().split(/\s+/)[0]).filter((x) => x && x.startsWith("/"));
+// Rewrites (200 rules) stay with their Function when they have one: /settings/* is the gated Settings page.
+const redirected = fs.readFileSync(path.join(ROOT, "_redirects"), "utf8").split("\n").map((l) => l.trim().split(/\s+/))
+  .filter(([from, , code]) => from && from.startsWith("/") && code !== "200").map(([from]) => from);
 const exclude = [...new Set([...DIRS.filter((d) => d !== "shop").map((d) => `/${d}/*`), "/shop", "/shop/*",
   ...CREATORS.map((c) => "/" + c), ...staticPages, ...redirected, ...ROOT_FILES.filter((f) => !f.startsWith("_")).map((f) => "/" + f)])];
 if (exclude.length > 99) throw new Error(`_routes.json has ${exclude.length} exclude rules; Cloudflare allows 100 in total`);

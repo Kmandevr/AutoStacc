@@ -1,12 +1,12 @@
 // Pages: the boundary between the public site and the signed-in app, over HTTP as a browser or crawler sees it.
-// Public pages answer anyone; the account pages (/dashboard, /account, /settings) are gated on the server and send
+// Public pages answer anyone; the account pages (/dashboard, /settings and its sections, /studio) are gated on the server and send
 // everyone else to login with a safe way back; no page's HTML (public or private) carries anyone's data.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
 
 const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/about"];
-const GATED = ["/dashboard", "/account", "/settings", "/studio"];
+const GATED = ["/dashboard", "/settings", "/settings/profile", "/settings/security", "/settings/orders", "/settings/email", "/settings/privacy", "/studio"];
 const goesToLogin = (r, next) => {
   assert.equal(r.status, 302);
   assert.equal(r.headers.get("location"), `/login?next=${encodeURIComponent(next)}`);
@@ -33,8 +33,18 @@ export default (ctx) => describe("pages", () => {
   test("account pages send anonymous visitors to login and back, and never serve the app", async () => {
     const anon = new Client(ctx.mock.url);
     for (const p of GATED) goesToLogin(await anon.get(p), p);
-    goesToLogin(await anon.get("/account?tab=orders"), "/account?tab=orders");
+    goesToLogin(await anon.get("/settings/orders?page=2"), "/settings/orders?page=2");
     goesToLogin(await anon.get("/settings/"), "/settings");
+    // The old account page is now Settings › Orders: a permanent redirect, then the same gate.
+    const moved = await anon.get("/account");
+    assert.equal(moved.status, 301);
+    assert.equal(moved.headers.get("location").replace(/^https?:\/\/[^/]+/, ""), "/settings/orders");
+    // A section that doesn't exist is the site's 404, never the app and never a login bounce.
+    for (const p of ["/settings/nope", "/settings/security/extra", "/settings/..%2Fadmin"]) {
+      const r = await anon.get(p);
+      assert.equal(r.status, 404, p);
+      assert.doesNotMatch(String(r.data), /settings-app/, p);
+    }
     goesToLogin(await anon.req("HEAD", "/dashboard"), "/dashboard");
   });
 
