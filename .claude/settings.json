@@ -10,6 +10,7 @@
       "Bash(npm test)",
       "Bash(npm run test:api)",
       "Bash(npm run test:browser)",
+      "Bash(npm run test:store)",
       "Bash(npm ci)",
       "Bash(node scripts/build.js:*)",
       "Bash(node scripts/seo-test.js)"

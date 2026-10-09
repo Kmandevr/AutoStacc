@@ -8,7 +8,8 @@
   const { $, escapeHTML: e, cents, api } = window.GS;
   const root = $("#admin-app");
   if (!root) return;
-  let products = [];
+  // The products for the test-purchase list; loading starts on "gs:admin", and a preview waits for it.
+  let products = Promise.resolve([]);
 
   const list = (items, empty) => (items.length ? `<ul>${items.join("")}</ul>` : `<p class="small-print">${empty}</p>`);
   const day = (iso) => e(String(iso || "").slice(0, 16).replace("T", " "));
@@ -19,7 +20,7 @@
     const res = await api(`/api/admin/customers/${encodeURIComponent(userId)}`);
     if (!res.ok) { el.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     const d = res.data, c = d.customer;
-    const buyable = products.filter((p) => p.published && !p.salesPaused && !p.deleted && !p.free);
+    const buyable = (await products).filter((p) => p.published && !p.salesPaused && !p.deleted && !p.free);
     el.innerHTML = `<div class="panel wide admin-preview" data-customer="${e(c.id)}">
       <h2>${e(c.email)}</h2><p class="small-print">Customer preview · read-only · ${e(c.name)} · ${c.verified ? "verified" : "not verified"} · joined ${day(c.createdAt)}</p>
       ${d.libraryNote ? `<p class="msg error">${e(d.libraryNote)}</p>` : ""}
@@ -53,9 +54,10 @@
     msg.textContent = res.error.message;
   }
 
-  addEventListener("gs:admin", async () => {
-    const res = await api("/api/admin/products");
-    products = res.ok ? res.data.products : [];
+  // Listens at once: js/admin-records.js may draw the "preview" buttons before the products arrive, and a click on one
+  // then must still open the preview.
+  addEventListener("gs:admin", () => {
+    products = api("/api/admin/products").then((res) => (res.ok ? res.data.products : []));
     root.addEventListener("click", (ev) => {
       const p = ev.target.closest("[data-preview]");
       if (p) return preview(p.dataset.preview);

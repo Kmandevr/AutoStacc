@@ -25,14 +25,17 @@ async function mine(app) {
   const user = await requireUser(app);
   const orders = await all(app.db, `SELECT * FROM orders WHERE user_id = ? AND (status != 'pending' OR created_at > ?) ORDER BY created_at DESC LIMIT 100`,
     user.id, new Date(Date.now() - 86400000).toISOString());
-  const out = [];
-  for (const o of orders) out.push({ ...publicOrder(o, await orderItems(app.db, o.id)), refund: await refundStatus(app.db, o) });
+  const out = await Promise.all(orders.map(async (o) => {
+    const [items, refund] = await Promise.all([orderItems(app.db, o.id), refundStatus(app.db, o)]);
+    return { ...publicOrder(o, items), refund };
+  }));
   return json({ orders: out });
 }
 
 async function one(app, { orderId }) {
   const order = await ownedOrder(app, orderId);
-  return json({ order: { ...publicOrder(order, await orderItems(app.db, order.id)), refund: await refundStatus(app.db, order) } });
+  const [items, refund] = await Promise.all([orderItems(app.db, order.id), refundStatus(app.db, order)]);
+  return json({ order: { ...publicOrder(order, items), refund } });
 }
 
 // A customer's own refund: a paid order, inside the window, with nothing downloaded (server/orders/refunds.js).
@@ -41,7 +44,8 @@ async function refund(app, { orderId }) {
   const order = await ownedOrder(app, orderId);
   await refundOrder(app, order);
   const fresh = await getOrder(app.db, order.id);
-  return json({ order: { ...publicOrder(fresh, await orderItems(app.db, fresh.id)), refund: await refundStatus(app.db, fresh) } });
+  const [items, refundState] = await Promise.all([orderItems(app.db, fresh.id), refundStatus(app.db, fresh)]);
+  return json({ order: { ...publicOrder(fresh, items), refund: refundState } });
 }
 
 // Asks the payment provider (with our secret key) whether a pending order was paid. Safe to call any number of times.

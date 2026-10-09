@@ -62,7 +62,7 @@ node scripts/serve.js        # static pages only, store offline: http://localhos
 npm install && npm run dev   # whole site with the store in test mode: http://localhost:8788/
 node scripts/build.js        # after changing data/: regenerate heads, item pages, sitemap and catalog
 node scripts/seo-test.js     # search-visibility tests (also run in CI and before every deploy)
-npm test                     # store unit tests; npm run test:api and npm run test:browser for the attack suites
+npm test                     # store unit tests; npm run test:store for the attack suites (API and browser, in parallel)
 ```
 
 ## Deploying to Cloudflare Pages

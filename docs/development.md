@@ -55,13 +55,16 @@ Schema changes are new files in `db/migrations/` with the next number (`0007_...
 | --- | --- | --- |
 | `node scripts/seo-test.js` | Search visibility (also checks the build is current) | seconds |
 | `npm test` | Unit tests (`test/unit`): config refusals, download tokens, cart parsing, Stripe event mapping, router, catalog SQL, platform hierarchy and links (a second project added as data), Your Stacc views over one asset list | seconds |
-| `npm run test:api` | API security suites (`test/api`) against two local stores: mock payments, and Stripe mode with a fake Stripe API (`test/support/fake-stripe.js`) and really signed webhooks | ~2 min |
-| `npm run test:browser` | Browser and chaos tests (`test/browser`) in Chromium at phone and desktop sizes | ~1 min |
+| `npm run test:api` | API security suites (`test/api`) in two groups run in parallel, `accounts.test.js` and `payments.test.js`, each with its own local stores: mock payments, and (payments) Stripe mode with a fake Stripe API (`test/support/fake-stripe.js`) and really signed webhooks | ~45 s |
+| `npm run test:browser` | Browser and chaos tests (`test/browser`) in Chromium at phone and desktop sizes, in three groups run in parallel (`flows`, `layout`, `features`), each with its own store | ~2 min |
+| `npm run test:store` | Both of the above at once, building `dist/` once (never run `test:api` and `test:browser` side by side: each rebuilds `dist/`) | ~2.5 min |
 | `verify-site` skill | Every page in a browser with the store offline | ~1 min |
 
 The API suites attack: the account pages' server gate (anonymous, forged, expired and signed-out sessions, open redirects, unknown Settings sections, nothing private in any page's HTML), account settings (another account's devices, tokens in answers, unknown or non-boolean email switches, the export leaking another customer, deletion without the right email or password, from another site, by an admin or creator owner, or while impersonating; what deletion keeps and removes), anonymous and forged/expired sessions, cross-account access, enumeration, reset abuse, rate limits, role escalation; price, id, quantity tampering, duplicate and racing checkouts; unsigned, mis-signed, replayed, duplicated, racing and mismatched webhooks; cancel, fail, refund, reconciliation; downloads without login or entitlement, someone else's file or link, edited, forged and expired links, guessed paths, unpublished files, revoked access; guest keys, adoption by verified email, account hijack by unverified email; follows and Auto-Stacc (free only, once, never paid), Pac/kind tags on files with downloads still per product, poll votes (one per verified account, closed polls, projects without polls); malformed input, cross-site requests, admin access. The browser suite walks the public cover, the gate (log in and land back where you were going) and the signed-in app's navigation and sign-out, and breaks the purchase flow with double clicks, the back button, refresh, offline, slow and failing API, store down, declined and abandoned payments, expired sessions and links, keyboard-only use, and checks overflow, tap targets and CSP errors at 320–1280px. CI: `.github/workflows/store.yml`.
 
 When fixing a store bug, write the failing test first in the suite for that area.
+
+Groups run in parallel, so each starts its own stores on its own ports with its own state folder (`.wrangler/test-<kind>-<group>`); tests inside a group run in order and may build on each other (the `features` browser tests reuse the admin account the impersonation test creates). A new API suite goes into the group whose stores it needs; a new browser test into the group it belongs to.
 
 ## Extending
 

@@ -8,6 +8,10 @@ You review completed changes for AutoStacc. You report; you do not edit files. D
 
 **Start with:** `git diff origin/main --stat`, then the diff itself (or the files you were given). For each changed function, check who depends on it with Serena `find_referencing_symbols` (or Grep for a data field name) before judging whether the change is safe. Read a whole file only if the diff can't be understood without it.
 
+**From the brief:** if the caller gives changed files, a diff range or checks already run with their results, use them for scope and don't re-run those checks; take its file list and range, never its verdict.
+
+**Read shallow (required):** go only as deep as the question needs, in this order: the repo map (`.claude/tools/tree.sh <dir>`), then Graphify (`.claude/tools/graph.sh query|explain|affected`), then Serena (`get_symbols_overview`, `find_symbol` with `include_body`, `find_referencing_symbols`), and only then Read with `offset`/`limit` for the lines those named. Never read a whole file the layers above already answered, never re-read one in context, and keep tool output small (`head`, `grep -c`, summaries). Report findings only, briefly; no file dumps.
+
 **Don't read:** unrelated modules, `docs/log.md`, `graphify-out/`, `.serena/`. Don't run the browser checks; `browser-tester` does that. `node --check` on changed JS is fine.
 
 **Look for, in this order:**

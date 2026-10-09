@@ -3,7 +3,7 @@
 // Usage: node scripts/seo-test.js   (exit 1 on any FAIL). The rendered-head and crawl checks are in verify-site.
 const fs = require("fs");
 const path = require("path");
-const { execFileSync } = require("child_process");
+const { execFile } = require("child_process");
 const { ROOT, loadData, origin, projectPath } = require("./lib/data");
 
 const out = [];
@@ -19,13 +19,15 @@ const projectOf = (p) => data.projects.find((x) => p && (p === projectPath(x.id)
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
 
 // ---------- the build is current ----------
-try {
-  execFileSync("node", [path.join(ROOT, "scripts/build.js"), "--check"], { stdio: "pipe" });
-  add("PASS", "build", "generated pages, heads and sitemap match data/");
-} catch (e) {
-  const msg = (String(e.stdout || "") + String(e.stderr || "")).trim().split("\n")[0].replace(/^FAIL build - /, "");
-  add("FAIL", "build", msg + " (run node scripts/build.js)");
-}
+// Runs in a child process alongside the checks below; its line keeps the first slot of the report.
+const buildSlot = out.push("") - 1;
+const buildCheck = new Promise((resolve) =>
+  execFile("node", [path.join(ROOT, "scripts/build.js"), "--check"], (e, stdout, stderr) => {
+    if (!e) return resolve(`PASS build - generated pages, heads and sitemap match data/`);
+    const msg = (String(stdout || "") + String(stderr || "")).trim().split("\n")[0].replace(/^FAIL build - /, "");
+    resolve(`FAIL build - ${msg} (run node scripts/build.js)`);
+  })
+).then((line) => (out[buildSlot] = line));
 
 // ---------- pages ----------
 const htmlUnder = (dir) => (exists(dir) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
@@ -310,7 +312,9 @@ for (const f of published) {
 }
 
 // ---------- report ----------
-const fails = out.filter((l) => l.startsWith("FAIL")), warns = out.filter((l) => l.startsWith("WARN"));
-console.log(out.join("\n"));
-console.log(`\n${fails.length ? "FAIL" : warns.length ? "WARN" : "PASS"}: ${fails.length} fail, ${warns.length} warn across ${pageFiles.length} pages and ${locs.length} sitemap URLs`);
-process.exit(fails.length ? 1 : 0);
+buildCheck.then(() => {
+  const fails = out.filter((l) => l.startsWith("FAIL")), warns = out.filter((l) => l.startsWith("WARN"));
+  console.log(out.join("\n"));
+  console.log(`\n${fails.length ? "FAIL" : warns.length ? "WARN" : "PASS"}: ${fails.length} fail, ${warns.length} warn across ${pageFiles.length} pages and ${locs.length} sitemap URLs`);
+  process.exit(fails.length ? 1 : 0);
+});

@@ -1,11 +1,27 @@
 #!/bin/bash
-# Session start. Stdout goes into the session's context, so it is kept to the compact top-level map.
+# Session start. Stdout goes into the session's context, so it is kept to the compact top-level map plus a short git and log status.
 # Serena is installed here (output to stderr) so the MCP server starts fast and the install is cached.
-set -euo pipefail
+set -uo pipefail
 command -v serena >/dev/null 2>&1 || uv tool install -p 3.13 serena-agent >&2 || true
 # Node dependencies (if the project has a lockfile) install in the background so the session isn't held up.
-cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
+cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}" || exit 0
 if [ -f package-lock.json ] && [ ! -d node_modules ]; then (npm ci --no-audit --no-fund >/dev/null 2>&1 &); fi
 
+# The parts are independent: each writes its own file in the background, then they print in order.
+LOG_NOTE=${SESSION_LOG_NOTE:-docs/log.md}
+T=$(mktemp -d) || exit 0
+trap 'rm -rf "$T"' EXIT
+"$(dirname "$0")/../tools/tree.sh" > "$T/map" 2>/dev/null &
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  { printf 'Branch: %s; uncommitted changes: ' "$(git branch --show-current 2>/dev/null || echo detached)"; git status --porcelain 2>/dev/null | wc -l | tr -d ' '; } > "$T/branch" &
+  git log -5 --format='  %h %<(72,trunc)%s' 2>/dev/null | sed 's/ *$//' > "$T/commits" &
+fi
+# The note's newest entries are its first bullet lines ("Newest first").
+[ -f "$LOG_NOTE" ] && grep -m3 '^- ' "$LOG_NOTE" | cut -c1-200 | sed 's/^/  /' > "$T/log" &
+wait
+
 echo 'Repo map, top level (layer 0). Stop here if it answers the task. Details: .claude/tools/tree.sh <dir>; questions: .claude/tools/graph.sh query "<keywords>", then Serena for symbols (code-nav skill).'
-"$(dirname "$0")/../tools/tree.sh"
+cat "$T/map" 2>/dev/null
+if [ -s "$T/branch" ]; then cat "$T/branch"; echo 'Last commits:'; cat "$T/commits"; fi
+if [ -s "$T/log" ]; then echo "Newest in $LOG_NOTE (trimmed):"; cat "$T/log"; fi
+exit 0

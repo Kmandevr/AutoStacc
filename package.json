@@ -8,8 +8,10 @@
   "scripts": {
     "dev": "node scripts/dev.js",
     "test": "node --test test/unit/*.test.js",
-    "test:api": "node --test --test-reporter=spec test/api/run.test.js",
-    "test:browser": "node --test --test-reporter=spec test/browser/run.test.js"
+    "site": "node scripts/build.js && node scripts/dist.js",
+    "test:api": "npm run -s site && node --test --test-reporter=spec test/api/*.test.js",
+    "test:browser": "npm run -s site && node --test --test-reporter=spec test/browser/*.test.js",
+    "test:store": "npm run -s site && node --test --test-concurrency=5 --test-reporter=spec test/api/*.test.js test/browser/*.test.js"
   },
   "dependencies": {
     "better-auth": "^1.7.7",
