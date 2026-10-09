@@ -26,6 +26,7 @@
         ${s.livePayments ? "Real payments. Test purchases are off here." : "Test payments only: nothing here is real revenue."}</p>
       <p class="msg">${escapeHTML(s.environment)} · payments: ${escapeHTML(s.paymentProvider)} · ${s.products} products · ${s.customers} customers · ${paid.n} paid orders (${cents(paid.cents || 0)}) · ${s.activeEntitlements} active entitlements</p>
       ${s.alerts.length ? `<div class="msg error" role="alert">Payment events that need a look (check them in Stripe too):<ul>${s.alerts.map((a) => `<li>${escapeHTML(a.received_at.slice(0, 16).replace("T", " "))} ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.order_id ? ` (${escapeHTML(a.order_id)})` : ""}</li>`).join("")}</ul></div>` : ""}
+      <label class="admin-section"><span>Section</span><select data-section aria-label="Section">${TABS.map(([k, l], i) => `<option value="${k}"${i === 0 ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       <div class="admin-tabs" role="tablist">${TABS.map(([k, l], i) => `<button type="button" role="tab" id="tab-${k}" aria-controls="admin-${k}" aria-selected="${i === 0}">${l}</button>`).join("")}</div>
       ${TABS.map(([k], i) => `<div class="admin-panel" role="tabpanel" id="admin-${k}" aria-labelledby="tab-${k}"${i ? " hidden" : ""}></div>`).join("")}`;
   }
@@ -35,6 +36,8 @@
       $(`#tab-${k}`).setAttribute("aria-selected", String(k === key));
       $(`#admin-${k}`).hidden = k !== key;
     });
+    const pick = $("[data-section]", root);
+    if (pick) pick.value = key;
   }
 
   async function products() {
@@ -122,6 +125,11 @@
       if (await upload(`/api/admin/products/${encodeURIComponent(id)}/files?${query}`, file, $(".msg", form))) products();
     }
     btn.disabled = false;
+  });
+
+  root.addEventListener("change", (e) => {
+    const pick = e.target.closest("[data-section]");
+    if (pick) selectTab(pick.value);
   });
 
   root.addEventListener("click", async (e) => {

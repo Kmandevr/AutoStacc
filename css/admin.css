@@ -75,3 +75,29 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 .admin-choice label { display: block; margin: 4px 0; }
 .admin-promo-form input[type=number], .admin-promo-form select { min-height: 44px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; }
 .admin-table tr[data-status="ended"] td { color: var(--muted); }
+
+/* Phones and touch screens. The section picker replaces the sideways-scrolling tab strip, tables become stacked cards
+   (js/admin-mobile.js labels each cell), and controls are at least 44px tall. */
+.admin-section { display: none; }
+@media (max-width: 700px) {
+  .admin-section { display: grid; gap: 4px; margin: 0 0 16px; color: var(--muted); font-size: .85rem; }
+  .admin-section select { min-height: 48px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; font-size: 1rem; width: 100%; }
+  .admin-tabs { display: none; }
+  .admin-table { overflow: visible; border: 0; }
+  .admin-table table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
+  .admin-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .admin-table tr { margin: 0 0 12px; padding: 4px 12px; border: 1px solid var(--line); background: var(--panel); }
+  .admin-table td { display: grid; grid-template-columns: minmax(84px, 38%) 1fr; gap: 8px; padding: 8px 0; white-space: normal; overflow-wrap: anywhere; border-bottom: 1px solid var(--line); }
+  .admin-table td:last-child { border-bottom: 0; }
+  .admin-table td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; }
+  .admin-table td:not([data-label]) { display: block; }
+  .admin-table input[type=number] { width: 100%; min-height: 44px; }
+  .admin-row .btn, .admin-upload .btn, .admin-search .btn { min-height: 44px; }
+  .admin-upload input, .admin-search input { width: 100%; }
+  .admin-upload, .admin-search { align-items: stretch; }
+  .admin-mode { padding: 8px 10px; }
+  .stats-controls select { width: 100%; }
+}
+@media (pointer: coarse) {
+  .admin .btn.small, .admin .btn.ghost { min-height: 44px; }
+}

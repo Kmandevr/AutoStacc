@@ -29,4 +29,12 @@
 
 @media (max-width: 860px) {
   .studio-grid { grid-template-columns: 1fr; }
+  .studio-bar .btn, .studio-add select, .studio-add .btn { flex: 1 1 auto; }
+}
+@media (pointer: coarse), (max-width: 700px) {
+  .studio .btn.small, .studio .btn.ghost, .studio-images button { min-height: 44px; }
+  .studio-projects summary, .studio-creator summary { padding: 10px 0; }
+  .studio-checks label { min-height: 44px; }
+  .studio-images li { grid-template-columns: 72px 1fr; }
+  .studio-images img { width: 72px; height: 72px; }
 }

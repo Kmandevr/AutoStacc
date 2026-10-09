@@ -45,7 +45,8 @@ export function startFakeStripe(port) {
         const amount = items.reduce((s, i) => s + Number(i.price_data.unit_amount) * Number(i.quantity), 0);
         const id = "cs_test_" + crypto.randomBytes(12).toString("hex");
         const s = {
-          id, object: "checkout.session", url: `http://127.0.0.1:${port}/pay/${id}`, amount_total: amount,
+          id, object: "checkout.session", url: `http://127.0.0.1:${port}/pay/${id}`, amount_subtotal: amount, amount_total: amount + Math.round(amount * 0.07), // 7% tax, as Managed Payments adds
+          
           currency: items[0] ? items[0].price_data.currency : "usd", metadata: p.metadata || {}, client_reference_id: p.client_reference_id,
           customer_email: p.customer_email, payment_intent: null, payment_status: "unpaid", status: "open", livemode: false,
           success_url: p.success_url, cancel_url: p.cancel_url
