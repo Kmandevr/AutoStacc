@@ -75,6 +75,6 @@ Future custom HTML/CSS needs its own model before it's allowed: creator code run
 
 ## Not built yet (on purpose)
 
-- Creators selling their own products (Studio products, payouts, Stripe Connect). The data model is ready: `products.source`, the per-line seller and split.
+- Per-project staff roles, paid extra storage, and per-creator tax forms. Selling and payouts are built: [payouts-setup](payouts-setup.md).
 - Custom HTML/CSS (needs a separate sandboxed origin, see above), custom domains, more than one creator per account, team members beyond the owner (the `editor` role exists but can't be granted yet), reporting a page, Studio pages in the sitemap.
 - Abandoned or orphaned upload cleanup. Images are a single request (stored, then recorded; a failed record deletes the object). Deactivated paid files stay in R2 by design, and a reconciliation job can list the `products/<id>/` and `sites/<creator>/` prefixes against the database.

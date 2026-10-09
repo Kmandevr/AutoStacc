@@ -24,6 +24,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
 - [Control Center](admin.md): the owner's admin: statistics and their sources, customer preview, support impersonation, test purchases, audit log
 - [Store setup](store-setup.md): the owner's checklist to switch the store on (Cloudflare, Stripe, Brevo, secrets)
+- [Payouts setup](payouts-setup.md): how creators are paid (Stripe Connect on a second Stripe account) and what to set up to switch it on
 - [Development](development.md): running locally in test mode, environment variables, tests, extending the store
 - [SEO](seo.md): how search visibility works (generated metadata, item pages, sitemap, structured data, tests)
 - [Search Console](search-console.md): the owner's step-by-step for Google Search Console and official profiles
