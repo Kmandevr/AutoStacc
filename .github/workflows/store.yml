@@ -10,6 +10,8 @@ on:
 permissions:
   contents: read
 jobs:
+  # Two jobs run side by side (the browser suite used to wait for the API suite), so a pull request waits for the
+  # slower one, not the sum. The job named `store` keeps its name for anything that requires it.
   store:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -24,6 +26,16 @@ jobs:
         run: npm test
       - name: API security tests
         run: npm run test:api
+  store-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Install Playwright with Chromium
         run: npm install -g playwright@1 && npx playwright install --with-deps chromium
       - name: Browser and chaos tests
