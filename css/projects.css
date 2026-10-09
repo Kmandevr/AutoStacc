@@ -55,3 +55,4 @@
 .pcard-body { align-content: start; }
 .pcard .project-follow .btn { min-height: 40px; padding: 6px 14px; font-size: .85rem; }
 .pcard .project-follow .auto-stacc { font-size: .85rem; }
+.pcard-why { margin: 0; font-size: .82rem; font-weight: 600; color: var(--accent); }
