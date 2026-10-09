@@ -7,7 +7,6 @@
   const { $, escapeHTML, cents, fmtDate, api, cart, track } = window.GS;
   const root = $("#checkout-app");
   if (!root) return;
-  const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
   const params = new URLSearchParams(location.search);
   const orderId = params.get("order") || "";
   const mockSession = params.get("mock");
@@ -33,8 +32,8 @@
       o.items.forEach((i) => cart.remove(i.productId));
       let first = true;
       try { first = !sessionStorage.getItem("gs:done:" + o.id); sessionStorage.setItem("gs:done:" + o.id, "1"); } catch {}
-      if (first) { sound("cinch"); track("purchase_complete"); }
-      root.innerHTML = state("Payment confirmed", false, `<p>Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
+      if (first) track("purchase_complete");
+      root.innerHTML = state("Payment confirmed", false, `<p>Stacc'd. Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
         ${lines(o)}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>
         <div data-refund-slot></div>`);
       refundOption(o);

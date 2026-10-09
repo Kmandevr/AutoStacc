@@ -31,16 +31,16 @@ A project is creative work owned by a creator ([creators](creators.md)), at `/<c
 
 This contract is for first-party projects in `data/`. Projects made in the Studio exist only in the database and have no such entry ([creators](creators.md)); the `/projects` directory, follows and polls don't list them yet.
 
-Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it). The build fails if any of these point at a project that doesn't exist.
+Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it). The build fails if any of these point at a project that doesn't exist. Shows carry `project` too (`[data-shows]` lists only its project's dates).
 
 ## Glitches & Stitches
 
-The first project (`glitches-and-stitches`). It uses every feature, including polls (community votes on unfinished music) and relationships (which tracks were built from which fragments; see [identity](identity.md)). Its pages are `/autostacc/glitches-and-stitches` (its home: hero, listen, latest, shows, about, the loop, newsletter) and `/music`, `/news`, `/press` under it, written by hand in `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/`; release and news pages are generated under the same address. It has a skin (the glitch terminal, [brand](brand.md)) and sounds. Its identity is owner-written in [identity](identity.md); facts in [artist](artist.md).
+The first project (`glitches-and-stitches`). It uses every feature, including polls (community votes on unfinished music) and relationships (which tracks were built from which fragments; see [identity](identity.md)). Its pages are `/autostacc/glitches-and-stitches` (its home: hero, listen, latest, shows, about, the loop, newsletter) and `/music`, `/news`, `/press` under it, written by hand in `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` from drop-in modules ([modules](modules.md)); release and news pages are generated under the same address. It has a skin (the glitch terminal, [brand](brand.md)) and sounds. Its identity is owner-written in [identity](identity.md); facts in [artist](artist.md).
 
 ## Adding a project
 
 1. Add an entry to `data/projects.js` with only the features it uses.
-2. Give its products, releases, news, Stacclets and Pacs `project: "<id>"` (Pacs via their Stacclet).
+2. Give its products, releases, news, shows, Stacclets and Pacs `project: "<id>"` (Pacs via their Stacclet).
 3. Give it a `creator` (an entry of `data/creators.js`; first-party projects belong to `autostacc`). Run `node scripts/build.js`; it validates every link and syncs the project into the store database.
 4. It appears on `/projects` and on its creator's generated profile (`/<creator>`, `scripts/lib/creator-page.js`); customers can follow it; its products show "by <name>" and its content files itself in Your Stacc.
 

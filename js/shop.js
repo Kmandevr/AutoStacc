@@ -10,6 +10,8 @@
 //   data-url                 the store page: filters, search and the selected item live in the address
 //                            (/shop?project=<id>&type=<type>&q=<text>&item=<id>); clicking a card selects it in place.
 // Elsewhere, clicking a card opens the store filtered to its project with that item selected at the top.
+// Creators' (Studio) products come from the store API and join the grid once it answers, each marked "Unverified
+// creator" until AutoStacc trusts its creator; with the store offline the grid simply shows AutoStacc's own catalog.
 // Needs data/projects.js, data/product-types.js, data/products.js, js/util.js and js/product-card.js. Buttons, live
 // prices and OWNED come from js/store.js (it listens for gs:cards).
 (function () {
@@ -25,21 +27,37 @@
   const SORTS = [["", "Recommended"], ["price-asc", "Price: low to high"], ["price-desc", "Price: high to low"], ["name", "Name"]];
   const plural = (n) => `${n} item${n === 1 ? "" : "s"}`;
 
+  // Studio products, in the shape data/products.js uses, fetched once per page for every grid.
+  let studio = null;
+  const studioProducts = () => studio || (studio = GS.api("/api/products").then((res) => (res.ok ? res.data.products : [])
+    .filter((p) => p.source === "studio")
+    .map((p) => ({ id: p.id, title: p.title, description: p.description, type: p.type, price: p.priceCents / 100, project: p.projectId,
+      projectName: p.projectName, projectPath: p.projectPath, path: p.path, verified: p.verified, featured: p.featured }))));
+
   function mount(root) {
     const cfg = root.dataset;
     const filters = (cfg.filters || "").split(/\s+/).filter(Boolean);
     const level = Number(cfg.level) || 3;
     const synced = "url" in cfg;
-    let base = PRODUCTS.filter((p) => (!cfg.project || p.project === cfg.project) && (!("featured" in cfg) || p.featured));
-    if (cfg.limit) base = base.slice(0, Number(cfg.limit));
-    const projects = PROJECTS.filter((x) => base.some((p) => p.project === x.id));
-    const types = [...new Set(base.map(card.label))];
+    const wanted = (p) => (!cfg.project || p.project === cfg.project) && (!("featured" in cfg) || p.featured);
+    let base = [], projects = [], types = [], haystack = new Map(), spot = null;
+    const setBase = (list) => {
+      base = list.filter(wanted);
+      if (cfg.limit) base = base.slice(0, Number(cfg.limit));
+      // Studio projects aren't in data/projects.js: their name and address come with their products.
+      const extra = [...new Map(base.filter((p) => p.projectName && !PROJECTS.some((x) => x.id === p.project))
+        .map((p) => [p.project, { id: p.project, name: p.projectName, path: p.projectPath }])).values()];
+      projects = [...PROJECTS, ...extra].filter((x) => base.some((p) => p.project === x.id));
+      types = [...new Set(base.map(card.label))];
+      root.dataset.catalog = base.map((p) => p.id).join(","); // for js/store.js: live state for every item, drawn or not
+      // Lower-case text each item is searched by.
+      haystack = new Map(base.map((p) => [p, [p.title, p.description, card.label(p), p.projectName || projectName(p.project), card.genre(p),
+        ...(p.tags || []), ...(p.formats || [])].join(" ").toLowerCase()]));
+      spot = "spotlight" in cfg && base.find((p) => p.featured);
+    };
+    setBase(PRODUCTS);
     const state = { project: "", type: "", q: "", item: "", sort: "" };
     const taste = "picks" in cfg && GS.taste;
-    root.dataset.catalog = base.map((p) => p.id).join(","); // for js/store.js: live state for every item, drawn or not
-    // Lower-case text each item is searched by.
-    const haystack = new Map(base.map((p) => [p, [p.title, p.description, card.label(p), projectName(p.project), card.genre(p), ...(p.tags || []), ...(p.formats || [])].join(" ").toLowerCase()]));
-    const spot = "spotlight" in cfg && base.find((p) => p.featured);
 
     root.innerHTML = `
       ${"search" in cfg ? `<div class="shop-search" role="search">
@@ -112,9 +130,9 @@
         $(".shop-results [data-clear]", root).hidden = !filtered;
       }
       const from = $(".shop-from", root);
-      const proj = PROJECTS.find((x) => x.id === state.project);
+      const proj = projects.find((x) => x.id === state.project);
       from.hidden = !proj || Boolean(cfg.project);
-      if (proj) from.innerHTML = `Showing items from <a href="${e(GS.projectPath(proj.id))}">${e(proj.name)}</a>.`;
+      if (proj) from.innerHTML = `Showing items from <a href="${e(proj.path || GS.projectPath(proj.id))}">${e(proj.name)}</a>.`;
       bar("project", projects.map((x) => [x.id, x.name]));
       bar("type", types.map((t) => [t, t]));
       dispatchEvent(new CustomEvent("gs:cards"));
@@ -197,6 +215,12 @@
       addEventListener("popstate", () => { fromUrl(); swap(draw); });
     }
     draw();
+    studioProducts().then((list) => {
+      if (!list.length) return;
+      setBase([...PRODUCTS, ...list]);
+      if (synced) fromUrl();
+      draw();
+    });
   }
 
   document.querySelectorAll("[data-shop]").forEach(mount);

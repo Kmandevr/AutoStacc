@@ -6,7 +6,7 @@
 //   4. status moves are compare-and-set (server/orders/orders.js), so racing events can't double-apply
 import { first, run, now } from "../lib/db.js";
 import { getOrderBySession, getOrderByPayment, transition, recordRefund } from "../orders/orders.js";
-import { fulfil, unfulfil, restore } from "../orders/fulfilment.js";
+import { fulfil, unfulfil, restore, sendRefundNotice } from "../orders/fulfilment.js";
 import { sendEmail } from "../email/index.js";
 
 export async function processPaymentEvent(app, ev) {
@@ -85,6 +85,7 @@ async function apply(app, ev) {
           await recordRefund(db, order.id, order.total_cents, true);
         }
         await unfulfil(app, order.id, parked.outcome.startsWith("refund") ? "refunded" : "disputed");
+        if (parked.outcome.startsWith("refund")) await sendRefundNotice(app, order.id, order.total_cents);
         await run(db, "UPDATE payment_events SET outcome = REPLACE(outcome, 'waiting for payment', 'applied'), order_id = ? WHERE provider = ? AND detail = ? AND outcome LIKE '%waiting for payment'",
           order.id, ev.provider, ev.paymentId);
         return { outcome: `paid, then ${parked.outcome.split(" ")[0]} (arrived first)`, orderId: order.id };
@@ -102,6 +103,7 @@ async function apply(app, ev) {
       const moved = await transition(db, order.id, "refunded");
       if (moved || order.status === "refunded") await recordRefund(db, order.id, ev.amount ?? order.total_cents, true);
       if (moved || order.status === "refunded") await unfulfil(app, order.id, "refunded");
+      if (moved) await sendRefundNotice(app, order.id, ev.amount ?? order.total_cents);
       return { outcome: moved ? "refunded" : `no change (${order.status})`, orderId: order.id };
     }
     // Chargeback opened: access goes until it's resolved. Won: access comes back. Lost: stays revoked.

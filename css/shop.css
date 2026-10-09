@@ -184,7 +184,7 @@ a.cover { text-decoration: none; }
 a.cover:hover { color: #fff; }
 /* already yours: a stamp across the cover, so owned and not-owned read apart without colour */
 .card.is-owned .cover::before {
-  content: "In Your Stacc";
+  content: "Stacc'd";
   position: absolute;
   left: 14px;
   top: 14px;

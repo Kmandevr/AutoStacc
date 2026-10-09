@@ -96,6 +96,11 @@ export async function updateCreator(db, creator, { slug, name }) {
   return getCreator(db, creator.id);
 }
 
+// Names of projects by id, for things already owned (a deleted project's items keep their name in Your Stacc).
+export const projectNames = (db, ids) => ids.length
+  ? all(db, `SELECT id, name FROM projects WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids)
+  : Promise.resolve([]);
+
 // Who sells each product: its project, the project's creator and that creator's fee settings. Products without a
 // project or creator (none today) come back with nulls.
 export const sellersOfProducts = (db, productIds) => productIds.length

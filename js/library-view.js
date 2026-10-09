@@ -72,7 +72,7 @@
 
   // Owned products with no files yet.
   const waiting = (list) => list.length ? `<div class="panel stacc-waiting"><h2>On the way</h2><p>Files for these are being prepared; they'll land here by themselves.</p>
-    <ul>${list.map((it) => `<li><a href="/shop/${e(it.productId)}">${e(it.title)}</a> <span class="small-print">${it.sources.map((s) => e(SOURCES[s] || s)).join(", ")}</span></li>`).join("")}</ul></div>` : "";
+    <ul>${list.map((it) => `<li><a href="${e(it.path || `/shop/${it.productId}`)}">${e(it.title)}</a> <span class="small-print">${it.sources.map((s) => e(SOURCES[s] || s)).join(", ")}</span></li>`).join("")}</ul></div>` : "";
 
   // Published products of followed projects that aren't in the Stacc yet. Never implies ownership.
   function following(follows, products, ctx) {
@@ -80,7 +80,7 @@
     if (!follows.length) return `<p class="small-print stacc-follow-hint">Follow <a href="/projects">projects</a> to see their new releases here, and switch on Auto-Stacc to add their free ones automatically.</p>`;
     if (!products.length) return "";
     return `<section class="stacc-new"><h2>New from projects you follow</h2><ul class="tiles">${products.map((p) =>
-      `<li><a class="tile" href="/shop/${e(p.id)}"><span class="tag">${e(ctx.names.project(p.projectId))}</span><strong>${e(p.title)}</strong><span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span></a></li>`).join("")}</ul></section>`;
+      `<li><a class="tile" href="${e(p.path || `/shop/${p.id}`)}"><span class="tag">${e(ctx.names.project(p.projectId))}</span><strong>${e(p.title)}</strong><span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span></a></li>`).join("")}</ul></section>`;
   }
 
   window.GS.libraryView = { toolbar, treeView, kindView, selection, waiting, following };

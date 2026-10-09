@@ -5,6 +5,8 @@ import { requireAdmin } from "../auth/session.js";
 import { audit } from "../audit/log.js";
 import { allPayouts, getPayout, settlePayout, publicPayout } from "../revenue/payouts.js";
 import { sendPayout } from "../payments/connect.js";
+import { sendEmail } from "../email/index.js";
+import { first } from "../lib/db.js";
 
 async function list(app) {
   await requireAdmin(app);
@@ -34,6 +36,10 @@ async function settle(app, { payoutId }) {
   }
   if (!(await settlePayout(app.db, { id: pid, status, adminId: admin.id, note, transferId }))) fail(404, "not_found", "No open payout request with that id.");
   await audit(app, `payout.${status}`, { targetType: "payout", targetId: pid, detail: { note, ...(transferId ? { transfer: transferId } : {}) } });
+  // The creator who asked hears the outcome (if their account still exists).
+  const requester = await first(app.db, 'SELECT email FROM "user" WHERE id = ?', payout.requested_by);
+  if (requester) await sendEmail(app, "payout-settled", requester.email, { status, amountCents: payout.amount_cents, currency: payout.currency, note, studioUrl: `${app.config.siteUrl}/studio` },
+    { dedupeKey: `payout-settled:${pid}` });
   return json({ ok: true });
 }
 

@@ -29,9 +29,10 @@ export const SELLING = {
   kinds: ["music", "stems", "samples", "sample-pack", "presets", "visuals", "vj-loops", "other"]
 };
 
-// The platform's share of a sale, in basis points (1/100 of a percent), when a creator has none of its own. Zero until
-// the owner decides the pricing (docs/creators.md); changing it here changes only orders written afterwards.
-export const DEFAULT_PLATFORM_FEE_BPS = 0;
+// The platform's share of a sale, in basis points (1/100 of a percent), when a creator has none of its own: 20%, the
+// owner's choice (docs/decisions.md). Each order line keeps the split it was written with, so a change here only
+// affects later sales. A creator's own platform_fee_bps (Control Center) overrides it.
+export const DEFAULT_PLATFORM_FEE_BPS = 2000;
 
 export const quotaOf = (creator) => (creator && creator.storage_quota_bytes != null ? creator.storage_quota_bytes : LIMITS.storageQuotaBytes);
 export const feeBpsOf = (creator) => (creator && creator.platform_fee_bps != null ? creator.platform_fee_bps : DEFAULT_PLATFORM_FEE_BPS);

@@ -6,12 +6,14 @@
 // (server/impersonation/policy.js).
 import { json, fail, readJson, str } from "../lib/http.js";
 import { requireUser, isAdmin, impersonationIdOf } from "../auth/session.js";
-import { createAuth } from "../auth/index.js";
+import { passwordMatches } from "../auth/password.js";
 import { eraseUserStmts, expiredAuthCookies } from "../auth/erase.js";
 import { anonymiseOrdersStmt, hasOpenCheckout } from "../orders/orders.js";
 import { eraseEntitlementsStmt } from "../entitlements/grants.js";
 import { anonymiseEmailLogStmt } from "../email/index.js";
-import { erasePreferencesStmt } from "../email/preferences.js";
+import { anonymiseDownloadsStmt } from "../downloads/routes.js";
+import { erasePreferencesStmt, getPreferences } from "../email/preferences.js";
+import { syncNewsList } from "../email/contacts.js";
 import { removeAllFollowsStmt } from "../projects/follows.js";
 import { removeVotesStmt } from "../polls/polls.js";
 import { creatorsOfUser, leaveAllCreatorsStmt } from "../creators/creators.js";
@@ -20,16 +22,6 @@ import { limit } from "../lib/ratelimit.js";
 
 // Stands in for the email on what is kept. The reserved .invalid domain can never receive mail.
 const anonymousEmail = () => `deleted-${randomToken(10)}@deleted.invalid`;
-
-async function passwordMatches(app, password) {
-  try {
-    await createAuth(app).api.verifyPassword({ body: { password }, headers: app.request.headers });
-    return true;
-  } catch (e) {
-    if (e && (e.status === "BAD_REQUEST" || e.statusCode === 400)) return false;
-    throw e;
-  }
-}
 
 async function deleteAccount(app) {
   const user = await requireUser(app);
@@ -49,16 +41,19 @@ async function deleteAccount(app) {
 
   const db = app.db;
   const anon = anonymousEmail();
+  const wantedNews = (await getPreferences(db, user.id)).platformNews;
   await db.batch([
     anonymiseOrdersStmt(db, user.id, email, anon),
     eraseEntitlementsStmt(db, user.id, email, anon),
     anonymiseEmailLogStmt(db, email, anon),
+    anonymiseDownloadsStmt(db, user.id, randomToken(10)),
     erasePreferencesStmt(db, user.id),
     removeAllFollowsStmt(db, user.id),
     removeVotesStmt(db, user.id),
     leaveAllCreatorsStmt(db, user.id),
     ...eraseUserStmts(db, user.id)
   ]);
+  if (wantedNews) syncNewsList(app, email, false);
   const res = json({ ok: true });
   for (const cookie of expiredAuthCookies(app.config.secure)) res.headers.append("Set-Cookie", cookie);
   return res;
