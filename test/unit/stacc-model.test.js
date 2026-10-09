@@ -92,3 +92,17 @@ test("nothing owned means empty views", () => {
   assert.deepEqual(stacc.tree([], catalog), []);
   assert.deepEqual(stacc.byKind([], catalog), []);
 });
+
+test("the worker's requests (answer) build once, then give each view with its menus, the same as calling the model", () => {
+  const memo = {};
+  const built = stacc.answer(memo, { type: "build", items, catalog });
+  assert.deepEqual(built.assets, stacc.assetsFrom(items, catalog));
+  const kinds = stacc.answer(memo, { type: "view", view: "kinds", filter: { project: "gs" } });
+  assert.equal(kinds.view, "kinds");
+  assert.deepEqual(kinds.groups, stacc.byKind(assets, catalog, { project: "gs" }));
+  assert.deepEqual(kinds.facets, stacc.facets(assets));
+  const projects = stacc.answer(memo, { type: "view", view: "projects", filter: {} });
+  assert.deepEqual(projects.groups, stacc.tree(assets, catalog, {}));
+  assert.deepEqual(stacc.answer({}, { type: "view", view: "projects" }).groups, []);
+  assert.throws(() => stacc.answer(memo, { type: "nope" }), /Unknown Stacc request/);
+});

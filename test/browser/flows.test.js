@@ -163,6 +163,63 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  // Signs up, follows Glitches & Stitches with Auto-Stacc (so a free item is owned), then opens Your Stacc.
+  async function ownedStacc(page) {
+    await signUp(page, unique("worker"));
+    await page.goto("/projects");
+    await page.click("[data-follow='glitches-and-stitches']");
+    await page.check("[data-auto='glitches-and-stitches']");
+    await page.waitForSelector("text=Auto-Stacc on.");
+  }
+
+  // Filters by the first format listed: the view redraws, the box keeps focus and the owned file still shows.
+  async function filterKeepsFocus(page) {
+    const format = await page.locator("[data-filter=format] option:not([value=''])").first().getAttribute("value");
+    await page.selectOption("[data-filter=format]", format);
+    await page.waitForFunction((f) => document.activeElement?.dataset.filter === "format" && document.activeElement.value === f, format);
+    await page.waitForSelector(".stacc-asset:has-text('auto-stacc')");
+    await page.click("[data-view=kinds]");
+    await page.waitForSelector("[data-view=kinds][aria-pressed=true]");
+    await page.waitForSelector(".stacc-group .stacc-asset:has-text('auto-stacc')");
+  }
+
+  test("Your Stacc's model runs on a background thread (a Web Worker) and the page draws from its answers", async () => {
+    const { ctx, page } = await open(DESK);
+    await ownedStacc(page);
+    const started = page.waitForEvent("worker");
+    await page.goto("/library");
+    const worker = await started;
+    assert.match(worker.url(), /\/js\/stacc-worker\.js$/);
+    await page.waitForSelector(".stacc-project h2:has-text('Glitches & Stitches')");
+    await page.waitForSelector(".stacc-asset:has-text('auto-stacc')");
+    assert.equal(await worker.evaluate(() => typeof self.GS.stacc.answer), "function");
+    await filterKeepsFocus(page);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("Your Stacc falls back to the page when Worker is missing or its script fails to load", async () => {
+    const { ctx, page } = await open(DESK);
+    await ownedStacc(page);
+    // No Worker at all (old browsers, file:// previews).
+    const bare = await ctx.newPage();
+    bare.errors = [];
+    bare.on("pageerror", (e) => bare.errors.push(e.message));
+    await bare.addInitScript(() => Object.defineProperty(window, "Worker", { value: undefined }));
+    await bare.goto("/library");
+    await bare.waitForSelector(".stacc-asset:has-text('auto-stacc')");
+    assert.equal(bare.workers().length, 0);
+    await filterKeepsFocus(bare);
+    assert.deepEqual(bare.errors, []);
+    // A worker that can't load: the same model runs on the page.
+    await page.route("**/js/stacc-worker.js", (r) => r.fulfill({ status: 404, body: "" }));
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-asset:has-text('auto-stacc')");
+    await filterKeepsFocus(page);
+    assert.deepEqual(page.errors.filter((m) => !/404|Failed to load/.test(m)), []);
+    await ctx.close();
+  });
+
   test("empty states: cart, library when logged out, library with nothing in it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/cart");

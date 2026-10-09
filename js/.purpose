@@ -1,1 +1,1 @@
-Plain scripts, one per feature, sharing helpers via window.GS (plus the Your Stacc model and templates on GS.stacc and GS.libraryView).
+Plain scripts, one per feature, sharing helpers via window.GS (plus the Your Stacc model, its Web Worker client and templates on GS.stacc, GS.staccClient and GS.libraryView).
