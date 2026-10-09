@@ -13,10 +13,14 @@ updated: 2026-10-09
 - **Logo:** the placeholder stacked-blocks mark stays for now.
 - **Studio projects are not trusted by default:** they stay out of `/projects`, follows, Auto-Stacc and polls until a trust step exists that lets a project in (issue #85). Naming them in Your Stacc is unaffected.
 - **Legal facts confirmed:** AutoStacc is run by an individual in Utah County, Utah, under Utah law; bank refunds take 5–10 days; the terms keep "AutoStacc's fee, if any"; /privacy should name the session cookie both ways (`gs.session_token`, `__Secure-gs.session_token` on the live site) (issue #83).
+- **Platform fee: AutoStacc keeps 20%** of each creator sale (creator 80%, before Stripe's fees), for new sales only: each order line keeps the split it was written with. A per-creator fee in the Control Center still overrides it.
+- **Studio products join the store for every creator,** clearly marked: products of creators AutoStacc hasn't marked trusted carry an "Unverified creator" badge, and their product page says AutoStacc hasn't checked the creator (issue #90).
+- **AutoStacc news:** accounts that switch it on join a Brevo list, and the owner can also write and send news from the Control Center (issue #89).
+- **/privacy and /help copy approved** (issue #83).
 - **Titles:** the home page's title must start with "AutoStacc"; the separator after it is grammar, not a rule.
 - **Stripe Checkout and statements say AutoStacc**, not Glitches & Stitches.
 - **"Stacc'd" gets used** in the site's copy: Your Stacc's intro, the payment-confirmed message and claiming a free product. Later the same day: it replaces "owned" and "purchased" everywhere the site talks about having something; legal pages and payment words stay plain.
-- **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. The live platform fee and the marketplace Stripe key's permissions are still unchecked.
+- **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. Creator payouts aren't set up yet (no marketplace Stripe account or secrets), so the key's permissions wait for that.
 
 ## 2026-10-09: Docs are checked against the repository, not trusted
 
