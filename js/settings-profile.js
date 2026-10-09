@@ -1,6 +1,6 @@
 // Settings › Profile: your name (Better Auth's /api/auth/update-user) and your email. Changing the email
-// (/api/account/email) needs the password and a click on the link sent to the new address; the link comes back here with
-// ?email=<result>. Draws into #settings-app when js/settings.js opens this section. Needs js/util.js.
+// (/api/account/email) needs the password; the link sent to the new address opens this page with ?confirm=<token>, and
+// pressing Confirm here (signed in as the same account) makes the change (/api/account/email/confirm). Draws into #settings-app when js/settings.js opens this section. Needs js/util.js.
 (function () {
   "use strict";
 
@@ -18,7 +18,9 @@
         <div class="actions"><button class="btn" type="submit">Save name</button></div>
       </form>
       <form class="panel appear" data-form="email" novalidate>
-        <h2>Change email</h2><p class="msg" role="status">${escapeHTML(RESULTS[result] || "")}</p>
+        <h2>Change email</h2><p class="msg" role="status"></p>
+        ${confirmTo ? `<div class="panel" data-confirm-box><p>Make <strong>${escapeHTML(confirmTo)}</strong> your account's email? Your Stacc moves with it, and your other devices are logged out.</p>
+          <div class="actions"><button class="btn" type="button" data-confirm-email>Confirm</button></div></div>` : ""}
         <p class="small-print">We send a link to the new address; your email changes when you click it, and Your Stacc moves with your account. Your old address is told too.</p>
         <div class="field"><label for="new-email">New email</label><input id="new-email" type="email" autocomplete="email" maxlength="254" required></div>
         <div class="field"><label for="email-password">Your password</label><input id="email-password" type="password" autocomplete="current-password" maxlength="128" required></div>
@@ -26,13 +28,25 @@
       </form>`;
   }, { once: true });
 
-  const RESULTS = {
-    changed: "Your email is changed. Use the new one to sign in.",
-    expired: "That link expired. Ask for a new one below.",
-    invalid: "That link didn't work. It may have been used already; ask for a new one below.",
-    taken: "That email belongs to another account now, so nothing changed."
-  };
-  const result = new URLSearchParams(location.search).get("email");
+  // The link's token names the new address (it was mailed there); the store checks everything else.
+  const token = new URLSearchParams(location.search).get("confirm") || "";
+  const confirmTo = (() => {
+    try { return JSON.parse(atob(token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/"))).n || ""; } catch { return ""; }
+  })();
+
+  root.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-confirm-email]");
+    if (!btn || btn.disabled) return;
+    const form = btn.closest("form");
+    btn.disabled = true;
+    const res = await api("/api/account/email/confirm", { method: "POST", body: { t: token } });
+    if (res.status === 401) return location.replace(loginPath(location.pathname + location.search));
+    if (!res.ok) { btn.disabled = false; return say(form, res.error.message, true); }
+    history.replaceState(null, "", location.pathname);
+    $("[data-confirm-box]", form).remove();
+    $("#email", root).value = res.data.email;
+    say(form, "Your email is changed. Use the new one to log in.");
+  });
 
   root.addEventListener("submit", async (e) => {
     const change = e.target.closest('[data-form="email"]');

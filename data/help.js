@@ -41,7 +41,7 @@ window.HELP = [
       ] },
       { id: "change", q: "How do I change my name, password or email?", a: [
         "Your name: [Settings › Profile](/settings/profile). Your password and signed-in devices: [Settings › Security](/settings/security).",
-        "Change your email in [Settings › Profile](/settings/profile): enter the new address and your password, then click the link we send there within an hour. Your Stacc moves with your account, and your old address is told about the change. Past receipts keep the address they were sent to."
+        "Change your email in [Settings › Profile](/settings/profile): enter the new address and your password, then open the link we send there within an hour (logged in) and press Confirm. Your other devices are logged out. Your Stacc moves with your account, and your old address is told about the change. Past receipts keep the address they were sent to."
       ] },
       { id: "delete", q: "How do I delete my account?", a: [
         "In [Settings › Privacy and data](/settings/privacy). Download your data first if you want a copy. Deleting signs you out everywhere and erases your account; nothing you've Stacc'd downloads anymore, and your orders stay only as anonymous sales records. If you run a creator space in the Studio, AutoStacc has to close it or hand it over first: {contact}"
