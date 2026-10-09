@@ -13,6 +13,22 @@ updated: 2026-10-09
 - **Visitors control it:** "Forget it" clears the history; "Turn off" clears it and stops recording.
 - **Labels are facts only:** formats come from each product's own description, the genre from the project's `genres`, the size from the files actually uploaded. Nothing is guessed to fill a label.
 
+## 2026-10-09: Owner answers to the docs audit's open questions
+
+- **Store is live:** the owner switched it on (Cloudflare permissions, secrets, Stripe, Brevo; issue #44). Real products are in progress (#5).
+- **Newsletter provider: Brevo** (already the store's email service; issue #8).
+- **Logo:** the placeholder stacked-blocks mark stays for now.
+- **Studio projects are not trusted by default:** they stay out of `/projects`, follows, Auto-Stacc and polls until a trust step exists that lets a project in (issue #85). Naming them in Your Stacc is unaffected.
+- **Legal facts confirmed:** AutoStacc is run by an individual in Utah County, Utah, under Utah law; bank refunds take 5–10 days; the terms keep "AutoStacc's fee, if any"; /privacy should name the session cookie both ways (`gs.session_token`, `__Secure-gs.session_token` on the live site) (issue #83).
+- **Platform fee: AutoStacc keeps 20%** of each creator sale (creator 80%, before Stripe's fees), for new sales only: each order line keeps the split it was written with. A per-creator fee in the Control Center still overrides it.
+- **Studio products join the store for every creator,** clearly marked: products of creators AutoStacc hasn't marked trusted carry an "Unverified creator" badge, and their product page says AutoStacc hasn't checked the creator (issue #90).
+- **AutoStacc news:** accounts that switch it on join a Brevo list, and the owner can also write and send news from the Control Center (issue #89).
+- **/privacy and /help copy approved** (issue #83).
+- **Titles:** the home page's title must start with "AutoStacc"; the separator after it is grammar, not a rule.
+- **Stripe Checkout and statements say AutoStacc**, not Glitches & Stitches.
+- **"Stacc'd" gets used** in the site's copy: Your Stacc's intro, the payment-confirmed message and claiming a free product. Later the same day: it replaces "owned" and "purchased" everywhere the site talks about having something; legal pages and payment words stay plain.
+- **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. Creator payouts aren't set up yet (no marketplace Stripe account or secrets), so the key's permissions wait for that.
+
 ## 2026-10-09: Docs are checked against the repository, not trusted
 
 - **Each note names the code it describes** (`covers:` frontmatter), so "which note must change with this file" is data, not memory.
@@ -161,7 +177,6 @@ Plain HTML, CSS and JS. Free to host anywhere (GitHub Pages, Netlify, Cloudflare
 
 Superseded by the store decision above (2026-10-07).
 
-
 Selling digital files needs payment and secure delivery. A hosted provider handles both, so the site stays static and never touches card data. Provider not chosen yet (tracked as a GitHub issue).
 
 ## 2026-10-06: Content lives in `data/*.js`
@@ -235,7 +250,6 @@ The owner wants to run sales and promotions without a developer. Both are rows t
 ## 2026-10-08: /admin is a 404 to everyone but admins
 
 The Control Center page itself (not just its API) is now gated on the server and answers the site's ordinary 404 page, so it doesn't exist for signed-out visitors, customers, or an admin while impersonating.
-
 
 ## 2026-10-08: Creators own projects; free no-code creator sites at /<creator>/<project>
 

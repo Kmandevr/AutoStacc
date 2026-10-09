@@ -51,7 +51,7 @@ window.LEGAL = [
       { id: "cookies", heading: "Cookies and storage on your device", body: [
         "Only what the site needs to work:",
         { list: [
-          "**gs.session_token**: keeps you signed in (only after you sign in).",
+          "**gs.session_token** (named **__Secure-gs.session_token** on autostacc.com, which marks it as sent only over a secure connection): keeps you signed in (only after you sign in).",
           "**gs.dont_remember**: only if you untick \"Keep me logged in\", so you're signed out when you close the browser.",
           "**gs_guest**: lets a guest open their own orders (only after a guest checkout; 30 days).",
           "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, a note that this browser was signed in (not who), for the store's \"Picked for you\" the products you open or add to your cart there and the type filters you use (forget it or turn it off on the [store](/shop)), and, until you close the tab, the email and promo code you typed at checkout."
@@ -60,7 +60,8 @@ window.LEGAL = [
       ] },
       { id: "emails", heading: "Emails", body: [
         "AutoStacc sends the emails an account and a purchase need: confirming your email, resetting your password, receipts and download links. A record of each (what kind, to whom, when) is kept so a receipt can be resent.",
-        "Anything else (news about releases from projects you follow, AutoStacc news) is only sent if you switch it on under [Settings › Emails](/settings/email), and you can switch it off there at any time."
+        "Anything else (news about releases from projects you follow, AutoStacc news) is only sent if you switch it on under [Settings › Emails](/settings/email), and you can switch it off there at any time.",
+        "Project mailing lists: if you sign up on a project's page, AutoStacc emails you a link to confirm. Only once you click it is your address added to that project's list at Brevo, which sends the newsletter; every newsletter has an unsubscribe link. AutoStacc doesn't keep the sign-up itself."
       ] },
       { id: "support", heading: "When AutoStacc helps you", body: [
         "To solve a problem you report, AutoStacc's staff can view the store as your account sees it. Every time that happens it is recorded in an audit log, it can't make real purchases or change your password, and it ends on its own."
@@ -68,7 +69,7 @@ window.LEGAL = [
       { id: "others", heading: "Who else is involved", body: [
         { list: [
           "**Stripe**: payments.",
-          "**Brevo**: sending emails.",
+          "**Brevo**: sending emails, and keeping the project mailing lists you confirmed and, if you switch on AutoStacc news, the AutoStacc news list.",
           "**Cloudflare**: hosts the site, the database and the files.",
           "**Google Fonts**: the site's fonts load from Google, which sees your IP address when they do.",
           "**Music players** (YouTube, Spotify, Deezer and others) on release pages and creators' pages are loaded from those services and follow their own privacy policies."
@@ -76,25 +77,26 @@ window.LEGAL = [
         "Nothing about you is sold or shared for advertising."
       ] },
       { id: "abuse", heading: "Protection against abuse", body: [
-        "To slow down password guessing and other abuse, the site counts requests per IP address for each kind of request (only the count and the time of the latest one). These counters aren't linked to your account or used for anything else."
+        "To slow down password guessing and other abuse, the site counts requests per IP address for each kind of request (only the count and the time of the latest one), and newsletter sign-ups also per email address, stored only as a scrambled code (a hash). These counters aren't linked to your account or used for anything else, and are deleted within a day of the latest request."
       ] },
       { id: "keeping", heading: "How long things are kept", body: [
         { list: [
           "Your account and its choices: until you delete it.",
           "Sessions: until you sign out, sign them out, or 30 days pass without you using the site.",
-          "Download links: a few minutes. The record that a link was made and used is kept with the order's history.",
+          "Download links: a few minutes. The record that a link was made and used is kept with the order's history; when an account is deleted, it no longer names the account.",
           "Guest access to an order: 30 days, from the receipt link or the cookie.",
           "Records of emails sent: kept so receipts can be resent; when an account is deleted, the address in them is removed.",
           "The audit log of what AutoStacc's staff did (including viewing the store as your account): kept and never changed.",
           "Orders: kept as sales records even after an account is deleted (tax, refunds and disputes need them), but no longer linked to you.",
           "Visit counts: kept as anonymous totals.",
-          "Abuse counters: only the latest count for each IP address and kind of request."
+          "Project mailing lists: at Brevo until you unsubscribe.",
+          "Abuse counters: only the latest count for each IP address and kind of request, deleted within a day of it."
         ] }
       ] },
       { id: "rights", heading: "Your choices", body: [
         { list: [
           "See and download your data: [Settings › Privacy and data](/settings/privacy).",
-          "Correct your name: [Settings › Profile](/settings/profile). Your email can't be changed yet, because purchases are tied to it.",
+          "Correct your name or change your email: [Settings › Profile](/settings/profile). A new email is confirmed by a link sent to it, and the old address is told.",
           "Stop optional emails: [Settings › Emails](/settings/email).",
           "Delete your account: [Settings › Privacy and data](/settings/privacy). Your sign-ins, follows, votes and choices are erased, your library stops downloading, and your orders stay only as anonymous sales records.",
           "Anything else: {contact}"

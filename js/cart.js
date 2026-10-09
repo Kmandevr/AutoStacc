@@ -95,7 +95,7 @@
       : "";
     return `<li class="cart-line${l.problem ? " has-problem" : ""}">
       <div class="cart-what">
-        ${l.title ? `<a href="/shop/${escapeHTML(l.productId)}">${escapeHTML(l.title)}</a>` : `<span>${escapeHTML(l.productId)}</span>`}
+        ${l.title ? `<a href="${escapeHTML(l.path || `/shop/${l.productId}`)}">${escapeHTML(l.title)}</a>` : `<span>${escapeHTML(l.productId)}</span>`}
         ${l.problem ? `<span class="cart-problem">${escapeHTML(PROBLEMS[l.problem] || "Can't be bought right now.")}</span>` : ""}
       </div>
       <div class="cart-qty">${qty}</div>

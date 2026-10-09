@@ -19,6 +19,16 @@ export const listProjectProducts = async (db, projectIds) => {
   return all(db, `SELECT * FROM products WHERE published = 1 AND deleted_at IS NULL AND project_id IN (${projectIds.map(() => "?").join(",")}) ORDER BY title`, ...projectIds);
 };
 
+// Who made each Studio product, for the store's "by" line and its "Unverified creator" label: the project and creator
+// (name, address) and whether AutoStacc trusts the creator. Catalog (first-party) products need none.
+export async function sellersOf(db, products) {
+  const ids = products.filter((p) => p.source === "studio").map((p) => p.id);
+  if (!ids.length) return new Map();
+  const rows = await all(db, `SELECT p.id, j.name AS project_name, j.slug AS project_slug, c.name AS creator_name, c.slug AS creator_slug, c.trusted
+    FROM products p JOIN projects j ON j.id = p.project_id JOIN creators c ON c.id = j.creator_id WHERE p.id IN (${ids.map(() => "?").join(",")})`, ...ids);
+  return new Map(rows.map((r) => [r.id, r]));
+}
+
 // Visible in the store: published and not removed from data/.
 export const isVisible = (p) => Boolean(p && p.published && !p.deleted_at);
 // Can be bought right now.
@@ -26,9 +36,12 @@ export const isPurchasable = (p) => isVisible(p) && !p.sales_paused && p.price_c
 // Can be claimed for free by a signed-in customer.
 export const isFree = (p) => isVisible(p) && !p.sales_paused && p.price_cents === 0;
 
+// Where a product's page is: catalog products have generated pages, Studio products share the /product template.
+export const productPath = (p) => (p.source === "studio" ? `/product?p=${p.id}` : `/shop/${p.id}`);
+
 // The shape browsers see: no internal columns. With the running sales (server/promotions), priceCents is the price
 // right now and listPriceCents the catalog price, plus the sale's name and end while one applies.
-export function publicProduct(p, sales = []) {
+export function publicProduct(p, sales = [], seller = null) {
   const { priceCents, sale } = salePrice(p, sales);
   return {
     id: p.id,
@@ -49,6 +62,11 @@ export function publicProduct(p, sales = []) {
     pacs: parseJson(p.pacs, []),
     maxQuantity: p.max_quantity,
     available: isPurchasable(p) || isFree(p),
-    free: p.price_cents === 0
+    free: p.price_cents === 0,
+    path: productPath(p),
+    source: p.source || "catalog",
+    // A Studio product names its maker; verified is false until AutoStacc trusts the creator.
+    ...(seller ? { projectName: seller.project_name, creator: { name: seller.creator_name, path: `/${seller.creator_slug}` },
+      projectPath: `/${seller.creator_slug}/${seller.project_slug}`, verified: Boolean(seller.trusted) } : { verified: p.source !== "studio" })
   };
 }

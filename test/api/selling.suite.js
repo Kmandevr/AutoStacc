@@ -5,11 +5,12 @@
 // settling them, and nobody reaching another creator's products, files, earnings or payouts.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { Client, sql } from "../support/client.js";
+import { Client, sql, outbox } from "../support/client.js";
 import { newBuyer, mockBuy, adminClient } from "../support/flows.js";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const ZIP = Buffer.from("PK\u0003\u0004 sample pack", "latin1");
+const MP3 = Buffer.from("ID3\u0003\u0000\u0000\u0000\u0000\u0000\u0000 a preview", "latin1");
 const slug = (tag) => `${tag}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
@@ -88,6 +89,41 @@ export default (ctx) => describe("selling", () => {
     assert.equal(db(`SELECT artwork FROM products WHERE id = '${p.id}'`)[0].artwork, img.data.image.src);
     assert.equal((await patch(s.c, { artworkId: null })).status, 200);
     assert.equal(db(`SELECT artwork FROM products WHERE id = '${p.id}'`)[0].artwork, null);
+
+    // Tags, and a preview clip: audio only, contents must match, only the owner, replaced cleanly, removable.
+    assert.equal((await patch(s.c, { tags: ["lo-fi", "drums"] })).status, 200);
+    assert.equal((await patch(s.c, { tags: ["Not OK!"] })).status, 400);
+    const pv = (client, name, raw) => put(client, `/api/studio/products/${p.id}/preview?filename=${encodeURIComponent(name)}`, raw);
+    assert.equal((await pv(s.c, "clip.zip", ZIP)).status, 415);
+    assert.equal((await pv(s.c, "clip.mp3", ZIP)).status, 415, "not really audio");
+    assert.equal((await pv(t.c, "clip.mp3", MP3)).status, 404, "not their product");
+    const first = await pv(s.c, "clip.mp3", MP3);
+    assert.equal(first.status, 201, JSON.stringify(first.data));
+    assert.match(first.data.preview, new RegExp(`^/media/previews/${p.id}-[a-z2-7]+\\.mp3$`));
+    const second = await pv(s.c, "clip.mp3", MP3);
+    assert.notEqual(second.data.preview, first.data.preview, "a new name each time, so caches never serve the old clip");
+    assert.equal(db(`SELECT preview FROM products WHERE id = '${p.id}'`)[0].preview, second.data.preview);
+    assert.equal((await s.c.req("DELETE", `/api/studio/products/${p.id}/preview`)).status, 200);
+    assert.equal(db(`SELECT preview FROM products WHERE id = '${p.id}'`)[0].preview, null);
+  });
+
+  test("the store lists creators' products with who made them, marked unverified until the creator is trusted", async () => {
+    const s = await seller(base(), "listed");
+    const p = (await make(s, { title: "Listed Pack" })).data.product;
+    assert.equal((await put(s.c, `/api/studio/products/${p.id}/files?filename=pack.zip`, ZIP)).status, 201);
+    db(`UPDATE product_files SET status = 'published' WHERE product_id = '${p.id}'`);
+    assert.equal((await s.c.req("PATCH", `/api/studio/products/${p.id}`, { body: { published: true } })).status, 200);
+    const listed = async () => (await new Client(base()).get("/api/products")).data.products.find((x) => x.id === p.id);
+    let x = await listed();
+    assert.ok(x, "in the store");
+    assert.deepEqual([x.source, x.verified, x.projectName, x.creator.path, x.projectPath, x.path],
+      ["studio", false, "Beats", `/${s.creator.slug}`, `/${s.creator.slug}/beats`, `/product?p=${p.id}`]);
+    assert.equal((await new Client(base()).get(`/api/products/${p.id}`)).data.product.verified, false);
+    db(`UPDATE creators SET trusted = 1 WHERE id = '${s.creator.id}'`);
+    x = await listed();
+    assert.equal(x.verified, true, "trusted creators lose the label");
+    const own = (await new Client(base()).get("/api/products")).data.products.find((y) => y.source === "catalog");
+    assert.equal(own.verified, true, "AutoStacc's own products are verified");
   });
 
   test("files: only listed types whose bytes match; wait for approval unless trusted; nobody else's product", async () => {
@@ -107,6 +143,8 @@ export default (ctx) => describe("selling", () => {
     const good = await up(s.c, "pack.zip", ZIP);
     assert.equal(good.status, 201);
     assert.equal(good.data.file.status, "pending", "an untrusted creator's file waits for approval");
+    const alerts = (await outbox(base(), "admin@autostacc.test")).filter((m) => m.kind === "admin-alert" && m.body_text.includes(`/${s.creator.slug})`) && m.body_text.includes(good.data.file.filename));
+    assert.equal(alerts.length, 1, "the admins are told a file is waiting");
     assert.equal(db(`SELECT content_type FROM product_files WHERE id = '${good.data.file.id}'`)[0].content_type, "application/zip");
 
     // Not deliverable yet, so it can't go on sale.
@@ -154,7 +192,12 @@ export default (ctx) => describe("selling", () => {
     const order = await mockBuy(buyer, [{ productId: p.id, priceCents: 1, unitPriceCents: 1 }]);
     const items = db(`SELECT creator_id, unit_price_cents, net_cents, platform_fee_cents, creator_share_cents FROM order_items WHERE order_id = '${order.orderId}'`);
     assert.deepEqual(items, [{ creator_id: s.creator.id, unit_price_cents: 2000, net_cents: 2000, platform_fee_cents: 200, creator_share_cents: 1800 }]);
-    assert.ok((await buyer.get("/api/library")).data.items.some((i) => i.productId === p.id), "the buyer owns it");
+    const owned = (await buyer.get("/api/library")).data.items.find((i) => i.productId === p.id);
+    assert.ok(owned, "the buyer owns it");
+    // Your Stacc names the Studio project and links to the product's real page.
+    assert.equal(owned.projectName, "Beats");
+    assert.equal(owned.path, `/product?p=${p.id}`);
+    assert.equal((await buyer.get("/api/orders")).data.orders.find((o) => o.id === order.orderId).items[0].path, `/product?p=${p.id}`);
 
     // Earnings: just paid, so on hold and not yet payable. No buyer is named.
     const e1 = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;
@@ -191,6 +234,8 @@ export default (ctx) => describe("selling", () => {
     // Asking: details required, the amount is what the server says is available, one open request at a time.
     for (const details of [undefined, "", "abc", "x".repeat(201), 5]) assert.equal((await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, { details })).status, 400, String(details));
     const ask = await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, { details: "PayPal: me@seller.test", amountCents: 999999 });
+    assert.ok((await outbox(base(), "admin@autostacc.test")).some((m) => m.kind === "admin-alert" && m.body_text.includes(s.creator.slug) && m.subject.includes("payout")),
+      "the admins are told about the payout request");
     assert.equal(ask.status, 201);
     assert.equal(ask.data.payout.amountCents, 1800, "the client can't choose the amount");
     const twice = await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, { details: "PayPal: me@seller.test" });
@@ -208,6 +253,9 @@ export default (ctx) => describe("selling", () => {
     assert.equal((await s.c.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "paid" } })).status, 404, "creators can't pay themselves");
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "maybe" } })).status, 400);
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "paid", note: "Sent by PayPal" } })).status, 200);
+    const settled = (await outbox(base(), s.user.email)).filter((m) => m.kind === "payout-settled");
+    assert.equal(settled.length, 1, "the creator hears it was paid");
+    assert.match(settled[0].body_text, /Sent by PayPal/);
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "declined" } })).status, 404, "settled once");
     const after = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data;
     assert.equal(after.earnings.paidOutCents, 1800);
@@ -229,7 +277,7 @@ export default (ctx) => describe("selling", () => {
     assert.equal(ask.status, 201);
     const admin = await adminClient(base());
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "declined", note: "Call me" } })).status, 200);
-    assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings.availableCents, 3000, "declined money is available again");
+    assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings.availableCents, 2400, "declined money is available again");
     db(`UPDATE orders SET status = 'refunded', refunded_cents = 3000 WHERE id = '${order.orderId}'`);
     const e = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;
     assert.deepEqual([e.shareCents, e.availableCents], [0, 0]);

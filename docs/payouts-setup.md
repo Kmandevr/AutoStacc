@@ -13,9 +13,10 @@ Creators' products are sold on a **second Stripe account** (the "marketplace" ac
 
 1. A creator owner opens the Studio, picks the country of their bank account and presses **Set up payouts**. Stripe's own page collects their ID, tax and bank details (none reach AutoStacc; we keep the Stripe account id and whether it is ready). Creators can be in the United States, the United Kingdom, Canada, Switzerland or the European Economic Area: those are the regions Stripe's self-serve payouts from a US platform reach ([cross-border payouts](https://docs.stripe.com/connect/cross-border-payouts)). Other countries need Stripe's separate Global Payouts product, which isn't built; the Studio doesn't offer them.
 2. A buyer pays for a creator's product on the marketplace account (Stripe Tax on). A cart with both kinds is paid in two steps; each order records its account (`orders.payment_account`) and each account has its own webhook, believed only for its own orders.
-3. A sale is held 14 days (the refund window). After that the creator presses **Request a payout** (minimum $10, one open request at a time); with the marketplace account on, their payout account must be ready first.
-4. In the Control Center → **Payouts** the owner presses **Send via Stripe**: one Stripe transfer keyed by the request, so a retry never pays twice. If Stripe refuses (for example not enough balance) nothing is marked paid and the reason is shown.
-5. A sale refunded after it was paid out leaves a negative balance, taken from the creator's next sales before anything more is available.
+3. Each sale line records its split: AutoStacc keeps **20%** (the platform default, `server/creators/policy.js`, or a per-creator fee set in the Control Center) and the creator's share is the rest, fixed when the order is written.
+4. A sale is held 14 days (the refund window). After that the creator presses **Request a payout** (minimum $10, one open request at a time); with the marketplace account on, their payout account must be ready first. The admins get an email about it.
+5. In the Control Center → **Payouts** the owner presses **Send via Stripe**: one Stripe transfer keyed by the request, so a retry never pays twice. If Stripe refuses (for example not enough balance) nothing is marked paid and the reason is shown. The creator is emailed when a request is paid or declined.
+6. A sale refunded after it was paid out leaves a negative balance, taken from the creator's next sales before anything more is available.
 
 Until the keys below are set, creator products can't be bought with real payments (checkout answers 503 `creator_sales_closed`) and payouts stay manual (the creator types how they want to be paid, you pay and mark it paid).
 

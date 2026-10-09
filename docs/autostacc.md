@@ -38,7 +38,7 @@ Hierarchy: AutoStacc → (Creator →) Project → Stacclet → Pac → content.
 
 ## Plain words stay plain
 
-Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) stay normal words. Good: "Library — Everything you've Stacc'd." Bad: renaming the cart, the download button or the account page into puns.
+Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) stay normal words. **Stacc'd replaces "owned" and "purchased"** wherever the site speaks about having something (badges, Your Stacc, settings, help, emails; owner, 2026-10-09): "STACC'D", "Nothing Stacc'd yet", "everything you've Stacc'd". Paying stays plain words (order, payment, refund, receipt) and the legal pages (terms, privacy, refunds, licence) keep "purchase" for its legal meaning. Used: Your Stacc's intro ("Everything you've Stacc'd"), the payment-confirmed message and claiming a free product ("Stacc'd!"). Good: "Library — Everything you've Stacc'd." Bad: renaming the cart, the download button or the account page into puns.
 
 ## Site structure
 
@@ -51,7 +51,7 @@ Stacked and modular, like a DAW (think REAPER) but prettier: neutral panels on a
 - **Themes:** light and dark, following the device until the visitor picks one (remembered). Dark: graphite panels; light: off-white panels.
 - **Colour:** neutral greys for structure; teal is the accent (actions, focus, the logo); track colours tag content: amber MIDI, coral samples, lime loops, violet presets (`css/platform.css` tokens; each product type picks its colour with `track` in `data/product-types.js`). Text stays high-contrast in both themes.
 - **Type:** a clean sans for text and headings (Inter), a mono for labels, counts and meters (JetBrains Mono).
-- **Logo:** four stacked colour blocks (`img/autostacc-mark.svg`) beside the AutoStacc wordmark, a placeholder until the owner supplies one; `img/og.png` is the link preview.
+- **Logo:** four stacked colour blocks (`img/autostacc-mark.svg`) beside the AutoStacc wordmark, a placeholder the owner is happy to keep for now (2026-10-09); `img/og.png` is the link preview.
 - **Projects keep their own skin** (Glitches & Stitches: the glitch terminal in [brand](brand.md)) on their pages.
 
 ## Voice

@@ -138,10 +138,10 @@ async function checkPage(browser, base, page, width) {
         if ((await tab.locator(".card").count()) !== before) problems.push(["FAIL", "shop-filter", "'All' did not restore the full list"]);
       } else problems.push(["WARN", "shop-filter", "fewer than two categories, filter not exercised"]);
     }
-    if (width === 1280 && (await tab.locator("#newsletter-form").count())) {
-      await tab.fill("#newsletter-form input[type=email]", "test@example.com");
-      await tab.click("#newsletter-form button");
-      if (!(await tab.locator("#newsletter-msg").innerText()).trim() && !(await tab.url()).includes("?")) problems.push(["WARN", "newsletter", "submitting showed no message"]);
+    if (width === 1280 && (await tab.locator("[data-newsletter] form").count())) {
+      await tab.fill("[data-newsletter] input[type=email]", "test@example.com");
+      await tab.click("[data-newsletter] button");
+      if (!(await tab.locator("[data-newsletter] .form-msg").innerText()).trim() && !(await tab.url()).includes("?")) problems.push(["WARN", "newsletter", "submitting showed no message"]);
     }
   } catch (e) {
     problems.push(["FAIL", "checker", String(e.message || e).split("\n")[0]]);

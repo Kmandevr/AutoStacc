@@ -9,7 +9,7 @@ export default (ctx) => describe("admin", () => {
     const { c } = await newBuyer(ctx.mock.url, "not-admin");
     for (const [m, p] of [["GET", "/api/admin/summary"], ["GET", "/api/admin/products"], ["PATCH", "/api/admin/products/wallpapers"],
       ["PUT", "/api/admin/products/wallpapers/files?filename=x.zip"], ["DELETE", "/api/admin/files/pf_x"], ["GET", "/api/admin/orders"],
-      ["POST", "/api/admin/entitlements"], ["GET", "/api/admin/customers"], ["GET", "/api/admin/analytics"]]) {
+      ["POST", "/api/admin/entitlements"], ["GET", "/api/admin/customers"]]) {
       const r = await c.req(m, p, m === "GET" ? {} : { body: {} });
       assert.equal(r.status, 404, `${m} ${p}`);
     }

@@ -19,7 +19,7 @@ window.HELP = [
         "Yes, as often as you like, from [Your Stacc](/library) while you're signed in. Each press makes a fresh link."
       ] },
       { id: "guest-purchases", q: "I bought without an account", a: [
-        "Your receipt email has a link that opens your purchases for 30 days. To keep them for good, [create an account](/login#signup) with the same email: once you confirm it, every guest purchase made with that email moves into your account."
+        "Your receipt email has a link that opens what you Stacc'd for 30 days. To keep them for good, [create an account](/login#signup) with the same email: once you confirm it, every guest purchase made with that email moves into your account."
       ] },
       { id: "duplicate", q: "Did I pay twice?", a: [
         "The store won't sell you something you already own, and pressing Checkout twice opens a single order. If you still see two charges for the same thing, see the [refund policy](/refunds#duplicate)."
@@ -41,10 +41,10 @@ window.HELP = [
       ] },
       { id: "change", q: "How do I change my name, password or email?", a: [
         "Your name: [Settings › Profile](/settings/profile). Your password and signed-in devices: [Settings › Security](/settings/security).",
-        "Your email can't be changed yet, because purchases are tied to it. If you need to move to a new address, {contact}"
+        "Change your email in [Settings › Profile](/settings/profile): enter the new address and your password, then open the link we send there within an hour (logged in) and press Confirm. Your other devices are logged out. Your Stacc moves with your account, and your old address is told about the change. Past receipts keep the address they were sent to."
       ] },
       { id: "delete", q: "How do I delete my account?", a: [
-        "In [Settings › Privacy and data](/settings/privacy). Download your data first if you want a copy. Deleting signs you out everywhere and erases your account; your purchases stop downloading, and your orders stay only as anonymous sales records. If you own a creator space in the Studio, AutoStacc has to close it or hand it over first: {contact}"
+        "In [Settings › Privacy and data](/settings/privacy). Download your data first if you want a copy. Deleting signs you out everywhere and erases your account; nothing you've Stacc'd downloads anymore, and your orders stay only as anonymous sales records. If you run a creator space in the Studio, AutoStacc has to close it or hand it over first: {contact}"
       ] }
     ]
   },
@@ -53,7 +53,7 @@ window.HELP = [
     title: "Products",
     items: [
       { id: "contents", q: "What's in a product?", a: [
-        "Each product page lists what's inside, its type and its format. Products are made of Pacs: folders of one kind of content (samples, loops, presets, stems and so on) grouped into Stacclets, so Your Stacc can sort everything you own by project, Stacclet, Pac and kind."
+        "Each product page lists what's inside, its type and its format. Products are made of Pacs: folders of one kind of content (samples, loops, presets, stems and so on) grouped into Stacclets, so Your Stacc can sort everything you've Stacc'd by project, Stacclet, Pac and kind."
       ] },
       { id: "formats", q: "Which file formats will I get?", a: [
         "It depends on the product; its page lists the formats where the creator has given them. Files arrive as normal downloads (usually ZIP archives) that open on any computer."
@@ -86,10 +86,10 @@ window.HELP = [
     title: "Projects and Your Stacc",
     items: [
       { id: "follow", q: "What does following a project do?", a: [
-        "Following puts a project's new releases on your [dashboard](/dashboard). Turn on Auto-Stacc as well, and its free releases are added to Your Stacc automatically, now and whenever new ones come out. Follow from [Projects](/projects)."
+        "Following puts a project's new releases on your [dashboard](/dashboard). Turn on Auto-Stacc as well, and its free releases are added to Your Stacc automatically, now and whenever new ones come out. Want an email too? Switch on new-release emails in [Settings › Emails](/settings/email). Follow from [Projects](/projects)."
       ] },
       { id: "your-stacc", q: "What is Your Stacc?", a: [
-        "Your library: everything you own, sorted by project, Stacclet, Pac and kind, with downloads. It's at [Your Stacc](/library)."
+        "Your library: everything you've Stacc'd, sorted by project, Stacclet, Pac and kind, with downloads. It's at [Your Stacc](/library)."
       ] },
       { id: "free", q: "How do free releases work?", a: [
         "Free products are claimed with an account and then live in Your Stacc like anything you bought. With Auto-Stacc on, a followed project's free releases arrive by themselves."

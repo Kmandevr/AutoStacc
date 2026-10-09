@@ -1,6 +1,7 @@
 // Orders: creation, lookups and status changes. A status change is a compare-and-set (UPDATE ... WHERE status IN
 // allowed-from), so two events racing for the same order can't both win and a refunded order can't become paid again.
 import { all, first, run, stmt, newId, now } from "../lib/db.js";
+import { productPath } from "../catalog/products.js";
 
 // Allowed moves. A verified payment wins over an earlier failure or expiry: the money was taken, so the order is paid.
 export const TRANSITIONS = {
@@ -42,7 +43,8 @@ export const getOrderByPayment = (db, provider, paymentId) =>
   first(db, "SELECT * FROM orders WHERE provider = ? AND provider_payment_id = ?", provider, paymentId);
 export const getOrderByIdempotencyKey = (db, key) => first(db, "SELECT * FROM orders WHERE idempotency_key = ?", key);
 export const orderItems = (db, orderId) =>
-  all(db, "SELECT product_id, title, unit_price_cents, quantity, line_total_cents FROM order_items WHERE order_id = ? ORDER BY title", orderId);
+  all(db, `SELECT i.product_id, i.title, i.unit_price_cents, i.quantity, i.line_total_cents, p.source FROM order_items i
+    LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ? ORDER BY i.title`, orderId);
 
 export const attachCheckout = (db, id, sessionId, url) =>
   run(db, "UPDATE orders SET provider_session_id = ?, checkout_url = ?, updated_at = ? WHERE id = ? AND status = 'pending'", sessionId, url, now(), id);
@@ -98,7 +100,7 @@ export const publicOrder = (o, items) => ({
   totalCents: o.total_cents,
   createdAt: o.created_at,
   paidAt: o.paid_at,
-  items: (items || []).map((i) => ({ productId: i.product_id, title: i.title, unitPriceCents: i.unit_price_cents, quantity: i.quantity, lineTotalCents: i.line_total_cents }))
+  items: (items || []).map((i) => ({ productId: i.product_id, title: i.title, path: productPath({ id: i.product_id, source: i.source }), unitPriceCents: i.unit_price_cents, quantity: i.quantity, lineTotalCents: i.line_total_cents }))
 });
 
 // Every order this person placed: signed in, or as a guest with their email before or after signing up. Newest first.

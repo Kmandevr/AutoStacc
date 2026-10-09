@@ -71,6 +71,12 @@ export function loadConfig(env) {
     else if (brevoKey.startsWith("xsmtpsib-")) problems.push("BREVO_API_KEY is an SMTP key; it must be an API key (xkeysib-...)");
     else if (!brevoKey.startsWith("xkeysib-")) problems.push("BREVO_API_KEY must be a Brevo API key (xkeysib-...)");
   }
+  // Newsletter lists in Brevo, per project: "glitches-and-stitches:3,other:7". A project without one has no sign-up yet.
+  // Entries that don't parse are left out (the sign-up says "coming soon") rather than taking the store offline.
+  const newsletterLists = new Map(String(env.BREVO_NEWSLETTER_LISTS || "").split(",").map((s) => s.trim().match(/^([a-z0-9-]{1,80}):(\d{1,9})$/))
+    .filter(Boolean).map((m) => [m[1], Number(m[2])]));
+  // The Brevo list that accounts with "AutoStacc news" switched on are kept in, so news can also be sent from Brevo.
+  const newsListId = /^\d{1,9}$/.test(env.BREVO_NEWS_LIST || "") ? Number(env.BREVO_NEWS_LIST) : null;
   // Two senders: EMAIL_FROM for purchases (receipts), EMAIL_FROM_NOREPLY for automated mail (account, alerts).
   const emailFrom = parseFrom(env.EMAIL_FROM || "");
   if (!emailFrom) problems.push("EMAIL_FROM must look like: Name <address@domain>");
@@ -102,6 +108,8 @@ export function loadConfig(env) {
     brevoKey,
     emailFrom,
     emailFromNoreply,
+    newsletterLists,
+    newsListId,
     // Comma-separated emails that are admins once verified. Roles can also be set in the user table.
     adminEmails: new Set(String(env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)),
     downloadTtlSeconds: 300,

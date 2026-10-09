@@ -3,7 +3,7 @@
 // one) and preview clips, deactivate files. The other tabs start on the "gs:admin" event: statistics
 // (js/admin-stats.js), orders, customers and entitlements (js/admin-records.js), customer preview with impersonation
 // and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), creators
-// (js/admin-creators.js), test-purchase checks and the audit log (js/admin-audit.js).
+// (js/admin-creators.js), payouts (js/admin-payouts.js), AutoStacc news (js/admin-news.js), test-purchase checks and the audit log (js/admin-audit.js).
 // Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
 (function () {
   "use strict";
@@ -16,7 +16,7 @@
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
   const TABS = [["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"],
-    ["promotions", "Promotions"], ["creators", "Creators"], ["payouts", "Payouts"], ["tests", "Test purchases"], ["audit", "Audit log"]];
+    ["promotions", "Promotions"], ["creators", "Creators"], ["payouts", "Payouts"], ["news", "News"], ["tests", "Test purchases"], ["audit", "Audit log"]];
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
   function shell(s) {
@@ -79,7 +79,7 @@
     const res = await api("/api/admin/products");
     if (!res.ok) { panel.innerHTML = `<p class="msg error">${escapeHTML(res.error.message)}</p>`; return; }
     panel.innerHTML = `
-      <p class="small-print">Here you can change a price, take a product out of draft or hide it, remove it, pause sales, and manage its paid files. Titles and descriptions still live in data/products.js. Changes here are kept when the site is redeployed.</p>
+      <p class="small-print">Here you can change a price, title or description, take a product out of draft or hide it, remove it, pause sales, and manage its paid files (hold back, publish, reject or deactivate). Changes here are kept when the site is redeployed; product pages and search data still show data/products.js until it is updated.</p>
       <form class="panel wide" data-preview-upload><h2>Preview clip</h2>
         <p>Upload an audio clip (MP3/M4A/OGG/WAV, under 20 MB), then set <code>preview: { file: "name.mp3" }</code> on the product in data/products.js.</p>
         <div class="field"><label for="preview-file">Audio file</label><input id="preview-file" type="file" accept="audio/*" required></div>
@@ -90,12 +90,18 @@
           <span class="admin-flags">${p.deleted ? "removed" : p.published ? "published" : "draft"}${p.salesPaused ? " · sales paused" : ""}</span>
           ${p.deleted ? `<button class="btn ghost" type="button" data-product-set='{"deleted":false}'>Restore</button>` : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>
           <button class="btn ghost" type="button" data-product-set='{"published":${p.published ? "false" : "true"}}'>${p.published ? "Hide from store" : "Publish (out of draft)"}</button>
-          <button class="btn ghost danger" type="button" data-product-remove>Remove</button>`}</div>
+          ${p.published ? `<button class="btn ghost" type="button" data-announce title="Email the project's followers who want new-release emails">Email followers</button>` : ""}
+          <button class="btn ghost danger" type="button" data-product-remove>Remove</button>`}<span class="small-print" role="status" data-announce-msg></span></div>
         ${p.deleted ? "" : `<form class="admin-upload" data-price-form><label for="pr-${escapeHTML(p.id)}">Price (${escapeHTML(p.currency)}, 0 = free)</label>
           <input id="pr-${escapeHTML(p.id)}" type="number" min="0" max="10000" step="0.01" inputmode="decimal" value="${(p.priceCents / 100).toFixed(2)}" required>
-          <button class="btn ghost" type="submit">Save price</button><span class="small-print" role="status"></span></form>`}
+          <button class="btn ghost" type="submit">Save price</button><span class="small-print" role="status"></span></form>
+        <details class="admin-edit"><summary>Edit title and description</summary><form class="admin-upload" data-text-form>
+          <label for="t-${escapeHTML(p.id)}">Title</label><input id="t-${escapeHTML(p.id)}" type="text" minlength="3" maxlength="80" value="${escapeHTML(p.title)}" required data-title>
+          <label for="d-${escapeHTML(p.id)}">Description</label><textarea id="d-${escapeHTML(p.id)}" rows="4" maxlength="2000" data-description>${escapeHTML(p.description || "")}</textarea>
+          <button class="btn ghost" type="submit">Save text</button><span class="small-print" role="status"></span></form></details>`}
         <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.pac_id ? ` · ${escapeHTML(pacTitle(f.pac_id))}` : ""}${f.kind ? ` · ${escapeHTML((KINDS[f.kind] || {}).label || f.kind)}` : ""}${f.active ? (f.status && f.status !== "published" ? ` · <strong>${escapeHTML(f.status)}</strong>` : "") : " · deactivated"}</span>
           ${f.active && f.status === "pending" ? `<button class="link-btn" type="button" data-publish-file="${escapeHTML(f.id)}">publish</button>` : ""}
+          ${f.active && f.status !== "rejected" ? `<button class="link-btn danger" type="button" data-reject-file="${escapeHTML(f.id)}">reject</button>` : ""}
           ${f.active ? `<button class="link-btn danger" type="button" data-remove-file="${escapeHTML(f.id)}">deactivate</button>` : ""}</li>`).join("") || "<li class=\"small-print\">No files yet: buyers would get an empty library entry.</li>"}</ul>
         <form class="admin-upload" data-upload>
           <label class="sr-only" for="f-${escapeHTML(p.id)}">File for ${escapeHTML(p.title)}</label><input id="f-${escapeHTML(p.id)}" type="file" required>
@@ -134,6 +140,18 @@
       if (btn.disabled || !Number.isInteger(priceCents) || priceCents < 0) { note.textContent = "Enter a price like 9.99."; return; }
       btn.disabled = true;
       const res = await api(`/api/admin/products/${encodeURIComponent(form.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: { priceCents } });
+      if (res.ok) return products();
+      btn.disabled = false;
+      note.textContent = res.error.message;
+      return;
+    }
+    if (form.matches("[data-text-form]")) {
+      e.preventDefault();
+      const btn = $("button[type=submit]", form), note = $("[role=status]", form);
+      if (btn.disabled) return;
+      btn.disabled = true;
+      const body = { title: $("[data-title]", form).value, description: $("[data-description]", form).value };
+      const res = await api(`/api/admin/products/${encodeURIComponent(form.closest("[data-product]").dataset.product)}`, { method: "PATCH", body });
       if (res.ok) return products();
       btn.disabled = false;
       note.textContent = res.error.message;
@@ -187,11 +205,37 @@
       pause.disabled = true;
       return act(pause, `/api/admin/products/${encodeURIComponent(pause.closest("[data-product]").dataset.product)}`, { salesPaused: pause.dataset.pause === "1" });
     }
+    // Tells the project's followers who want new-release emails, in batches; each person once per product.
+    const announce = e.target.closest("[data-announce]");
+    if (announce && !announce.disabled) {
+      const li = announce.closest("[data-product]"), msg = $("[data-announce-msg]", li);
+      if (!confirm(`Email "${li.querySelector("strong").textContent}" to its project's followers? Each follower gets it once.`)) return;
+      announce.disabled = true;
+      let total = 0;
+      for (;;) {
+        const res = await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}/announce`, { method: "POST", body: {} });
+        if (!res.ok) { msg.textContent = res.error.message; break; }
+        total += res.data.sent;
+        msg.textContent = res.data.left ? `Sent ${total}, ${res.data.left} left…` : `Sent to ${total} follower${total === 1 ? "" : "s"}.`;
+        if (!res.data.left || !res.data.sent) break;
+      }
+      announce.disabled = false;
+      return;
+    }
     // A pending file (uploaded with "hold back") reaches owners only once published.
     const pub = e.target.closest("[data-publish-file]");
     if (pub) {
       pub.disabled = true;
       await api(`/api/admin/files/${encodeURIComponent(pub.dataset.publishFile)}`, { method: "PATCH", body: { status: "published" } });
+      return products();
+    }
+    // Rejecting takes a file away from owners for good (a creator's product with no file left goes back to draft).
+    const rej = e.target.closest("[data-reject-file]");
+    if (rej) {
+      const note = prompt("Reject this file? Owners lose it and it can't be published again. Reason (optional; a creator sees it in the Studio):");
+      if (note === null) return;
+      rej.disabled = true;
+      await api(`/api/admin/files/${encodeURIComponent(rej.dataset.rejectFile)}`, { method: "PATCH", body: { status: "rejected", ...(note.trim() && { note: note.trim() }) } });
       return products();
     }
     const rm = e.target.closest("[data-remove-file]");

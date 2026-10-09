@@ -1,7 +1,7 @@
 ---
 title: Modules
-summary: Drop-in features: how a feature is placed on any page by attributes, project looks, and which features still need converting.
-covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/news.js, js/shows.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
+summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
+covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/news.js, js/shows.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, data/shows.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
 updated: 2026-10-09
 ---
 
@@ -14,6 +14,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 - One script finds every `[data-<feature>]` element and mounts on each (several per page are fine). Its options are attributes on that element; its header comment lists them.
 - Templates that a module renders live in their own file and set one namespace on `GS` (e.g. `js/product-card.js` → `GS.productCard`).
 - Project styling travels with the item: `GS.look(projectId)` returns `look-<id>` and loads `css/projects/<id>/look.css` (the project's colours, type, buttons and tiles). Inside a project's own pages the same rules apply through `.skin-<id>`. A project with `skin: true` ships both `look.css` (portable) and `skin.css` (page effects).
+- A module's project is its `data-project`, else the open project's (`GS.moduleProject(el)`); `GS.wear(el, projectId)` puts that project's look on the module when it sits outside the project's own pages.
 - Links between modules are shared helpers in `js/util.js` (`GS.shopItemPath`, `GS.projectPath`) and the same addresses in the generator (`projectPath` in `scripts/lib/data.js`, `shopItemPath` in `scripts/lib/pages.js`).
 
 ## Drop-in now
@@ -26,10 +27,19 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |
 | Account links and menu (`js/account-nav.js`) | `[data-auth="in"\|"out"]`, `[data-account-menu]`, `[data-signout]` | |
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |
+| News (`js/news.js`) | `[data-news]` | `data-project`, `data-limit`, `data-full` (whole posts as h2 sections, the news page; otherwise headlines and summaries as h3) |
+| Shows (`js/shows.js`) | `[data-shows]` | `data-project` (shows carry `project` in `data/shows.js`; ticketed ones go into structured data once per project) |
+| Releases (`js/releases.js`) | `[data-releases]` (a list) | `data-project`, `data-limit` |
+| Official profiles (`js/profiles.js`) | `[data-profiles]` | `data-project` (music and press pages) |
+| Listen player (`js/music.js`) | `[data-listen]` | `data-release` (a release page; counts a release view), else `featured` in `data/music.js` if it is the project's, else its newest; `data-project`; `data-links` (the release's streaming links under the player) |
+| Newsletter sign-up (`js/newsletter.js`) | `[data-newsletter]` holding a `<form>` and a `.form-msg` (an empty element gets the standard form) | `data-project` (the list it joins); reads `?newsletter=<result>` from the confirmation link |
+| Press contact (`js/press.js`) | `[data-press-contact]` | `data-project`; also wires `[data-copy="<id>"]` copy buttons |
+| Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link |
+| Your Stacc (`js/library.js`) | `[data-stacc]` | `data-project` (starts filtered to it), `data-stacc-view="kinds"` (starts by content type); a receipt's guest key is redeemed once per page. Its inner file area is `[data-stacc-files]`. |
 | Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` | the page's `data-project` |
 
 Store items wear their project's look in the store, the new releases feed (home page, dashboard) and on their product page; clicking one opens the store filtered to its project with it selected at the top.
 
-## Still bound to one page (to convert)
+## Single-use by nature
 
-Each of these looks up fixed ids and should become `[data-<feature>]` with attributes (tracked in #52): news (`#news-list`, `#latest-news`), shows (`#show-list`), releases (`#release-list`, `#artist-profiles`), listen player (`#listen-player`, `#listen-platforms`), newsletter (`#newsletter-form`, `#newsletter-msg`), press (`#press-contact`, `#press-profiles`), Your Stacc (`#library-app`), and the single-use app pages: cart (`#cart-app`), checkout (`#checkout-app`), login (`#auth-app`), settings (`#settings-app`), the creators' product page (`#product-app`), Studio (`#studio-app`), the dashboard (`[data-dashboard-*]`, page-specific) and admin. The store pages' `#*-app` roots are single-use by nature (one cart per page), but their parts (order list, cart lines) can still become modules when another page needs them.
+The store and app pages keep one root each, because a page has one cart, one checkout and one form: cart (`#cart-app`), checkout (`#checkout-app`), login (`#auth-app`), settings (`#settings-app`), the creators' product page (`#product-app`), Studio (`#studio-app`), admin, and the dashboard's greeting (`[data-dashboard-hello]`, `js/dashboard.js`, which also sends an ended session to log in). Their parts (order list, cart lines) can still become modules when another page needs them. Every other feature is a drop-in (#52).
