@@ -15,5 +15,5 @@ CLAUDE.md	Closes #N
 CLAUDE.md	never re-read
 CLAUDE.md	never the only copy
 .claude/rules/html.md	(title `<page> · <project> · AutoStacc`)
-.claude/rules/html.md	The hub's title starts with "AutoStacc ·"
+.claude/rules/html.md	The hub's title starts with "AutoStacc"
 .claude/rules/html.md	Platform pages wear the AutoStacc look (light and dark, no sounds)
