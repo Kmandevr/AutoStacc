@@ -21,8 +21,8 @@
     root.innerHTML = COLS.map(([view, title, empty, track]) => {
       const list = GS.exploreItems.query(view, items[view], {}).hits
         .map((x, i) => ({ x, rank: (followed.has(x.project) ? 0 : 1e4) + i })).sort((a, b) => a.rank - b.rank).slice(0, limit).map((r) => r.x);
-      return `<section class="mix-panel latest-col" data-track="${track}" aria-labelledby="latest-${view}">
-        <div class="mix-head"><h3 id="latest-${view}">${title}</h3><a href="/explore${view === "releases" ? "" : `?view=${view}`}">All<span class="sr-only"> ${title.toLowerCase()}</span> &rarr;</a></div>
+      return `<section class="mix-panel latest-col" data-track="${track}" aria-labelledby="lt-${view}">
+        <div class="mix-head"><h3 id="lt-${view}">${title}</h3><a href="/explore${view === "releases" ? "" : `?view=${view}`}">All<span class="sr-only"> ${title.toLowerCase()}</span> &rarr;</a></div>
         ${list.length ? `<ul class="latest-list">${list.map(line).join("")}</ul>` : `<p class="small-print">${empty}</p>`}</section>`;
     }).join("");
   }

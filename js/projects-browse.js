@@ -20,7 +20,7 @@
     return p;
   };
   let params = fromAddress(), seq = 0;
-  const fallback = root.innerHTML; // the built list, shown again if the store is offline
+  const fallback = ($("[data-project-list]", root) || {}).outerHTML || ""; // the built list, shown again if the store is offline
   const listOf = (k) => (params.get(k) || "").split(",").filter(Boolean);
   const setList = (k, l) => (l.length ? params.set(k, l.join(",")) : params.delete(k));
   const taste = (detail) => document.dispatchEvent(new CustomEvent("gs:taste", { detail }));
