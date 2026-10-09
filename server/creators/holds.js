@@ -21,17 +21,22 @@ export const holdStmt = (db, kind, scope, oldSlug, newSlug, targetId) => [
 // Is the slug free for this creator (or a new one)? Taken by another, held for another, or the name of a
 // first-party project (data/projects.js: a creator "glitches-and-stitches" would pose as that artist) means no.
 export async function creatorSlugFree(db, slug, creatorId = null) {
-  if (await first(db, "SELECT 1 AS x FROM projects WHERE source = 'catalog' AND slug = ?", slug)) return false;
-  const row = await first(db, "SELECT id FROM creators WHERE slug = ?", slug);
+  const [firstParty, row, hold] = await Promise.all([
+    first(db, "SELECT 1 AS x FROM projects WHERE source = 'catalog' AND slug = ?", slug),
+    first(db, "SELECT id FROM creators WHERE slug = ?", slug),
+    heldBy(db, "creator", "", slug)
+  ]);
+  if (firstParty) return false;
   if (row && row.id !== creatorId) return false;
-  const hold = await heldBy(db, "creator", "", slug);
   return !hold || hold.target_id === creatorId;
 }
 
 export async function projectSlugFree(db, creatorId, slug, projectId = null) {
-  const row = await first(db, "SELECT id FROM projects WHERE creator_id = ? AND slug = ? AND deleted_at IS NULL", creatorId, slug);
+  const [row, hold] = await Promise.all([
+    first(db, "SELECT id FROM projects WHERE creator_id = ? AND slug = ? AND deleted_at IS NULL", creatorId, slug),
+    heldBy(db, "project", creatorId, slug)
+  ]);
   if (row && row.id !== projectId) return false;
-  const hold = await heldBy(db, "project", creatorId, slug);
   return !hold || hold.target_id === projectId;
 }
 

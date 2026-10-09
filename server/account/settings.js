@@ -17,8 +17,8 @@ async function ownAccount(app) {
 
 async function devices(app) {
   const user = await ownAccount(app);
-  const current = (await realSession(app)).session.id;
-  const list = (await listDevices(app.db, user.id)).map((d) => ({ ...d, current: d.id === current }));
+  const [real, devices] = await Promise.all([realSession(app), listDevices(app.db, user.id)]);
+  const list = devices.map((d) => ({ ...d, current: d.id === real.session.id }));
   return json({ devices: list });
 }
 

@@ -39,8 +39,9 @@ export async function updateProject(db, project, { slug, name }) {
   const t = now();
   const writes = [];
   if (slug && slug !== project.slug) {
-    if (!(await projectSlugFree(db, project.creator_id, slug, project.id))) taken();
-    if (await holdsOf(db, "project", project.id) >= MAX_HOLDS) fail(429, "rename_limit", "This project has been renamed too often lately. Try again later.");
+    const [free, holds] = await Promise.all([projectSlugFree(db, project.creator_id, slug, project.id), holdsOf(db, "project", project.id)]);
+    if (!free) taken();
+    if (holds >= MAX_HOLDS) fail(429, "rename_limit", "This project has been renamed too often lately. Try again later.");
     writes.push(...holdStmt(db, "project", project.creator_id, project.slug, slug, project.id));
   }
   writes.push(stmt(db, "UPDATE projects SET slug = ?, name = ?, updated_at = ? WHERE id = ?", slug || project.slug, name || project.name, t, project.id));

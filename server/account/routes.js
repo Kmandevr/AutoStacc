@@ -17,11 +17,12 @@ function impersonationView(imp) {
 }
 
 async function me(app) {
-  const user = await currentUser(app);
+  // impersonation() is cached by currentUser, so only the guest cookie check runs beside it.
+  const [user, guests] = await Promise.all([currentUser(app), guestOrderIds(app)]);
   const live = paymentProvider(app).livemode(app.config);
   return json({
     user: user ? { id: user.id, name: user.name, email: user.email, emailVerified: Boolean(user.emailVerified), createdAt: user.createdAt, admin: isAdmin(app, user) } : null,
-    guestOrders: (await guestOrderIds(app)).length,
+    guestOrders: guests.length,
     impersonation: impersonationView(await impersonation(app)),
     store: { paymentProvider: app.config.paymentProvider, testMode: !app.config.production, livePayments: live }
   });

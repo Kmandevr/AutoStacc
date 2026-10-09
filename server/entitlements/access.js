@@ -4,8 +4,8 @@ import { guestOrderIds } from "../orders/guest.js";
 import { fail } from "../lib/http.js";
 
 export async function resolveAccess(app) {
-  const user = await currentUser(app);
-  return { user: user && user.emailVerified ? user : null, guestOrderIds: await guestOrderIds(app) };
+  const [user, guests] = await Promise.all([currentUser(app), guestOrderIds(app)]);
+  return { user: user && user.emailVerified ? user : null, guestOrderIds: guests };
 }
 
 export async function requireAccess(app) {
