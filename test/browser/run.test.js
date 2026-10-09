@@ -900,7 +900,6 @@ describe("store in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
-<<<<<<< HEAD
   test("a skinned project is a rounded, shadowed card with soft gray on light pages and stays full-bleed black in dark mode", async () => {
     const probe = (page) => page.evaluate(() => {
       const card = document.querySelector(".project-card");
@@ -927,7 +926,7 @@ describe("store in the browser", () => {
     assert.equal(d.bg, "rgb(0, 0, 0)", "dark: true black");
     assert.deepEqual(dark.page.errors, []);
     await dark.ctx.close();
-=======
+  });
   test("a guest can refund an unused order from the confirmation page; after a download they can't", async () => {
     const { ctx, page } = await open(PHONE);
     const email = unique("guest-refund");
@@ -955,6 +954,5 @@ describe("store in the browser", () => {
     assert.equal(await page.locator("[data-refund]").count(), 0, "no refund once something was downloaded");
     assert.deepEqual(page.errors, []);
     await ctx.close();
->>>>>>> origin/main
   });
 });
