@@ -29,10 +29,10 @@
       root.innerHTML = `
         <div class="studio-bar">
           <button class="btn ghost" type="button" data-action="back">&larr; All projects</button>
-          <h2>${e(data.project.name)}</h2>
+          <h2>${e(data.project.name)} <span class="studio-state" data-live="${data.project.published}">${data.project.published ? "Live" : "Draft"}</span></h2>
           ${data.project.published ? `<a class="btn ghost" href="${e(data.project.path)}" target="_blank" rel="noopener">View live page</a>` : ""}
           <button class="btn ghost" type="button" data-action="preview">Preview</button>
-          <button class="btn" type="button" data-action="save">Save draft</button>
+          <button class="btn ghost" type="button" data-action="save">Save draft</button>
           <button class="btn" type="button" data-action="publish">Publish</button>
           ${data.project.published ? '<button class="btn ghost" type="button" data-action="unpublish">Unpublish</button>' : ""}
         </div>
@@ -50,21 +50,23 @@
               <button class="btn ghost small" type="button" data-action="image-delete" data-id="${e(i.id)}">Delete</button></li>`).join("")}</ul>
           </aside>
           <div class="studio-main">
-            <div class="admin-tabs" role="tablist">${d.pages.map((x, i) => `<button type="button" role="tab" aria-selected="${i === page}" data-action="page" data-index="${i}">${e(x.title || "Untitled")}</button>`).join("")}
-              ${d.pages.length < o.limits.pagesPerSite ? '<button type="button" data-action="page-add">+ Page</button>' : ""}</div>
+            <nav class="studio-pages" aria-label="Pages">${d.pages.map((x, i) => `<button type="button"${i === page ? ' aria-current="page"' : ""} data-action="page" data-index="${i}">${e(x.title || "Untitled")}</button>`).join("")}
+              ${d.pages.length < o.limits.pagesPerSite ? '<button type="button" class="studio-page-add" data-action="page-add">+ Page</button>' : ""}</nav>
             <div class="panel wide">
               <div class="field"><label for="st-title">Page name</label><input id="st-title" data-path="pages.${page}.title" maxlength="60" value="${e(p.title)}"></div>
               ${page ? `<div class="field"><label for="st-slug">Address</label><input id="st-slug" data-path="pages.${page}.slug" maxlength="40" value="${e(p.slug)}" pattern="[a-z0-9]+(-[a-z0-9]+)*">
                 <p class="small-print">${e(data.project.path)}/<strong>${e(p.slug || "…")}</strong></p></div>
                 <button class="btn ghost small" type="button" data-action="page-delete">Delete this page</button>` : `<p class="small-print">The home page, at ${e(data.project.path)}.</p>`}
             </div>
-            ${p.blocks.map((b, i) => `<section class="panel wide studio-block"><div class="studio-block-head"><h3>${e(B().label(b.type))}</h3>
-              <button class="btn ghost small" type="button" data-action="up" data-index="${i}"${i ? "" : " disabled"}>Up</button>
-              <button class="btn ghost small" type="button" data-action="down" data-index="${i}"${i < p.blocks.length - 1 ? "" : " disabled"}>Down</button>
-              <button class="btn ghost small" type="button" data-action="remove" data-index="${i}">Remove</button></div>
-              ${B().form(b, `pages.${page}.blocks.${i}`, data)}</section>`).join("")}
-            <div class="studio-add"><label for="st-add" class="sr-only">Block to add</label><select id="st-add">${B().types.map((t) => `<option value="${t}">${e(B().label(t))}</option>`).join("")}</select>
-              <button class="btn" type="button" data-action="add">Add block</button></div>
+            ${p.blocks.map((b, i) => `<section class="panel wide studio-block" aria-label="Block ${i + 1}: ${e(B().label(b.type))}"><div class="studio-block-head"><span class="studio-block-n" aria-hidden="true">${i + 1}</span><h3>${e(B().label(b.type))}</h3>
+              <button class="btn ghost small" type="button" data-action="up" data-index="${i}"${i ? "" : " disabled"}>&uarr; Up</button>
+              <button class="btn ghost small" type="button" data-action="down" data-index="${i}"${i < p.blocks.length - 1 ? "" : " disabled"}>&darr; Down</button>
+              <button class="btn ghost small danger" type="button" data-action="remove" data-index="${i}">Remove</button></div>
+              ${B().form(b, `pages.${page}.blocks.${i}`, data)}</section>`).join("")
+              || `<p class="studio-empty">This page has no blocks yet. Pick one below, a heading or some text is a good start, and press Add block.</p>`}
+            <div class="studio-add"><label for="st-add">Add a block</label><select id="st-add">${B().types.map((t) => `<option value="${t}">${e(B().label(t))}</option>`).join("")}</select>
+              <button class="btn" type="button" data-action="add">Add block</button>
+              <span class="small-print">${p.blocks.length} of ${o.limits.blocksPerPage} blocks</span></div>
           </div>
         </div>`;
     }
@@ -84,13 +86,13 @@
       const a = btn.dataset.action;
       const blocks = data.document.pages[page].blocks;
       const i = Number(btn.dataset.index);
-      if (a === "back") { if (!dirty || confirm("Leave without saving?")) onBack(); return; }
+      if (a === "back") { if (!dirty || confirm("Leave without saving?")) { onbeforeunload = null; onBack(); } return; }
       if (a === "page") { page = i; return draw(); }
       if (a === "page-add") { data.document.pages.push({ slug: `page-${data.document.pages.length + 1}`, title: "New page", blocks: [] }); page = data.document.pages.length - 1; return changed(); }
       if (a === "page-delete") { if (confirm("Delete this page and its blocks?")) { data.document.pages.splice(page, 1); page = 0; changed(); } return; }
       if (a === "add") { if (blocks.length >= data.options.limits.blocksPerPage) return say("This page has as many blocks as it can hold.", true); blocks.push(B().blank($("#st-add", root).value)); return changed(); }
       if (a === "up" || a === "down") { const j = a === "up" ? i - 1 : i + 1; [blocks[i], blocks[j]] = [blocks[j], blocks[i]]; return changed(); }
-      if (a === "remove") { blocks.splice(i, 1); return changed(); }
+      if (a === "remove") { if (confirm(`Remove this ${B().label(blocks[i].type)} block? It's gone once you save.`)) { blocks.splice(i, 1); changed(); } return; }
       if (a === "list-add") { getAt(data.document, btn.dataset.path).push(B().blankItem(btn.dataset.path.split(".").pop())); return changed(); }
       if (a === "list-remove") { getAt(data.document, btn.dataset.path).splice(i, 1); return changed(); }
       btn.disabled = true;
@@ -140,6 +142,8 @@
       } else setAt(data.document, t.dataset.path, /\.level$/.test(t.dataset.path) ? Number(t.value) : t.value);
       changed(false);
     };
+    // Closing the tab or reloading with unsaved changes asks first (the browser shows its own wording).
+    onbeforeunload = (ev) => { if (dirty) { ev.preventDefault(); ev.returnValue = ""; } };
     root.onchange = (ev) => { if (ev.target.dataset.action === "upload") upload(ev.target); };
     root.onclick = (ev) => { const btn = ev.target.closest("button[data-action]"); if (btn) act(btn); };
 

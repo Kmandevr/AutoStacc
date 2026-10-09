@@ -75,16 +75,30 @@
   <header id="site-header"></header>
 
   <main id="main" class="platform">
-    <div class="page-hero">
+    <div class="page-hero shop-hero">
       <div class="wrap">
+        <p class="shop-kicker">The AutoStacc store</p>
         <h1 class="glitch" data-text="Store">Store</h1>
-        <p>Sample packs, presets, stems, music and visuals, ready to download as soon as your payment is confirmed.</p>
+        <p>Sample packs, presets, stems, music and visuals, straight from the projects that make them. Ready to download as soon as your payment is confirmed.</p>
+        <p class="shop-owned msg" data-owned-summary hidden></p>
       </div>
     </div>
 
-    <section>
+    <section class="shop-section">
       <div class="wrap">
-        <div class="shop" data-shop data-filters="project type" data-level="2" data-url></div>
+        <div class="shop" data-shop data-filters="project type" data-search data-spotlight data-picks="3" data-sort data-level="2" data-url></div>
+      </div>
+    </section>
+
+    <section class="alt shop-how" aria-labelledby="how-head">
+      <div class="wrap">
+        <h2 id="how-head">How buying works</h2>
+        <ol class="shop-steps">
+          <li><strong>Pick</strong><span>Add items to your cart. Free ones go straight into your account.</span></li>
+          <li><strong>Pay on Stripe</strong><span>Checkout runs on Stripe; this site never sees your card. No account needed.</span></li>
+          <li><strong>Find it in Your Stacc</strong><span>Your files land in <a href="/library">Your Stacc</a> the moment the payment clears, sorted by project and Pac.</span></li>
+        </ol>
+        <p class="small-print">What you may do with each item: <a href="/license">licences</a>. When we refund: <a href="/refunds">refunds</a>. Questions: <a href="/help">help</a>.</p>
       </div>
     </section>
   </main>
@@ -99,6 +113,7 @@
   <script src="/js/layout.js"></script>
   <script src="/js/account-nav.js"></script>
   <script src="/js/product-card.js"></script>
+  <script src="/js/taste.js"></script>
   <script src="/js/shop.js"></script>
   <script src="/js/store.js"></script>
   <script src="/js/motion.js"></script>

@@ -280,26 +280,37 @@ function productPage(SITE, data, p) {
         ${productCover(p, true, data.productTypes)}
         <div class="product-info">
           <p class="lede">${esc(p.description)}</p>
+          <div class="buy-panel">
+            <div class="buy-panel-head">
+              <span class="price buy-price" data-price="${esc(p.id)}">${price}</span>
+              <span class="buy-state" data-status="${esc(p.id)}">${buyable ? "Available now" : "Coming soon"}</span>
+            </div>
+            <div class="detail-buy buy" data-buy="${esc(p.id)}">
+              ${buyable ? `<button class="btn" type="button" data-add-to-cart="${esc(p.id)}">Add to cart</button>` : `<span class="btn" aria-disabled="true">Coming soon</span>`}
+            </div>
+            <ul class="buy-points">
+              <li>Digital download, in <a href="/library">Your Stacc</a> the moment the payment clears</li>
+              <li>Checkout runs on Stripe; this site never sees your card</li>
+              <li>Private links that expire after a few minutes · <a href="/refunds">Refund policy</a></li>
+            </ul>
+          </div>
           ${preview}
           ${(p.includes || []).length ? `<h2 class="included-head">What's inside</h2>
           <ul class="included">${p.includes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
           ${pacs.length ? `<h2 class="included-head">Pacs</h2>
           <ul class="included pacs">${pacs.map(({ pac, stacclet }) => `<li>${esc(pac.title)}${stacclet ? ` <span class="small-print">· ${esc(stacclet.title)} Stacclet</span>` : ""}</li>`).join("")}</ul>` : ""}
+          <h2 class="included-head">Details</h2>
           <dl class="facts">
             <dt>Created by</dt><dd><a href="${esc(projectPath(creator.id))}">${esc(creator.name)}</a></dd>
             <dt>Sold by</dt><dd><a href="/about">${esc(SITE.name)}</a></dd>
             <dt>Type</dt><dd>${esc(p.category)}</dd>
-            <dt>Format</dt><dd>Digital download</dd>
-            <dt>Price</dt><dd class="price" data-price="${esc(p.id)}">${price}</dd>
-            <dt>Status</dt><dd data-status="${esc(p.id)}">${buyable ? "Available now" : "Coming soon"}</dd>
+            <dt>Format</dt><dd>Digital download${(p.formats || []).length ? ` · ${p.formats.map(esc).join(", ")}` : ""}</dd>
+            ${(creator.genres || []).length ? `<dt>Genre</dt><dd>${esc(creator.genres.join(", "))}</dd>` : ""}
+            <div data-size-row hidden><dt>Download</dt><dd data-size="${esc(p.id)}"></dd></div>
             ${release ? `<dt>Release</dt><dd><a href="${esc(releasePath(release))}">${esc(release.title)}</a></dd>` : ""}
             ${(p.tags || []).length ? `<dt>Tags</dt><dd class="tags">${p.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join(" ")}</dd>` : ""}
             ${facts}
           </dl>
-          <div class="detail-buy buy" data-buy="${esc(p.id)}">
-            ${buyable ? `<button class="btn" type="button" data-add-to-cart="${esc(p.id)}">Add to cart</button>` : `<span class="btn" aria-disabled="true">Coming soon</span>`}
-          </div>
-          <p class="note">Checkout runs on Stripe; this site never sees your card. Files land in <a href="/library">Your Stacc</a>, sorted by Pac and content type, the moment the payment clears, as private links that expire after a few minutes. <a href="/refunds">Refund policy</a>.</p>
           ${licenseBox(SITE, data, p)}
         </div>
       </div>
@@ -312,7 +323,7 @@ ${others.length ? `
       </div>
     </section>
 ` : ""}`;
-  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/store.js"], main, look: creator }) };
+  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/taste.js", "js/store.js"], main, look: creator }) };
 }
 
 // ---------- news post ----------

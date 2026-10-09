@@ -15,6 +15,18 @@
 .release-info .lede, .product-info .lede { margin-top: 0; font-size: 1.05rem; }
 .release-info .platforms-label { margin: 28px 0 12px; }
 .detail-buy { margin: 28px 0 12px; }
+/* the purchase panel: price, live availability, the buy control and what happens after paying (js/store.js fills it) */
+.buy-panel { display: grid; gap: 14px; margin: 22px 0 30px; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.buy-panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.buy-price { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+.buy-state { padding: 2px 10px; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+.buy-panel .detail-buy { margin: 0; }
+.buy-panel .detail-buy .btn { flex: 1 1 auto; justify-content: center; text-align: center; }
+.buy-points { list-style: none; display: grid; gap: 6px; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+.buy-points li { position: relative; padding-left: 18px; }
+.buy-points li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); }
+.buy-points a { display: inline-block; padding-block: 2px; }
+.product-info .facts { margin-bottom: 8px; }
 .product-info .note { color: var(--muted); font-size: .85rem; }
 .product-info .note a { display: inline-block; padding-block: 2px; }
 .preview { margin: 0 0 22px; }
@@ -72,3 +84,10 @@
   .tracklist li { grid-template-columns: auto 1fr auto; gap: 2px 12px; }
   .detail-more .btn, .detail-buy .btn { flex: 1 1 100%; display: block; }
 }
+/* the licence box is a <section>: keep project skins' section spacing off it */
+.product-info section.license-box { padding: 18px 20px; }
+/* computers: the artwork stays in view while the details scroll */
+@media (min-width: 861px) { .product > .product-art { position: sticky; top: 80px; } }
+/* a fact the store fills in later (download size) sits in a wrapper that keeps the dt/dd grid */
+.facts > div { display: contents; }
+.facts > div[hidden] { display: none; }

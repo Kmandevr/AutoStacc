@@ -6,6 +6,13 @@ updated: 2026-10-09
 
 # Decisions
 
+## 2026-10-09: Store recommendations stay on the visitor's device
+
+- **The owner asked for picks based on each visitor's habits and preferences.** They are computed in the browser (`js/taste.js`) from what that browser opened, added to its cart and filtered by; nothing is sent to the store or kept per account, so there is no tracking profile, nothing new for the privacy page beyond one line, and no recommendation backend.
+- **Not only more of the same:** picks favour things not yet opened and always keep one place for a kind the visitor hasn't looked at.
+- **Visitors control it:** "Forget it" clears the history; "Turn off" clears it and stops recording.
+- **Labels are facts only:** formats come from each product's own description, the genre from the project's `genres`, the size from the files actually uploaded. Nothing is guessed to fill a label.
+
 ## 2026-10-09: Owner answers to the docs audit's open questions
 
 - **Store is live:** the owner switched it on (Cloudflare permissions, secrets, Stripe, Brevo; issue #44). Real products are in progress (#5).
@@ -170,7 +177,6 @@ Plain HTML, CSS and JS. Free to host anywhere (GitHub Pages, Netlify, Cloudflare
 
 Superseded by the store decision above (2026-10-07).
 
-
 Selling digital files needs payment and secure delivery. A hosted provider handles both, so the site stays static and never touches card data. Provider not chosen yet (tracked as a GitHub issue).
 
 ## 2026-10-06: Content lives in `data/*.js`
@@ -244,7 +250,6 @@ The owner wants to run sales and promotions without a developer. Both are rows t
 ## 2026-10-08: /admin is a 404 to everyone but admins
 
 The Control Center page itself (not just its API) is now gated on the server and answers the site's ordinary 404 page, so it doesn't exist for signed-out visitors, customers, or an admin while impersonating.
-
 
 ## 2026-10-08: Creators own projects; free no-code creator sites at /<creator>/<project>
 

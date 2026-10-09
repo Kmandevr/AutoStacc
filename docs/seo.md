@@ -20,7 +20,7 @@ Since 2026-10-08 autostacc.com is AutoStacc, the platform (WebSite and Organizat
   - a plain link per published project inside `<!-- projects:start -->`/`<!-- projects:end -->` on the home page and `/projects` (so project pages are linked in the HTML itself; `js/projects.js` upgrades them to cards),
   - `sitemap.xml` with every indexable page, `llms.txt` (below), `scripts/public-urls.txt` (the record of every URL ever published) and `db/catalog.sql` (the store database's copy of the catalog, [store](store.md)). Generated pages whose data entry is gone (or became a draft) are deleted.
   - `--check` writes nothing and fails if anything is out of date. Output is committed, so the repo is exactly what goes live; the deploy refuses to publish if it is out of date.
-- Pages stay static HTML on Cloudflare Pages: no server rendering, no framework. Only the store API (`/api/*`) runs code ([store](store.md)); live price and ownership are added to product pages by script, on top of the static price. Lists (shop grid, news, release cards) are still rendered in the browser from `data/`; the head, item pages and sitemap are static so every crawler and link preview sees them.
+- Pages stay static HTML on Cloudflare Pages: no server rendering, no framework. Only the store API (`/api/*`) runs code ([store](store.md)); live price, ownership and download size are added to product pages by script, on top of the static price (in the purchase panel above the details). Lists (shop grid, news, release cards) are still rendered in the browser from `data/`; the head, item pages and sitemap are static so every crawler and link preview sees them.
 
 ## Addresses
 

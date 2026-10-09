@@ -29,7 +29,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
 | `account/` | who is signed in; Settings: devices, email preferences, the data export, deleting the account ([below](#accounts)) | `GET /api/account`, `/api/account/devices` (+ `/:id/sign-out`, `/sign-out-others`), `GET`/`PUT /api/account/email-preferences`, `POST /api/account/export`, `POST /api/account/delete` |
 | `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/settings` and `/settings/<section>`, `/studio`, `/admin` (Pages Functions in `functions/`) |
-| `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
+| `catalog/` | reading products (price, availability; `state` with `ids` also gives each product's download size from its published files) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
 | `payments/` | providers (Stripe, mock), which Stripe account takes a product's money (`accounts.js`), Connect payout accounts and transfers (`connect.js`), tax codes per product type (`tax-codes.js`), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/webhooks/stripe-marketplace`, `POST /api/dev/mock-payment` |

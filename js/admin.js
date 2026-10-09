@@ -24,21 +24,55 @@
     root.innerHTML = `
       <p class="admin-mode ${s.livePayments ? "live" : "test"}"><strong>${s.livePayments ? "LIVE" : "TEST"}</strong>
         ${s.livePayments ? "Real payments. Test purchases are off here." : "Test payments only: nothing here is real revenue."}</p>
-      <p class="msg">${escapeHTML(s.environment)} · payments: ${escapeHTML(s.paymentProvider)} · ${s.products} products · ${s.customers} customers · ${paid.n} paid orders (${cents(paid.cents || 0)}) · ${s.activeEntitlements} active entitlements</p>
+      <ul class="admin-kpis" aria-label="Store at a glance">${[["Environment", s.environment], ["Payments", s.paymentProvider], ["Products", s.products], ["Customers", s.customers],
+        ["Paid orders", `${paid.n} · ${cents(paid.cents || 0)}`], ["Active entitlements", s.activeEntitlements]]
+        .map(([k, v]) => `<li><span>${k}</span><strong>${escapeHTML(String(v))}</strong></li>`).join("")}</ul>
       ${s.alerts.length ? `<div class="msg error" role="alert">Payment events that need a look (check them in Stripe too):<ul>${s.alerts.map((a) => `<li>${escapeHTML(a.received_at.slice(0, 16).replace("T", " "))} ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.order_id ? ` (${escapeHTML(a.order_id)})` : ""}</li>`).join("")}</ul></div>` : ""}
       <label class="admin-section"><span>Section</span><select data-section aria-label="Section">${TABS.map(([k, l], i) => `<option value="${k}"${i === 0 ? " selected" : ""}>${l}</option>`).join("")}</select></label>
-      <div class="admin-tabs" role="tablist">${TABS.map(([k, l], i) => `<button type="button" role="tab" id="tab-${k}" aria-controls="admin-${k}" aria-selected="${i === 0}">${l}</button>`).join("")}</div>
+      <div class="admin-tabs" role="tablist" aria-label="Control Center sections">${TABS.map(([k, l], i) => `<button type="button" role="tab" id="tab-${k}" aria-controls="admin-${k}" aria-selected="${i === 0}" tabindex="${i ? -1 : 0}">${l}</button>`).join("")}</div>
       ${TABS.map(([k], i) => `<div class="admin-panel" role="tabpanel" id="admin-${k}" aria-labelledby="tab-${k}"${i ? " hidden" : ""}></div>`).join("")}`;
   }
 
-  function selectTab(key) {
+  // The open section lives in the address (/admin#orders), so a reload or a shared link lands on it.
+  function selectTab(key, focus) {
+    if (!TABS.some(([k]) => k === key)) key = TABS[0][0];
     TABS.forEach(([k]) => {
-      $(`#tab-${k}`).setAttribute("aria-selected", String(k === key));
+      const tab = $(`#tab-${k}`);
+      tab.setAttribute("aria-selected", String(k === key));
+      tab.tabIndex = k === key ? 0 : -1;
       $(`#admin-${k}`).hidden = k !== key;
     });
+    if (focus) $(`#tab-${key}`).focus();
     const pick = $("[data-section]", root);
     if (pick) pick.value = key;
+    if (location.hash.slice(1) !== key) history.replaceState(null, "", key === TABS[0][0] ? location.pathname : `#${key}`);
   }
+
+  // Tabs move with the arrow keys, Home and End (the WAI-ARIA tabs pattern).
+  root.addEventListener("keydown", (e) => {
+    const tab = e.target.closest("[role=tab]");
+    if (!tab) return;
+    const keys = TABS.map(([k]) => k);
+    const at = keys.indexOf(tab.id.slice(4));
+    const to = { ArrowRight: at + 1, ArrowLeft: at - 1, Home: 0, End: keys.length - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    selectTab(keys[(to + keys.length) % keys.length], true);
+  });
+
+  // A product action that didn't go through says so beside the product instead of failing silently.
+  const act = async (el, path, body) => {
+    const res = await api(path, { method: "PATCH", body });
+    if (!res.ok) {
+      el.disabled = false;
+      const row = el.closest("[data-product]");
+      let msg = $(".admin-row-error", row);
+      if (!msg) { msg = document.createElement("p"); msg.className = "msg error admin-row-error"; msg.setAttribute("role", "alert"); row.append(msg); }
+      msg.textContent = res.error.message;
+      return;
+    }
+    products();
+  };
 
   async function products() {
     const panel = $("#admin-products");
@@ -57,7 +91,7 @@
           ${p.deleted ? `<button class="btn ghost" type="button" data-product-set='{"deleted":false}'>Restore</button>` : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>
           <button class="btn ghost" type="button" data-product-set='{"published":${p.published ? "false" : "true"}}'>${p.published ? "Hide from store" : "Publish (out of draft)"}</button>
           ${p.published ? `<button class="btn ghost" type="button" data-announce title="Email the project's followers who want new-release emails">Email followers</button>` : ""}
-          <button class="btn ghost" type="button" data-product-remove>Remove</button>`}<span class="small-print" role="status" data-announce-msg></span></div>
+          <button class="btn ghost danger" type="button" data-product-remove>Remove</button>`}<span class="small-print" role="status" data-announce-msg></span></div>
         ${p.deleted ? "" : `<form class="admin-upload" data-price-form><label for="pr-${escapeHTML(p.id)}">Price (${escapeHTML(p.currency)}, 0 = free)</label>
           <input id="pr-${escapeHTML(p.id)}" type="number" min="0" max="10000" step="0.01" inputmode="decimal" value="${(p.priceCents / 100).toFixed(2)}" required>
           <button class="btn ghost" type="submit">Save price</button><span class="small-print" role="status"></span></form>
@@ -67,8 +101,8 @@
           <button class="btn ghost" type="submit">Save text</button><span class="small-print" role="status"></span></form></details>`}
         <ul class="admin-files">${p.files.map((f) => `<li${f.active ? "" : ' class="inactive"'}>${escapeHTML(f.label || f.filename)} <span class="small-print">${escapeHTML(f.filename)} · ${size(f.size_bytes)}${f.pac_id ? ` · ${escapeHTML(pacTitle(f.pac_id))}` : ""}${f.kind ? ` · ${escapeHTML((KINDS[f.kind] || {}).label || f.kind)}` : ""}${f.active ? (f.status && f.status !== "published" ? ` · <strong>${escapeHTML(f.status)}</strong>` : "") : " · deactivated"}</span>
           ${f.active && f.status === "pending" ? `<button class="link-btn" type="button" data-publish-file="${escapeHTML(f.id)}">publish</button>` : ""}
-          ${f.active && f.status !== "rejected" ? `<button class="link-btn" type="button" data-reject-file="${escapeHTML(f.id)}">reject</button>` : ""}
-          ${f.active ? `<button class="link-btn" type="button" data-remove-file="${escapeHTML(f.id)}">deactivate</button>` : ""}</li>`).join("") || "<li class=\"small-print\">No files yet: buyers would get an empty library entry.</li>"}</ul>
+          ${f.active && f.status !== "rejected" ? `<button class="link-btn danger" type="button" data-reject-file="${escapeHTML(f.id)}">reject</button>` : ""}
+          ${f.active ? `<button class="link-btn danger" type="button" data-remove-file="${escapeHTML(f.id)}">deactivate</button>` : ""}</li>`).join("") || "<li class=\"small-print\">No files yet: buyers would get an empty library entry.</li>"}</ul>
         <form class="admin-upload" data-upload>
           <label class="sr-only" for="f-${escapeHTML(p.id)}">File for ${escapeHTML(p.title)}</label><input id="f-${escapeHTML(p.id)}" type="file" required>
           <label class="sr-only" for="l-${escapeHTML(p.id)}">Label</label><input id="l-${escapeHTML(p.id)}" type="text" placeholder="Label (e.g. WAV stems)" maxlength="120">
@@ -156,8 +190,7 @@
     const set = e.target.closest("[data-product-set]");
     if (set) {
       set.disabled = true;
-      await api(`/api/admin/products/${encodeURIComponent(set.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: JSON.parse(set.dataset.productSet) });
-      return products();
+      return act(set, `/api/admin/products/${encodeURIComponent(set.closest("[data-product]").dataset.product)}`, JSON.parse(set.dataset.productSet));
     }
     // Removing hides the product and stops sales; people who already bought it keep their files. It can be restored.
     const rmProduct = e.target.closest("[data-product-remove]");
@@ -165,14 +198,12 @@
       const li = rmProduct.closest("[data-product]");
       if (!confirm(`Remove "${li.querySelector("strong").textContent}" from the store? People who already bought it keep their files. You can restore it later.`)) return;
       rmProduct.disabled = true;
-      await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}`, { method: "PATCH", body: { deleted: true } });
-      return products();
+      return act(rmProduct, `/api/admin/products/${encodeURIComponent(li.dataset.product)}`, { deleted: true });
     }
     const pause = e.target.closest("[data-pause]");
     if (pause) {
       pause.disabled = true;
-      await api(`/api/admin/products/${encodeURIComponent(pause.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: { salesPaused: pause.dataset.pause === "1" } });
-      return products();
+      return act(pause, `/api/admin/products/${encodeURIComponent(pause.closest("[data-product]").dataset.product)}`, { salesPaused: pause.dataset.pause === "1" });
     }
     // Tells the project's followers who want new-release emails, in batches; each person once per product.
     const announce = e.target.closest("[data-announce]");
@@ -221,5 +252,7 @@
     shell(res.data);
     products();
     dispatchEvent(new CustomEvent("gs:admin", { detail: res.data }));
+    selectTab(location.hash.slice(1));
+    addEventListener("hashchange", () => selectTab(location.hash.slice(1)));
   })();
 })();

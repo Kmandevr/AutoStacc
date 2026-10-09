@@ -65,6 +65,7 @@
     state.mode = d.mode;
     $("[data-stats-mode]", el).value = d.mode;
     out.innerHTML = `<p class="admin-mode ${d.mode}"><strong>${d.mode === "live" ? "LIVE" : "TEST"} figures</strong> ${e(d.since)} to ${e(d.until)}${d.mode === "live" ? "" : " · test orders only, never revenue"}</p>
+      <nav class="stats-jump" aria-label="Jump to">${d.sections.map((x) => `<button type="button" data-jump="stats-${e(x.id)}">${e(x.title)}</button>`).join("")}</nav>
       ${d.sections.map(section).join("")}<p class="small-print">Generated ${e(d.generatedAt.slice(0, 16).replace("T", " "))} UTC.</p>`;
   }
 
@@ -76,6 +77,12 @@
         <button class="btn ghost" type="submit">Refresh</button></form>
       <p class="stats-legend">${Object.entries(SOURCES).map(([k, l]) => `<span class="stats-source" data-source="${k}">${e(l)}</span>`).join("")}</p>
       <div data-stats-out></div>`;
+    // The overview is long: the jump bar scrolls to a section without touching the address (it holds the open tab).
+    el.addEventListener("click", (ev) => {
+      const jump = ev.target.closest("[data-jump]");
+      const to = jump && document.getElementById(jump.dataset.jump);
+      if (to) to.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
     el.addEventListener("submit", (ev) => {
       ev.preventDefault();
       state = { days: Number($("[data-stats-days]", el).value), mode: $("[data-stats-mode]", el).value };

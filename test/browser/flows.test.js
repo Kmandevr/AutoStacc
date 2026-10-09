@@ -421,12 +421,48 @@ describe("store in the browser", () => {
     assert.match(page.url(), /\/shop\?project=glitches-and-stitches&item=serum-presets$/);
     assert.ok((await page.getAttribute(".shop-selected .card", "class")).includes("look-glitches-and-stitches"), "wears its project's look");
     assert.equal(await page.evaluate(() => document.activeElement.dataset.select), "serum-presets");
-    assert.equal(await page.locator('[data-filter=project] [aria-pressed=true]').innerText(), "Glitches & Stitches");
+    assert.match(await page.locator('[data-filter=project] [aria-pressed=true]').innerText(), /^Glitches & Stitches\s+\d+$/, "the option and how many items it holds");
     await page.reload();
     await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
     await page.goBack();
     await page.waitForFunction(() => !document.querySelector(".shop-selected .card"));
     assert.equal(await page.locator(".grid .card").count(), first);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("store search and spotlight: typing narrows the items, the address keeps it, a miss offers to clear, owned items are stamped", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/shop");
+    await page.waitForSelector(".shop-spotlight .card");
+    const featured = await page.getAttribute(".shop-spotlight .card", "data-product");
+    assert.equal(await page.locator(`.grid .card[data-product="${featured}"]`).count(), 0, "the spotlight item isn't repeated in the grid");
+    await page.fill("#shop-q", "stems remix");
+    await page.waitForFunction(() => location.search.includes("q="));
+    assert.deepEqual(await page.locator(".grid .card").evaluateAll((els) => els.map((x) => x.dataset.product)), ["stems-patchwork"]);
+    assert.equal(await page.locator(".shop-spotlight .card").count(), 0, "no spotlight while searching");
+    await page.reload();
+    assert.equal(await page.inputValue("#shop-q"), "stems remix");
+    await page.fill("#shop-q", "zzzz-nothing");
+    await page.waitForSelector(".shop-empty [data-clear]");
+    await page.click(".shop-empty [data-clear]");
+    await page.waitForSelector(".shop-spotlight .card");
+    assert.equal(await page.inputValue("#shop-q"), "");
+    // Ownership comes from the store API: after a paid purchase the store stamps that card and says how much is yours.
+    const email = unique("owner");
+    await signUp(page, email);
+    // Signed in, checkout uses the account's email (no email field).
+    await page.goto("/shop/wallpapers");
+    await page.locator("[data-buy] [data-add-to-cart]").click();
+    await page.goto("/cart");
+    await page.click("#checkout-btn");
+    await page.waitForURL(/\/checkout\?order=.*mock=/);
+    await page.click("[data-mock=paid]");
+    await page.waitForSelector("text=Payment confirmed");
+    await page.goto("/shop?type=Visuals");
+    await page.waitForSelector('.card.is-owned[data-product="wallpapers"]');
+    assert.equal(await page.locator(".card.is-owned").count(), 1, "only what was bought");
+    assert.match(await page.locator("[data-owned-summary]").innerText(), /You've Stacc'd 1 of these/);
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
