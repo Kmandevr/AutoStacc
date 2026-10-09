@@ -1,7 +1,8 @@
 // Your Stacc's model (docs/library.md): turns the library API's owned products and files plus the static hierarchy
 // (data/projects.js, stacclets.js, pacs.js, content-types.js) into one list of assets, then builds the views from that
-// list. Pure functions, no DOM: every view holds the same asset objects, never copies. Sets GS.stacc for
-// js/library.js; also loads in Node for the unit tests (test/unit/stacc-model.test.js). Needs js/util.js in pages.
+// list. Pure functions, no DOM or window-only APIs: every view holds the same asset objects, never copies. Sets GS.stacc
+// in pages and in js/stacc-worker.js (Your Stacc's background thread); also loads in Node for the unit tests
+// (test/unit/stacc-model.test.js).
 (function (root) {
   "use strict";
 
@@ -108,7 +109,21 @@
     return { projects: count("projectId"), kinds: count("kind"), formats: count("format") };
   }
 
-  const api = { assetsFrom, kindOf, formatOf, filter, byKind, tree, facets };
+  // One request from js/stacc-client.js, answered the same in the worker or on the page. "build" turns the owned items
+  // into assets and keeps them (and the catalog) in memo; "view" builds one view, filtered, plus the filter menus.
+  function answer(memo, msg) {
+    if (msg.type === "build") {
+      memo.catalog = msg.catalog || {};
+      memo.assets = assetsFrom(msg.items, memo.catalog);
+      return { assets: memo.assets };
+    }
+    if (msg.type !== "view") throw new Error(`Unknown Stacc request: ${msg.type}`);
+    const assets = memo.assets || [], catalog = memo.catalog || {};
+    const groups = msg.view === "kinds" ? byKind(assets, catalog, msg.filter) : tree(assets, catalog, msg.filter);
+    return { view: msg.view, groups, facets: facets(assets) };
+  }
+
+  const api = { assetsFrom, kindOf, formatOf, filter, byKind, tree, facets, answer };
   if (typeof module === "object" && module.exports) module.exports = api;
-  else root.GS.stacc = api;
-})(typeof window !== "undefined" ? window : globalThis);
+  else (root.GS = root.GS || {}).stacc = api;
+})(typeof self !== "undefined" ? self : globalThis);
