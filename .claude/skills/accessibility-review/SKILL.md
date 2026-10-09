@@ -12,7 +12,7 @@ Start `verify-site` (alt text, `lang`, tap targets, overflow) with `run_in_backg
 | Structure | One `h1` per page, no skipped heading levels, landmarks (`header`, `nav`, `main`, `footer`), a skip link |
 | Names | Links and buttons with clear text (not "click here"); `aria-label` on icon-only controls; disabled "Coming soon" buttons use `aria-disabled` and aren't focus traps |
 | Nav toggle | `aria-expanded` kept in sync, usable by keyboard, closes on Escape |
-| Forms | Visible or `aria-label`led label on the newsletter input; the status message in `#newsletter-msg` announced (`aria-live`) |
+| Forms | Visible or `aria-label`led label on the newsletter input; the status message in `[data-newsletter] .form-msg` announced (`aria-live`) |
 | Keyboard | Everything reachable by Tab in a sensible order, visible focus (check `css/core.css` and `css/layout.css` for `outline: none` overrides) |
 | Colour | Contrast of text and accents in both AutoStacc themes (tokens in `css/platform.css`) and in each project skin (`css/projects/<id>/skin.css`) (4.5:1 body text, 3:1 large text and UI). Don't judge by eye; compute the ratio |
 | Motion | The glitch title and animations stop under `prefers-reduced-motion` (in `css/core.css`, `css/platform.css`, `css/layout.css` and the project skins; confirm it still covers new animation) |

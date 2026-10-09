@@ -163,6 +163,13 @@ const GS = (function () {
     if (!document.querySelector(`link[href^="${href}"]`)) document.head.insertAdjacentHTML("beforeend", `<link rel="stylesheet" href="${href}">`);
     return `look-${p.id}`;
   };
+  // A drop-in module's project (its data-project, else the open project's id, else "") and its look: a module showing a
+  // project's things outside that project's own pages wears its look on the module's element.
+  const moduleProject = (el) => el.dataset.project || currentProject().id || "";
+  const wear = (el, projectId) => {
+    const cls = projectId && projectId !== currentProject().id ? look(projectId) : "";
+    if (cls) el.classList.add(cls);
+  };
   // Where a store item opens: the store filtered to its project, with the item selected at the top.
   const shopItemPath = (p) => `/shop?project=${encodeURIComponent(p.project || "")}&item=${encodeURIComponent(p.id)}`;
 
@@ -180,6 +187,6 @@ const GS = (function () {
     m.textContent = text;
   };
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, shopItemPath, viewSwap, say };
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, moduleProject, wear, shopItemPath, viewSwap, say };
 })();
 window.GS = GS;
