@@ -21,29 +21,46 @@
   function overview(data) {
     root.onclick = root.oninput = root.onchange = null;
     if (!data.creators.length) {
-      root.innerHTML = `<form class="panel" data-form="creator"><h2>Claim your creator name</h2>
-        <p>Your space will live at <strong>${e(location.host)}/<span data-preview>you</span></strong>. Free: no plan, no card.</p>
-        ${nameFields("cr")}<button class="btn" type="submit">Claim it</button><p class="msg" role="status" hidden></p></form>`;
+      root.innerHTML = `<div class="studio-start">
+        <form class="panel" data-form="creator"><h2>Claim your creator name</h2>
+          <p>Your space will live at <strong>${e(location.host)}/<span data-preview>you</span></strong>. Free: no plan, no card.</p>
+          ${nameFields("cr")}<button class="btn" type="submit">Claim it</button><p class="msg" role="status" hidden></p></form>
+        <ol class="studio-steps" aria-label="How the Studio works">
+          <li><strong>Claim your name</strong><span>Your creator address on AutoStacc, unique to you.</span></li>
+          <li><strong>Make a project</strong><span>Up to ${data.limits.projectsPerCreator} of them, each with its own page.</span></li>
+          <li><strong>Build with blocks</strong><span>Headings, text, images, links and more. Pick a style and an accent colour; no code.</span></li>
+          <li><strong>Publish</strong><span>Preview privately, then put it live at your address whenever you're ready.</span></li>
+        </ol></div>`;
       return;
     }
     root.innerHTML = data.creators.map((c) => `
       <section class="panel wide studio-creator">
-        <h2>${e(c.name)}</h2>
-        <p>Your address: <a href="${e(c.path)}" target="_blank" rel="noopener">${e(location.host + c.path)}</a>${c.status !== "active" ? ' <strong class="tag">Suspended</strong>' : ""}
-          ${c.trusted ? "" : '<br><span class="small-print">New creators\' pages are kept out of search engines until AutoStacc has had a look.</span>'}</p>
-        <p class="small-print">Storage: ${size(c.storage.usedBytes)} of ${size(c.storage.quotaBytes)} free · ${c.projects.length} of ${data.limits.projectsPerCreator} projects</p>
-        <ul class="studio-projects">${c.projects.map((p) => `<li>
-          <strong>${e(p.name)}</strong> <span class="tag">${p.published ? "Live" : "Draft"}</span>
-          <a href="${e(p.path)}" target="_blank" rel="noopener">${e(p.path)}</a>
-          <button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>
-          <button class="btn small" type="button" data-products="${e(p.id)}">Products</button>
+        <div class="studio-creator-head">
+          <h2>${e(c.name)}</h2>${c.status !== "active" ? ' <strong class="tag">Suspended</strong>' : ""}
+          <a class="studio-address" href="${e(c.path)}" target="_blank" rel="noopener">${e(location.host + c.path)}<span class="sr-only"> (opens in a new tab)</span></a>
+        </div>
+        ${c.trusted ? "" : '<p class="small-print">New creators\' pages are kept out of search engines until AutoStacc has had a look.</p>'}
+        <ul class="studio-meters">
+          <li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>of ${size(c.storage.quotaBytes)}</small></strong>
+            <meter min="0" max="${c.storage.quotaBytes}" value="${c.storage.usedBytes}" aria-label="Storage used"></meter></li>
+          <li><span>Projects</span><strong>${c.projects.length} <small>of ${data.limits.projectsPerCreator}</small></strong>
+            <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>
+        </ul>
+        <h3 class="studio-sub">Projects</h3>
+        <ul class="studio-projects">${c.projects.map((p) => `<li class="studio-project">
+          <div class="studio-project-head"><strong>${e(p.name)}</strong> <span class="studio-state" data-live="${p.published}">${p.published ? "Live" : "Draft"}</span></div>
+          <a class="studio-path" href="${e(p.path)}" target="_blank" rel="noopener">${e(p.path)}<span class="sr-only"> (opens in a new tab)</span></a>
+          <div class="studio-project-actions">
+            <button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>
+            <button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>
+          </div>
           <details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
               <button class="btn ghost small" type="submit">Save</button></form>
-            <form data-form="project-delete" data-id="${e(p.id)}"><div class="field"><label for="pd-${e(p.id)}">Type ${e(p.slug)} to delete</label><input id="pd-${e(p.id)}" name="confirm" required></div>
-              <button class="btn ghost small" type="submit">Delete project</button></form>
-          </details></li>`).join("") || "<li>No projects yet.</li>"}</ul>
-        ${c.projects.length < data.limits.projectsPerCreator ? `<form data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
+            <form class="studio-danger" data-form="project-delete" data-id="${e(p.id)}"><div class="field"><label for="pd-${e(p.id)}">Type ${e(p.slug)} to delete</label><input id="pd-${e(p.id)}" name="confirm" required autocomplete="off"></div>
+              <button class="btn ghost small danger" type="submit">Delete project</button></form>
+          </details></li>`).join("") || `<li class="studio-empty">No projects yet. Name your first one below: it opens in the editor straight away.</li>`}</ul>
+        ${c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
         ${c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
         ${c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}

@@ -38,3 +38,72 @@
   .studio-images li { grid-template-columns: 72px 1fr; }
   .studio-images img { width: 72px; height: 72px; }
 }
+
+/* ---------- layout fixes: these panels are <section>s, so keep the page's section spacing off them ---------- */
+.studio section.panel { padding: 26px; }
+.studio section.studio-block { padding: 18px 20px; }
+@media (max-width: 600px) { .studio section.panel { padding: 18px; } .studio section.studio-block { padding: 14px; } }
+
+/* ---------- getting started: the claim form beside how the Studio works ---------- */
+.studio-start { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.studio-steps { list-style: none; counter-reset: step; display: grid; gap: 12px; margin: 0; padding: 0; }
+.studio-steps li { counter-increment: step; display: grid; grid-template-columns: 34px 1fr; gap: 2px 12px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.studio-steps li::before { content: counter(step); grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; font-family: var(--mono); font-weight: 700; color: var(--on-accent); background: var(--accent); }
+.studio-steps li:nth-child(2)::before { background: var(--amber); }
+.studio-steps li:nth-child(3)::before { background: var(--coral); }
+.studio-steps li:nth-child(4)::before { background: var(--violet); }
+.studio-steps span { color: var(--muted); font-size: .9rem; }
+@media (max-width: 860px) { .studio-start { grid-template-columns: 1fr; } }
+
+/* ---------- the creator overview: address, meters, project cards ---------- */
+.studio-creator-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 6px; }
+.studio-creator-head h2 { margin: 0; }
+.studio-address { font-family: var(--mono); font-size: .9rem; overflow-wrap: anywhere; }
+.studio-meters { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; margin: 16px 0 24px; padding: 0; }
+.studio-meters li { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.studio-meters span { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+.studio-meters small { color: var(--muted); font-weight: 400; }
+.studio-meters meter { width: 100%; height: 8px; }
+.studio-sub { margin: 0 0 12px; }
+.studio .studio-projects { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.studio .studio-projects li.studio-project { display: grid; align-content: start; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); transition: border-color .15s, transform .2s var(--snap); }
+.studio .studio-projects li.studio-project:hover, .studio .studio-projects li.studio-project:focus-within { border-color: var(--accent); }
+.studio-project-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 1.1rem; }
+.studio-path { font-family: var(--mono); font-size: .85rem; overflow-wrap: anywhere; }
+.studio-project-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.studio-state { display: inline-block; padding: 1px 10px; border-radius: 999px; font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; vertical-align: middle; border: 1px dashed var(--muted); color: var(--muted); }
+.studio-state[data-live="true"] { border-style: solid; border-color: var(--accent); color: var(--on-accent); background: var(--accent); }
+.studio .studio-projects li.studio-empty, .studio-empty { display: block; grid-column: 1 / -1; margin: 0; padding: 22px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); }
+.studio-new { margin: 0 0 22px; padding: 18px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.studio-new h3 { margin: 0 0 12px; }
+.studio-danger { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.studio .btn.danger { color: var(--coral); border-color: var(--coral); background: transparent; }
+.studio .btn.danger:hover { color: var(--on-accent); background: var(--coral); }
+
+/* earnings: the same figure cards as the Control Center, styled here because admin.css isn't loaded */
+.studio-earnings { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
+.studio-earnings h3 { margin: 0 0 12px; }
+.studio-earnings .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 10px; margin-bottom: 10px; }
+.studio-earnings .stat { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.studio-earnings .stat-label { color: var(--muted); font-size: .8rem; }
+.studio-earnings .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--heading); }
+
+/* ---------- the editor: sticky action bar, page tabs, numbered blocks, the add-block bar ---------- */
+.studio-bar { position: sticky; top: var(--topbar); z-index: 5; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+.studio-bar h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.studio-status { margin: 0 0 14px; }
+.studio-pages { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
+.studio-pages button { flex: none; min-height: 44px; padding: 8px 16px; font: inherit; font-size: .95rem; color: var(--muted); background: transparent; border: 0; border-bottom: 3px solid transparent; cursor: pointer; }
+.studio-pages button:hover { color: var(--text); }
+.studio-pages button[aria-current] { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
+.studio-pages .studio-page-add { color: var(--link); }
+.studio-block-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-family: var(--mono); font-size: .85rem; font-weight: 700; color: var(--on-accent); background: var(--accent); }
+.studio-block { transition: border-color .15s; }
+.studio-block:focus-within { border-color: var(--accent); }
+.studio .studio-add { padding: 16px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.studio-add label { font-weight: 600; }
+@media (max-width: 860px) {
+  .studio-bar { position: static; }
+  .studio-side { order: 2; }
+  .studio-add label { flex-basis: 100%; }
+}
