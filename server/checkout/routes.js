@@ -90,7 +90,7 @@ async function checkout(app) {
     // The provider's own error type and code say why (a bad key, an account not yet activated, a rejected request);
     // they hold no secrets and no customer data, so they go in the logs and in the answer for whoever is debugging.
     // 503, not 502: Cloudflare replaces a 502 from a Function with its own empty error page, hiding this answer.
-    const why = { type: e && e.type, code: e && e.code, status: e && e.statusCode };
+    const why = { type: e && e.type, code: e && e.code, status: e && e.statusCode, param: e && e.param, message: e && e.message ? String(e.message).slice(0, 200) : undefined };
     console.error("checkout: provider error", JSON.stringify(why), e && e.message);
     fail(503, "payment_unavailable", "The payment service couldn't open checkout. Nothing was charged; try again in a minute.", { provider: why });
   }
