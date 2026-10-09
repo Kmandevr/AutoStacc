@@ -40,14 +40,16 @@
 
   document.querySelectorAll("[data-polls-for]").forEach(async (box) => {
     const polls = (window.POLLS || []).filter((p) => p.project === box.dataset.pollsFor && live(p));
-    let shown = 0;
-    for (const p of polls) {
+    // Every poll's slot goes in now, in order; their requests run side by side.
+    const mounted = await Promise.all(polls.map(async (p) => {
       const el = document.createElement("div");
       el.className = "poll panel";
       box.append(el);
-      if (await mount(el, p.id)) shown++;
-      else el.remove();
-    }
+      if (await mount(el, p.id)) return true;
+      el.remove();
+      return false;
+    }));
+    const shown = mounted.filter(Boolean).length;
     const section = box.closest("section");
     if (shown && section) section.hidden = false;
   });
