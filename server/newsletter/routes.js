@@ -3,15 +3,14 @@
 // the project's Brevo list (config.newsletterLists) and goes back to the project's page. Nothing is stored here: the
 // list lives in Brevo. Only first-party projects with a list have a sign-up (Studio projects aren't trusted by default).
 import { json, fail, readJson, email as emailOf, id } from "../lib/http.js";
-import { hmacSign, hmacVerify, b64url, fromB64url, sha256 } from "../lib/crypto.js";
+import { sha256 } from "../lib/crypto.js";
+import { signToken, readToken } from "../lib/signed.js";
 import { first } from "../lib/db.js";
 import { limit } from "../lib/ratelimit.js";
 import { sendEmail } from "../email/index.js";
 import { addContact } from "../email/contacts.js";
 
 const TTL_SECONDS = 7 * 24 * 3600;
-const enc = new TextEncoder();
-const dec = new TextDecoder();
 
 // The list for a project: production needs one set; local development and tests treat every project as open.
 const listFor = (config, projectId) => config.newsletterLists.get(projectId) ?? (config.devLike ? 0 : null);
@@ -22,22 +21,6 @@ const projectOf = (db, projectId) => first(db,
    WHERE p.id = ? AND p.source = 'catalog' AND p.published = 1 AND p.deleted_at IS NULL`, projectId);
 const homeOf = (p) => (p && p.creator && p.slug ? `/${p.creator}/${p.slug}` : "/");
 
-async function sign(secret, payload) {
-  const body = b64url(enc.encode(JSON.stringify(payload)));
-  return `${body}.${await hmacSign(secret, "nl1." + body)}`;
-}
-
-async function read(secret, token) {
-  const [body, sig, extra] = String(token || "").split(".");
-  if (!body || !sig || extra !== undefined || body.length > 600 || !(await hmacVerify(secret, "nl1." + body, sig))) return null;
-  try {
-    const p = JSON.parse(dec.decode(fromB64url(body)));
-    return typeof p.e === "string" && typeof p.p === "string" && typeof p.x === "number" ? p : null;
-  } catch {
-    return null;
-  }
-}
-
 async function subscribe(app) {
   await limit(app, "newsletter", 5, 600);
   const body = await readJson(app.request);
@@ -47,19 +30,20 @@ async function subscribe(app) {
   const project = await projectOf(app.db, id(body.project, "project"));
   if (!project) fail(404, "not_found", "No project with that id.");
   if (listFor(app.config, project.id) === null) fail(503, "newsletter_off", "The mailing list isn't open yet.");
-  const t = await sign(app.config.downloadSecret, { e: address, p: project.id, x: Math.floor(Date.now() / 1000) + TTL_SECONDS });
+  const t = await signToken(app.config.downloadSecret, "nl1", { e: address, p: project.id, x: Math.floor(Date.now() / 1000) + TTL_SECONDS });
   await sendEmail(app, "newsletter-confirm", address, { url: `${app.config.siteUrl}/api/newsletter/confirm?t=${encodeURIComponent(t)}`, project: project.name });
   return json({ ok: true });
 }
 
 async function confirm(app) {
   const back = (path, result) => new Response(null, { status: 303, headers: { Location: `${path}?newsletter=${result}#newsletter`, "Cache-Control": "no-store" } });
-  const payload = await read(app.config.downloadSecret, new URL(app.request.url).searchParams.get("t"));
-  if (!payload) return back("/", "invalid");
+  const read = await readToken(app.config.downloadSecret, "nl1", new URL(app.request.url).searchParams.get("t"));
+  const payload = read && (read.expired ? read.payload : read);
+  if (!payload || typeof payload.e !== "string" || typeof payload.p !== "string") return back("/", "invalid");
   const project = await projectOf(app.db, payload.p);
   const listId = project ? listFor(app.config, project.id) : null;
   if (listId === null) return back(homeOf(project), "invalid");
-  if (payload.x < Math.floor(Date.now() / 1000)) return back(homeOf(project), "expired");
+  if (read.expired) return back(homeOf(project), "expired");
   try {
     await addContact(app.config, payload.e, listId);
   } catch (e) {

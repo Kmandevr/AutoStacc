@@ -163,14 +163,6 @@ async function revokeEntitlement(app, { entitlementId }) {
   return json({ ok: true });
 }
 
-async function analytics(app) {
-  await requireAdmin(app);
-  const days = Math.min(Number(new URL(app.request.url).searchParams.get("days")) || 30, 365);
-  const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
-  const rows = await all(app.db, "SELECT event, subject, SUM(count) AS count FROM analytics_daily WHERE day >= ? GROUP BY event, subject ORDER BY count DESC LIMIT 200", since);
-  return json({ since, rows });
-}
-
 export const routes = [
   ["GET", "/api/admin/summary", summary],
   ["GET", "/api/admin/products", products],
@@ -181,6 +173,5 @@ export const routes = [
   ["GET", "/api/admin/customers", customers],
   ["GET", "/api/admin/entitlements", entitlements],
   ["POST", "/api/admin/entitlements", grantEntitlement],
-  ["POST", "/api/admin/entitlements/:entitlementId/revoke", revokeEntitlement],
-  ["GET", "/api/admin/analytics", analytics]
+  ["POST", "/api/admin/entitlements/:entitlementId/revoke", revokeEntitlement]
 ];
