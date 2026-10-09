@@ -94,7 +94,7 @@ One area, `/settings`, with a page per section: Profile (name; the email can't c
 
 ## Cart and checkout
 
-The cart is ids and quantities in `localStorage`. `POST /api/cart/price` prices it from D1 and lists problems per line (gone, unpublished, paused, free, owned, too many). `POST /api/checkout` refuses any problem, creates a `pending` order with price snapshots, then a Stripe Checkout Session built from those server-side prices (`client_reference_id` and `metadata.order_id` = our order id; Stripe idempotency key per order; 30-minute expiry). An `Idempotency-Key` header from the cart page makes double clicks, refreshes and the back button return the same order; a signed-in customer's identical open order is reused too. Guests give an email and get an httpOnly order key cookie.
+The cart is ids and quantities in `localStorage`. `POST /api/cart/price` prices it from D1 and lists problems per line (gone, unpublished, paused, free, owned, too many). `POST /api/checkout` refuses any problem, creates a `pending` order with price snapshots, then a Stripe Checkout Session built from those server-side prices (`client_reference_id` and `metadata.order_id` = our order id; Stripe idempotency key per order; the payment page stays open 30 minutes: Stripe requires an expiry of at least 30 minutes after it *receives* the request, so the value sent carries a 2-minute margin, `expiresAtFor` in `server/payments/stripe.js`). An `Idempotency-Key` header from the cart page makes double clicks, refreshes and the back button return the same order; a signed-in customer's identical open order is reused too. Guests give an email and get an httpOnly order key cookie.
 
 ## Payments and orders
 
