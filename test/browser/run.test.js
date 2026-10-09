@@ -843,5 +843,26 @@ describe("store in the browser", () => {
     await page.waitForSelector("text=Go to your cart");
     assert.deepEqual(page.errors, []);
     await ctx.close();
+  test("phone quick-links bar: Store, Projects, Log in and Menu are within reach; Menu opens the drawer and Escape closes it", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/shop");
+    const bar = page.locator(".tabbar");
+    assert.equal(await bar.isVisible(), true);
+    const names = await bar.locator("a:visible, button:visible").allTextContents();
+    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Projects", "Log in", "Menu"]);
+    assert.equal(await bar.locator("a[aria-current]").textContent(), "Store");
+    const small = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
+    assert.equal(small, 0, "every quick link is at least 44px tall");
+    await bar.locator("[data-tab-menu]").click();
+    await page.waitForSelector(".side.open");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector(".side:not(.open)");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "nothing scrolls sideways");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+    const wide = await open(DESK);
+    await wide.page.goto("/shop");
+    assert.equal(await wide.page.locator(".tabbar").isVisible(), false, "no quick-links bar on a computer");
+    await wide.ctx.close();
   });
 });
