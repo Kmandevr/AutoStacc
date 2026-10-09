@@ -8,6 +8,7 @@ import { guestOrderIds, checkGuestKey, guestCookie, guestKeysFromRequest } from 
 import { providerByName } from "../payments/index.js";
 import { processPaymentEvent } from "../payments/events.js";
 import { limit } from "../lib/ratelimit.js";
+import { refundStatus, refundOrder } from "./refunds.js";
 
 // The order, only for its owner (account or guest key). Everyone else gets the same 404 as a missing order.
 async function ownedOrder(app, orderId) {
@@ -25,13 +26,22 @@ async function mine(app) {
   const orders = await all(app.db, `SELECT * FROM orders WHERE user_id = ? AND (status != 'pending' OR created_at > ?) ORDER BY created_at DESC LIMIT 100`,
     user.id, new Date(Date.now() - 86400000).toISOString());
   const out = [];
-  for (const o of orders) out.push(publicOrder(o, await orderItems(app.db, o.id)));
+  for (const o of orders) out.push({ ...publicOrder(o, await orderItems(app.db, o.id)), refund: await refundStatus(app.db, o) });
   return json({ orders: out });
 }
 
 async function one(app, { orderId }) {
   const order = await ownedOrder(app, orderId);
-  return json({ order: publicOrder(order, await orderItems(app.db, order.id)) });
+  return json({ order: { ...publicOrder(order, await orderItems(app.db, order.id)), refund: await refundStatus(app.db, order) } });
+}
+
+// A customer's own refund: a paid order, inside the window, with nothing downloaded (server/orders/refunds.js).
+async function refund(app, { orderId }) {
+  await limit(app, "order-refund", 10, 3600);
+  const order = await ownedOrder(app, orderId);
+  await refundOrder(app, order);
+  const fresh = await getOrder(app.db, order.id);
+  return json({ order: { ...publicOrder(fresh, await orderItems(app.db, fresh.id)), refund: await refundStatus(app.db, fresh) } });
 }
 
 // Asks the payment provider (with our secret key) whether a pending order was paid. Safe to call any number of times.
@@ -69,6 +79,7 @@ export const routes = [
   ["GET", "/api/orders", mine],
   ["POST", "/api/guest/key", redeemGuestKey],
   ["GET", "/api/orders/:orderId", one],
+  ["POST", "/api/orders/:orderId/refund", refund],
   // Asks the provider for a payment's real state; safe (and useful) while impersonating.
   ["POST", "/api/orders/:orderId/reconcile", reconcile, { impersonation: "allow" }]
 ];
