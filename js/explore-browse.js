@@ -24,6 +24,7 @@
   };
   const view = () => params.get("view") || "releases";
   const listOf = (k) => (params.get(k) || "").split(",").filter(Boolean);
+  const slug = (v) => String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
   root.innerHTML = `
     <div class="explore-views" role="tablist" aria-label="What to explore">${VIEWS.map(([v, t]) => `<button type="button" role="tab" id="ex-tab-${v}" data-view="${v}" aria-controls="ex-results">${t} <span>${items[v].length}</span></button>`).join("")}</div>
@@ -77,7 +78,7 @@
     input.value = f.q;
     input.placeholder = `Search ${v}…`;
     $("[data-panel]", root).innerHTML = `<h2 class="sr-only">Filters</h2>` + facets.filter((g) => g.values.length).map((g) => `<details class="f-group" open><summary>${e(g.title)}</summary><ul class="f-list">
-      ${g.values.map((x) => `<li><label for="exf-${e(g.key)}-${e(x.value)}"><input type="checkbox" id="exf-${e(g.key)}-${e(x.value)}" data-f="${e(g.key)}" data-v="${e(x.value)}"${x.selected ? " checked" : ""}${!x.count && !x.selected ? " disabled" : ""}>
+      ${g.values.map((x) => `<li><label for="exf-${e(g.key)}-${slug(x.value)}"><input type="checkbox" id="exf-${e(g.key)}-${slug(x.value)}" data-f="${e(g.key)}" data-v="${e(x.value)}"${x.selected ? " checked" : ""}${!x.count && !x.selected ? " disabled" : ""}>
         <span>${e(x.label)}</span><span class="f-count">${x.count}</span></label></li>`).join("")}</ul></details>`).join("");
     const chips = [...(f.q ? [["q", f.q, `“${f.q}”`]] : []), ...facets.flatMap((g) => g.values.filter((x) => x.selected).map((x) => [g.key, x.value, `${g.title}: ${x.label}`]))]
       .map(([k, val, t]) => `<button type="button" class="chip" data-chip="${e(k)}" data-chip-value="${e(val)}">${e(t)}<span aria-hidden="true"> ×</span><span class="sr-only"> (remove this filter)</span></button>`).join("");
@@ -92,10 +93,10 @@
     const again = focusId && document.getElementById(focusId);
     if (again) again.focus({ preventScroll: true });
   }
-  function go(focusId, keepPage = false) {
+  function go(focusId, keepPage = false, replace = false) {
     if (!keepPage) params.delete("page");
     const qs = params.toString();
-    history.pushState(null, "", location.pathname + (qs ? `?${qs}` : ""));
+    history[replace ? "replaceState" : "pushState"](null, "", location.pathname + (qs ? `?${qs}` : ""));
     render(focusId);
   }
 
@@ -116,7 +117,7 @@
   root.addEventListener("click", (ev) => {
     const t = ev.target;
     const tab = t.closest("button[data-view]");
-    if (tab) { params = new URLSearchParams(tab.dataset.view === "releases" ? {} : { view: tab.dataset.view }); return go(tab.id); }
+    if (tab) return switchTo(tab);
     const chip = t.closest("button[data-chip]");
     if (chip) {
       const rest = listOf(chip.dataset.chip).filter((x) => x !== chip.dataset.chipValue);
@@ -129,13 +130,21 @@
     if (t.closest("button[data-open-filters]")) return drawer(true);
     if (t.closest("[data-close-filters]")) return drawer(false);
   });
-  // Arrow keys move between the view tabs.
+  // Another view keeps the search words (its filters differ, so they go). Arrow keys, Home and End move between the
+  // tabs without adding a history step for each press.
+  function switchTo(tab, replace = false) {
+    const q = params.get("q");
+    params = new URLSearchParams();
+    if (tab.dataset.view !== "releases") params.set("view", tab.dataset.view);
+    if (q) params.set("q", q);
+    go(tab.id, false, replace);
+  }
   $(".explore-views", root).addEventListener("keydown", (ev) => {
-    if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
     const tabs = [...root.querySelectorAll("[data-view]")], i = tabs.indexOf(document.activeElement);
-    if (i < 0) return;
+    const to = { ArrowRight: i + 1, ArrowLeft: i - 1 + tabs.length, Home: 0, End: tabs.length - 1 }[ev.key];
+    if (i < 0 || to === undefined) return;
     ev.preventDefault();
-    tabs[(i + (ev.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length].click();
+    switchTo(tabs[to % tabs.length], true);
   });
   const aside = $("#ex-filters", root), scrim = $(".browse-scrim", root), toggle = $("[data-open-filters]", root);
   function drawer(open) {

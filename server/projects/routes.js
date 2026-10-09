@@ -18,16 +18,17 @@ async function projects(app) {
   return json({ projects: rows.map(publicProject), signedIn: Boolean(user), follows });
 }
 
-// The projects browser: filters, counts, sort and a page of projects (server/projects/browse.js). Private when it
-// knows who is asking (follow state), shared otherwise.
+// The projects browser: filters, counts, sort and a page of projects (server/projects/browse.js). Never cached: the
+// answer depends on who is asking (follow state), and a signed-out copy must not outlive logging in.
 async function browsePage(app) {
+  await limit(app, "browse", 120, 60);
   const params = new URL(app.request.url).searchParams;
   const f = parseProjectFilters(params, SELLING.kinds);
   const user = await currentUser(app);
   const userId = user && user.emailVerified ? user.id : null;
   const entries = await projectEntries(app.db, { userId });
   return json({ ...browse(entries, f, { signedIn: Boolean(userId) }), signedIn: Boolean(user), canFollow: Boolean(userId) }, 200,
-    { "Cache-Control": user ? "private, no-store" : "public, max-age=60" });
+    { "Cache-Control": "private, no-store" });
 }
 
 async function follow(app, { projectId }) {

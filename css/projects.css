@@ -24,7 +24,7 @@
 .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 18px; }
 .pgrid > .projects { grid-column: 1 / -1; }
 .pcard { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 16px; align-items: start; padding: 18px; background: var(--panel);
-  border: 1px solid var(--line); border-radius: var(--radius); transition: border-color .15s, transform .2s var(--snap); }
+  border: 1px solid var(--line); border-radius: var(--radius); transition: border-color .15s; }
 .pcard:hover, .pcard:focus-within { border-color: var(--accent); }
 .pcard-art { display: grid; place-items: center; width: 88px; height: 88px; overflow: hidden; border-radius: calc(var(--radius) + 4px); text-decoration: none;
   background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 70%, #000), color-mix(in srgb, var(--accent-2, var(--accent)) 45%, #000)); }
@@ -56,3 +56,4 @@
 .pcard .project-follow .btn { min-height: 40px; padding: 6px 14px; font-size: .85rem; }
 .pcard .project-follow .auto-stacc { font-size: .85rem; }
 .pcard-why { margin: 0; font-size: .82rem; font-weight: 600; color: var(--accent); }
+@media (max-width: 600px) { .pcard .project-follow .btn { min-height: 44px; } }
