@@ -85,6 +85,15 @@
       </div>`;
   }
 
+  // A project with its own skin sits in a card (css/project-frame.css): its header, page and footer go in one wrapper, so
+  // on AutoStacc's light pages it reads as a rounded, shadowed card instead of a black slab. (Sticky header still works.)
+  if (P.skin && main) {
+    const card = document.createElement("div");
+    card.className = "project-card";
+    header.after(card);
+    card.append($(".project-header", header), main, ...(footer ? [footer] : []));
+  }
+
   // Anonymous counters (GS.track): the page kind, the project, and which news post (its address) was read.
   if (document.body.dataset.page) GS.track("page_view", document.body.dataset.page);
   GS.track("project_view", P.id);

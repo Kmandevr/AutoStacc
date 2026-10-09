@@ -103,3 +103,11 @@ main.look-glitches-and-stitches { background: var(--bg); }
   :is(.skin-glitches-and-stitches .card, .look-glitches-and-stitches .card, .card.look-glitches-and-stitches):hover .cover::after,
   :is(.skin-glitches-and-stitches .card, .look-glitches-and-stitches .card, .card.look-glitches-and-stitches):hover .cover span { animation: none; }
 }
+
+/* On AutoStacc's light pages its black is a soft dark gray, so the card has depth instead of a hole in the page. The
+   dark theme keeps the true black screen. */
+:is(.skin-glitches-and-stitches, .look-glitches-and-stitches) { --bg: #14151a; --panel: #1b1c24; --line: #24663a; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.skin-glitches-and-stitches, .look-glitches-and-stitches) { --bg: #000; --panel: #0b0812; --line: #1f5c33; }
+}
+:root[data-theme="dark"] :is(.skin-glitches-and-stitches, .look-glitches-and-stitches) { --bg: #000; --panel: #0b0812; --line: #1f5c33; }

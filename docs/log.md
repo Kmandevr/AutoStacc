@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-09: A skinned project (Glitches & Stitches) sits in a card on light pages: its header, page and footer share a wrapper (`js/project-frame.js`) that is rounded, shadowed and edged (`css/project-frame.css`), and its black is a soft dark gray `#14151a` in light mode (`css/projects/glitches-and-stitches/look.css`). Dark mode is unchanged (full-bleed true black). The skin's rolling scanline band is pinned inside the card.
 - 2026-10-09: Guests (and signed-in customers) can refund an unused paid order from the confirmation page `/checkout?order=…` within 14 days (`js/checkout.js`); the store's eligibility rule is unchanged.
 - 2026-10-09: Stripe tax codes are per kind of product (`server/payments/tax-codes.js`): audio kinds use Digital Audio Works, visuals Digital Finished Artwork, VJ loops Audio Visual Works, presets and other the general code. Owner to confirm with a tax adviser.
 - 2026-10-09: Settings › Orders tidied. Paid and refunded orders are clean rows (items, date, short order number, price, one chip); failed and cancelled orders are folded into "Failed or cancelled (N)" with a one-line reason; orders still waiting on payment show as one notice (`js/settings-orders.js`, `css/settings.css`).
