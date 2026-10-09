@@ -1,4 +1,4 @@
-// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, About; Projects: one link per project in
+// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Explore, About; Projects: one link per project in
 // data/projects.js; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
 // Create account, cart count, the slot js/theme.js fills, and the account menu's slot, [data-account-menu], which
 // js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
@@ -24,13 +24,14 @@
     stacc: svg("stacc", '<rect x="4" y="4" width="16" height="4.5" rx="1.5"/><rect x="4" y="10" width="16" height="4.5" rx="1.5"/><rect x="4" y="16" width="16" height="4" rx="1.5"/>'),
     studio: svg("studio", '<path d="M5 19l1-4L15.5 5.5a2.1 2.1 0 0 1 3 3L9 18z"/><path d="M13.5 7.5l3 3"/>'),
     home: svg("home", '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9.5h11V10"/>'),
+    explore: svg("explore", '<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>'),
     about: svg("about", '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.4"/>'),
     all: svg("all", '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>')
   };
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
   // Studio, Settings and the rest of the account live in the top bar's account menu (js/account-nav.js).
   const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"]];
-  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/about", "About", "about", "about"]];
+  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/explore", "Explore", "explore", "explore"], ["/about", "About", "about", "about"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
@@ -148,7 +149,7 @@
           <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
           ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
-        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/about", "About"], ["/studio", "Studio"]])}
+        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/explore", "Releases, news and shows"], ["/about", "About"], ["/studio", "Studio"]])}
         ${col("Help", [["/help", "Help"], ["/contact", "Contact"], ["/security", "Security"]])}
         ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>

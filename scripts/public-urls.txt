@@ -28,3 +28,4 @@ https://autostacc.com/security
 https://autostacc.com/contact
 https://autostacc.com/help
 https://autostacc.com/license
+https://autostacc.com/explore

@@ -53,3 +53,5 @@
 @media (prefers-reduced-motion: reduce) { .pcard { transition: none; } }
 .pcard-body .pcard-actions .btn, .pcard .project-follow .btn { width: auto; flex: none; }
 .pcard-body { align-content: start; }
+.pcard .project-follow .btn { min-height: 40px; padding: 6px 14px; font-size: .85rem; }
+.pcard .project-follow .auto-stacc { font-size: .85rem; }
