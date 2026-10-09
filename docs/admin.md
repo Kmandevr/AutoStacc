@@ -1,16 +1,17 @@
 ---
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
-updated: 2026-10-08
+covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, db/migrations/0004_admin_ops.sql]
+updated: 2026-10-09
 ---
 
 # Control Center
 
-`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Test purchases, Audit log. A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
+`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Payouts, Test purchases, Audit log. On phones a section menu replaces the tabs and tables become cards (`js/admin-mobile.js`). A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
 
 ## Statistics (Overview)
 
-`GET /api/admin/stats?days=&mode=live|test`, built from sections in `server/stats/` (sales, customers, products, downloads, activity). Each number is labelled with its source, and the page shows that label next to it:
+`GET /api/admin/stats?days=&mode=live|test`, built from sections in `server/stats/` (sales, customers, products, downloads, promotions, creators, activity); `days` is 1–365 (default 30), `mode` defaults to what the store takes. One section alone: `GET /api/admin/stats/:section`. Each number is labelled with its source, and the page shows that label next to it:
 
 | Label | Source | Trust |
 | --- | --- | --- |
@@ -52,7 +53,7 @@ From a customer's preview. Opens the store as that customer so you can reproduce
 
 - **Server-side, every request:** the browser holds only a random token (httpOnly cookie, its hash stored in `impersonations`). It counts only while the row is open, under 2 hours old, used in the last 30 minutes, and presented with the same admin account *and the same sign-in session* that started it. The admin must still be an admin, and the customer must exist and not be one. Anything else ends it.
 - **They stay a customer:** every route sees the customer, with role forced to customer; admin routes answer 404; the admin's own guest orders are hidden.
-- **Read-mostly:** reading anything they can read is allowed. Writes are refused unless a route opts in (`{ impersonation: "allow" }`): pricing the cart, asking a download link (to check access), reconciling an order. Changing their account, claiming free items, following, voting, guest keys and every Better Auth endpoint (password, profile, sign-out) are refused. Payments are refused whenever the store is live.
+- **Read-mostly:** reading anything they can read is allowed. Writes are refused unless a route opts in (`{ impersonation: "allow" }`): pricing the cart, asking a download link (to check access), reconciling an order, the anonymous activity counter (which then doesn't count). Checkout and the mock payment page opt in as `"test-payments"`, refused whenever the store is live. Changing their account, refunding an order, claiming free items, following, voting, guest keys and every Better Auth endpoint (password, profile, sign-out) are refused.
 - **Idle means idle:** the banner's own once-a-minute check doesn't count as activity, so an open but unused tab still times out after 30 minutes.
 - **Never silent:** a hazard-striped banner on every page names the customer and you, with time left and **Exit impersonation**. If it ends anywhere else (time limit, idle, signed out, cookie copied), every request fails with `impersonation_ended` and the banner turns into an "ended" warning until you exit; the browser never quietly falls back to your own session.
 - **Attributed:** each allowed write is logged before it runs as "admin → as customer → `METHOD /route`" (route patterns, never tokens), plus start, end and why it ended. Orders and downloads made inside carry `impersonation_id`, so they are never mistaken for the customer's own.
@@ -77,16 +78,20 @@ It is the production checkout, not a copy: the order is created by `POST /api/ch
 `admin_audit`, append-only (database triggers refuse updates and deletes), read in the Audit log tab (`GET /api/admin/audit`, admin only). Recorded:
 
 - admin signed in; impersonation started, ended (with reason) and every write inside it; test purchase started; customer previewed
-- product sales paused or resumed, file added, replaced (new version) or deactivated, preview uploaded; receipt resent; entitlement granted or revoked
+- product sales paused or resumed, product changed in the Control Center (price, published, removed), file added, replaced (new version), published, held back, rejected or deactivated, preview uploaded; receipt resent; entitlement granted or revoked; promotion created or ended; creator updated; payout paid or declined
 - by the database itself, as "catalog sync": product created, price changed, published, unpublished, removed; project created, published, unpublished
 
 Not recorded here: news and events, which are edited in `data/` and published by deploy. Their history is git's. No passwords, tokens, keys, card data or customer emails are stored in entries; customers are identified by account id and shown by email only when an admin reads the log.
 
 ## Creators
 
-Every creator (first-party and Studio) with its address, live and draft projects, storage used, quota and platform fee ([creators](creators.md)). **Trust** lets search engines index a creator's pages (new creators are noindex), **Suspend** takes its pages and images offline at once and stops it publishing, and a quota (MB) or fee (basis points, 100 = 1%) set here overrides the platform default; empty means the default. Every change is audited (`creator.updated`). The Overview's **Creators** statistics show sites, image storage, and paid sales split into platform fees and creators' shares.
+Every creator (first-party and Studio) with its address, live and draft projects, storage used, quota and platform fee ([creators](creators.md)). **Trust** lets search engines index a creator's pages (new creators are noindex) and publishes their file uploads without review, **Suspend** takes its pages and images offline at once and stops it publishing, and a quota (MB) or fee (basis points, 100 = 1%) set here overrides the platform default; empty means the default. Every change is audited (`creator.updated`). The Overview's **Creators** statistics show sites, image storage, and paid sales split into platform fees and creators' shares.
+
+## Payouts
+
+Creators' payout requests (`GET`/`PATCH /api/admin/payouts`, `server/admin/payouts.js`), each with the amount and how the creator wants to be paid. A request from a creator with a connected Stripe account shows **Send via Stripe**: one Connect transfer from the marketplace account, keyed by the request so a retry never pays twice; if Stripe refuses, nothing is marked paid and its reason is shown. Without one, pay by hand and press **Mark paid**. **Decline** closes it (the API takes an optional note). Settling happens once and is audited (`payout.paid`, `payout.declined`). Setup: [payouts-setup](payouts-setup.md).
 
 ## Paid files: hold back, then publish
 
-An upload can be held back ("Hold back until I publish it"): it is stored but reaches no customer until you press **publish** on it. Only published, active files are delivered. Uploads are limited to known file types (audio, MIDI, presets, project files, zip, images, video, documents; `server/files/policy.js`), 95 MB each and 100 per product.
+An upload can be held back ("Hold back until I publish it"): it is stored but reaches no customer until you press **publish** on it in Products. Creators' own uploads arrive the same way, held back, unless the creator is trusted; publishing one is the approval. Only published, active files are delivered, and a creator's product with no deliverable file left is taken off sale. `PATCH /api/admin/files/:id` sets a file published, pending or rejected; `DELETE` deactivates it. Uploads are limited to known file types (audio, MIDI, presets, project files, zip, images, video, documents; `server/files/policy.js`), 95 MB each and 100 per product.
 

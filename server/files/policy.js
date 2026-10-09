@@ -1,5 +1,5 @@
-// Limits for paid files (D1 product_files, private R2 FILES): what can be uploaded to a product. Today only the admin
-// uploads; when creators upload their own products the same checks run, plus their storage quota. Extensions come from
+// Limits for paid files (D1 product_files, private R2 FILES): what can be uploaded to a product. The admin and
+// creators (Studio) upload through the same checks; creators also have their storage quota. Extensions come from
 // data/content-types.js's formats plus a few common ones; the content is never run or shown, only downloaded.
 import { fail } from "../lib/http.js";
 

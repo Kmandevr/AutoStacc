@@ -53,7 +53,7 @@ bucket_name = "autostacc-files-preview"
 binding = "PREVIEWS"
 bucket_name = "autostacc-previews-preview"
 
-# autostacc.com: live Stripe keys only (server/config.js refuses anything else), Brevo email.
+# autostacc.com: live Stripe keys only (server/lib/config.js refuses anything else), Brevo email.
 [env.production.vars]
 APP_ENV = "production"
 SITE_URL = "https://autostacc.com"

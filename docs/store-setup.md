@@ -1,7 +1,8 @@
 ---
 title: Store setup
 summary: The owner's checklist to switch the store on: Cloudflare token permissions, secrets, Stripe and Brevo setup, first admin, uploading files, going live.
-updated: 2026-10-07
+covers: [.github/workflows/deploy.yml, scripts/cloudflare.js, scripts/deploy-check.js, server/lib/config.js, wrangler.toml, server/payments/stripe.js, server/payments/tax-codes.js, server/email/providers.js]
+updated: 2026-10-09
 ---
 
 # Store setup (owner)
@@ -24,12 +25,14 @@ R2 must be enabled once in the dashboard (Cloudflare → R2 → Purchase/enable;
 | --- | --- | --- |
 | `BETTER_AUTH_SECRET` | Signs sessions | Make one: `openssl rand -hex 32` |
 | `DOWNLOAD_SIGNING_SECRET` | Signs download links (must differ from the one above) | `openssl rand -hex 32` |
-| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with Checkout Sessions write is better) | Stripe → Developers → API keys |
+| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with write access to Checkout Sessions and Refunds is better: customers' own refunds go through it) | Stripe → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` of the webhook endpoint in step 3 | Stripe → Developers → Webhooks → the endpoint → Signing secret |
 | `BREVO_API_KEY` | API key `xkeysib-...` (not the SMTP key `xsmtpsib-...`; the deploy refuses that) | Brevo → SMTP & API → API keys |
-| `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified | You |
+| `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified (optional to the deploy, but without it nobody can open `/admin`) | You |
 
-Then **Variables** tab: add `STORE_ENABLED` = `true`. The next deploy (push to `main`, or Actions → Deploy → Run workflow) provisions D1 and R2, applies migrations, syncs the catalog, sets the secrets in Cloudflare and checks `https://autostacc.com/api/account` answers. If a secret is missing, the deploy warns and the store stays "offline"; the site is unaffected.
+Optional, for creators' sales and payouts on a second Stripe account: `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` ([payouts-setup](payouts-setup.md)). `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are already there for the static deploy.
+
+Then **Variables** tab: add `STORE_ENABLED` = `true`. The next deploy (push to `main`, or Actions → Deploy → Run workflow) provisions D1 and R2, applies migrations, syncs the catalog, sets the secrets in Cloudflare, checks them against the store's production rules, and after publishing checks that `https://autostacc.com/api/account` and `/api/products` answer and the webhook address exists (`scripts/deploy-check.js`). If a secret is missing, the deploy warns and the store stays "offline"; a secret that breaks a rule is printed (by name, never its value) as an error. The site is unaffected either way. Deleting a GitHub secret doesn't remove the copy already in Cloudflare.
 
 Production refuses test keys: `sk_test_` keys only work in development and previews (`server/lib/config.js`).
 
@@ -39,8 +42,8 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 2. Developers → Webhooks → Add endpoint: `https://autostacc.com/api/webhooks/stripe`, events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`.
    Copy its signing secret into `STRIPE_WEBHOOK_SECRET`.
-3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above.
-4. Refunds are done in the Stripe dashboard; the webhook revokes access automatically. A chargeback suspends access until it's resolved. If the store ever refuses a paid event (it should not), every `ADMIN_EMAILS` address gets a "Store alert" mail and `/admin` shows it at the top.
+3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above. The code expects this account to sell through Stripe's Managed Payments: each Checkout line carries a digital-goods tax code per product type (`server/payments/tax-codes.js`, to confirm with your tax adviser), and the store checks the total before tax.
+4. Customers can refund an order themselves within 14 days if they haven't downloaded anything from it (Settings › Orders, or the order's checkout result page for a guest holding its key); other refunds are done in the Stripe dashboard. Either way the webhook revokes access automatically. A chargeback suspends access until it's resolved. If the store ever refuses a paid event (it should not), every `ADMIN_EMAILS` address gets a "Store alert" mail and `/admin` shows it at the top.
 
 ## 4. Brevo
 

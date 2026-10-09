@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-08",
+    updated: "2026-10-09",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -28,17 +28,18 @@ window.LEGAL = [
       ] },
       { id: "account", heading: "Your account", body: [
         "When you create an account: your name, your email address, and your password, which is stored only as a one-way hash (nobody, including AutoStacc, can read it back). Whether you've confirmed your email, and when the account was made.",
-        "When you sign in: a session, so you stay signed in for up to 30 days. Each session records the IP address and browser it started from; you can see them, and sign any of them out, under [Settings › Security](/settings/security).",
+        "When you sign in: a session, so you stay signed in until 30 days after you last use the site (or until you close your browser, if you untick \"Keep me logged in\"). Each session records the IP address and browser it started from; you can see them, and sign any of them out, under [Settings › Security](/settings/security).",
         "If you follow projects, turn on Auto-Stacc, vote in polls or choose which emails you get, those choices are stored with your account."
       ] },
       { id: "purchases", heading: "Orders and purchases", body: [
         "For every order: the email it was placed with, what was in it, the prices charged, any promo code, its status (paid, refunded and so on) and when. Stripe's reference numbers for the payment are kept so refunds and disputes can be matched to the order.",
         "What you own is recorded separately, so your library knows which files you can download.",
-        "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, once you set up payouts, the reference of your Stripe payout account and whether it is ready (Stripe, not AutoStacc, collects and keeps your ID, tax and bank details; see [Stripe's privacy policy](https://stripe.com/privacy)). Each payout is recorded with its amount and Stripe's transfer reference. If payouts are still sent by hand, the payment details you type in (for example a PayPal address) are kept with the payout record, visible only to you and AutoStacc.",
-        "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link."
+        "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, once you set up payouts, the reference of your Stripe payout account, the country of its bank account and whether it is ready (Stripe, not AutoStacc, collects and keeps your ID, tax and bank details; see [Stripe's privacy policy](https://stripe.com/privacy)). Each payout is recorded with its amount and Stripe's transfer reference. If payouts are still sent by hand, the payment details you type in (for example a PayPal address) are kept with the payout record, visible only to you and AutoStacc.",
+        "If you make a creator space in the Studio: its name and address, the pages and images you publish there (which are public), and which accounts can edit it.",
+        "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link for 30 days."
       ] },
       { id: "payments", heading: "Payments", body: [
-        "Payments are taken by [Stripe](https://stripe.com/privacy) on its own checkout page. Your card number, expiry and security code go to Stripe, never to AutoStacc. Stripe tells AutoStacc whether the payment succeeded, failed or was refunded."
+        "Payments are taken by [Stripe](https://stripe.com/privacy) on its own checkout page. Your card number, expiry and security code go to Stripe, never to AutoStacc. For creators' products, Stripe also asks for the address it needs to work out sales tax. Stripe tells AutoStacc whether the payment succeeded, failed or was refunded."
       ] },
       { id: "downloads", heading: "Downloads", body: [
         "Each download link is made for you when you ask for it and stops working after a few minutes. AutoStacc records that a link was made and used (which file, for which purchase, and whether it was allowed), without your IP address."
@@ -51,8 +52,9 @@ window.LEGAL = [
         "Only what the site needs to work:",
         { list: [
           "**gs.session_token**: keeps you signed in (only after you sign in).",
+          "**gs.dont_remember**: only if you untick \"Keep me logged in\", so you're signed out when you close the browser.",
           "**gs_guest**: lets a guest open their own orders (only after a guest checkout; 30 days).",
-          "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, and a note that this browser was signed in (not who)."
+          "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, a note that this browser was signed in (not who) and, until you close the tab, the email and promo code you typed at checkout."
         ] },
         "No advertising, analytics or cross-site tracking cookies are used."
       ] },
@@ -69,17 +71,24 @@ window.LEGAL = [
           "**Brevo**: sending emails.",
           "**Cloudflare**: hosts the site, the database and the files.",
           "**Google Fonts**: the site's fonts load from Google, which sees your IP address when they do.",
-          "**Music players** (YouTube, Spotify, Deezer and others) on release pages are loaded from those services and follow their own privacy policies."
+          "**Music players** (YouTube, Spotify, Deezer and others) on release pages and creators' pages are loaded from those services and follow their own privacy policies."
         ] },
         "Nothing about you is sold or shared for advertising."
+      ] },
+      { id: "abuse", heading: "Protection against abuse", body: [
+        "To slow down password guessing and other abuse, the site counts requests per IP address for each kind of request (only the count and the time of the latest one). These counters aren't linked to your account or used for anything else."
       ] },
       { id: "keeping", heading: "How long things are kept", body: [
         { list: [
           "Your account and its choices: until you delete it.",
-          "Sessions: until you sign out, sign them out, or 30 days pass.",
-          "Download links: a few minutes.",
+          "Sessions: until you sign out, sign them out, or 30 days pass without you using the site.",
+          "Download links: a few minutes. The record that a link was made and used is kept with the order's history.",
+          "Guest access to an order: 30 days, from the receipt link or the cookie.",
+          "Records of emails sent: kept so receipts can be resent; when an account is deleted, the address in them is removed.",
+          "The audit log of what AutoStacc's staff did (including viewing the store as your account): kept and never changed.",
           "Orders: kept as sales records even after an account is deleted (tax, refunds and disputes need them), but no longer linked to you.",
-          "Visit counts: kept as anonymous totals."
+          "Visit counts: kept as anonymous totals.",
+          "Abuse counters: only the latest count for each IP address and kind of request."
         ] }
       ] },
       { id: "rights", heading: "Your choices", body: [

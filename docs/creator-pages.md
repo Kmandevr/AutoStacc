@@ -1,12 +1,13 @@
 ---
 title: Creator pages
 summary: PLANNED / NOT IMPLEMENTED. Blueprint for customizable project pages: creator HTML/CSS (later JavaScript) isolated in a sandboxed iframe on sandbox.autostacc.com, seamless under /<creator>/<project>.
-updated: 2026-10-08
+covers: [server/sites/, functions/[[path]].js, functions/media/sites/, _headers, server/lib/http.js, server/auth/index.js, server/orders/guest.js, server/impersonation/sessions.js]
+updated: 2026-10-09
 ---
 
 # Creator pages (sandboxed customization)
 
-> **PLANNED / NOT IMPLEMENTED.** This note is a design. Nothing in it exists in the code, the database, `_headers`, `_redirects` or Cloudflare. Building any part of it is a separate task the owner has to ask for. Decisions behind it: [decisions](decisions.md#2026-10-08-creator-pages-are-sandboxed-planned).
+> **PLANNED / NOT IMPLEMENTED.** This note is a design. None of the sandbox exists: no `sandbox.autostacc.com` host or Worker, no iframes, no bridge, no runtime, no sanitizer, no custom HTML/CSS/JS, nothing in `_headers`, `_redirects` or Cloudflare for it (checked 2026-10-09). Only its prerequisites exist, in a different, simpler form: creator accounts and projects in D1, and server-rendered block sites at `/<creator>/<project>[/<page>]` with no creator code at all ([creators](creators.md); [building it later](#building-it-later-order) step 1). Building any part of it is a separate task the owner has to ask for. Decisions behind it: [decisions](decisions.md#2026-10-08-creator-pages-are-sandboxed-planned).
 
 > **Updated 2026-10-08, after this plan:** the owner then chose addresses `/<creator>/<project>[/<page>]` (AutoStacc is the creator `autostacc`, so Glitches & Stitches is at `/autostacc/glitches-and-stitches`), and creator accounts with free, block-only sites now exist ([creators](creators.md)). This note's addresses are updated to match. Its sandbox design remains the plan for creator HTML/CSS and JavaScript: blocks stay the safe default, and custom code would be a further block type or page mode rendered in the sandbox iframe.
 
@@ -276,7 +277,7 @@ How these map to free and paid creators is a business decision the owner hasn't 
 
 ## Building it later (order)
 
-1. Creator accounts tied to projects, and page data in D1 (prerequisites, not designed here).
+1. Creator accounts tied to projects, and page data in D1 (prerequisites, not designed here). **Done** (2026-10-08) as the Studio: `creators`, `creator_members`, `project_sites`, `site_pages` in D1, rendered at publish by `server/sites/` and served by `functions/[[path]].js` with edge caching. Its block document is a simpler cousin of Level 1 (preset, accent and font instead of design tokens; no platform modules such as polls or follow, no first-party projects).
 2. Level 1: sections, design tokens, the shell route, edge caching.
 3. Cookie hardening (`__Host-` prefix), header changes for project shells only, tests for the rules in [trade-offs](#trade-offs-of-a-subdomain).
 4. The sandbox Worker, the runtime, the bridge (resize, navigate, ready, error) and fallbacks.

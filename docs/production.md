@@ -1,7 +1,8 @@
 ---
 title: Production requirements
 summary: What makes AutoStacc fit to run as a public store (trust pages, licences, support, privacy, security, accessibility, SEO) and the rules every change must keep.
-updated: 2026-10-08
+covers: [data/legal.js, data/help.js, data/licenses.js, data/product-types.js, data/site.js, scripts/lib/trust-pages.js, scripts/lib/rich-text.js, scripts/seo-test.js, _headers, server/files/policy.js, server/sites/images.js, server/sites/render.js, server/auth/index.js, server/lib/ratelimit.js, server/account/, server/email/preferences.js, server/analytics/routes.js, server/downloads/, server/impersonation/, js/layout.js]
+updated: 2026-10-09
 ---
 
 # Production requirements
@@ -43,13 +44,14 @@ Nothing is accepted that isn't on a list. Paid files and previews: only the exte
 
 ## Accounts and privacy
 
-Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`) and delete their account. Deletion keeps orders only as anonymous sales records ([store](store.md#settings)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track.
+Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`) and delete their account. Deletion keeps orders only as anonymous sales records ([store](store.md#settings)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track. Deletion is refused while the account owns a Studio creator, has a checkout that could still be paid, or is an admin (`server/account/delete.js`).
 
 ## Security
 
 - The browser never decides prices, ownership, payment results or admin rights; the server and Stripe do. Every account-owned route checks the session; another person's id answers 404. Admin routes answer 404 to non-admins whatever the page shows.
-- `_headers`: HSTS and a baseline content policy on every page; account and store pages add a strict policy (own scripts only). Public pages don't restrict scripts because the music players come from several services; tightening that needs the player origins checked against the live site first.
-- Downloads: private files, links made per request, bound to the buyer and expiring in minutes.
+- Rate limits: Better Auth limits sign-in, sign-up, resets and password changes; store routes call `limit()` (`server/lib/ratelimit.js`), counted per IP in the `rateLimit` table. Support impersonation can't use Better Auth's endpoints, refuses writes a route hasn't allowed and records every allowed one in the append-only audit log (`server/impersonation/policy.js`).
+- `_headers`: HSTS and a baseline content policy on every page; account and store pages add a strict policy (own scripts only). Creators' Studio pages are served with `script-src 'none'` (`server/sites/render.js`). Public pages don't restrict scripts because the music players come from several services; tightening that needs the player origins checked against the live site first.
+- Downloads: private files, links made per request, bound to the buyer and expiring after 5 minutes (`downloadTtlSeconds`).
 
 ## Accessibility
 
