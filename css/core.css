@@ -171,6 +171,9 @@ section { padding: 80px 0; }
 
 /* ---------- page changes: a quick cross-fade (a project skin can replace it) ---------- */
 @view-transition { navigation: auto; types: page; }
+/* Taps feel immediate: no double-tap zoom delay, no grey flash. Anchor jumps and "back to top" glide, unless motion is reduced. */
+a, button, summary, label, select, input { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none; }

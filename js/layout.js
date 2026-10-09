@@ -67,6 +67,13 @@
         <button class="side-collapse" type="button" aria-controls="side"><span class="side-collapse-icon" aria-hidden="true"></span><span class="side-text">Collapse</span></button>
       </div>
       <div class="side-scrim" hidden></div>
+      <nav class="tabbar" aria-label="Quick links">
+        <a href="/shop"${current("shop")}>${ICONS.store}<span>Store</span></a>
+        <a href="/projects"${current("projects")}>${ICONS.all}<span>Projects</span></a>
+        <a href="/library" data-auth="in" hidden${current("library")}>${ICONS.stacc}<span>Your Stacc</span></a>
+        <a href="/login" data-auth="out"${current("login")}>${ICONS.account}<span>Log in</span></a>
+        <button type="button" data-tab-menu aria-controls="side" aria-expanded="false">${ICONS.settings}<span>Menu</span></button>
+      </nav>
       <div class="topbar">
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="side"><span class="menu-bars" aria-hidden="true"></span><span class="sr-only">Menu</span></button>
         <a class="topbar-brand" href="/" aria-label="${e(SITE.name || "Home")}, home">${MARK}</a>
@@ -103,12 +110,13 @@
     // inert, focus moves into it, and the close button, Escape or the scrim close it.
     const toggle = $(".menu-toggle", header);
     const scrim = $(".side-scrim", header);
-    const behind = () => [$(".topbar", header), main, footer].filter(Boolean);
+    const behind = () => [$(".topbar", header), $(".tabbar", header), main, footer].filter(Boolean);
     const setOpen = (open, refocus = true) => {
       side.classList.toggle("open", open);
       scrim.hidden = !open;
       root.classList.toggle("menu-open", open);
       toggle.setAttribute("aria-expanded", String(open));
+      $("[data-tab-menu]", header).setAttribute("aria-expanded", String(open));
       side.inert = narrow.matches && !open;
       behind().forEach((el) => (el.inert = open));
       if (open) $(".side-close", side).focus();
@@ -118,6 +126,7 @@
     // Crossing the drawer breakpoint closes it, so it doesn't reappear open when narrowed again.
     narrow.addEventListener("change", () => setOpen(false, false));
     toggle.addEventListener("click", () => setOpen(true));
+    $("[data-tab-menu]", header).addEventListener("click", () => setOpen(true));
     $(".side-close", side).addEventListener("click", () => setOpen(false));
     scrim.addEventListener("click", () => setOpen(false));
     side.addEventListener("click", (ev) => { if (ev.target.closest("a")) setOpen(false, false); });
