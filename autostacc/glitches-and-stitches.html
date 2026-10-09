@@ -130,10 +130,7 @@
           <h2>Listen</h2>
           <a href="/autostacc/glitches-and-stitches/music">All music &rarr;</a>
         </div>
-        <div class="listen">
-          <div id="listen-player"></div>
-          <div class="platforms" id="listen-platforms"></div>
-        </div>
+        <div class="listen" data-listen data-links></div>
       </div>
     </section>
 
@@ -143,7 +140,7 @@
           <h2>Latest</h2>
           <a href="/autostacc/glitches-and-stitches/news">All updates &rarr;</a>
         </div>
-        <div class="news-list" id="latest-news"></div>
+        <div class="news-list" data-news data-limit="3"></div>
       </div>
     </section>
 
@@ -162,7 +159,7 @@
         <div class="section-head">
           <h2>Shows</h2>
         </div>
-        <div class="shows" id="show-list"></div>
+        <div class="shows" data-shows></div>
       </div>
     </section>
 
@@ -209,11 +206,13 @@
       <div class="wrap">
         <div class="section-head"><h2>Stay in the loop</h2></div>
         <p>New releases, presales and free downloads, straight to your inbox. No spam, unsubscribe any time.</p>
-        <form id="newsletter-form">
-          <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
-          <button class="btn" type="submit">Sign up</button>
-        </form>
-        <div class="form-msg" id="newsletter-msg" role="status"></div>
+        <div data-newsletter>
+          <form>
+            <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
+            <button class="btn" type="submit">Sign up</button>
+          </form>
+          <div class="form-msg" role="status"></div>
+        </div>
       </div>
     </section>
   </main>
