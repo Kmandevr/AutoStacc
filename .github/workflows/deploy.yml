@@ -8,7 +8,8 @@
 #
 # Secrets: CLOUDFLARE_API_TOKEN (Cloudflare Pages: Edit; with the store also D1: Edit and Workers R2 Storage: Edit),
 # CLOUDFLARE_ACCOUNT_ID, and for the store BETTER_AUTH_SECRET, DOWNLOAD_SIGNING_SECRET, STRIPE_SECRET_KEY,
-# STRIPE_WEBHOOK_SECRET, BREVO_API_KEY, ADMIN_EMAILS. Full list and how to make each: docs/store-setup.md.
+# STRIPE_WEBHOOK_SECRET, BREVO_API_KEY, ADMIN_EMAILS; optional for creators' sales and payouts: STRIPE_MARKETPLACE_KEY,
+# STRIPE_MARKETPLACE_WEBHOOK_SECRET, PLATFORM_COUNTRY (docs/payouts-setup.md). Full list and how to make each: docs/store-setup.md.
 name: Deploy to Cloudflare Pages
 on:
   push:
@@ -56,6 +57,9 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+          STRIPE_MARKETPLACE_KEY: ${{ secrets.STRIPE_MARKETPLACE_KEY }}
+          STRIPE_MARKETPLACE_WEBHOOK_SECRET: ${{ secrets.STRIPE_MARKETPLACE_WEBHOOK_SECRET }}
+          PLATFORM_COUNTRY: ${{ secrets.PLATFORM_COUNTRY }}
         run: node scripts/cloudflare.js store
       - name: Static site only (store not enabled)
         if: env.STORE_ENABLED != 'true'

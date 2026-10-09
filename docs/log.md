@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-09: Creator payouts through Stripe Connect on a second (marketplace) Stripe account: orders carry their account, each account has its own webhook, a mixed cart is paid in two steps, creators connect a payout account in the Studio, the admin's Send is one idempotent Stripe transfer, a refund after payout is a negative balance. Migration 0011, `server/payments/{accounts,connect}.js`, `server/studio/payout-account.js`, API suite `payouts`. Off until `STRIPE_MARKETPLACE_KEY` and `STRIPE_MARKETPLACE_WEBHOOK_SECRET` are set: [payouts-setup](payouts-setup.md).
 - 2026-10-09: A skinned project (Glitches & Stitches) sits in a card on light pages: its header, page and footer share a wrapper (`js/project-frame.js`) that is rounded, shadowed and edged (`css/project-frame.css`), and its black is a soft dark gray `#14151a` in light mode (`css/projects/glitches-and-stitches/look.css`). Dark mode is unchanged (full-bleed true black). The skin's rolling scanline band is pinned inside the card.
 - 2026-10-09: Guests (and signed-in customers) can refund an unused paid order from the confirmation page `/checkout?order=…` within 14 days (`js/checkout.js`); the store's eligibility rule is unchanged.
 - 2026-10-09: Stripe tax codes are per kind of product (`server/payments/tax-codes.js`): audio kinds use Digital Audio Works, visuals Digital Finished Artwork, VJ loops Audio Visual Works, presets and other the general code. Owner to confirm with a tax adviser.
