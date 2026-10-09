@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-09: Customers can refund their own order (Settings › Orders): paid, within 14 days, nothing downloaded from it. `server/orders/refunds.js` asks the provider for a full refund, then runs the same refund event a webhook would send, so the order, library and creator earnings change once. `/refunds` says so.
 - 2026-10-09: Payment stuck on "Confirming". Stripe's Managed Payments adds sales tax, so a session's total no longer equalled our order total and the store refused the payment (a refused event is final). The paid check now compares the amount before tax (`amount_subtotal`), the fake Stripe adds 7% tax so every payment test covers it, and the recheck uses event id `reconcile2-` so orders refused earlier can be recovered by rechecking.
 - 2026-10-09: Control Center and Studio on phones. A section picker replaces the sideways tab strip, tables show as labelled cards (`js/admin-mobile.js`, `css/admin.css`), controls are 44px or more, Studio touch targets enlarged. Browser test covers it.
 - 2026-10-09: Live checkout works (a real Stripe page opens). CI: the store workflow runs the unit and API suite and the browser suite as two parallel jobs (`store`, `store-browser`) instead of one after the other.
