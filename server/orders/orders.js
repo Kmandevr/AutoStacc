@@ -15,17 +15,17 @@ export const TRANSITIONS = {
 // promotionId are a promo code's, and the total is subtotal minus that discount. Items attributed by
 // server/revenue/split.js also carry their seller (project, creator), their share of the code and the money split.
 export async function createOrder(db, { userId, email, currency, items, provider, livemode, idempotencyKey, accessKeyHash, impersonationId = null,
-  discountCents = 0, promotionId = null, promoCode = null }) {
+  discountCents = 0, promotionId = null, promoCode = null, paymentAccount = "main" }) {
   const id = newId("ord");
   const t = now();
   const subtotal = items.reduce((s, i) => s + i.unitPriceCents * i.quantity, 0);
   await db.batch([
     stmt(db,
       `INSERT INTO orders (id, user_id, email, status, currency, subtotal_cents, discount_cents, total_cents, provider, livemode,
-        idempotency_key, access_key_hash, created_at, updated_at, impersonation_id, promotion_id, promo_code)
-       VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        idempotency_key, access_key_hash, created_at, updated_at, impersonation_id, promotion_id, promo_code, payment_account)
+       VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id, userId, email, currency, subtotal, discountCents, subtotal - discountCents, provider, livemode ? 1 : 0, idempotencyKey, accessKeyHash, t, t,
-      impersonationId, promotionId, promoCode),
+      impersonationId, promotionId, promoCode, paymentAccount),
     ...items.map((i) => stmt(db,
       `INSERT INTO order_items (id, order_id, product_id, title, unit_price_cents, quantity, line_total_cents, list_price_cents, sale_id,
         project_id, creator_id, discount_cents, net_cents, platform_fee_cents, creator_share_cents) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
