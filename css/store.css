@@ -123,7 +123,9 @@
     width: min(88vw, 360px);
     max-height: none;
     padding: 16px 18px 28px;
-    background: var(--bg);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    -webkit-backdrop-filter: var(--blur, blur(18px));
+    backdrop-filter: var(--blur, blur(18px));
     border-right: 1px solid var(--line);
     transform: translateX(-105%);
     visibility: hidden;
@@ -132,7 +134,7 @@
   .browse.filters-open .browse-filters { transform: none; visibility: visible; transition: transform .22s var(--snap); }
   .browse-filters-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .browse-filters-title { margin: 0; font-weight: 700; font-size: 1.1rem; }
-  .browse-scrim { position: fixed; inset: 0; z-index: 65; background: rgba(0, 0, 0, .45); }
+  .browse-scrim { position: fixed; inset: 0; z-index: 65; background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
   .store-row { grid-auto-columns: minmax(240px, 46%); }
 }
 @media (max-width: 600px) {

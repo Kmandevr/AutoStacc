@@ -52,6 +52,9 @@
   --msg-err: "";
   --msg-pending: "";
   --snap: cubic-bezier(.2, .8, .2, 1);
+  /* glass: frosted chrome (sidebar, top bar, menus, drawers) and see-through surfaces over the ambient light below */
+  --blur: saturate(160%) blur(18px);
+  --glass-edge: color-mix(in srgb, var(--line) 70%, transparent);
 }
 
 /* dark: the device asks for it (and the visitor hasn't picked light), or the visitor picked it */
@@ -102,20 +105,26 @@
 [data-track="presets"] { --track: var(--violet); }
 
 /* ---------- platform pages ---------- */
-/* A calm, flat page: the arrange-view grid is only a whisper at the top and fades out, so content, not decoration, leads. */
-.platform {
+/* A calm page: soft track-coloured light far behind everything (fixed, so it never scrolls), see-through surfaces over
+   it, so content, not decoration, leads. */
+body:has(> .site-frame)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
-    linear-gradient(to bottom, var(--bg), transparent 360px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 64px 100% no-repeat,
-    var(--bg);
-  background-size: 100% 360px, 100% 360px, auto;
-  background-repeat: no-repeat;
+    radial-gradient(42% 46% at 14% 6%, color-mix(in srgb, var(--teal) 15%, transparent), transparent 72%),
+    radial-gradient(36% 42% at 94% 16%, color-mix(in srgb, var(--violet) 13%, transparent), transparent 72%),
+    radial-gradient(46% 44% at 68% 104%, color-mix(in srgb, var(--amber) 10%, transparent), transparent 72%);
+}
+.platform {
   min-height: 70vh;
 }
 .platform .page-hero { padding: 40px 0 20px; }
 .platform .page-hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
 .platform section { padding: 40px 0; }
-.platform .alt { background: color-mix(in srgb, var(--panel) 70%, transparent); border-block: 1px solid var(--line); }
+.platform .alt { background: color-mix(in srgb, var(--panel) 45%, transparent); border-block: 1px solid var(--glass-edge); }
 
 /* section titles carry a small track-colour chip, like a track header */
 .platform .section-head h2 { display: inline-flex; align-items: center; gap: .5em; }
@@ -155,3 +164,34 @@
   from { opacity: 0; translate: 0 -14px; }
   to { opacity: 1; translate: 0 0; }
 }
+
+/* ---------- glass surfaces: AutoStacc's own panels and cards let the ambient light through (a project's look keeps
+   its own solid surfaces, so it stays itself) ---------- */
+.platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]) {
+  background-color: color-mix(in srgb, var(--panel) 72%, transparent);
+  border-color: var(--glass-edge);
+}
+.platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 82%, transparent); }
+
+/* ---------- feedback: quiet, quick, the same everywhere ---------- */
+.platform .btn { transition: transform .16s var(--snap), box-shadow .2s var(--snap), background-color .16s, border-color .16s, color .16s, opacity .16s; }
+.platform .btn:disabled { opacity: .62; }
+.platform :is(.side-nav a, .tool-link, .chip, .browse-cats button, .explore-views button, .f-list label, .latest-list a) { transition: background-color .16s, border-color .16s, color .16s, transform .16s var(--snap); }
+.platform :is(.chip, .browse-cats button, .explore-views button):active { transform: scale(.96); }
+:focus-visible { transition: outline-offset .14s var(--snap); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* results that a search or filter just drew settle in, the first few one after another */
+  .platform :is(.pgrid > .pcard, .explore-list > .ex-item, .latest-list > li) { animation: settle .34s var(--snap) both; }
+  .platform :is(.pgrid > .pcard, .explore-list > .ex-item, .latest-list > li):nth-child(2) { animation-delay: 35ms; }
+  .platform :is(.pgrid > .pcard, .explore-list > .ex-item, .latest-list > li):nth-child(3) { animation-delay: 70ms; }
+  .platform :is(.pgrid > .pcard, .explore-list > .ex-item, .latest-list > li):nth-child(4) { animation-delay: 105ms; }
+  .platform :is(.pgrid > .pcard, .explore-list > .ex-item, .latest-list > li):nth-child(n+5) { animation-delay: 140ms; }
+  /* panels that fold (filters, Your Stacc groups) open and close smoothly where the browser can animate to "auto" */
+  @supports (interpolate-size: allow-keywords) {
+    :root { interpolate-size: allow-keywords; }
+    .platform details::details-content { height: 0; overflow: clip; transition: height .26s var(--snap), content-visibility .26s allow-discrete; }
+    .platform details[open]::details-content { height: auto; }
+  }
+}
+@keyframes settle { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }

@@ -1,59 +1,28 @@
-/* The home page (/): AutoStacc's public cover, used by index.html. */
-/* The home page (/): AutoStacc's public cover. The hero (copy, actions and four track blocks that stack like the logo,
-   their meters moving), the artists and new releases side by side, and the closing call to action. Used by index.html
+/* The home page (/): AutoStacc's public cover. The hero (copy and actions over the DAW backdrop), the artists and new
+   releases side by side, and the closing call to action. Used by index.html
    with css/panels.css (projects rack, releases feed), css/shop.css (featured products) and css/about.css (.flow). */
 
-.cover-hero { padding: clamp(40px, 8vw, 88px) 0 clamp(32px, 6vw, 64px); }
-.cover-hero-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 5vw, 64px); }
-.cover-kicker { margin: 0 0 10px; font-family: var(--mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
-.cover-copy h1 { font-size: clamp(2rem, 3.8vw, 3rem); margin: 0 0 18px; text-wrap: balance; }
-.cover-lead { font-size: clamp(1.02rem, 1.6vw, 1.18rem); max-width: 54ch; color: var(--muted); margin: 0 0 24px; }
+/* The hero: most of the first screen, over the DAW backdrop (css/daw-stage.css), so it is light-on-dark in either
+   theme. A scroll cue at its foot; the sections below slide over the backdrop (css/home.css). */
+.cover-hero { position: relative; z-index: 1; display: grid; align-content: center; min-height: calc(85svh - var(--topbar));
+  padding: clamp(40px, 8vw, 88px) 0 clamp(64px, 9vw, 96px); color: #eef1f6; }
+.cover-hero-grid { display: grid; grid-template-columns: minmax(0, 720px); }
+.cover-kicker { margin: 0 0 10px; font-family: var(--mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: #2ee6d6; }
+.cover-copy h1 { font-size: clamp(2.2rem, 5.2vw, 4.2rem); line-height: 1.05; margin: 0 0 20px; text-wrap: balance; color: #fff; }
+.cover-lead { font-size: clamp(1.05rem, 1.7vw, 1.25rem); max-width: 54ch; color: #c9d0db; margin: 0 0 26px; }
 .cover-actions { margin-bottom: 14px; }
-.cover-note { margin: 0; }
-.cover-note a { display: inline-block; padding-block: 3px; }
-
-/* four clips stacking into the AutoStacc mark: offset widths, track colours, a meter running inside each */
-.cover-stack { display: grid; gap: 14px; padding: 8px 0; }
-.cover-block {
-  --w: 86%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: var(--w);
-  min-height: 58px;
-  padding: 0 16px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--track) 45%, var(--line));
-  background: color-mix(in srgb, var(--track) 16%, var(--panel));
-  box-shadow: var(--shadow), 0 6px 0 -2px color-mix(in srgb, var(--track) 30%, transparent);
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: .85rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-.cover-block:nth-child(1) { --w: 74%; }
-.cover-block:nth-child(2) { --w: 88%; margin-left: 9%; }
-.cover-block:nth-child(3) { --w: 66%; }
-.cover-block:nth-child(4) { --w: 30%; margin-left: 70%; margin-top: -72px; }
-.cover-block > span { min-width: 5.5em; }
-.cover-block > i { flex: 1; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--track) 22%, transparent); position: relative; overflow: hidden; }
-.cover-block > i::after { content: ""; position: absolute; inset: 0; background: var(--track); border-radius: 4px; transform-origin: left; transform: scaleX(.6); }
-.cover-block:nth-child(4) > span { min-width: 0; }
-.cover-block:nth-child(4) > i { display: none; }
-
+.cover-hero .btn.ghost { color: #eef1f6; background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .35); }
+.cover-hero .btn.ghost:hover { color: #fff; background: rgba(255, 255, 255, .12); border-color: #2ee6d6; }
+.cover-note { margin: 0; color: #9aa3b2; }
+.cover-note a { display: inline-block; padding-block: 3px; color: #2ee6d6; }
+.cover-scroll { position: absolute; left: 50%; bottom: 18px; display: grid; justify-items: center; gap: 6px; min-height: 44px; padding: 4px 10px;
+  transform: translateX(-50%); color: #c9d0db; font-family: var(--mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
+.cover-scroll i { width: 12px; height: 12px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+.cover-scroll:hover, .cover-scroll:focus-visible { color: #fff; }
 @media (prefers-reduced-motion: no-preference) {
-  .cover-block { animation: stack-drop .7s var(--snap) both; }
-  .cover-block:nth-child(2) { animation-delay: .12s; }
-  .cover-block:nth-child(3) { animation-delay: .24s; }
-  .cover-block:nth-child(4) { animation-delay: .42s; }
-  .cover-block > i::after { animation: cover-meter 2.4s ease-in-out infinite alternate; animation-delay: var(--clock, 0ms); }
-  .cover-block:nth-child(2) > i::after { animation-duration: 1.9s; }
-  .cover-block:nth-child(3) > i::after { animation-duration: 2.9s; }
+  .cover-scroll i { animation: cover-nudge 1.6s ease-in-out infinite; }
 }
-@keyframes stack-drop { from { opacity: 0; transform: translateY(-36px); } to { opacity: 1; transform: none; } }
-@keyframes cover-meter { from { transform: scaleX(.25); } to { transform: scaleX(.95); } }
+@keyframes cover-nudge { 50% { transform: translateY(5px) rotate(45deg); } }
 
 /* projects and new releases side by side, as mixer panels; the projects panel has no header strip of its own */
 .platform .cover-projects { padding-top: 18px; }
@@ -66,12 +35,6 @@
 
 @media (max-width: 1000px) {
   .cover-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 860px) {
-  .cover-hero-grid { grid-template-columns: 1fr; }
-  .cover-stack { max-width: 460px; gap: 10px; }
-  .cover-block { min-height: 46px; }
-  .cover-block:nth-child(4) { margin-top: -56px; }
 }
 @media (max-width: 600px) {
   .cover-actions .btn { flex: 1 1 auto; }
