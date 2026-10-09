@@ -17,8 +17,8 @@ async function library(app) {
   if (access.user) await autoStacc(app.db, access.user);
   const ents = await activeEntitlements(app.db, access);
   const productIds = [...new Set(ents.map((e) => e.product_id))];
-  const products = new Map((await getProducts(app.db, productIds)).map((p) => [p.id, p]));
-  const files = await deliverableFiles(app.db, productIds);
+  const [rows, files] = await Promise.all([getProducts(app.db, productIds), deliverableFiles(app.db, productIds)]);
+  const products = new Map(rows.map((p) => [p.id, p]));
   const items = productIds.filter((pid) => products.has(pid)).map((pid) => {
     const p = products.get(pid);
     const mine = ents.filter((e) => e.product_id === pid);

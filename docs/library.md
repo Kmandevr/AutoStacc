@@ -1,7 +1,7 @@
 ---
 title: Your Stacc
 summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, follows and Auto-Stacc.
-updated: 2026-10-07
+updated: 2026-10-09
 ---
 
 # Your Stacc
@@ -21,6 +21,8 @@ updated: 2026-10-07
 - **Filters:** project, content type and format apply to both views.
 
 Both views are built from the same asset objects (`GS.stacc.tree`, `GS.stacc.byKind`); unit tests (`test/unit/stacc-model.test.js`) check that the same object is reached through both.
+
+The model runs on a background thread: `js/stacc-client.js` sends `{ type: "build" }` once with the owned items and catalog, then `{ type: "view", view, filter }` for each view or filter change, to a Web Worker (`js/stacc-worker.js`) that loads the same `js/stacc-model.js` and answers with `GS.stacc.answer`. The newest request wins, so a slow answer never draws over a newer view. Where Worker is missing or fails to load (file:// previews, old browsers), the same `answer` runs on the page instead. The account pages' CSP needs no `worker-src`: it falls back to `script-src 'self'`.
 
 ## Downloads
 

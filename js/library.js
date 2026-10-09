@@ -1,22 +1,25 @@
 // Your Stacc (/library): everything the visitor can use, organized by project → Stacclet → Pac → content type or by
 // content type across everything, with filters, per-file and selected downloads (docs/library.md). Ownership and
-// files come from the store API; structure from data/ via GS.stacc (js/stacc-model.js) and markup from
-// GS.libraryView (js/library-view.js). Each download asks for a fresh 5-minute private link. Also redeems the guest
-// key in a receipt link (/library#key=...). Needs js/util.js, js/stacc-model.js, js/library-view.js and data/projects.js,
-// stacclets.js, pacs.js, content-types.js.
+// files come from the store API; structure from data/ via GS.stacc (js/stacc-model.js), computed on a background thread
+// through GS.staccClient (js/stacc-client.js, js/stacc-worker.js), and markup from GS.libraryView (js/library-view.js).
+// Each download asks for a fresh 5-minute private link. Also redeems the guest key in a receipt link (/library#key=...).
+// Needs js/util.js, js/stacc-model.js, js/stacc-client.js, js/library-view.js and data/projects.js, stacclets.js,
+// pacs.js, content-types.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML, api, track } = window.GS;
   const root = $("#library-app");
   if (!root) return;
-  const { stacc, libraryView: V } = window.GS;
+  const { libraryView: V } = window.GS;
+  const model = window.GS.staccClient();
   const catalog = { projects: window.PROJECTS || [], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
   const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
   const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
   const params = new URLSearchParams(location.search);
   const state = { view: "projects", filter: { project: "", kind: "", format: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [] };
+  let asked = 0, shown = null; // the newest model request, and the last answer drawn
 
   function banner() {
     const d = params.get("download");
@@ -26,16 +29,31 @@
     return "";
   }
 
-  function render() {
+  // Draws the last model answer; redraws that need no model work (clearing the selection) call this directly.
+  function paint() {
+    const box = root.querySelector("[data-stacc]");
+    if (!box || !shown) return;
     const ctx = { catalog, names, selected: state.selected };
-    const view = state.view === "kinds" ? V.kindView(stacc.byKind(state.assets, catalog, state.filter), ctx) : V.treeView(stacc.tree(state.assets, catalog, state.filter), ctx);
-    const files = state.assets.length ? `${V.toolbar(stacc.facets(state.assets), state, ctx)}${V.selection(state.selected.size)}
+    const view = shown.view === "kinds" ? V.kindView(shown.groups, ctx) : V.treeView(shown.groups, ctx);
+    const files = state.assets.length ? `${V.toolbar(shown.facets, state, ctx)}${V.selection(state.selected.size)}
       <div class="stacc-view">${view || `<p class="msg">Nothing matches those filters.</p>`}</div>` : "";
     const waiting = state.items.filter((it) => !it.files.length);
-    root.querySelector("[data-stacc]").innerHTML = files + V.waiting(waiting) + V.following(state.follows, state.discover, ctx);
+    box.innerHTML = files + V.waiting(waiting) + V.following(state.follows, state.discover, ctx);
+  }
+
+  // Asks the model for the current view and filters; the latest request wins, so a slow answer never draws over a newer
+  // one. Resolves true when this answer was drawn.
+  async function render() {
+    const n = ++asked;
+    const answer = await model.ask({ type: "view", view: state.view, filter: { ...state.filter } });
+    if (n !== asked) return false;
+    shown = answer;
+    paint();
+    return true;
   }
 
   async function load() {
+    const n = ++asked; // a reload drops any view still being worked out
     const res = await api("/api/library");
     if (res.status === 401) {
       root.innerHTML = `${banner()}<div class="panel appear"><h2>Locked</h2>
@@ -49,12 +67,14 @@
       return;
     }
     const { items, signedIn } = res.data;
+    const built = await model.ask({ type: "build", items, catalog });
+    if (n !== asked) return;
     state.items = items;
-    state.assets = stacc.assetsFrom(items, catalog);
+    state.assets = built.assets;
     const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
     root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing owned yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc></div>`;
     if (signedIn) await discover(new Set(items.map((it) => it.productId)));
-    render();
+    await render();
   }
 
   // Published products of followed projects not owned yet (the store decides what's published and what's free).
@@ -126,7 +146,7 @@
     if (sel && !sel.disabled) downloadSelected(sel);
     const view = e.target.closest("[data-view]");
     if (view) { state.view = view.dataset.view; render(); }
-    if (e.target.closest("[data-clear-selection]")) { state.selected.clear(); render(); }
+    if (e.target.closest("[data-clear-selection]")) { state.selected.clear(); paint(); }
     if (e.target.closest("[data-retry]")) load();
   });
 
@@ -146,8 +166,7 @@
     if (t.matches("[data-select], [data-select-group]")) return syncSelection();
     if (!t.matches("[data-filter]")) return;
     state.filter[t.dataset.filter] = t.value;
-    render();
-    root.querySelector(`[data-filter="${t.dataset.filter}"]`).focus();
+    render().then((drawn) => drawn && root.querySelector(`[data-filter="${t.dataset.filter}"]`).focus());
   });
 
   // A receipt link (#key=ord_x.secret): store it as a cookie, take it out of the address bar, then open the Stacc.

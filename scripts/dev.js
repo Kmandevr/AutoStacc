@@ -2,17 +2,28 @@
 // local D1 database and R2 buckets (Wrangler, installed by `npm install`). Test mode only: mock payments, emails kept
 // in the database (see /api/dev/outbox), every product for sale, sample files to download. Nothing touches Cloudflare.
 // Usage: npm run dev  (or node scripts/dev.js [--port 8788] [--fresh])   then open http://localhost:8788/
-// Tests start it with startDevServer() and their own port, state folder and variables.
+// Tests start it with startDevServer() and their own port, state folder and variables; several can start at once in one
+// process (setup doesn't block), as long as the site is built beforehand and each passes build: false.
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { spawn, execFileSync } = require("child_process");
+const { spawn, execFile, execFileSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 
+// Each Wrangler command costs about two seconds of start-up, so the local setup runs independent ones side by side.
+// opts.track: a Set that holds the running process, so a server stopped during setup can end it.
 function wrangler(args, opts = {}) {
-  return execFileSync(WRANGLER, args, { cwd: ROOT, stdio: opts.quiet ? "pipe" : "inherit", env: { ...process.env, WRANGLER_SEND_METRICS: "false", ...opts.env } });
+  const env = { ...process.env, WRANGLER_SEND_METRICS: "false", ...opts.env };
+  let child;
+  const done = new Promise((resolve, reject) => {
+    if (opts.quiet) child = execFile(WRANGLER, args, { cwd: ROOT, env }, (e, out, err) => (e ? reject(Object.assign(e, { message: `${e.message}\n${err}` })) : resolve(out)));
+    else child = spawn(WRANGLER, args, { cwd: ROOT, env, stdio: "inherit" })
+      .on("error", reject).on("close", (code) => (code ? reject(new Error(`wrangler ${args.join(" ")} exited ${code}`)) : resolve("")));
+  });
+  if (opts.track) { opts.track.add(child); done.finally(() => opts.track.delete(child)).catch(() => {}); }
+  return done;
 }
 
 // Secrets for local development only, generated once into .dev.vars (gitignored). Never real keys.
@@ -65,32 +76,54 @@ function devSeed(stateDir) {
   return { seedFile, ids: [...products, ...extra.map((e) => e[0])] };
 }
 
-// Prepares the local database and storage, then starts `wrangler pages dev`. Returns { child, url, ready }.
-function startDevServer({ port = 8788, stateDir = path.join(ROOT, ".wrangler", "state"), vars = {}, fresh = false, quiet = false } = {}) {
+// Prepares the local database and storage, then starts `wrangler pages dev`. Returns { url, ready, stop, log }; `child` is
+// set once Wrangler is spawned. build: false skips build.js and dist.js (the caller built dist/ already; tests do, so
+// stores starting together don't rewrite the files another is serving). inspectorPort: a fixed devtools port, for stores
+// starting together (they would race for Wrangler's default); left out, Wrangler picks a free one.
+function startDevServer({ port = 8788, stateDir = path.join(ROOT, ".wrangler", "state"), vars = {}, fresh = false, quiet = false, build = true, inspectorPort } = {}) {
   ensureDevVars();
   if (fresh) fs.rmSync(stateDir, { recursive: true, force: true });
   fs.mkdirSync(stateDir, { recursive: true });
-  const q = { quiet: true };
-  execFileSync("node", [path.join(ROOT, "scripts/build.js")], { cwd: ROOT, stdio: quiet ? "pipe" : "inherit" });
-  execFileSync("node", [path.join(ROOT, "scripts/dist.js")], { cwd: ROOT, stdio: quiet ? "pipe" : "inherit" });
-  wrangler(["d1", "migrations", "apply", "DB", "--local", "--persist-to", stateDir], { ...q, env: { CI: "1" } });
-  wrangler(["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--file", "db/catalog.sql"], q);
-  const { seedFile, ids } = devSeed(stateDir);
-  wrangler(["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--file", seedFile], q);
-  const tmp = path.join(stateDir, "dev-file.txt");
-  for (const id of ids) {
-    fs.writeFileSync(tmp, `Test download for ${id}. If you can read this, the entitlement check let you in.\n`);
-    wrangler(["r2", "object", "put", `autostacc-files-dev/dev/${id}/readme.txt`, "--local", "--persist-to", stateDir, "--file", tmp], q);
+  if (build) {
+    execFileSync("node", [path.join(ROOT, "scripts/build.js")], { cwd: ROOT, stdio: quiet ? "pipe" : "inherit" });
+    execFileSync("node", [path.join(ROOT, "scripts/dist.js")], { cwd: ROOT, stdio: quiet ? "pipe" : "inherit" });
+  } else if (!fs.existsSync(path.join(ROOT, "dist", "index.html"))) {
+    throw new Error("dist/ is missing: run `npm run site` first (npm run test:api, test:browser and test:store do)");
   }
-  const args = ["pages", "dev", "dist", "--port", String(port), "--ip", "127.0.0.1", "--persist-to", stateDir, "--show-interactive-dev-session=false",
-    ...Object.entries({ SITE_URL: `http://localhost:${port}`, ...vars }).flatMap(([k, v]) => ["--binding", `${k}=${v}`])];
-  const child = spawn(WRANGLER, args, { cwd: ROOT, env: { ...process.env, WRANGLER_SEND_METRICS: "false" }, stdio: ["ignore", "pipe", "pipe"] });
   const url = `http://localhost:${port}`;
-  let log = "";
-  const onData = (d) => { log += d; if (!quiet) process.stdout.write(d); };
-  child.stdout.on("data", onData);
-  child.stderr.on("data", onData);
-  const ready = (async () => {
+  let log = "", stopped = false;
+  const server = { url, child: null, log: () => log, fileIdFor };
+  const setup = new Set();
+  server.stop = () => { stopped = true; setup.forEach((c) => c.kill("SIGTERM")); if (server.child) server.child.kill("SIGTERM"); };
+  server.ready = (async () => {
+    const q = { quiet: true, track: setup };
+    const { seedFile, ids } = devSeed(stateDir);
+    // The catalog and the test data go in as one file, after the migrations; the sample files don't need the database.
+    const dataFile = path.join(stateDir, "dev-data.sql");
+    fs.writeFileSync(dataFile, fs.readFileSync(path.join(ROOT, "db/catalog.sql"), "utf8") + "\n" + fs.readFileSync(seedFile, "utf8"));
+    await Promise.all([
+      (async () => {
+        await wrangler(["d1", "migrations", "apply", "DB", "--local", "--persist-to", stateDir], { ...q, env: { CI: "1" } });
+        await wrangler(["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--file", dataFile], q);
+      })(),
+      // Every sample file in one Wrangler call, one at a time inside it (local storage refuses concurrent writes).
+      (async () => {
+        const manifest = path.join(stateDir, "dev-files.json");
+        fs.writeFileSync(manifest, JSON.stringify(ids.map((id) => {
+          const file = path.join(stateDir, `dev-file-${id}.txt`);
+          fs.writeFileSync(file, `Test download for ${id}. If you can read this, the entitlement check let you in.\n`);
+          return { key: `dev/${id}/readme.txt`, file };
+        })));
+        await wrangler(["r2", "bulk", "put", "autostacc-files-dev", "--local", "--persist-to", stateDir, "--filename", manifest, "--concurrency", "1", "--force"], q);
+      })()
+    ]);
+    if (stopped) throw new Error("dev server stopped before it started");
+    const args = ["pages", "dev", "dist", "--port", String(port), ...(inspectorPort ? ["--inspector-port", String(inspectorPort)] : []), "--ip", "127.0.0.1", "--persist-to", stateDir, "--show-interactive-dev-session=false",
+      ...Object.entries({ SITE_URL: url, ...vars }).flatMap(([k, v]) => ["--binding", `${k}=${v}`])];
+    const child = server.child = spawn(WRANGLER, args, { cwd: ROOT, env: { ...process.env, WRANGLER_SEND_METRICS: "false" }, stdio: ["ignore", "pipe", "pipe"] });
+    const onData = (d) => { log += d; if (!quiet) process.stdout.write(d); };
+    child.stdout.on("data", onData);
+    child.stderr.on("data", onData);
     for (let i = 0; i < 240; i++) {
       if (child.exitCode !== null) throw new Error("wrangler exited:\n" + log.slice(-3000));
       try {
@@ -101,7 +134,7 @@ function startDevServer({ port = 8788, stateDir = path.join(ROOT, ".wrangler", "
     }
     throw new Error("dev server did not start:\n" + log.slice(-3000));
   })();
-  return { child, url, ready, log: () => log, fileIdFor };
+  return server;
 }
 
 module.exports = { startDevServer, fileIdFor };
@@ -111,5 +144,5 @@ if (require.main === module) {
   const server = startDevServer({ port: Number(arg("--port", 8788)), fresh: process.argv.includes("--fresh") });
   server.ready.then((url) => console.log(`\ndev: site and store API on ${url}/  (test mode: mock payments, emails at ${url}/api/dev/outbox)\n`))
     .catch((e) => { console.error(e.message); process.exit(1); });
-  process.on("SIGINT", () => { server.child.kill("SIGINT"); process.exit(0); });
+  process.on("SIGINT", () => { if (server.child) server.child.kill("SIGINT"); process.exit(0); });
 }

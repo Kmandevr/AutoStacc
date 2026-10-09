@@ -25,7 +25,7 @@ Static HTML, CSS and JS with no framework, hosted on Cloudflare Pages, plus the 
 
 ## Read in layers
 
-Don't read every file. Go deeper only when the layer above doesn't answer the question, and don't re-read what's already in context.
+Don't read every file. Go deeper only when the layer above doesn't answer the question, and never re-read a file already in context.
 
 1. **Map:** the session-start hook prints the top level. `.claude/tools/tree.sh <dir>` lists one directory's files with their purposes.
 2. **Skill:** for a repeatable task use its skill (`add-product`, `add-news`, `add-release`, `verify-site`, `seo-check`, `store-check`, `accessibility-review`, `release-check`, `code-nav`). Skills name the files; don't re-derive them.
@@ -38,6 +38,8 @@ Preserve module boundaries: edit only the files a change needs, and leave unrela
 ## Workflow
 
 One-file changes: just do them. For independent review or testing, delegate to a subagent in `.claude/agents/` (`architect` before structural changes, `frontend-reviewer`, `backend-reviewer`, `security-reviewer`, `browser-tester`, `commerce-tester`, `code-reviewer`, `seo-reviewer` after) and ask for findings only. Modularity applies to every file (scripts, styles, pages, server modules, tests, notes, Claude config): one purpose per file, change only what the task needs. Changes across areas: run the saved workflow `change` (`args: { task: "...", agents: { test: "browser-tester", review: "code-reviewer" } }`): plan, build in parallel on disjoint files, verify, update docs. It never commits. See `.claude/README.md`.
+
+**Parallel by default.** Independent tool calls go in one message, and checks that don't depend on each other run together (`npm run test:store` for the store suites; never `test:api` beside `test:browser`, each rebuilds `dist/`). Spawn subagents only when a task has several sizeable independent parts (each would take many steps) or needs an independent review; small or single-area work is done inline by one agent, to keep usage down. When parallel subagents are worth it, they work on disjoint files, each in a worktree from the current branch (`git worktree add -b <name> .claude/worktrees/<name> HEAD`; automatic worktrees can start from a stale commit). Brief every subagent with what you already know (changed files, diff range, findings, checks run and their results) so it starts there instead of re-exploring.
 
 ## Checking changes
 

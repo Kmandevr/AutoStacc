@@ -12,7 +12,7 @@ NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js            # a
 NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js shop.html  # one page
 ```
 
-The script serves the site like Cloudflare Pages (`scripts/serve.js`: clean addresses, `_redirects`, real 404), so nothing needs cleaning up. The store API is offline there (503), so it also proves every page works when the store is down; the store itself is tested by the `store-check` skill. Exit code 1 means at least one FAIL. With no arguments it covers every page, including the generated ones in `music/`, `shop/` and `news/`. To browse by hand: `node scripts/serve.js` and open http://localhost:8000/.
+The script serves the site like Cloudflare Pages (`scripts/serve.js`: clean addresses, `_redirects`, real 404), so nothing needs cleaning up. The store API is offline there (503), so it also proves every page works when the store is down; the store itself is tested by the `store-check` skill. Exit code 1 means at least one FAIL. With no arguments it covers every page, including the generated ones in `music/`, `shop/` and `news/`. The static checks, the page tabs (`VERIFY_CONCURRENCY` at once, default the CPU count between 2 and 6) and the crawl run at the same time. Lines are still printed grouped and in a fixed order (static, then each page at 1280 and 390, then the crawl), so the output reads the same as a one-by-one run. Set `VERIFY_CONCURRENCY=1` if a timing-sensitive check (shop filter, newsletter) looks flaky on a slow machine. To browse by hand: `node scripts/serve.js` and open http://localhost:8000/.
 
 ## What it checks
 
