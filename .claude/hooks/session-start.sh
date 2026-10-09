@@ -24,4 +24,6 @@ echo 'Repo map, top level (layer 0). Stop here if it answers the task. Details: 
 cat "$T/map" 2>/dev/null
 if [ -s "$T/branch" ]; then cat "$T/branch"; echo 'Last commits:'; cat "$T/commits"; fi
 if [ -s "$T/log" ]; then echo "Newest in $LOG_NOTE (trimmed):"; cat "$T/log"; fi
+# Bring the code graph up to date in the background, so the first graph.sh query of the session doesn't wait for it.
+[ -x .claude/tools/graph.sh ] && command -v graphify >/dev/null 2>&1 && (nohup .claude/tools/graph.sh refresh >/dev/null 2>&1 &)
 exit 0

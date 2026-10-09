@@ -18,14 +18,18 @@ https://:version.:project.pages.dev/*
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'self'
 
-# Scripts, styles and data change with each deploy but keep the same URLs, so browsers re-check them on every visit
-# (a quick "not modified" when unchanged). Without this a phone can keep old files for hours and show a mix of versions.
+# Plain addresses of scripts, styles and data (pages use fingerprinted /assets/ copies; these serve what loads files by
+# name) keep the same URL across deploys, so browsers re-check them on every visit (a quick "not modified"). Without this a phone can keep old files for hours and show a mix of versions.
 /js/*
   Cache-Control: no-cache
 /css/*
   Cache-Control: no-cache
 /data/*
   Cache-Control: no-cache
+
+# Fingerprinted copies made by scripts/dist.js: the address changes whenever the content does, so keep them for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
 
 # Images keep their names when replaced, so browsers keep them for a day, not forever.
 /img/*
