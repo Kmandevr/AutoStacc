@@ -84,6 +84,7 @@
   <link rel="stylesheet" href="/css/shop.css">
   <link rel="stylesheet" href="/css/panels.css">
   <link rel="stylesheet" href="/css/cover.css">
+  <link rel="stylesheet" href="/css/daw-stage.css">
   <link rel="stylesheet" href="/css/store.css">
   <link rel="stylesheet" href="/css/latest.css">
   <link rel="stylesheet" href="/css/home.css">
@@ -92,7 +93,8 @@
   <header id="site-header"></header>
 
   <main id="main" class="platform home-cover">
-    <section class="cover-hero" aria-labelledby="cover-title">
+    <div class="daw-stage" data-daw-stage aria-hidden="true"></div>
+    <section class="cover-hero" aria-labelledby="cover-title" data-daw-hero>
       <div class="wrap cover-hero-grid">
         <div class="cover-copy">
           <p class="cover-kicker">AutoStacc</p>
@@ -105,16 +107,11 @@
           </div>
           <p class="small-print cover-note">Browse and buy without an account. Create one to follow artists and get their free releases.<span data-auth="out"> Already have one? <a href="/login">Log in</a>.</span></p>
         </div>
-        <div class="cover-stack" aria-hidden="true">
-          <span class="cover-block" data-track="midi"><span>MIDI</span><i></i></span>
-          <span class="cover-block" data-track="samples"><span>Samples</span><i></i></span>
-          <span class="cover-block" data-track="loops"><span>Loops</span><i></i></span>
-          <span class="cover-block" data-track="presets"><span>Presets</span><i></i></span>
-        </div>
       </div>
+      <a class="cover-scroll" href="#home-find"><span>Scroll to explore</span><i aria-hidden="true"></i></a>
     </section>
 
-    <section class="home-search" aria-label="Find something">
+    <section class="home-search" id="home-find" aria-label="Find something">
       <div class="wrap">
         <form class="browse-search home-search-form" role="search" action="/shop" method="get">
           <label for="home-q" class="sr-only">Search the store</label>
@@ -190,6 +187,7 @@
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/account-nav.js"></script>
+  <script src="/js/daw-stage.js"></script>
   <script src="/js/taste.js"></script>
   <script src="/js/product-card.js"></script>
   <script src="/js/shop.js"></script>

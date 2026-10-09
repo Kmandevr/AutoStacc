@@ -1,6 +1,6 @@
 // Browser tests for staff and creator features against its own local store: impersonation, sales and promo codes, the
 // Studio (pages and selling), the Control Center on a phone, the phone quick-links bar, Settings › Orders, the skinned
-// project card, guest refunds, drop-in modules placed twice on one page, and the discovery pages (projects, Your Stacc search, explore, home, dashboard). Tests run in order: the Control Center test signs in as the admin the impersonation
+// project card, guest refunds, drop-in modules placed twice on one page, the discovery pages (projects, Your Stacc search, explore, home, dashboard) and the home banner. Tests run in order: the Control Center test signs in as the admin the impersonation
 // test created. Usage: npm run test:browser.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -411,5 +411,37 @@ describe("features in the browser", () => {
     assert.equal(await page.locator("[data-project-picks]:not([data-picks]) .pcard[data-project='glitches-and-stitches']").count(), 0, "no suggesting what you already follow");
     assert.deepEqual(page.errors, []);
     await ctx.close();
+  });
+
+  test("home banner: a DAW backdrop fixed behind the page, the hero most of the screen, still once scrolled past or for less motion", async () => {
+    const { ctx, page } = await open({ ...DESK, reducedMotion: "no-preference" });
+    await page.goto("/");
+    await page.waitForSelector(".daw-stage .daw-clip");
+    const facts = () => page.evaluate(() => {
+      const stage = document.querySelector(".daw-stage"), hero = document.querySelector("[data-daw-hero]");
+      return { position: getComputedStyle(stage).position, top: stage.getBoundingClientRect().top, hidden: stage.getAttribute("aria-hidden"),
+        hero: hero.getBoundingClientRect().height / innerHeight, still: stage.classList.contains("is-still"),
+        moving: document.querySelector(".daw-strip").getAnimations().filter((a) => a.playState === "running").length };
+    });
+    const first = await facts();
+    assert.equal(first.position, "fixed");
+    assert.equal(first.hidden, "true", "decorative: hidden from screen readers");
+    assert.ok(first.hero >= 0.75, `the hero takes most of the screen (${first.hero})`);
+    assert.ok(first.moving > 0, "the arrangement scrolls past the playhead");
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    await page.waitForFunction(() => document.querySelector(".daw-stage").classList.contains("is-still"));
+    const end = await facts();
+    assert.equal(end.top, 0, "still in place at the very bottom");
+    assert.equal(end.moving, 0, "nothing moves behind the page once the hero is gone");
+    assert.ok(await page.evaluate(() => !document.elementFromPoint(innerWidth / 2, innerHeight - 20).closest(".daw-stage")), "the page covers it");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+
+    const calm = await open({ ...PHONE, reducedMotion: "reduce" });
+    await calm.page.goto("/");
+    await calm.page.waitForSelector(".daw-stage .daw-clip");
+    assert.equal(await calm.page.evaluate(() => document.querySelector(".daw-stage").getAnimations({ subtree: true }).length), 0, "no motion when asked for less");
+    assert.ok(await calm.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll on a phone");
+    await calm.ctx.close();
   });
 });

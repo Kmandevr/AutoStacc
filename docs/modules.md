@@ -31,6 +31,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Projects to follow (`js/project-picks.js`) | `[data-project-picks]` | `data-limit`, `data-picks="following"` (the projects you follow instead) |
 | Latest releases, news and shows (`js/latest.js`) | `[data-latest]` | `data-limit` (per list) |
 | Projects browser, explore (`js/projects-browse.js`, `js/explore-browse.js`) | `[data-projects-browse]`, `[data-explore]` | none: one per page, state in the address ([browse](browse.md)) |
+| DAW backdrop (`js/daw-stage.js`, `css/daw-stage.css`) | `[data-daw-stage]` | `[data-daw-hero]` on the element it sits behind (it stops moving when that is out of view) |
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |
 | Account links and menu (`js/account-nav.js`) | `[data-auth="in"\|"out"]`, `[data-account-menu]`, `[data-signout]` | |
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |
