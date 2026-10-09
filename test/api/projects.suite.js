@@ -4,7 +4,7 @@
 // answer, invalid input refused, and Studio projects followable and gone once their creator is suspended.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { Client } from "../support/client.js";
+import { Client, sql } from "../support/client.js";
 import { newBuyer, adminClient } from "../support/flows.js";
 
 const tag = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -27,10 +27,10 @@ export default (ctx) => describe("projects browser", () => {
   };
   const ids = (r) => r.data.projects.map((p) => p.id);
 
-  test("anyone can browse; AutoStacc's projects carry genres, what they make and activity; the answer is cacheable", async () => {
+  test("anyone can browse; AutoStacc's projects carry genres, what they make and activity; never cached", async () => {
     const anon = new Client(ctx.mock.url);
     const r = await browse(anon);
-    assert.match(r.headers.get("cache-control"), /public/);
+    assert.match(r.headers.get("cache-control"), /no-store/, "a signed-out copy must not outlive logging in");
     assert.equal(r.data.signedIn, false);
     const gs = r.data.projects.find((p) => p.id === "glitches-and-stitches");
     assert.ok(gs, "the first project is listed");
@@ -76,6 +76,16 @@ export default (ctx) => describe("projects browser", () => {
     assert.equal(listed[0].verified, false);
     assert.equal(listed[0].creator, creator.name);
     assert.equal(listed[0].path, `/${creator.slug}/browse-me`);
+
+    // A product released in the future is in "what it makes" but isn't activity yet.
+    const soon = new Date(Date.now() + 30 * 86400000).toISOString(), at = new Date().toISOString();
+    sql(ctx.mock.stateDir, `INSERT INTO products (id, title, description, type, price_cents, currency, tags, metadata, featured, published, sales_paused, max_quantity,
+      project_id, pacs, source, search_text, released_at, created_at, updated_at) VALUES ('pb-future-${tag()}', 'Later', '', 'presets', 500, 'USD', '[]', '{}', 0, 1, 0, 1,
+      '${project.id}', '[]', 'studio', 'later', '${soon}', '${at}', '${at}')`);
+    const later = (await browse(anon, `q=${encodeURIComponent(name)}`)).data.projects[0];
+    assert.ok(later.makes.includes("presets"));
+    assert.equal(later.lastActive, null);
+    assert.equal(later.recent, false);
 
     const { c: fan } = await newBuyer(ctx.mock.url, "pbfan");
     const f = await fan.req("PUT", `/api/follows/${project.id}`, { body: { autoStacc: true } });

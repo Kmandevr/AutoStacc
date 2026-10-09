@@ -51,15 +51,23 @@
       `<option value="${e(v)}"${v === value ? " selected" : ""}>${e(text)}</option>`).join("")}</select></label>`;
   }
 
-  // facets: GS.stacc.facets(assets); state: { view, filter }; shown: { count, total } from the model.
-  function toolbar(facets, state, ctx, shown = {}) {
-    const types = ctx.catalog.contentTypes || {};
-    const narrowed = Object.values(state.filter).some(Boolean);
-    return `<form class="stacc-search" role="search" data-stacc-search>
+  // The search box and the count line under it, drawn once and then kept (the box keeps focus and the phone keyboard;
+  // the count, a live region, is updated in place by found()).
+  const search = (state, ctx) => `<form class="stacc-search" role="search" data-stacc-search>
       <label for="stacc-q-${ctx.uid}" class="sr-only">Search Your Stacc</label>
       <input id="stacc-q-${ctx.uid}" type="search" data-filter="q" value="${e(state.filter.q || "")}" placeholder="Search your files and products…" autocomplete="off" maxlength="80" enterkeyhint="search">
     </form>
-    <div class="stacc-bar">
+    <p class="stacc-found" aria-live="polite" data-stacc-found></p>`;
+
+  // shown: { count, total } from the model.
+  const found = (state, shown = {}) => (Object.values(state.filter).some(Boolean)
+    ? `${shown.count || 0} of ${files(shown.total || 0)} match <button class="link-btn" type="button" data-clear-filters>Clear search and filters</button>`
+    : files(shown.total || 0));
+
+  // facets: GS.stacc.facets(assets); state: { view, filter }.
+  function toolbar(facets, state, ctx) {
+    const types = ctx.catalog.contentTypes || {};
+    return `<div class="stacc-bar">
       <div class="stacc-views" role="group" aria-label="Organize by">
         <button type="button" class="btn ghost" data-view="projects" aria-pressed="${state.view === "projects"}">By project</button>
         <button type="button" class="btn ghost" data-view="kinds" aria-pressed="${state.view === "kinds"}">By content type</button>
@@ -67,8 +75,7 @@
       ${facets.projects.length > 1 ? select("project", "Project", facets.projects.map(([id, n]) => [id, `${ctx.names.project(id)} (${n})`]), state.filter.project) : ""}
       ${select("kind", "Type", facets.kinds.map(([k, n]) => [k, `${(types[k] || {}).label || k} (${n})`]), state.filter.kind)}
       ${select("format", "Format", facets.formats.map(([f, n]) => [f, `${f.toUpperCase()} (${n})`]), state.filter.format)}
-    </div>
-    <p class="stacc-found" aria-live="polite">${narrowed ? `${shown.count || 0} of ${files(shown.total || 0)} match <button class="link-btn" type="button" data-clear-filters>Clear search and filters</button>` : files(shown.total || 0)}</p>`;
+    </div>`;
   }
 
   function selection(count) {
@@ -87,8 +94,8 @@
     if (!follows.length) return `<p class="small-print stacc-follow-hint">Follow <a href="/projects">projects</a> to see their new releases here, and switch on Auto-Stacc to add their free ones automatically.</p>`;
     if (!products.length) return "";
     return `<section class="stacc-new"><h2>New from projects you follow</h2><ul class="tiles">${products.map((p) =>
-      `<li><a class="tile" href="${e(p.path || `/shop/${p.id}`)}"><span class="tag">${e(ctx.names.project(p.projectId))}</span><strong>${e(p.title)}</strong><span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span></a></li>`).join("")}</ul></section>`;
+      `<li><a class="tile" href="${e(p.path || `/shop/${p.id}`)}"><span class="tag">${e(p.projectName || ctx.names.project(p.projectId))}</span><strong>${e(p.title)}</strong><span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span></a></li>`).join("")}</ul></section>`;
   }
 
-  window.GS.libraryView = { toolbar, treeView, kindView, selection, waiting, following };
+  window.GS.libraryView = { search, found, toolbar, treeView, kindView, selection, waiting, following };
 })();

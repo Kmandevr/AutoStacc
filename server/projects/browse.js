@@ -47,8 +47,8 @@ const daysBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / 86400000;
 export async function projectEntries(db, { userId = null, at = new Date().toISOString() } = {}) {
   const [rows, kinds, facets, follows] = await Promise.all([
     listVisibleProjects(db),
-    all(db, `SELECT project_id, type, COUNT(*) AS n, MAX(COALESCE(released_at, created_at)) AS last FROM products
-      WHERE published = 1 AND deleted_at IS NULL AND project_id IS NOT NULL GROUP BY project_id, type`),
+    all(db, `SELECT project_id, type, COUNT(*) AS n, MAX(CASE WHEN COALESCE(released_at, created_at) <= ? THEN COALESCE(released_at, created_at) END) AS last
+      FROM products WHERE published = 1 AND deleted_at IS NULL AND project_id IS NOT NULL GROUP BY project_id, type`, at), // a future release isn't activity yet
     all(db, `SELECT p.project_id, pf.facet, pf.value, COUNT(*) AS n FROM product_facets pf JOIN products p ON p.id = pf.product_id
       WHERE p.published = 1 AND p.deleted_at IS NULL AND pf.facet IN ('genre', 'style') GROUP BY p.project_id, pf.facet, pf.value`),
     userId ? listFollows(db, userId) : []

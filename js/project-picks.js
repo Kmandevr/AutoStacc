@@ -1,14 +1,14 @@
 // Projects to follow, a drop-in for any [data-project-picks] (the home page): a few projects from GET
-// /api/projects/browse, ordered by how well their genres and styles match
-// this browser's own history (js/taste.js: filters used and genres picked; read here, never sent). Each card says why
-// it was picked; projects the visitor already follows are left out. data-picks="following" lists those instead (the
-// dashboard), most recently active first. data-limit="3" caps the cards. Offline, the built list inside stays. Needs js/util.js,
-// js/project-card.js, data/product-types.js; js/taste.js optional; js/follow.js fills the follow controls.
+// /api/projects/browse, ordered by how well their genres and styles match this browser's own history (js/taste.js:
+// filters used and genres picked; read here, never sent). Each card says why it was picked; projects the visitor
+// already follows are left out. data-picks="following" lists those instead (the dashboard), most recently active
+// first. data-limit="3" caps the cards. Offline, the built list inside stays. Needs js/util.js, js/project-card.js,
+// data/product-types.js; js/taste.js optional; js/follow.js fills the follow controls.
 (function () {
   "use strict";
 
   const GS = window.GS;
-  const { api, escapeHTML: e } = GS;
+  const { api } = GS;
   const roots = [...document.querySelectorAll("[data-project-picks]")];
   if (!roots.length || !GS.projectCard) return;
 
@@ -32,11 +32,15 @@
     }).sort((a, b) => a.rank - b.rank).slice(0, limit);
   }
 
+  // One request per question, however many roots ask it (the dashboard has two).
+  const asked = new Map();
+  const ask = (qs) => (asked.has(qs) ? asked.get(qs) : asked.set(qs, api(`/api/projects/browse?${qs}`)).get(qs));
+
   async function load(root) {
     const limit = Number(root.dataset.limit) || 3;
-    const res = await api("/api/projects/browse");
-    if (!res.ok) return;
     const following = root.dataset.picks === "following";
+    const res = await ask(following ? "followed=1" : "");
+    if (!res.ok) return;
     const list = res.data.projects.filter((p) => Boolean(p.following) === following);
     if (following && !list.length) {
       root.innerHTML = `<p class="small-print">${res.data.signedIn ? "You don't follow any projects yet." : "Log in to see the projects you follow."} <a href="/projects">Find projects to follow</a>.</p>`;
@@ -44,7 +48,7 @@
     }
     if (!list.length) return;
     const chosen = following ? list.slice(0, limit).map((p) => ({ p, why: "" })) : pick(list, limit);
-    root.innerHTML = `<div class="pgrid">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3 }).replace('<p class="pcard-activity">', `${why ? `<p class="pcard-why">${e(why)}</p>` : ""}<p class="pcard-activity">`)).join("")}</div>`;
+    root.innerHTML = `<div class="pgrid">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3, why })).join("")}</div>`;
     dispatchEvent(new CustomEvent("gs:projects"));
   }
   roots.forEach(load);

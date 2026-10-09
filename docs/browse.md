@@ -18,7 +18,7 @@ Every visible project: AutoStacc's own and published Studio projects of active c
   - Unknown genre, style or makes values are skipped and reported in `ignored`. Malformed input is a 400 `invalid_filter`.
   - The answer holds: `total`, `page`, `pages`, `projects`, `facets` (`genre`, `style`, `makes`, each count worked out without its own group), `toggles` (`active`, `followed`), `signedIn` and `canFollow`.
   - Filters are OR within a group and AND between groups, worked out in the module over all visible projects (few enough today; move to SQL when the directory grows).
-  - Signed in, the answer is `private, no-store`; otherwise `public, max-age=60`.
+  - The answer is never cached (`private, no-store`): it depends on who asks, and a signed-out copy must not outlive logging in. 120 requests a minute per client (`limit(app, "browse")`).
 - **What a project says about itself** is only derived from records:
   - genres and styles come from AutoStacc's data (`projects.genres`, synced from `data/projects.js`) and from the facets of its published products;
   - "what it makes" is its published product kinds, plus "Releases" when it has releases;
@@ -63,7 +63,7 @@ The dashboard has:
 
 ## Your Stacc
 
-Search narrows the files as you type. Every word must appear in the file's name, its file name or its product title (`js/stacc-model.js`). The count says how many files match, with a button to clear search and filters. On `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&view=kinds`).
+Search narrows the files as you type; the box and its count line are drawn once and kept, so focus, the phone keyboard and the screen-reader announcement of the count survive each redraw. Every word must appear in the file's name, its file name or its product title (`js/stacc-model.js`). The count says how many files match, with a button to clear search and filters. On `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&view=kinds`).
 
 ## Privacy
 

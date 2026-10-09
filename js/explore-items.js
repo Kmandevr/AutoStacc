@@ -1,7 +1,8 @@
-// The items /explore browses (GS.exploreItems, for js/explore-browse.js only): every published release, news post and
-// upcoming show from data/music.js, news.js and shows.js, across all projects, as one shape ({ view, id, project,
-// date, title, href, ... }); and the filter, facet-count and search rules (OR within a filter, AND between filters,
-// each filter's counts without itself). Drafts and past shows never appear. Needs js/util.js and data/projects.js.
+// Releases, news and shows across projects (GS.exploreItems), the model behind /explore (js/explore-browse.js) and the
+// [data-latest] lists (js/latest.js): every published release, news post and upcoming show of a published project
+// from data/music.js, news.js and shows.js, in one shape ({ view, id, project, date, title, href, ... }), plus the
+// filter, facet-count and search rules (OR within a filter, AND between filters, each filter's counts without itself).
+// No DOM. Needs js/util.js and data/projects.js.
 (function () {
   "use strict";
 
@@ -17,16 +18,19 @@
     shows: [["project", "Project", (x) => x.project], ["city", "City", (x) => x.city]]
   };
 
+  // Only what is published: the item and its project (a draft project's items never show).
+  const live = (x) => !x.draft && (window.PROJECTS || []).some((p) => p.id === x.project && !p.draft);
+
   function all() {
-    const releases = ((window.MUSIC || {}).releases || []).filter((r) => !r.draft && r.project).map((r) => ({
+    const releases = ((window.MUSIC || {}).releases || []).filter(live).map((r) => ({
       view: "releases", id: r.id, project: r.project, projectName: projectName(r.project), date: r.date, title: r.title, type: r.type || "Release",
       artwork: r.artwork || null, text: (r.description || "").slice(0, 200), tracks: (r.tracks || []).length, href: projectPath(r.project, "music", r.id)
     }));
-    const news = (window.NEWS || []).filter((n) => !n.draft && n.project).map((n) => ({
+    const news = (window.NEWS || []).filter(live).map((n) => ({
       view: "news", id: n.id, project: n.project, projectName: projectName(n.project), date: n.date, title: n.title, tag: n.tag || "News",
       text: n.summary || "", href: projectPath(n.project, "news", n.id)
     }));
-    const shows = (window.SHOWS || []).filter((s) => !s.draft && s.project && s.date >= today()).map((s, i) => ({
+    const shows = (window.SHOWS || []).filter((s) => live(s) && s.date >= today()).map((s, i) => ({
       view: "shows", id: `${s.project}-${s.date}-${i}`, project: s.project, projectName: projectName(s.project), date: s.date,
       title: s.venue || s.city, city: s.city || "", venue: s.venue || "", ticketUrl: s.ticketUrl || "", href: projectPath(s.project)
     }));

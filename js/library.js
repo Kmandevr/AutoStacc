@@ -56,8 +56,12 @@
       const box = root.querySelector("[data-stacc-files]");
       if (!box || !shown) return;
       const ctx = { catalog, names, selected: state.selected, uid };
+      const head = root.querySelector("[data-stacc-head]");
+      if (head && state.assets.length && !head.firstChild) head.innerHTML = V.search(state, ctx);
+      const count = root.querySelector("[data-stacc-found]"), said = V.found(state, shown);
+      if (count && count.dataset.said !== said) { count.innerHTML = said; count.dataset.said = said; } // announce changes only
       const view = shown.view === "kinds" ? V.kindView(shown.groups, ctx) : V.treeView(shown.groups, ctx);
-      const files = state.assets.length ? `${V.toolbar(shown.facets, state, ctx, shown)}${V.selection(state.selected.size)}
+      const files = state.assets.length ? `${V.toolbar(shown.facets, state, ctx)}${V.selection(state.selected.size)}
         <div class="stacc-view">${view || `<p class="msg">Nothing matches those filters.</p>`}</div>` : "";
       const waiting = state.items.filter((it) => !it.files.length);
       box.innerHTML = files + V.waiting(waiting) + V.following(state.follows, state.discover, ctx);
@@ -99,7 +103,7 @@
       state.items = items;
       state.assets = built.assets;
       const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
-      root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc-files></div>`;
+      root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc-head></div><div data-stacc-files></div>`;
       if (signedIn) await discover(new Set(items.map((it) => it.productId)));
       await render();
     }
@@ -175,7 +179,9 @@
       if (view) { state.view = view.dataset.view; render(); }
       if (e.target.closest("[data-clear-filters]")) {
         for (const k of FILTERS) if (k !== "project" || !root.dataset.project) state.filter[k] = "";
-        render().then((drawn) => drawn && root.querySelector('[data-filter="q"]').focus());
+        const box = root.querySelector('[data-filter="q"]');
+        if (box) { box.value = ""; box.focus(); }
+        render();
       }
       if (e.target.closest("[data-clear-selection]")) { state.selected.clear(); paint(); }
       if (e.target.closest("[data-retry]")) load();
@@ -200,7 +206,7 @@
       render().then((drawn) => drawn && root.querySelector(`[data-filter="${t.dataset.filter}"]`).focus());
     });
 
-    // Search narrows as you type (a short pause first); focus and the caret stay in the box across the redraw.
+    // Search narrows as you type (a short pause first); the box itself is never redrawn.
     let typing = 0;
     root.addEventListener("input", (e) => {
       const t = e.target;
@@ -208,11 +214,7 @@
       clearTimeout(typing);
       typing = setTimeout(() => {
         state.filter.q = t.value.trim().slice(0, 80);
-        const at = t.selectionStart;
-        render().then((drawn) => {
-          const box = drawn && root.querySelector('[data-filter="q"]');
-          if (box) { box.focus(); box.setSelectionRange(at, at); }
-        });
+        render();
       }, 220);
     });
     root.addEventListener("submit", (e) => { if (e.target.matches("[data-stacc-search]")) e.preventDefault(); });

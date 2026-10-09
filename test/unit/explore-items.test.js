@@ -12,11 +12,13 @@ const future = (days) => new Date(Date.now() + days * 86400000).toISOString().sl
 
 function load() {
   const window = {
-    PROJECTS: [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }],
+    PROJECTS: [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }, { id: "d", name: "Hidden", draft: true }],
     MUSIC: { releases: [
       { id: "r1", project: "a", type: "Single", date: "2025-10-15", title: "Hail", tracks: [{}] },
       { id: "r2", project: "b", type: "EP", date: "2026-02-01", title: "Thread", description: "Stitched loops" },
-      { id: "r3", project: "a", type: "Album", date: "2026-03-01", title: "Secret", draft: true }
+      { id: "r3", project: "a", type: "Album", date: "2026-03-01", title: "Secret", draft: true },
+      { id: "r4", project: "d", type: "Single", date: "2026-04-01", title: "Of a draft project" },
+      { id: "r5", project: "nobody", type: "Single", date: "2026-04-01", title: "Of no project" }
     ] },
     NEWS: [{ id: "n1", project: "a", date: "2025-10-15", title: "Out now", tag: "Release", summary: "Hail is out" },
       { id: "n2", project: "b", date: "2026-01-01", title: "Draft", tag: "Tour", draft: true }],
@@ -30,7 +32,7 @@ function load() {
   return { all: plain(X.all), query: plain(X.query) };
 }
 
-test("drafts and past shows never appear; newest first; links go to the project's own pages", () => {
+test("drafts, draft projects' items and past shows never appear; newest first; links go to the project's own pages", () => {
   const X = load();
   const all = X.all();
   assert.deepEqual(all.releases.map((r) => r.id), ["r1", "r2"]);

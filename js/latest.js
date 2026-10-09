@@ -16,16 +16,23 @@
     <span class="latest-title">${e(x.title)}</span>
     <span class="latest-meta">${e(x.type || x.tag || x.city)} · ${e(x.projectName)} · <time datetime="${e(x.date)}">${e(fmtDate(x.date))}</time></span></a></li>`;
 
-  function draw(root, followed) {
+  function draw(root, followed, n) {
     const limit = Number(root.dataset.limit) || 3;
     root.innerHTML = COLS.map(([view, title, empty, track]) => {
       const list = GS.exploreItems.query(view, items[view], {}).hits
         .map((x, i) => ({ x, rank: (followed.has(x.project) ? 0 : 1e4) + i })).sort((a, b) => a.rank - b.rank).slice(0, limit).map((r) => r.x);
-      return `<section class="mix-panel latest-col" data-track="${track}" aria-labelledby="lt-${view}">
-        <div class="mix-head"><h3 id="lt-${view}">${title}</h3><a href="/explore${view === "releases" ? "" : `?view=${view}`}">All<span class="sr-only"> ${title.toLowerCase()}</span> &rarr;</a></div>
+      return `<section class="mix-panel latest-col" data-track="${track}" aria-labelledby="lt${n}-${view}">
+        <div class="mix-head"><h3 id="lt${n}-${view}">${title}</h3><a href="/explore${view === "releases" ? "" : `?view=${view}`}">All<span class="sr-only"> ${title.toLowerCase()}</span> &rarr;</a></div>
         ${list.length ? `<ul class="latest-list">${list.map(line).join("")}</ul>` : `<p class="small-print">${empty}</p>`}</section>`;
     }).join("");
   }
-  roots.forEach((r) => draw(r, new Set()));
-  addEventListener("gs:follows", (ev) => roots.forEach((r) => draw(r, new Set((ev.detail && ev.detail.ids) || []))));
+  roots.forEach((r, n) => draw(r, new Set(), n));
+  // Redrawn only when who is followed actually changes, so a focused link isn't swept away for nothing.
+  let last = "";
+  addEventListener("gs:follows", (ev) => {
+    const ids = ((ev.detail && ev.detail.ids) || []).slice().sort(), key = ids.join(",");
+    if (key === last) return;
+    last = key;
+    roots.forEach((r, n) => draw(r, new Set(ids), n));
+  });
 })();

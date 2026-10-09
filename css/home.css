@@ -13,4 +13,4 @@
 @media (max-width: 900px) {
   .home-doors { grid-template-columns: minmax(0, 1fr); }
 }
-@media (prefers-reduced-motion: reduce) { .home-doors a { transition: none; } .home-doors a:hover { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .home-doors a { transition: none; } .home-doors a:hover, .home-doors a:focus-visible { transform: none; } }
