@@ -195,7 +195,7 @@ function releasePage(SITE, data, r) {
     <section class="alt">
       <div class="wrap">
         <div class="section-head"><h2>Listen</h2></div>
-        <div id="listen-player" data-release="${esc(r.id)}"></div>
+        <div data-listen data-release="${esc(r.id)}"></div>
       </div>
     </section>
 

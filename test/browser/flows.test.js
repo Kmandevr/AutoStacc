@@ -508,7 +508,7 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, unique("app"));
     await page.waitForSelector("h1:has-text('Dashboard')");
-    await page.waitForSelector("[data-dashboard-stacc] >> text=Nothing in Your Stacc yet.");
+    await page.waitForSelector("[data-stacc-glance] >> text=Nothing in Your Stacc yet.");
     assert.ok(await page.locator(".side a[href='/dashboard'][aria-current=page]").isVisible(), "the app group in the sidebar");
     assert.ok(await page.locator(".side a[href='/library']").isVisible());
     assert.equal(await page.locator(".topbar a[href='/login']").isVisible(), false, "no Log in once signed in");
