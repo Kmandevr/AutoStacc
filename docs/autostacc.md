@@ -38,7 +38,7 @@ Hierarchy: AutoStacc → (Creator →) Project → Stacclet → Pac → content.
 
 ## Plain words stay plain
 
-Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) stay normal words. Used: Your Stacc's intro ("Everything you've Stacc'd"), the payment-confirmed message and claiming a free product ("Stacc'd!"). Good: "Library — Everything you've Stacc'd." Bad: renaming the cart, the download button or the account page into puns.
+Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) stay normal words. **Stacc'd replaces "owned" and "purchased"** wherever the site speaks about having something (badges, Your Stacc, settings, help, emails; owner, 2026-10-09): "STACC'D", "Nothing Stacc'd yet", "everything you've Stacc'd". Paying stays plain words (order, payment, refund, receipt) and the legal pages (terms, privacy, refunds, licence) keep "purchase" for its legal meaning. Used: Your Stacc's intro ("Everything you've Stacc'd"), the payment-confirmed message and claiming a free product ("Stacc'd!"). Good: "Library — Everything you've Stacc'd." Bad: renaming the cart, the download button or the account page into puns.
 
 ## Site structure
 

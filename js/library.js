@@ -57,7 +57,7 @@
     const res = await api("/api/library");
     if (res.status === 401) {
       root.innerHTML = `${banner()}<div class="panel appear"><h2>Locked</h2>
-        <p>Log in to open Your Stacc. Bought as a guest? Use the link in your receipt email, or create an account with the email you paid with: your purchases join it automatically.</p>
+        <p>Log in to open Your Stacc. Bought as a guest? Use the link in your receipt email, or create an account with the email you paid with: everything you Stacc'd joins it automatically.</p>
         <div class="actions"><a class="btn" href="/login?next=/library">Log in</a><a class="btn ghost" href="/login?next=/library#signup">Create account</a></div></div>`;
       return;
     }
@@ -76,7 +76,7 @@
     state.items = items;
     state.assets = built.assets;
     const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
-    root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing owned yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc></div>`;
+    root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc></div>`;
     if (signedIn) await discover(new Set(items.map((it) => it.productId)));
     await render();
   }

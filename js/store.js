@@ -29,8 +29,8 @@
     const p = state && state.products[id];
     if (!p) return null; // unknown to the API (draft or API down): keep the static fallback
     // Cards get just the stamp (it links to the library); the product page adds a full button.
-    if (p.owned) return detail ? `<span class="owned-badge">OWNED</span><a class="btn ghost" href="/library">Open Your Stacc</a>`
-      : `<a class="owned-badge" href="/library" title="It's in Your Stacc">OWNED</a>`;
+    if (p.owned) return detail ? `<span class="owned-badge">STACC'D</span><a class="btn ghost" href="/library">Open Your Stacc</a>`
+      : `<a class="owned-badge" href="/library" title="It's in Your Stacc">STACC'D</a>`;
     if (!p.available) return `<span class="btn" aria-disabled="true">Unavailable</span>`;
     if (p.free) return `<button class="btn" type="button" data-claim="${escapeHTML(id)}">Get it free</button>`;
     if (cart.has(id)) return `<a class="btn ghost in-cart" href="/cart">In cart → checkout</a>`;

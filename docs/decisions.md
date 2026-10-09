@@ -15,7 +15,7 @@ updated: 2026-10-09
 - **Legal facts confirmed:** AutoStacc is run by an individual in Utah County, Utah, under Utah law; bank refunds take 5–10 days; the terms keep "AutoStacc's fee, if any"; /privacy should name the session cookie both ways (`gs.session_token`, `__Secure-gs.session_token` on the live site) (issue #83).
 - **Titles:** the home page's title must start with "AutoStacc"; the separator after it is grammar, not a rule.
 - **Stripe Checkout and statements say AutoStacc**, not Glitches & Stitches.
-- **"Stacc'd" gets used** in the site's copy: Your Stacc's intro, the payment-confirmed message and claiming a free product.
+- **"Stacc'd" gets used** in the site's copy: Your Stacc's intro, the payment-confirmed message and claiming a free product. Later the same day: it replaces "owned" and "purchased" everywhere the site talks about having something; legal pages and payment words stay plain.
 - **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. The live platform fee and the marketplace Stripe key's permissions are still unchecked.
 
 ## 2026-10-09: Docs are checked against the repository, not trusted

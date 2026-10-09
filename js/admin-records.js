@@ -37,7 +37,7 @@
     const el = $("#admin-customers");
     const res = await api(`/api/admin/customers${q ? `?q=${encodeURIComponent(q)}` : ""}`);
     if (!res.ok) return fail(el, res);
-    el.innerHTML = search("customers", "Search customers", "email or name") + table(["Email", "Name", "Verified", "Role", "Paid orders", "Owned", "Joined", ""],
+    el.innerHTML = search("customers", "Search customers", "email or name") + table(["Email", "Name", "Verified", "Role", "Paid orders", "Stacc'd", "Joined", ""],
       res.data.customers.map((c) => `<tr><td>${escapeHTML(c.email)}</td><td>${escapeHTML(c.name)}</td><td>${c.verified ? "yes" : "no"}</td><td>${escapeHTML(c.role || "customer")}</td><td>${c.paidOrders}</td><td>${c.owned}</td><td>${escapeHTML(String(c.createdAt).slice(0, 10))}</td>
         <td><button class="link-btn" type="button" data-preview="${escapeHTML(c.id)}">preview</button></td></tr>`)) + `<div id="customer-preview"></div>`;
   }

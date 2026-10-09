@@ -38,9 +38,9 @@ export const templates = {
 
   // After guest purchases join an account (confirmed email or password reset).
   "purchases-linked": ({ count, libraryUrl, resetUrl }) => ({
-    subject: "Your purchases joined your account — AutoStacc",
-    text: `${count} purchase${count === 1 ? "" : "s"} made with this email ${count === 1 ? "is" : "are"} now in Your Stacc: ${libraryUrl}\n\nDidn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`,
-    html: layout("Your purchases joined your account", para(`${count} purchase${count === 1 ? "" : "s"} made with this email ${count === 1 ? "is" : "are"} now in Your Stacc.`) +
+    subject: "Everything you Stacc'd joined your account — AutoStacc",
+    text: `${count} order${count === 1 ? "" : "s"} Stacc'd with this email ${count === 1 ? "is" : "are"} now in Your Stacc: ${libraryUrl}\n\nDidn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`,
+    html: layout("Everything you Stacc'd joined your account", para(`${count} order${count === 1 ? "" : "s"} Stacc'd with this email ${count === 1 ? "is" : "are"} now in Your Stacc.`) +
       button(libraryUrl, "Open Your Stacc") + para(`Didn't create an account? Reset its password now to take it over (this logs everyone else out): ${resetUrl}`))
   }),
 
