@@ -35,6 +35,8 @@ export function summarise(lines, { nowMs, holdDays = SELLING.holdDays, paidOutCe
   return {
     salesCount: lines.length, netCents: net, platformFeeCents: fee, shareCents: share, onHoldCents: onHold, clearedCents: cleared,
     paidOutCents, requestedCents, availableCents: Math.max(0, cleared - paidOutCents - requestedCents),
+    // Negative when sales were refunded after being paid out: that amount is taken from the next sales before anything is available.
+    balanceCents: cleared - paidOutCents - requestedCents,
     products: [...byProduct.values()].sort((a, b) => b.shareCents - a.shareCents), recent: sales.slice(0, 30)
   };
 }

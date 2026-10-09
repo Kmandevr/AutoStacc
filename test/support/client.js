@@ -125,9 +125,9 @@ export function signedEvent(event, secret, timestamp) {
   return { payload, header };
 }
 
-export async function sendWebhook(client, event, secret, timestamp) {
+export async function sendWebhook(client, event, secret, timestamp, path = "/api/webhooks/stripe") {
   const { payload, header } = signedEvent(event, secret, timestamp);
-  return client.req("POST", "/api/webhooks/stripe", { raw: payload, headers: { "stripe-signature": header, "Content-Type": "application/json" } });
+  return client.req("POST", path, { raw: payload, headers: { "stripe-signature": header, "Content-Type": "application/json" } });
 }
 
 export const unique = (tag) => `${tag}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}@test.dev`;

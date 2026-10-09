@@ -4,9 +4,17 @@
 import Stripe from "stripe";
 import { taxCodeFor } from "./tax-codes.js";
 
+// Two Stripe accounts: "main" (AutoStacc's own products, Managed Payments) and "marketplace" (creators' products and their
+// Connect payouts). Each has its own key, webhook secret and live/test mode.
+const ACCOUNTS = {
+  main: (c) => ({ key: c.stripeKey, secret: c.stripeWebhookSecret, live: c.stripeLive }),
+  marketplace: (c) => ({ key: c.marketplaceKey, secret: c.marketplaceWebhookSecret, live: c.marketplaceLive })
+};
+
 const clients = new Map();
-function client(config) {
-  const key = config.stripeKey + "|" + config.stripeApiBase;
+export function stripeClient(config, account = "main") {
+  const { key: secretKey } = ACCOUNTS[account](config);
+  const key = secretKey + "|" + config.stripeApiBase;
   if (!clients.has(key)) {
     const opts = { httpClient: Stripe.createFetchHttpClient(), maxNetworkRetries: 2, timeout: 20000 };
     if (config.stripeApiBase) {
@@ -14,7 +22,7 @@ function client(config) {
       const u = new URL(config.stripeApiBase);
       Object.assign(opts, { host: u.hostname, port: Number(u.port), protocol: u.protocol.replace(":", "") });
     }
-    clients.set(key, new Stripe(config.stripeKey, opts));
+    clients.set(key, new Stripe(secretKey, opts));
   }
   return clients.get(key);
 }
@@ -38,13 +46,14 @@ function lineItem(order, i) {
   return { quantity: 1, price_data: { currency, unit_amount: i.unitPriceCents * i.quantity - i.discountCents, product_data: { ...product_data, name } } };
 }
 
-export const stripeProvider = {
+const makeProvider = (account) => ({
   name: "stripe",
-  livemode: (config) => config.stripeLive,
+  account,
+  livemode: (config) => ACCOUNTS[account](config).live,
 
   async createCheckout(app, { order, items, successUrl, cancelUrl }) {
     const { config } = app;
-    const session = await client(config).checkout.sessions.create({
+    const session = await stripeClient(config, account).checkout.sessions.create({
       mode: "payment",
       client_reference_id: order.id,
       customer_email: order.email,
@@ -53,20 +62,22 @@ export const stripeProvider = {
       line_items: items.map((i) => lineItem(order, i)),
       success_url: successUrl,
       cancel_url: cancelUrl,
-      expires_at: expiresAtFor(config)
+      expires_at: expiresAtFor(config),
+      // Creator checkouts: Stripe Tax works out the tax from each line's tax code and the buyer's location.
+      ...(account === "marketplace" && config.marketplaceTax ? { automatic_tax: { enabled: true } } : {})
     }, { idempotencyKey: `checkout-${order.id}` });
     return { sessionId: session.id, url: session.url };
   },
 
   // Full refund of a paid order, to the card it was paid with. The key makes a repeated click the same refund.
   async refund(app, order) {
-    return client(app.config).refunds.create({ payment_intent: order.provider_payment_id, reason: "requested_by_customer", metadata: { order_id: order.id } },
+    return stripeClient(app.config, account).refunds.create({ payment_intent: order.provider_payment_id, reason: "requested_by_customer", metadata: { order_id: order.id } },
       { idempotencyKey: `refund-${order.id}` });
   },
 
   async retrieveCheckout(app, sessionId) {
-    const s = await client(app.config).checkout.sessions.retrieve(sessionId);
-    return normalizeSession(s, s.payment_status === "paid" ? "paid" : s.status === "expired" ? "expired" : "pending");
+    const s = await stripeClient(app.config, account).checkout.sessions.retrieve(sessionId);
+    return { ...normalizeSession(s, s.payment_status === "paid" ? "paid" : s.status === "expired" ? "expired" : "pending"), account };
   },
 
   // Throws on a bad signature or a stale timestamp (older than 5 minutes = replay).
@@ -74,10 +85,13 @@ export const stripeProvider = {
     const signature = request.headers.get("stripe-signature");
     if (!signature) throw new Error("missing signature");
     const body = await request.text();
-    const event = await client(app.config).webhooks.constructEventAsync(body, signature, app.config.stripeWebhookSecret, 300, crypto);
-    return normalizeEvent(event);
+    const event = await stripeClient(app.config, account).webhooks.constructEventAsync(body, signature, ACCOUNTS[account](app.config).secret, 300, crypto);
+    return { ...normalizeEvent(event), account };
   }
-};
+});
+
+export const stripeProvider = makeProvider("main");
+export const marketplaceProvider = makeProvider("marketplace");
 
 function normalizeSession(s, type) {
   return {
