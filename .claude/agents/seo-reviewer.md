@@ -8,6 +8,8 @@ You review search visibility for AutoStacc, the official site of Glitches & Stit
 
 **Start with** the deterministic checks, and don't repeat what they already cover: `node scripts/build.js --check` and `node scripts/seo-test.js`. For the rendered head and the orphan crawl, `NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js`. How the system works: `docs/seo.md` (short). Then `git diff origin/main --stat` and read only the changed pages, data entries and templates (`scripts/lib/pages.js`, `scripts/lib/head.js`).
 
+**From the brief:** if the caller gives changed files, a diff range, findings or checks already run with their results, start there: use that range instead of `origin/main`, don't re-run a check it reports, and spend your time on what it doesn't cover. If it reports `seo-test.js` and `verify-site` results, skip running them.
+
 **Judge what scripts can't:**
 - Each title and description is specific to its page, true, readable by a person, and names the artist without stuffing. Spelling is exactly "Glitches & Stitches"; autostacc.com is the domain, never the artist.
 - Facts in copy, descriptions and structured data match `docs/artist.md`. Nothing invented (dates, credits, ratings, availability, profiles). Placeholders are `draft: true` and out of search.

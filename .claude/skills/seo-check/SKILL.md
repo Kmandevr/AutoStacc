@@ -29,4 +29,4 @@ How the system works is in [docs/seo.md](../../../docs/seo.md). Don't restate it
 - `url-disappeared`: a public page was removed or renamed. Add a `301` from the old path in `_redirects`, or, if the removal is deliberate and the page should drop out of search, delete its line from `scripts/public-urls.txt`.
 - `placeholder-profile`: set the real profile URL or `""`. Never a site's home page.
 
-Report the scripts' lines as they are, then one verdict line. For an independent read-only review, the `seo-reviewer` agent exists.
+Report the scripts' lines as they are, then one verdict line. For an independent read-only review, the `seo-reviewer` agent exists; brief it with the changed pages and data and the step 2 results, so it skips the scripts.
