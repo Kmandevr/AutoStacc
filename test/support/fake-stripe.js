@@ -9,6 +9,11 @@ export function startFakeStripe(port) {
   const byIdem = new Map();
   const refunds = []; // refund requests received
   let refundFails = false;
+  const accounts = new Map(); // connected (payout) accounts
+  const transfersByIdem = new Map();
+  const transfers = []; // transfers received
+  let balanceCents = 1_000_000; // the marketplace account's available balance
+  let transferFails = false;
   const created = []; // every create call, so tests can check what the store asked Stripe to charge
 
   function parseForm(body) {
@@ -55,12 +60,44 @@ export function startFakeStripe(port) {
         };
         sessions.set(id, s);
         if (idem) byIdem.set(idem, id);
-        created.push({ session: s, form: p });
+        created.push({ session: s, form: p, key: req.headers.authorization });
         return send(200, s);
+      }
+      // Stripe Connect on the marketplace account: payout accounts, onboarding links and transfers.
+      if (req.method === "POST" && req.url === "/v1/accounts") {
+        const idem = req.headers["idempotency-key"];
+        if (idem && byIdem.has(idem)) return send(200, accounts.get(byIdem.get(idem)));
+        const p = parseForm(body);
+        const id = "acct_" + crypto.randomBytes(8).toString("hex");
+        const a = { id, object: "account", type: p.type, country: p.country, payouts_enabled: false, details_submitted: false, capabilities: { transfers: "inactive" },
+          requirements: { currently_due: ["external_account", "individual.id_number"] }, form: p, key: req.headers.authorization };
+        accounts.set(id, a);
+        if (idem) byIdem.set(idem, id);
+        return send(200, a);
+      }
+      if (req.method === "POST" && req.url === "/v1/account_links") {
+        const p = parseForm(body);
+        if (!accounts.has(p.account)) return send(404, { error: { type: "invalid_request_error", message: "No such account." } });
+        return send(200, { object: "account_link", url: `http://127.0.0.1:${port}/onboard/${p.account}` });
+      }
+      const acct = req.url.match(/^\/v1\/accounts\/(acct_\w+)$/);
+      if (req.method === "GET" && acct) return accounts.has(acct[1]) ? send(200, accounts.get(acct[1])) : send(404, { error: { type: "invalid_request_error", message: "No such account." } });
+      if (req.method === "POST" && req.url === "/v1/transfers") {
+        const idem = req.headers["idempotency-key"];
+        if (idem && transfersByIdem.has(idem)) return send(200, transfersByIdem.get(idem));
+        const p = parseForm(body);
+        if (transferFails) return send(400, { error: { type: "invalid_request_error", message: "transfer refused" } });
+        if (!accounts.has(p.destination)) return send(400, { error: { type: "invalid_request_error", message: "No such destination." } });
+        if (Number(p.amount) > balanceCents) return send(400, { error: { type: "invalid_request_error", code: "balance_insufficient", message: "You have insufficient funds in your Stripe account for this transfer." } });
+        balanceCents -= Number(p.amount);
+        const t = { id: "tr_" + crypto.randomBytes(8).toString("hex"), object: "transfer", amount: Number(p.amount), currency: p.currency, destination: p.destination, transfer_group: p.transfer_group, key: req.headers.authorization };
+        transfers.push(t);
+        if (idem) transfersByIdem.set(idem, t);
+        return send(200, t);
       }
       if (req.method === "POST" && req.url === "/v1/refunds") {
         const p = parseForm(body);
-        refunds.push(p);
+        refunds.push({ ...p, key: req.headers.authorization });
         if (refundFails) return send(402, { error: { type: "invalid_request_error", message: "refund refused" } });
         return send(200, { id: "re_" + crypto.randomBytes(8).toString("hex"), object: "refund", status: "succeeded", payment_intent: p.payment_intent });
       }
@@ -75,6 +112,12 @@ export function startFakeStripe(port) {
     sessions,
     created,
     refunds,
+    accounts,
+    transfers,
+    // The connected account finished Stripe's onboarding, so payouts to it work.
+    completeOnboarding(id) { Object.assign(accounts.get(id), { payouts_enabled: true, details_submitted: true, capabilities: { transfers: "active" }, requirements: { currently_due: [] } }); },
+    setBalance(c) { balanceCents = c; },
+    failTransfers(on) { transferFails = on; },
     failRefunds(on) { refundFails = on; },
     // Marks a session paid the way Stripe would, and returns it (for building the webhook event).
     pay(id) {

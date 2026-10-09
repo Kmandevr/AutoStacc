@@ -65,6 +65,8 @@ async function apply(app, ev) {
     return reject("no matching order");
   }
   if (ev.orderId && ev.orderId !== order.id) return reject("order id mismatch", order.id);
+  // An event is believed only from the Stripe account that took the payment: main events for main orders, marketplace for marketplace.
+  if (ev.account && (order.payment_account || "main") !== ev.account) return reject("payment account mismatch", order.id);
   if (Boolean(order.livemode) !== Boolean(ev.livemode)) return reject("live/test mode mismatch", order.id);
 
   switch (ev.type) {

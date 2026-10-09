@@ -21,7 +21,11 @@ const PROJECT = "autostacc";
 const TOML = path.join(ROOT, "wrangler.toml");
 // Must match [env.production] in wrangler.toml.
 const PROD = { db: "autostacc", placeholder: "00000000-0000-0000-0000-000000000002", buckets: ["autostacc-files", "autostacc-previews"] };
-const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "BREVO_API_KEY", "ADMIN_EMAILS"];
+// The last four are optional: ADMIN_EMAILS can come from the user table, and the marketplace account (creators' sales and
+// Connect payouts, docs/payouts-setup.md) is off until its key and webhook secret are both set.
+const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "BREVO_API_KEY", "ADMIN_EMAILS",
+  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY"];
+const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY"]);
 
 // quiet: capture and resolve with the output; otherwise it goes straight to the deploy log and resolves with "".
 // Rejects like execFileSync threw: the error carries stderr when quiet.
@@ -97,7 +101,7 @@ async function buckets() {
 
 async function secrets(toml) {
   const present = Object.fromEntries(SECRETS.filter((k) => process.env[k]).map((k) => [k, process.env[k]]));
-  const missing = SECRETS.filter((k) => !present[k] && k !== "ADMIN_EMAILS");
+  const missing = SECRETS.filter((k) => !present[k] && !OPTIONAL.has(k));
   if (Object.keys(present).length) {
     const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "gs-")), "secrets.json");
     fs.writeFileSync(tmp, JSON.stringify(present), { mode: 0o600 });
