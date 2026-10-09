@@ -38,7 +38,7 @@
         ${email}${field("password", "Password (10+ characters)", "password", 'autocomplete="new-password" minlength="10" maxlength="128"')}
         <div class="actions"><button class="btn" type="submit">Create account</button></div>
         <p class="small-print">By creating an account you agree to the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a>.</p>
-        <p class="small-print">Bought something as a guest? Use the same email: once you confirm it, those purchases join this account.</p>
+        <p class="small-print">Bought something as a guest? Use the same email: once you confirm it, what you Stacc'd joins this account.</p>
         <p class="small-print">Have an account? <a href="#signin">Log in</a></p>
       </form>`,
     forgot: () => `<form class="panel appear" data-form="forgot" novalidate>
@@ -128,7 +128,7 @@
   // Already signed in: go straight on.
   api("/api/account").then((res) => {
     if (res.ok && res.data.user && !params.get("token")) location.replace(next);
-    else if (res.status === 503) root.innerHTML = `<p class="msg error" role="alert">Accounts are offline for maintenance. Your purchases are safe; try again soon.</p>`;
+    else if (res.status === 503) root.innerHTML = `<p class="msg error" role="alert">Accounts are offline for maintenance. Everything you've Stacc'd is safe; try again soon.</p>`;
     else route();
   });
 })();

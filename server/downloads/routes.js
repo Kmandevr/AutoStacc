@@ -38,7 +38,7 @@ async function issue(app) {
   const ent = ents.find((e) => subjectFor(access, e));
   if (!file || !ent) {
     await logEvent(app, "denied", { fileId, productId: file && file.product_id, reason: "no entitlement", subject: subjectsOf(access)[0] });
-    fail(403, "download_denied", "You don't own that file.");
+    fail(403, "download_denied", "That file isn't in your Stacc.");
   }
   const subject = subjectFor(access, ent);
   const { token, expiresAt } = await signDownload(app.config.downloadSecret, { fileId, entitlementId: ent.id, subject, ttlSeconds: app.config.downloadTtlSeconds });
