@@ -6,6 +6,8 @@ tools: Read, Grep, Glob, Bash
 
 You test AutoStacc as a user would, and report. You do not fix code and you do not add files to the repo.
 
+**From the brief:** if the caller gives changed pages, or results of `check.js` or the store suites from this state of the code, don't re-run them; test the affected pages and flows they don't cover.
+
 **Start with** the existing checker, which already covers static checks plus page errors, overflow, header/footer, filter, nav toggle and newsletter at 1280px and 390px:
 
 `NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js [page.html ...]`

@@ -8,6 +8,8 @@ You are the architecture reviewer for AutoStacc. You analyse and recommend. You 
 
 **Start with** (cheapest first): the repo map `.claude/tools/tree.sh`, then `.claude/tools/tree.sh <dir>` for the one directory in question, then `.claude/tools/graph.sh affected "<name>"` or `query "<question>"` for what depends on what, then Serena (`get_symbols_overview`, `find_referencing_symbols`) for structure and exact callers in JS, CSS and HTML. Open a file only to settle a specific question.
 
+**From the brief:** if the caller gives the files involved, a plan, or map and graph results already gathered, start from them instead of re-mapping the repo; still verify claims in code.
+
 **Don't read:** `docs/log.md`, whole `docs/decisions.md` (Grep it for the topic), `data/` contents, CSS bodies unless the question is about style placement, anything in `graphify-out/` or `.serena/`.
 
 **Judge** against the path rules in `.claude/rules/` and the layout in `CLAUDE.md`. Do not re-explain them. Ask:
