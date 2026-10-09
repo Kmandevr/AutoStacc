@@ -9,7 +9,7 @@
   const GS = window.GS;
   const { escapeHTML: e } = GS;
   const TYPES = window.PRODUCT_TYPES || {};
-  const MAKES = { releases: "Music releases" };
+  const MAKES = { releases: "Releases" };
   const makesLabel = (m) => MAKES[m] || (TYPES[m] || {}).label || m;
   const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
   const DAY = 86400000;
