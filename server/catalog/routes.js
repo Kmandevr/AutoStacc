@@ -5,6 +5,9 @@ import { resolveAccess } from "../entitlements/access.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { runningSales } from "../promotions/promotions.js";
 import { downloadSizes } from "../files/files.js";
+import { facetsOf } from "../discovery/facets.js";
+import { label } from "../discovery/vocabulary.js";
+import { parseJson } from "../lib/db.js";
 
 async function list(app) {
   const [listed, sales] = await Promise.all([listProducts(app.db), runningSales(app.db)]);
@@ -16,8 +19,11 @@ async function list(app) {
 async function one(app, { productId }) {
   const [p, sales] = await Promise.all([getProduct(app.db, id(productId, "productId")), runningSales(app.db)]);
   if (!isVisible(p)) fail(404, "not_found", "No product with that id.");
-  const sellers = await sellersOf(app.db, [p]);
-  return json({ product: publicProduct(p, sales, sellers.get(p.id)) }, 200, { "Cache-Control": "public, max-age=60" });
+  const [sellers, facetRows] = await Promise.all([sellersOf(app.db, [p]), facetsOf(app.db, [p.id])]);
+  // With its store details (labelled), BPM and specs, for the product page.
+  const details = { facets: Object.fromEntries(Object.entries(facetRows[p.id] || {}).map(([f, vs]) => [f, vs.map((v) => ({ value: v, label: label(f, v) }))])),
+    bpm: p.bpm_min ? [p.bpm_min, p.bpm_max] : null, specs: parseJson(p.metadata, {}).specs || {} };
+  return json({ product: { ...publicProduct(p, sales, sellers.get(p.id)), ...details } }, 200, { "Cache-Control": "public, max-age=60" });
 }
 
 // Live state for product pages and cards: availability and price for the given ids, and which ones this person owns.

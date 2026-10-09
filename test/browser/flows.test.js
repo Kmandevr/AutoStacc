@@ -412,57 +412,90 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
-  test("store browser: a card opens its project's items with it selected; the address keeps the state; Back undoes it", async () => {
+  test("store: filters from the server, chips to undo them, the address keeps it all, and Back from a product returns to the same results", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/shop");
-    const first = await page.locator(".grid .card").count();
-    await page.click('.grid .card [data-select="serum-presets"]');
-    await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
-    assert.match(page.url(), /\/shop\?project=glitches-and-stitches&item=serum-presets$/);
-    assert.ok((await page.getAttribute(".shop-selected .card", "class")).includes("look-glitches-and-stitches"), "wears its project's look");
-    assert.equal(await page.evaluate(() => document.activeElement.dataset.select), "serum-presets");
-    assert.match(await page.locator('[data-filter=project] [aria-pressed=true]').innerText(), /^Glitches & Stitches\s+\d+$/, "the option and how many items it holds");
-    await page.reload();
-    await page.waitForSelector('.shop-selected .card[data-product="serum-presets"]');
+    await page.waitForSelector(".browse-grid .card");
+    const all = await page.locator(".browse-grid .card").count();
+    await page.check("#f-contents-loops");
+    await page.waitForFunction(() => location.search.includes("contents=loops"));
+    await page.waitForFunction((n) => document.querySelectorAll(".browse-grid .card").length < n, all);
+    assert.equal(await page.evaluate(() => document.activeElement.id), "f-contents-loops", "focus stays on the checkbox after the redraw");
+    assert.match(await page.locator("[data-chips] .chip").first().innerText(), /Contents: Loops/);
+    assert.ok(await page.locator("[data-store-sections]").isHidden(), "picks step aside while the results are narrowed");
+    await page.selectOption("[data-sort]", "price-desc");
+    await page.waitForFunction(() => location.search.includes("sort=price-desc"));
+    await page.locator(".browse-grid .card h3 a").first().click();
+    await page.waitForURL(/\/shop\/[a-z0-9-]+$/);
     await page.goBack();
-    await page.waitForFunction(() => !document.querySelector(".shop-selected .card"));
-    assert.equal(await page.locator(".grid .card").count(), first);
+    await page.waitForSelector(".browse-grid .card");
+    assert.match(page.url(), /contents=loops/);
+    assert.equal(await page.inputValue("[data-sort]"), "price-desc");
+    assert.equal(await page.isChecked("#f-contents-loops"), true);
+    await page.click("[data-chips] .chip");
+    await page.waitForFunction(() => !location.search.includes("contents"));
+    await page.waitForFunction((n) => document.querySelectorAll(".browse-grid .card").length === n, all);
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
 
-  test("store search and spotlight: typing narrows the items, the address keeps it, a miss offers to clear, owned items are stamped", async () => {
+  test("store: search with suggestions by keyboard, a dead end that offers what to loosen, and phone filters in a drawer", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/shop");
+    await page.waitForSelector(".browse-grid .card");
+    await page.fill("#store-q", "seru");
+    await page.waitForSelector(".suggest li");
+    assert.ok((await page.locator(".suggest").innerText()).includes("Serum"));
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => location.search.includes("q=seru"));
+    assert.ok(await page.locator(".browse-grid .card[data-product=serum-presets]").count());
+    await page.goto("/shop?contents=stems&format=flac");
+    await page.waitForSelector(".browse-empty");
+    assert.ok(await page.locator(".browse-empty .chip").count() >= 2, "each filter is offered for removal");
+    await page.click(".browse-empty .chip >> nth=0");
+    await page.waitForSelector(".browse-grid .card");
+    await page.click("[data-open-filters]");
+    await page.waitForFunction(() => document.querySelector("[data-browse]").classList.contains("filters-open"));
+    assert.equal(await page.evaluate(() => document.activeElement.id), "browse-filters", "focus moves into the drawer");
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.querySelector("[data-browse]").classList.contains("filters-open"));
+    assert.ok(await page.evaluate(() => document.activeElement.matches("[data-open-filters]")), "and back to its button");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("store: picks for a newcomer, then for the genres they choose; 'Not interested' removes one; a wishlist needs an account; bought means Stacc'd", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/shop");
-    await page.waitForSelector(".shop-spotlight .card");
-    const featured = await page.getAttribute(".shop-spotlight .card", "data-product");
-    assert.equal(await page.locator(`.grid .card[data-product="${featured}"]`).count(), 0, "the spotlight item isn't repeated in the grid");
-    await page.fill("#shop-q", "stems remix");
-    await page.waitForFunction(() => location.search.includes("q="));
-    assert.deepEqual(await page.locator(".grid .card").evaluateAll((els) => els.map((x) => x.dataset.product)), ["stems-patchwork"]);
-    assert.equal(await page.locator(".shop-spotlight .card").count(), 0, "no spotlight while searching");
-    await page.reload();
-    assert.equal(await page.inputValue("#shop-q"), "stems remix");
-    await page.fill("#shop-q", "zzzz-nothing");
-    await page.waitForSelector(".shop-empty [data-clear]");
-    await page.click(".shop-empty [data-clear]");
-    await page.waitForSelector(".shop-spotlight .card");
-    assert.equal(await page.inputValue("#shop-q"), "");
-    // Ownership comes from the store API: after a paid purchase the store stamps that card and says how much is yours.
-    const email = unique("owner");
+    await page.waitForSelector(".store-section");
+    assert.equal(await page.locator("[data-section=for-you]").count(), 0, "no 'for you' without anything to go on");
+    await page.click("[data-tune]");
+    await page.click("[data-pref=genre][data-v=edm]");
+    await page.click("[data-tune-done]");
+    await page.waitForSelector("[data-section=for-you] .card");
+    const first = await page.getAttribute("[data-section=for-you] .card", "data-product");
+    await page.click(`[data-section=for-you] .card[data-product="${first}"] [data-dismiss]`);
+    assert.equal(await page.locator(`[data-section=for-you] .card[data-product="${first}"]`).count(), 0);
+    assert.ok((await page.evaluate(() => localStorage.getItem("gs:taste:v2"))).includes(`"dismiss"`), "kept in this browser");
+    await page.click(".browse-grid .card [data-wish] >> nth=0");
+    await page.waitForURL(/\/login\?next=/);
+    // Buying makes it Stacc'd wherever it shows.
+    const email = unique("stacc");
     await signUp(page, email);
-    // Signed in, checkout uses the account's email (no email field).
     await page.goto("/shop/wallpapers");
-    await page.locator("[data-buy] [data-add-to-cart]").click();
+    await page.locator(".detail-buy [data-add-to-cart]").click();
     await page.goto("/cart");
     await page.click("#checkout-btn");
     await page.waitForURL(/\/checkout\?order=.*mock=/);
     await page.click("[data-mock=paid]");
     await page.waitForSelector("text=Payment confirmed");
-    await page.goto("/shop?type=Visuals");
-    await page.waitForSelector('.card.is-owned[data-product="wallpapers"]');
-    assert.equal(await page.locator(".card.is-owned").count(), 1, "only what was bought");
-    assert.match(await page.locator("[data-owned-summary]").innerText(), /You've Stacc'd 1 of these/);
+    await page.goto("/shop?category=visuals");
+    await page.waitForSelector('.browse-grid .card.is-owned[data-product="wallpapers"]');
+    await page.click('.browse-grid .card[data-product="wallpapers"] [data-wish]');
+    await page.waitForSelector('.browse-grid .card[data-product="wallpapers"] [data-wish][aria-pressed="true"]');
+    await page.goto("/shop");
+    await page.waitForSelector('[data-section=wishlist] .card[data-product="wallpapers"]');
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

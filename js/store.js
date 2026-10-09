@@ -6,8 +6,9 @@
 
   const { escapeHTML, cents, api, cart, track } = window.GS;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
-  const slots = () => [...document.querySelectorAll("[data-buy]")];
-  if (!slots().length) return;
+  // Only slots that name a product (a page's own controls, like the Studio product page's, are left to it).
+  const slots = () => [...document.querySelectorAll("[data-buy]")].filter((el) => el.dataset.buy);
+  // The store page draws its cards after loading, so this runs on every page that may show buy controls.
 
   // A polite live region so screen readers hear "Added to cart" without moving focus.
   const live = document.createElement("p");
@@ -64,20 +65,25 @@
       const p = state.products[el.dataset.product];
       el.classList.toggle("is-owned", Boolean(p && p.owned));
     });
-    const owned = Object.values(state.products).filter((p) => p.owned).length;
-    document.querySelectorAll("[data-owned-summary]").forEach((el) => {
-      el.hidden = !owned;
-      if (owned) el.innerHTML = `You've Stacc'd ${owned} of these. <a href="/library">Open Your Stacc</a>`;
-    });
   }
 
+  // Live state for every product on the page that we don't have yet, 50 at a time (the API's limit). Cards drawn later
+  // (filters, pages, sections) ask again for just their new ids, so an owned product never shows as unowned.
+  let asked = new Set(), loading = null;
   async function load() {
-    // Every item a store browser can show (js/shop.js lists them in data-catalog): filters and search draw cards that
-    // weren't on screen at first.
-    const all = [...document.querySelectorAll("[data-catalog]")].flatMap((el) => el.dataset.catalog.split(",").filter(Boolean));
-    const ids = [...new Set([...slots().map((el) => el.dataset.buy), ...all])];
-    const res = await api(`/api/products/state?ids=${encodeURIComponent(ids.join(","))}`);
-    if (res.ok) state = res.data;
+    if (loading) await loading;
+    const want = [...new Set(slots().map((el) => el.dataset.buy))].filter((id) => !asked.has(id));
+    if (!want.length) return paint();
+    want.forEach((id) => asked.add(id));
+    loading = (async () => {
+      for (let i = 0; i < want.length; i += 50) {
+        const res = await api(`/api/products/state?ids=${encodeURIComponent(want.slice(i, i + 50).join(","))}`);
+        if (!res.ok) { want.slice(i).forEach((id) => asked.delete(id)); break; }
+        state = { signedIn: res.data.signedIn, products: { ...(state ? state.products : {}), ...res.data.products } };
+      }
+    })();
+    await loading;
+    loading = null;
     paint();
   }
 
@@ -99,7 +105,7 @@
       return;
     }
     const claim = e.target.closest("[data-claim]");
-    if (claim && !claim.disabled) {
+    if (claim && claim.dataset.claim && !claim.disabled) {
       claim.disabled = true;
       claim.textContent = "Claiming…";
       const res = await api("/api/library/free", { method: "POST", body: { productId: claim.dataset.claim } });
@@ -108,7 +114,7 @@
         return;
       }
       if (res.ok) {
-        state.products[claim.dataset.claim].owned = true;
+        if (state && state.products[claim.dataset.claim]) state.products[claim.dataset.claim].owned = true;
         sound("cinch");
         say("Stacc'd! It's in Your Stacc.");
       } else {
@@ -122,7 +128,7 @@
 
   addEventListener("gs:cart", paint);
   // js/shop.js redraws cards when a filter changes.
-  addEventListener("gs:cards", paint);
+  addEventListener("gs:cards", () => { paint(); load(); });
   // Back/forward cache: the cart may have changed on another page.
   addEventListener("pageshow", (e) => e.persisted && paint());
 

@@ -2,6 +2,7 @@
 // Catalog content and prices live in data/products.js (reviewed in git, shown on the static pages); here the owner
 // pauses sales and manages orders, customers and entitlements (paid files and previews: admin/files.js). Every change is
 // written to the audit log (server/audit/log.js) under the admin's name.
+import { refreshSearchText } from "../discovery/facets.js";
 import { json, fail, readJson, str, email as emailField, id } from "../lib/http.js";
 import { all, first, run, newId, now } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
@@ -74,6 +75,7 @@ async function updateProduct(app, { productId }) {
   if (["priceCents", "published", "deleted", "title", "description"].some((k) => body[k] !== undefined)) sets.push("admin_managed = 1");
   const res = await run(app.db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), id(productId));
   if (!res.meta.changes) fail(404, "not_found", "No product with that id.");
+  if (body.title !== undefined || body.description !== undefined) await refreshSearchText(app.db, productId);
   if (body.salesPaused !== undefined) await audit(app, body.salesPaused ? "product.sales_paused" : "product.sales_resumed", { targetType: "product", targetId: productId });
   const changed = ["priceCents", "published", "deleted", "title", "description"].filter((k) => body[k] !== undefined);
   if (changed.length) await audit(app, "product.changed_by_admin", { targetType: "product", targetId: productId, detail: Object.fromEntries(changed.map((k) => [k, body[k]])) });

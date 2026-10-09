@@ -26,6 +26,6 @@ Six products, all by Glitches & Stitches; the first three are `featured` (home p
 
 Placeholder platform content (also `draft: true`): the Frayed Signals Stacclet with MIDI, Samples, Loops and Presets Pacs (`data/stacclets.js`, `data/pacs.js`), taken from the owner's architecture brief; the sample pack delivers the Samples and Loops Pacs (matching its description).
 
-Four of them list `formats` (WAV 24-bit; Serum; FLAC and WAV; 4K and Resolume), copied from what their own descriptions say; the stems and wallpapers don't state one, so they have none. Cards and product pages show these as labels beside the project's genres and the download size the store reports from uploaded files.
+Each lists `facets` from the store vocabulary, copied only from what its own description says (Frayed Signals: glitch style, one-shots, loops, vocals, WAV, 24-bit; Seam Ripper: presets for Serum; Patchwork: stems for remixing; the EP: tracks in FLAC and WAV; Static Bloom: images as wallpapers; the VJ loops: glitch video loops for Resolume, 4K in `metadata`). No BPM, key, DAW or mood is stated anywhere, so none is set. Kinds with genres take Glitches & Stitches' (Electronic, EDM). The store filters, searches and recommends by these ([discovery](discovery.md)).
 
 Replace this table with the real catalogue when the owner provides it.
