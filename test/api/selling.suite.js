@@ -154,7 +154,12 @@ export default (ctx) => describe("selling", () => {
     const order = await mockBuy(buyer, [{ productId: p.id, priceCents: 1, unitPriceCents: 1 }]);
     const items = db(`SELECT creator_id, unit_price_cents, net_cents, platform_fee_cents, creator_share_cents FROM order_items WHERE order_id = '${order.orderId}'`);
     assert.deepEqual(items, [{ creator_id: s.creator.id, unit_price_cents: 2000, net_cents: 2000, platform_fee_cents: 200, creator_share_cents: 1800 }]);
-    assert.ok((await buyer.get("/api/library")).data.items.some((i) => i.productId === p.id), "the buyer owns it");
+    const owned = (await buyer.get("/api/library")).data.items.find((i) => i.productId === p.id);
+    assert.ok(owned, "the buyer owns it");
+    // Your Stacc names the Studio project and links to the product's real page.
+    assert.equal(owned.projectName, "Beats");
+    assert.equal(owned.path, `/product?p=${p.id}`);
+    assert.equal((await buyer.get("/api/orders")).data.orders.find((o) => o.id === order.orderId).items[0].path, `/product?p=${p.id}`);
 
     // Earnings: just paid, so on hold and not yet payable. No buyer is named.
     const e1 = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;

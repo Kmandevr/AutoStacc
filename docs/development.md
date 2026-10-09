@@ -42,6 +42,7 @@ Plain settings are `[vars]` in `wrangler.toml` (per environment: top level = loc
 | `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` | secret, optional | The second Stripe account for creators' sales and payouts; off without the key, which needs the webhook secret beside it; `PLATFORM_COUNTRY` defaults to `US` ([payouts-setup](payouts-setup.md)) |
 | `STRIPE_MARKETPLACE_TAX` | optional | `off` switches Stripe Tax off on creators' checkouts (testing only; the deploy doesn't set it) |
 | `BREVO_API_KEY` | secret | Brevo key |
+| `BREVO_NEWSLETTER_LISTS` | secret, optional | Each project's Brevo newsletter list, `project-id:list-id` comma-separated (`glitches-and-stitches:3`); a project without one says "coming soon". Development and tests treat every project as open and contact nobody |
 | `ADMIN_EMAILS` | secret | Admin emails, comma-separated (optional: `role = admin` in the user table works too) |
 | `STRIPE_API_BASE` | var | Tests only: points the Stripe SDK at the fake Stripe server (ignored outside development/test) |
 

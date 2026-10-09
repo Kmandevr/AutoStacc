@@ -89,7 +89,7 @@
       if (res.ok) {
         state.products[claim.dataset.claim].owned = true;
         sound("cinch");
-        say("Added to Your Stacc.");
+        say("Stacc'd! It's in Your Stacc.");
       } else {
         sound("error");
         say(res.error.message);

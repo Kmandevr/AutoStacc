@@ -7,11 +7,12 @@ import { fail, str } from "../lib/http.js";
 import { LIMITS, SELLING } from "./policy.js";
 import { requireProject } from "./projects.js";
 import { getProject } from "./creators.js";
+import { productPath } from "../catalog/products.js";
 import { ownImages, imageSrc } from "../sites/images.js";
 import { DELIVERABLE } from "../files/files.js";
 
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const productPath = (p) => (p.source === "studio" ? `/product?p=${p.id}` : `/shop/${p.id}`);
+export { productPath };
 
 const slugify = (s) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "product";
 

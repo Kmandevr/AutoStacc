@@ -26,6 +26,9 @@ export const isPurchasable = (p) => isVisible(p) && !p.sales_paused && p.price_c
 // Can be claimed for free by a signed-in customer.
 export const isFree = (p) => isVisible(p) && !p.sales_paused && p.price_cents === 0;
 
+// Where a product's page is: catalog products have generated pages, Studio products share the /product template.
+export const productPath = (p) => (p.source === "studio" ? `/product?p=${p.id}` : `/shop/${p.id}`);
+
 // The shape browsers see: no internal columns. With the running sales (server/promotions), priceCents is the price
 // right now and listPriceCents the catalog price, plus the sale's name and end while one applies.
 export function publicProduct(p, sales = []) {
@@ -49,6 +52,7 @@ export function publicProduct(p, sales = []) {
     pacs: parseJson(p.pacs, []),
     maxQuantity: p.max_quantity,
     available: isPurchasable(p) || isFree(p),
-    free: p.price_cents === 0
+    free: p.price_cents === 0,
+    path: productPath(p)
   };
 }
