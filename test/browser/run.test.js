@@ -778,4 +778,31 @@ describe("store in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
+  test("the Control Center works on a phone: a section picker, tables as cards, nothing sideways, big enough buttons", async () => {
+    const { ctx, page } = await open(PHONE);
+    await page.goto("/login");
+    await page.fill("#email", "owner@browser.test");
+    await page.fill("#password", "browser-pass-123");
+    await page.click("button[type=submit]");
+    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await page.goto("/admin");
+    await page.waitForSelector("[data-section]");
+    assert.equal(await page.locator(".admin-tabs").isVisible(), false, "the tab strip is replaced by the picker on a phone");
+    await page.selectOption("[data-section]", "customers");
+    await page.waitForSelector("#admin-customers td[data-label]");
+    assert.equal(await page.locator("#admin-customers").isVisible(), true);
+    assert.equal(await page.locator("#admin-products").isVisible(), false);
+    const facts = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      cellsLabelled: [...document.querySelectorAll("#admin-customers tbody td")].filter((td) => td.colSpan === 1 && document.querySelectorAll("#admin-customers thead th")[td.cellIndex].textContent.trim()).every((td) => td.dataset.label),
+      picker: document.querySelector("[data-section]").getBoundingClientRect().height,
+      small: [...document.querySelectorAll("#admin-customers button, #admin-customers .link-btn")].filter((b) => b.offsetParent && b.getBoundingClientRect().height < 40).length
+    }));
+    assert.ok(facts.overflow <= 0, `the Control Center overflows by ${facts.overflow}px`);
+    assert.ok(facts.cellsLabelled, "every table cell carries its column name");
+    assert.ok(facts.picker >= 44, "the picker is easy to tap");
+    assert.equal(facts.small, 0, "buttons are big enough to tap");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
 });

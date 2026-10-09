@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-09: Control Center and Studio on phones. A section picker replaces the sideways tab strip, tables show as labelled cards (`js/admin-mobile.js`, `css/admin.css`), controls are 44px or more, Studio touch targets enlarged. Browser test covers it.
 - 2026-10-09: Live checkout works (a real Stripe page opens). CI: the store workflow runs the unit and API suite and the browser suite as two parallel jobs (`store`, `store-browser`) instead of one after the other.
 - 2026-10-09: API tests 222 s to 92 s with the same 123 tests. The `sql()` helper started a wrangler process per query; it now reads the local D1 file with Node's built-in SQLite (`test/support/client.js`, needs Node 22.13+).
 - 2026-10-09: Live checkout, second cause. The Stripe account uses Managed Payments, which refuses any Checkout line without an eligible product tax code (`TAX_CODE` in `server/payments/stripe.js`, `txcd_10000000` general digital download; owner to confirm with a tax adviser, per-kind codes possible). Refusals now show Stripe's message and field. The fake Stripe enforces the tax-code rule.
