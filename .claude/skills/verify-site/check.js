@@ -98,9 +98,9 @@ async function checkPage(browser, base, page, width) {
     for (const id of facts.empty) problems.push(["WARN", "empty-container", `${id} rendered nothing`]);
     if (width === 390 && facts.smallTargets) problems.push(["WARN", "tap-targets", `${facts.smallTargets} links/buttons smaller than 24px`]);
     if (width === 390) {
-      // Platform pages open the AutoStacc drawer; a project's pages open the project's own menu.
+      // Platform pages open the AutoStacc drawer from the phone tab bar's Menu tab; a project's pages open the project's own menu.
       const project = await tab.locator(".ph-toggle").count();
-      const toggle = tab.locator(project ? ".ph-toggle" : ".menu-toggle");
+      const toggle = tab.locator(project ? ".ph-toggle" : "[data-tab-menu]");
       if (await toggle.isVisible()) {
         await toggle.click();
         if (!(await tab.locator(project ? ".ph-nav.open" : ".side.open").count())) problems.push(["FAIL", "nav-toggle", "menu did not open"]);
