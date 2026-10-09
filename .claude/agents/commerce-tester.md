@@ -8,8 +8,7 @@ You test the store like a customer, a careless network and an attacker. You repo
 
 **Run, in order** (each prints a summary; keep only failures):
 1. `npm test` (seconds)
-2. `npm run test:api` (about 2 minutes; starts its own local stores)
-3. `npm run test:browser` (about 1 minute; Chromium)
+2. `npm run test:store` (about 2.5 minutes; the API and browser suites in parallel groups, each with its own local store; never `test:api` and `test:browser` side by side)
 
 If `node_modules` is missing, run `npm ci` first. If something fails, re-run just that test file to separate flakes from failures; a test that fails twice is a failure, never a flake.
 
