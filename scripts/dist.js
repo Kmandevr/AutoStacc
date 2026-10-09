@@ -34,10 +34,11 @@ let count = 0;
 for (const f of fs.readdirSync(ROOT).filter((f) => f.endsWith(".html"))) { fs.copyFileSync(path.join(ROOT, f), path.join(OUT, f)); count++; }
 for (const f of ROOT_FILES) { fs.copyFileSync(path.join(ROOT, f), path.join(OUT, f)); count++; }
 for (const d of DIRS) count += copyDir(path.join(ROOT, d), path.join(OUT, d));
-// Fingerprint scripts, styles and data in every page (/js/layout.js -> /js/layout.js?v=3f9a1c2b, from the file's
-// content): a changed file gets a new address, so no browser or cache can keep running last deploy's copy beside this
-// deploy's pages (Cloudflare's browser-cache setting can override the no-cache in _headers). Unchanged files keep
-// their address and stay cached. Only the copies in dist/ change; the repository keeps plain links.
+// Fingerprint scripts, styles and data in every page (/js/layout.js -> /assets/3f9a1c2b0d/js/layout.js, a copy named
+// by the file's content): a changed file gets a new address, so no browser can keep last deploy's copy beside this
+// deploy's pages, and _headers lets browsers keep /assets/* for a year without re-checking. The plain /js, /css and
+// /data addresses stay (no-cache) for what loads files by name: the Your Stacc worker, the impersonation bar, Studio
+// creators' pages. Only the copies in dist/ change; the repository keeps plain links.
 const stamp = new Map();
 const version = (rel) => {
   if (!stamp.has(rel)) {
@@ -54,8 +55,10 @@ for (const file of pages(OUT)) {
   const out = html.replace(/(\s(?:src|href)=")\/((?:js|css|data)\/[^"?#]+\.(?:js|css))"/g, (m, attr, rel) => {
     const v = version(rel);
     if (!v) return m;
+    const copy = path.join(OUT, "assets", v, rel);
+    if (!fs.existsSync(copy)) { fs.mkdirSync(path.dirname(copy), { recursive: true }); fs.copyFileSync(path.join(OUT, rel), copy); count++; }
     stamped++;
-    return `${attr}/${rel}?v=${v}"`;
+    return `${attr}/assets/${v}/${rel}"`;
   });
   if (out !== html) fs.writeFileSync(file, out);
 }
@@ -69,7 +72,7 @@ const staticPages = fs.readdirSync(OUT).filter((f) => f.endsWith(".html")).map((
 // Rewrites (200 rules) stay with their Function when they have one: /settings/* is the gated Settings page.
 const redirected = fs.readFileSync(path.join(ROOT, "_redirects"), "utf8").split("\n").map((l) => l.trim().split(/\s+/))
   .filter(([from, , code]) => from && from.startsWith("/") && code !== "200").map(([from]) => from);
-const exclude = [...new Set([...DIRS.filter((d) => d !== "shop").map((d) => `/${d}/*`), "/shop", "/shop/*",
+const exclude = [...new Set([...DIRS.filter((d) => d !== "shop").map((d) => `/${d}/*`), "/assets/*", "/shop", "/shop/*",
   ...CREATORS.map((c) => "/" + c), ...staticPages, ...redirected, ...ROOT_FILES.filter((f) => !f.startsWith("_")).map((f) => "/" + f)])];
 if (exclude.length > 99) throw new Error(`_routes.json has ${exclude.length} exclude rules; Cloudflare allows 100 in total`);
 fs.writeFileSync(path.join(OUT, "_routes.json"), JSON.stringify({ version: 1, include: ["/*"], exclude }, null, 2) + "\n");

@@ -10,10 +10,27 @@ on:
 permissions:
   contents: read
 jobs:
-  # One job per test group, all side by side, so a pull request waits for the slowest group, not the sum. Each group
-  # starts its own local store (test/api/*.test.js, test/browser/*.test.js). The job named `store` keeps its name for
-  # anything that requires it: unit tests plus the API `accounts` group.
+  # Decides whether the store can be affected: a change to docs or Claude's config only (docs/, .claude/, *.md) can't,
+  # so the test jobs are skipped (a skipped job still counts as passed for required checks). Pushes to main always test.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      store: ${{ steps.diff.outputs.store }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "store=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          if echo "$changed" | grep -qvE '^(docs/|\.claude/)|\.md$'; then echo "store=true"; else echo "store=false"; fi >> "$GITHUB_OUTPUT"
+  # Two jobs side by side; inside each, the suite's groups run in parallel with their own stores (API: accounts,
+  # payments; browser: flows, layout, features). Two machines instead of one per group: the repository's CI minutes are
+  # limited, and each machine repeats the setup. The job named `store` keeps its name for anything that requires it.
   store:
+    needs: changes
+    if: needs.changes.outputs.store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -25,27 +42,13 @@ jobs:
       - run: npm ci
       - name: Unit tests
         run: npm test
-      - name: API security tests (accounts group)
-        run: npm run -s site && node --test --test-reporter=spec test/api/accounts.test.js
-  store-api-payments:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: API security tests (payments group)
-        run: npm run -s site && node --test --test-reporter=spec test/api/payments.test.js
+      - name: API security tests
+        run: npm run test:api
   store-browser:
+    needs: changes
+    if: needs.changes.outputs.store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        group: [flows, layout, features]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,7 +56,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Install Playwright with Chromium
-        run: npm install -g playwright@1 && npx playwright install --with-deps chromium
-      - name: Browser and chaos tests (${{ matrix.group }} group)
-        run: npm run -s site && node --test --test-reporter=spec test/browser/${{ matrix.group }}.test.js
+      - name: Install Playwright
+        id: pw
+        run: npm install -g playwright@1 && echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      # Chromium is kept between runs per Playwright version; the system libraries it needs are still installed each time.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ steps.pw.outputs.version }}-${{ runner.os }}
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser and chaos tests
+        run: npm run test:browser
