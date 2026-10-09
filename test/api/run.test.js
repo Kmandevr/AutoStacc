@@ -1,5 +1,5 @@
 // API security and break tests: starts the local stores once (mock payments + Stripe mode with a fake Stripe API),
-// then runs every suite against them. Usage: npm run test:api  (needs `npm install`; takes a minute or two).
+// then runs every suite against them. Usage: npm run test:api  (needs `npm install`; takes about a minute and a half).
 import { before, after } from "node:test";
 import { startStores } from "../support/servers.js";
 import auth from "./auth.suite.js";

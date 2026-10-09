@@ -1,7 +1,7 @@
 // Test helpers: an HTTP client with its own cookie jar and client IP (rate limits are per IP), account sign-up with
 // email verification through the dev outbox, direct SQL against the local database, and signed Stripe webhooks.
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import Stripe from "stripe";
 
@@ -75,16 +75,42 @@ export async function verifiedUser(client, email, password = "correct-horse-batt
   return me.data.user;
 }
 
-const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
+// Reads and writes the local D1 database file the dev server keeps in `stateDir`, directly with Node's built-in SQLite
+// (the same file `wrangler d1 execute --local` would open, without starting a wrangler process per query, which cost
+// seconds each). The server keeps the file open in WAL mode, so a short busy wait covers a write colliding with its own.
+function openDb(stateDir) {
+  const dir = path.join(stateDir, "v3", "d1", "miniflare-D1DatabaseObject");
+  const file = readdirSync(dir).find((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite");
+  if (!file) throw new Error("no local D1 database in " + dir);
+  const db = new DatabaseSync(path.join(dir, file));
+  db.exec("PRAGMA busy_timeout = 10000");
+  return db;
+}
+
+// Splits on semicolons that are outside quoted text, so a value containing ";" stays in one statement.
+function statements(command) {
+  const out = [];
+  let cur = "", quote = "";
+  for (const ch of command) {
+    if (quote) { cur += ch; if (ch === quote) quote = ""; continue; }
+    if (ch === "'" || ch === '"') { quote = ch; cur += ch; continue; }
+    if (ch === ";") { if (cur.trim()) out.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
 export function sql(stateDir, command) {
   return sqlAll(stateDir, command)[0];
 }
 
-// Several statements in one call: one result list per statement.
+// Several statements in one call: one result list per statement (rows as plain objects; writes give []).
 export function sqlAll(stateDir, command) {
-  const out = execFileSync(WRANGLER, ["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--json", "--command", command],
-    { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, WRANGLER_SEND_METRICS: "false" } }).toString();
-  return JSON.parse(out).map((r) => r.results);
+  const db = openDb(stateDir);
+  try {
+    return statements(command).map((q) => db.prepare(q).all().map((row) => ({ ...row })));
+  } finally { db.close(); }
 }
 
 export function devVar(name) {
