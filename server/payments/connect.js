@@ -12,6 +12,11 @@ function requireMarketplace(app) {
   if (!app.config.marketplaceEnabled) fail(503, "payouts_closed", "Payout accounts aren't open yet.");
 }
 
+// Where a creator's bank account can be. Stripe's self-serve payouts from a US platform cover the US, the UK, the European
+// Economic Area, Canada and Switzerland (docs.stripe.com/connect/cross-border-payouts); anywhere else needs a different Stripe
+// product (Global Payouts) and isn't built. js/studio-earnings.js shows the same list (a unit test keeps them equal).
+export const PAYOUT_COUNTRIES = ["US", "CA", "GB", "CH", "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IS", "IE", "IT", "LV", "LI", "LT", "LU", "MT", "NL", "NO", "PL", "PT", "RO", "SK", "SI", "ES", "SE"];
+
 // Opens (or resumes) Stripe's onboarding for the creator and returns the page to send them to. The country can't change
 // after the account exists, so it is asked for first; Stripe refuses countries it can't pay and says so.
 export async function openPayoutAccount(app, creator, { country }) {
@@ -20,13 +25,12 @@ export async function openPayoutAccount(app, creator, { country }) {
   let accountId = creator.stripe_account_id;
   if (!accountId) {
     if (!/^[A-Z]{2}$/.test(country || "")) fail(400, "invalid_field", "Pick the country your bank account is in.", { field: "country" });
+    if (!PAYOUT_COUNTRIES.includes(country)) fail(400, "unsupported_country", "AutoStacc can pay creators with bank accounts in the United States, the United Kingdom, Canada, Switzerland and the European Economic Area for now.", { field: "country" });
     try {
       const account = await c.accounts.create({
         type: "express",
         country,
         capabilities: { transfers: { requested: true } },
-        // Outside the platform's own country Stripe pays creators as cross-border recipients, with a lighter agreement.
-        ...(country !== app.config.platformCountry ? { tos_acceptance: { service_agreement: "recipient" } } : {}),
         metadata: { creator_id: creator.id }
       }, { idempotencyKey: `acct-${creator.id}` });
       accountId = account.id;
