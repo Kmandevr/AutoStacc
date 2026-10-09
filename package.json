@@ -3,7 +3,7 @@
   "private": true,
   "description": "AutoStacc: the platform (store, Your Stacc, projects) and its first project, Glitches & Stitches. Static site plus the store API (Cloudflare Pages Functions, D1, R2).",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13"
   },
   "scripts": {
     "dev": "node scripts/dev.js",

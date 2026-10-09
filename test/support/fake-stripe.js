@@ -39,6 +39,9 @@ export function startFakeStripe(port) {
           return send(400, { error: { type: "invalid_request_error", message: "The `expires_at` timestamp must be between 30 minutes and 24 hours from now." } });
         }
         const items = Object.values(p.line_items || {});
+        // The live account uses Managed Payments: every line needs an eligible product tax code (this once broke live checkout).
+        const untaxed = items.findIndex((i) => !/^txcd_\d+$/.test((i.price_data.product_data || {}).tax_code || ""));
+        if (untaxed >= 0) return send(400, { error: { type: "invalid_request_error", message: `Invalid line_items[${untaxed}]: the product tax code is missing.` } });
         const amount = items.reduce((s, i) => s + Number(i.price_data.unit_amount) * Number(i.quantity), 0);
         const id = "cs_test_" + crypto.randomBytes(12).toString("hex");
         const s = {
