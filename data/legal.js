@@ -69,7 +69,7 @@ window.LEGAL = [
       { id: "others", heading: "Who else is involved", body: [
         { list: [
           "**Stripe**: payments.",
-          "**Brevo**: sending emails, and keeping the project mailing lists you confirmed.",
+          "**Brevo**: sending emails, and keeping the project mailing lists you confirmed and, if you switch on AutoStacc news, the AutoStacc news list.",
           "**Cloudflare**: hosts the site, the database and the files.",
           "**Google Fonts**: the site's fonts load from Google, which sees your IP address when they do.",
           "**Music players** (YouTube, Spotify, Deezer and others) on release pages and creators' pages are loaded from those services and follow their own privacy policies."

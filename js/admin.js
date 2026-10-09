@@ -3,7 +3,7 @@
 // one) and preview clips, deactivate files. The other tabs start on the "gs:admin" event: statistics
 // (js/admin-stats.js), orders, customers and entitlements (js/admin-records.js), customer preview with impersonation
 // and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), creators
-// (js/admin-creators.js), test-purchase checks and the audit log (js/admin-audit.js).
+// (js/admin-creators.js), payouts (js/admin-payouts.js), AutoStacc news (js/admin-news.js), test-purchase checks and the audit log (js/admin-audit.js).
 // Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
 (function () {
   "use strict";
@@ -16,7 +16,7 @@
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
   const TABS = [["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"],
-    ["promotions", "Promotions"], ["creators", "Creators"], ["payouts", "Payouts"], ["tests", "Test purchases"], ["audit", "Audit log"]];
+    ["promotions", "Promotions"], ["creators", "Creators"], ["payouts", "Payouts"], ["news", "News"], ["tests", "Test purchases"], ["audit", "Audit log"]];
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
 
   function shell(s) {
@@ -56,7 +56,8 @@
           <span class="admin-flags">${p.deleted ? "removed" : p.published ? "published" : "draft"}${p.salesPaused ? " · sales paused" : ""}</span>
           ${p.deleted ? `<button class="btn ghost" type="button" data-product-set='{"deleted":false}'>Restore</button>` : `<button class="btn ghost" type="button" data-pause="${p.salesPaused ? "0" : "1"}">${p.salesPaused ? "Resume sales" : "Pause sales"}</button>
           <button class="btn ghost" type="button" data-product-set='{"published":${p.published ? "false" : "true"}}'>${p.published ? "Hide from store" : "Publish (out of draft)"}</button>
-          <button class="btn ghost" type="button" data-product-remove>Remove</button>`}</div>
+          ${p.published ? `<button class="btn ghost" type="button" data-announce title="Email the project's followers who want new-release emails">Email followers</button>` : ""}
+          <button class="btn ghost" type="button" data-product-remove>Remove</button>`}<span class="small-print" role="status" data-announce-msg></span></div>
         ${p.deleted ? "" : `<form class="admin-upload" data-price-form><label for="pr-${escapeHTML(p.id)}">Price (${escapeHTML(p.currency)}, 0 = free)</label>
           <input id="pr-${escapeHTML(p.id)}" type="number" min="0" max="10000" step="0.01" inputmode="decimal" value="${(p.priceCents / 100).toFixed(2)}" required>
           <button class="btn ghost" type="submit">Save price</button><span class="small-print" role="status"></span></form>
@@ -172,6 +173,23 @@
       pause.disabled = true;
       await api(`/api/admin/products/${encodeURIComponent(pause.closest("[data-product]").dataset.product)}`, { method: "PATCH", body: { salesPaused: pause.dataset.pause === "1" } });
       return products();
+    }
+    // Tells the project's followers who want new-release emails, in batches; each person once per product.
+    const announce = e.target.closest("[data-announce]");
+    if (announce && !announce.disabled) {
+      const li = announce.closest("[data-product]"), msg = $("[data-announce-msg]", li);
+      if (!confirm(`Email "${li.querySelector("strong").textContent}" to its project's followers? Each follower gets it once.`)) return;
+      announce.disabled = true;
+      let total = 0;
+      for (;;) {
+        const res = await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}/announce`, { method: "POST", body: {} });
+        if (!res.ok) { msg.textContent = res.error.message; break; }
+        total += res.data.sent;
+        msg.textContent = res.data.left ? `Sent ${total}, ${res.data.left} left…` : `Sent to ${total} follower${total === 1 ? "" : "s"}.`;
+        if (!res.data.left || !res.data.sent) break;
+      }
+      announce.disabled = false;
+      return;
     }
     // A pending file (uploaded with "hold back") reaches owners only once published.
     const pub = e.target.closest("[data-publish-file]");

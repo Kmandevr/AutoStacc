@@ -92,7 +92,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 
 - **ZIP of a selection:** "Download selected" fetches each file's own signed link in turn. A server-side ZIP (`POST /api/downloads/bundle {fileIds}` → one signed link, streamed store-only ZIP) is the next step if customers want it.
 - **Pac-level ownership:** access is per product. Bundles that share Pacs across products need a `product_pacs` table and a Pac-aware access check; the entitlement `bundle` source is reserved.
-- **Notifications:** follows record who wants news; nothing sends it yet. A "new release" mail is one template in `server/email/templates.js` plus a send when a product is published.
+- **Notifications:** new-release mail is sent by hand from the Control Center (Products → **Email followers**) to followers who switched new-release emails on, once per person per product (`server/admin/news.js`). Nothing sends it automatically when a product is published.
 - **Licences:** one licence per kind of product (`data/licenses.js`, picked by `license` in `data/product-types.js`), shown on `/license` and each product page; no per-purchase licence records.
 - **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own no-code sites and selling from the Studio are built ([creators](creators.md)); the planned design for creator code (sandboxed HTML/CSS, later JavaScript) is in [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED).
 - (Resolved 2026-10-08: the site is AutoStacc; projects live at `/<creator>/<project>` and creators build free sites in the Studio; see [creators](creators.md) and [decisions](decisions.md).)

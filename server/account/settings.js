@@ -8,6 +8,7 @@ import { createAuth } from "../auth/index.js";
 import { listDevices, tokenOf } from "../auth/devices.js";
 import { getPreferences, setPreferences, KINDS } from "../email/preferences.js";
 import { limit } from "../lib/ratelimit.js";
+import { syncNewsList } from "../email/contacts.js";
 
 async function ownAccount(app) {
   const user = await requireUser(app);
@@ -57,7 +58,10 @@ async function updatePreferences(app) {
     if (typeof value !== "boolean") fail(400, "invalid_field", `${name} must be true or false.`);
     changes[name] = value;
   }
-  return json({ preferences: await setPreferences(app.db, user.id, changes) });
+  const before = await getPreferences(app.db, user.id);
+  const next = await setPreferences(app.db, user.id, changes);
+  if (before.platformNews !== next.platformNews) syncNewsList(app, user.email, next.platformNews);
+  return json({ preferences: next });
 }
 
 export const routes = [

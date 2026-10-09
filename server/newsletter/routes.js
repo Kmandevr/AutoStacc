@@ -7,7 +7,7 @@ import { hmacSign, hmacVerify, b64url, fromB64url, sha256 } from "../lib/crypto.
 import { first } from "../lib/db.js";
 import { limit } from "../lib/ratelimit.js";
 import { sendEmail } from "../email/index.js";
-import { addContact } from "./brevo.js";
+import { addContact } from "../email/contacts.js";
 
 const TTL_SECONDS = 7 * 24 * 3600;
 const enc = new TextEncoder();
