@@ -4,6 +4,8 @@
 //   data-filters="project type"  filter bars to show (each option shows how many items it holds)
 //   data-search              a search box over titles, descriptions, tags, types and project names
 //   data-spotlight           with nothing filtered, the first featured item opens large at the top
+//   data-picks="3"           with nothing filtered, a "Picked for you" row from js/taste.js (this browser's history)
+//   data-sort                a sort menu: recommended (personal when picks are on), price, name
 //   data-level="2"           card heading level (default 3)
 //   data-url                 the store page: filters, search and the selected item live in the address
 //                            (/shop?project=<id>&type=<type>&q=<text>&item=<id>); clicking a card selects it in place.
@@ -20,6 +22,7 @@
   const card = GS.productCard;
   if (!card) return;
   const projectName = (id) => (PROJECTS.find((x) => x.id === id) || {}).name || "";
+  const SORTS = [["", "Recommended"], ["price-asc", "Price: low to high"], ["price-desc", "Price: high to low"], ["name", "Name"]];
   const plural = (n) => `${n} item${n === 1 ? "" : "s"}`;
 
   function mount(root) {
@@ -31,10 +34,11 @@
     if (cfg.limit) base = base.slice(0, Number(cfg.limit));
     const projects = PROJECTS.filter((x) => base.some((p) => p.project === x.id));
     const types = [...new Set(base.map(card.label))];
-    const state = { project: "", type: "", q: "", item: "" };
+    const state = { project: "", type: "", q: "", item: "", sort: "" };
+    const taste = "picks" in cfg && GS.taste;
     root.dataset.catalog = base.map((p) => p.id).join(","); // for js/store.js: live state for every item, drawn or not
     // Lower-case text each item is searched by.
-    const haystack = new Map(base.map((p) => [p, [p.title, p.description, card.label(p), projectName(p.project), ...(p.tags || [])].join(" ").toLowerCase()]));
+    const haystack = new Map(base.map((p) => [p, [p.title, p.description, card.label(p), projectName(p.project), card.genre(p), ...(p.tags || []), ...(p.formats || [])].join(" ").toLowerCase()]));
     const spot = "spotlight" in cfg && base.find((p) => p.featured);
 
     root.innerHTML = `
@@ -46,9 +50,11 @@
       ${filters.includes("type") && types.length > 1 ? `<div class="filters" role="group" aria-label="Type" data-filter="type"></div>` : ""}
       <p class="shop-from small-print" hidden></p>
       <div class="shop-spotlight"></div>
+      ${taste ? `<section class="shop-foryou" aria-labelledby="foryou-head"></section>` : ""}
       <div class="shop-selected"></div>
-      ${synced ? `<div class="shop-results"><p class="shop-count" aria-live="polite"></p><button type="button" class="shop-clear" data-clear hidden>Clear filters</button></div>` : ""}
-      <div class="grid"></div>`;
+      ${synced ? `<div class="shop-results"><p class="shop-count" aria-live="polite"></p><button type="button" class="shop-clear" data-clear hidden>Clear filters</button>
+        ${"sort" in cfg ? `<label class="shop-sort">Sort <select data-sort>${SORTS.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select></label>` : ""}</div>` : ""}
+      <div class="grid shop-grid"></div>`;
     const input = $("#shop-q", root);
 
     // Items that pass every filter except `skip`, so each filter option can say how many it would show.
@@ -66,8 +72,28 @@
       }).join("");
     };
 
+    const order = (items) => {
+      const by = { "price-asc": (a, b) => a.price - b.price, "price-desc": (a, b) => b.price - a.price, name: (a, b) => a.title.localeCompare(b.title) }[state.sort];
+      return by ? [...items].sort(by) : taste ? taste.rank(items, card.label) : items;
+    };
+    // Personal picks: a few cards with why each is shown, or a line to switch them back on. Nothing without history.
+    const picks = (show) => {
+      const el = $(".shop-foryou", root);
+      if (!el) return;
+      if (!show) { el.innerHTML = ""; return; }
+      if (!taste.enabled()) {
+        el.innerHTML = `<p class="small-print shop-foryou-off" id="foryou-head">Personal picks are off. <button type="button" class="shop-clear" data-taste="on">Turn them on</button></p>`;
+        return;
+      }
+      const list = taste.picks(base, Number(cfg.picks) || 3, { typeLabel: card.label, skip: (p) => p === spot || GS.cart.has(p.id) });
+      el.innerHTML = list.length ? `<div class="shop-foryou-head"><h${level} class="shop-label" id="foryou-head">Picked for you</h${level}>
+          <p class="small-print">From what you've opened and added to your cart here, kept only in this browser.
+            <button type="button" class="shop-clear" data-taste="reset">Forget it</button> <button type="button" class="shop-clear" data-taste="off">Turn off</button></p></div>
+        <div class="shop-picks">${list.map((x) => card(x.p, { level: level + 1, why: x.reason })).join("")}</div>` : "";
+    };
+
     const draw = () => {
-      const items = matching();
+      const items = order(matching());
       const filtered = Boolean(state.project || state.type || state.q);
       const picked = items.find((p) => p.id === state.item);
       const lead = !filtered && !picked && spot;
@@ -75,7 +101,8 @@
         ? `<p class="shop-label">Featured</p>${card(lead, { level, selected: true, label: "Featured" })}` : "";
       $(".shop-selected", root).innerHTML = picked ? card(picked, { level, selected: true }) : "";
       const rest = items.filter((p) => p !== picked && p !== lead);
-      $(".grid", root).innerHTML = rest.map((p) => card(p, { level })).join("")
+      picks(!filtered && !picked);
+      $(".shop-grid", root).innerHTML = rest.map((p) => card(p, { level })).join("")
         || (picked || lead ? "" : state.q
           ? `<div class="empty shop-empty"><p>Nothing matches “${e(state.q)}”.</p><button type="button" class="btn ghost" data-clear>Clear the search</button></div>`
           : `<p class="empty">Nothing here yet.</p>`);
@@ -99,11 +126,14 @@
       state.type = types.includes(q.get("type")) ? q.get("type") : "";
       state.q = input ? (q.get("q") || "").slice(0, 80) : "";
       state.item = base.some((p) => p.id === q.get("item")) ? q.get("item") : "";
+      state.sort = SORTS.some(([v]) => v && v === q.get("sort")) ? q.get("sort") : "";
       if (input) input.value = state.q;
+      const sorter = $("[data-sort]", root);
+      if (sorter) sorter.value = state.sort;
     };
     const toUrl = (replace) => {
       const q = new URLSearchParams();
-      for (const k of ["project", "type", "q", "item"]) if (state[k]) q.set(k, state[k]);
+      for (const k of ["project", "type", "q", "item", "sort"]) if (state[k]) q.set(k, state[k]);
       history[replace ? "replaceState" : "pushState"](null, "", location.pathname + (q.toString() ? "?" + q : ""));
     };
 
@@ -114,6 +144,16 @@
         state.item = "";
         if (synced) toUrl();
         return swap(draw);
+      }
+      const t = ev.target.closest("[data-taste]");
+      if (t) {
+        const how = t.dataset.taste;
+        if (how === "reset") taste.reset(); else taste.set(how === "on");
+        draw();
+        // The pressed button is gone after the redraw: keep focus near it.
+        const near = $("#foryou-head", root) || input;
+        if (near) { if (near !== input) near.tabIndex = -1; near.focus({ preventScroll: true }); }
+        return;
       }
       if (ev.target.closest("[data-clear]")) {
         Object.assign(state, { project: "", type: "", q: "", item: "" });
@@ -137,6 +177,12 @@
     });
     // Typing filters as you go; the address follows without filling the history with every letter.
     let typing;
+    root.addEventListener("change", (ev) => {
+      if (!ev.target.matches("[data-sort]")) return;
+      state.sort = ev.target.value;
+      if (synced) toUrl(true);
+      swap(draw);
+    });
     if (input) input.addEventListener("input", () => {
       clearTimeout(typing);
       typing = setTimeout(() => {

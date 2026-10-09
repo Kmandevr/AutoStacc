@@ -7,14 +7,18 @@
   const { escapeHTML: e, money } = GS;
   const TYPES = window.PRODUCT_TYPES || {};
   const label = (p) => (TYPES[p.type] || {}).label || p.type;
-  const projectName = (id) => ((window.PROJECTS || []).find((x) => x.id === id) || {}).name || "";
+  const projectOf = (id) => (window.PROJECTS || []).find((x) => x.id === id) || {};
+  const projectName = (id) => projectOf(id).name || "";
+  // The genre label is the project's own (data/projects.js genres): products don't claim one of their own.
+  const genre = (p) => (projectOf(p.project).genres || []).join(" · ");
   // Generated covers: a track-colour tile in AutoStacc's look; a project's look restyles it (Glitches & Stitches: the
   // hue picks a green or purple glow).
   const tint = (hue = 300) => (hue >= 90 && hue < 210 ? "green" : "purple");
 
   // level: heading level, so the card sits under its section. selected: the item opened large at the top of the store.
   // label: what the large card is called ("Selected" by default, "Featured" for the store's spotlight).
-  function productCard(p, { level = 3, selected = false, label: kicker = "Selected" } = {}) {
+  // why: a short line saying why it's shown (personal picks).
+  function productCard(p, { level = 3, selected = false, label: kicker = "Selected", why = "" } = {}) {
     // Static fallback; js/store.js swaps in the live control (Add to cart, OWNED, ...).
     const button = p.draft
       ? `<span class="btn" aria-disabled="true">Coming soon</span>`
@@ -27,7 +31,13 @@
           <span class="tag">${selected ? `${e(kicker)} · ` : ""}${e(label(p))}</span>
           <h${level}><a href="${e(GS.shopItemPath(p))}" data-select="${e(p.id)}">${e(p.title)}</a></h${level}>
           ${by ? `<p class="card-by">by ${e(by)}</p>` : ""}
+          ${why ? `<p class="card-why">${e(why)}</p>` : ""}
           <p class="card-desc">${e(p.description)}</p>
+          <ul class="card-labels" aria-label="Details">
+            ${(p.formats || []).map((f) => `<li class="label-format">${e(f)}</li>`).join("")}
+            ${genre(p) ? `<li class="label-genre">${e(genre(p))}</li>` : ""}
+            <li class="label-size" data-size="${e(p.id)}" hidden></li>
+          </ul>
           <a class="card-more" href="/shop/${e(p.id)}">${selected ? "Everything about it" : "Details"}<span class="sr-only"> about ${e(p.title)}</span> →</a>
           <div class="card-foot">
             <span class="price" data-price="${e(p.id)}">${p.price ? money(p.price) : "Free"}</span>
@@ -39,5 +49,6 @@
 
   // One namespace: the template, with its type-label helper attached (shop.js builds the type filter from it).
   productCard.label = label;
+  productCard.genre = genre;
   GS.productCard = productCard;
 })();

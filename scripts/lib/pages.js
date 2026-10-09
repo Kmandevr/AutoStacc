@@ -304,7 +304,9 @@ function productPage(SITE, data, p) {
             <dt>Created by</dt><dd><a href="${esc(projectPath(creator.id))}">${esc(creator.name)}</a></dd>
             <dt>Sold by</dt><dd><a href="/about">${esc(SITE.name)}</a></dd>
             <dt>Type</dt><dd>${esc(p.category)}</dd>
-            <dt>Format</dt><dd>Digital download</dd>
+            <dt>Format</dt><dd>Digital download${(p.formats || []).length ? ` · ${p.formats.map(esc).join(", ")}` : ""}</dd>
+            ${(creator.genres || []).length ? `<dt>Genre</dt><dd>${esc(creator.genres.join(", "))}</dd>` : ""}
+            <div data-size-row hidden><dt>Download</dt><dd data-size="${esc(p.id)}"></dd></div>
             ${release ? `<dt>Release</dt><dd><a href="${esc(releasePath(release))}">${esc(release.title)}</a></dd>` : ""}
             ${(p.tags || []).length ? `<dt>Tags</dt><dd class="tags">${p.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join(" ")}</dd>` : ""}
             ${facts}
@@ -321,7 +323,7 @@ ${others.length ? `
       </div>
     </section>
 ` : ""}`;
-  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/store.js"], main, look: creator }) };
+  return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "detail"], scripts: ["js/taste.js", "js/store.js"], main, look: creator }) };
 }
 
 // ---------- news post ----------

@@ -6,6 +6,13 @@ updated: 2026-10-09
 
 # Decisions
 
+## 2026-10-09: Store recommendations stay on the visitor's device
+
+- **The owner asked for picks based on each visitor's habits and preferences.** They are computed in the browser (`js/taste.js`) from what that browser opened, added to its cart and filtered by; nothing is sent to the store or kept per account, so there is no tracking profile, nothing new for the privacy page beyond one line, and no recommendation backend.
+- **Not only more of the same:** picks favour things not yet opened and always keep one place for a kind the visitor hasn't looked at.
+- **Visitors control it:** "Forget it" clears the history; "Turn off" clears it and stops recording.
+- **Labels are facts only:** formats come from each product's own description, the genre from the project's `genres`, the size from the files actually uploaded. Nothing is guessed to fill a label.
+
 ## 2026-10-09: Docs are checked against the repository, not trusted
 
 - **Each note names the code it describes** (`covers:` frontmatter), so "which note must change with this file" is data, not memory.

@@ -6,6 +6,8 @@
 //   id: lowercase-hyphenated, the page address and the product's permanent key. Never change it once published.
 //   title, description (plain text), type: a key of data/product-types.js. price: number in SITE.currency (0 = free).
 //   tags: optional list of short lowercase words. featured: shown on the home page.
+//   formats: optional list of file formats or tools it's for, shown as labels on cards and the product page
+//     ("WAV 24-bit", "Serum"). Only what is true of the files; leave it out when unknown.
 //   image: optional artwork { src, width, height, alt }; without it the cover is generated from `hue` (green or purple).
 //   release: optional id of the related release in data/music.js. includes: optional list of what's inside (plain text).
 //   preview: optional { file, label }: an audio clip uploaded in the admin, played from /media/previews/<file>.
@@ -23,6 +25,7 @@ window.PRODUCTS = [
     price: 24.99,
     description: "300+ one-shots, glitch loops, bit-crushed vocal chops and stitched-together drum fills. WAV, 24-bit.",
     tags: ["wav", "one-shots", "loops"],
+    formats: ["WAV 24-bit"],
     pacs: ["frayed-signals-samples", "frayed-signals-loops"],
     hue: 300,
     featured: true,
@@ -36,6 +39,7 @@ window.PRODUCTS = [
     price: 19.99,
     description: "64 Serum presets: tearing basses, stuttering leads and the signature wobble from the live sets.",
     tags: ["serum", "presets"],
+    formats: ["Serum"],
     hue: 190,
     featured: true,
     draft: true
@@ -60,6 +64,7 @@ window.PRODUCTS = [
     price: 7.00,
     description: "The 5-track EP in FLAC and WAV, plus 2 bonus tracks only available here.",
     tags: ["flac", "wav"],
+    formats: ["FLAC", "WAV"],
     hue: 330,
     featured: false,
     draft: true
@@ -84,6 +89,7 @@ window.PRODUCTS = [
     price: 14.99,
     description: "20 seamless 4K glitch loops from the tour visuals, ready for Resolume.",
     tags: ["4k", "resolume"],
+    formats: ["4K", "Resolume"],
     hue: 160,
     featured: false,
     draft: true
