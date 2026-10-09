@@ -12,6 +12,11 @@ export const mockProvider = {
     return { sessionId, url: `${app.config.siteUrl}/checkout?order=${order.id}&mock=${sessionId}` };
   },
 
+  // Nothing to send anywhere: the order is changed by the refund event the caller processes next.
+  async refund() {
+    return { id: "mock_re" };
+  },
+
   async retrieveCheckout(app, sessionId) {
     // The mock has no remote state: whatever the test buttons did is already in the database.
     return { type: "pending", sessionId };
