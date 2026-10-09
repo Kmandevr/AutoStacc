@@ -6,6 +6,17 @@ updated: 2026-10-09
 
 # Decisions
 
+## 2026-10-09: Projects get their own browser; the site's other pages follow the store's lead
+
+- **/projects becomes a browser of projects, separate from the store:** nothing is bought there. A project shows how many store items it has and links to the store filtered to it; no prices or buy buttons.
+- **Every published project is listed, Studio ones too,** marked "Unverified creator" until AutoStacc trusts the creator. This replaces the earlier rule that kept Studio projects out of `/projects` (below, "Owner answers to the docs audit").
+- **Follow and Auto-Stacc work for every listed project,** verified or not (owner's choice). Paid files from untrusted creators still wait for approval before anyone can download them.
+- **Filters:** genre and style (the store vocabulary), what a project makes (derived from its releases and products, never typed in), recent activity (releases, news, shows in the last 30 days), and followed / not followed for signed-in people.
+- **The same treatment elsewhere:** the home page becomes a discovery hub of curated rows; music, news and shows get browsers across projects; the dashboard and Your Stacc get search, filters and sections; every page gets a quality pass to the store's standard.
+- **Only real data:** the music, news and shows browsers list what exists as data (today AutoStacc's own projects); Studio projects join them once the Studio can publish such items.
+- **One history for the whole site:** the home page's personal rows use the same on-device history and the same forget / turn-off controls as the store.
+- Delivered as one pull request.
+
 ## 2026-10-09: Store discovery: server-side search, a transparent score, no invented signals
 
 - **Filtering, counting and paging run in D1** (`/api/store/search`), never by loading the catalog into the browser; one CTE applies running sales so filters and sorts use the price checkout charges.

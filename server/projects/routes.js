@@ -1,4 +1,4 @@
-// Projects and follows: the project directory, and following a project with optional Auto-Stacc (free products of
+// Projects and follows: the project directory and its browser, and following a project with optional Auto-Stacc (free products of
 // that project are added to the account's library automatically, now and whenever the library opens).
 import { json, fail, readJson, id } from "../lib/http.js";
 import { currentUser, requireUser } from "../auth/session.js";
@@ -6,6 +6,8 @@ import { limit } from "../lib/ratelimit.js";
 import { getVisibleProject, listVisibleProjects, publicProject } from "./projects.js";
 import { listFollows, setFollow, removeFollow, publicFollow } from "./follows.js";
 import { autoStacc } from "../entitlements/autostacc.js";
+import { SELLING } from "../creators/policy.js";
+import { parseProjectFilters, projectEntries, browse } from "./browse.js";
 
 // Published projects, plus this account's follows when signed in with a verified email (null otherwise, with
 // signedIn telling a signed-in but unconfirmed account apart from a visitor).
@@ -14,6 +16,18 @@ async function projects(app) {
   const visible = new Set(rows.map((p) => p.id));
   const follows = user && user.emailVerified ? (await listFollows(app.db, user.id)).filter((f) => visible.has(f.project_id)).map(publicFollow) : null;
   return json({ projects: rows.map(publicProject), signedIn: Boolean(user), follows });
+}
+
+// The projects browser: filters, counts, sort and a page of projects (server/projects/browse.js). Private when it
+// knows who is asking (follow state), shared otherwise.
+async function browsePage(app) {
+  const params = new URL(app.request.url).searchParams;
+  const f = parseProjectFilters(params, SELLING.kinds);
+  const user = await currentUser(app);
+  const userId = user && user.emailVerified ? user.id : null;
+  const entries = await projectEntries(app.db, { userId });
+  return json({ ...browse(entries, f, { signedIn: Boolean(userId) }), signedIn: Boolean(user), canFollow: Boolean(userId) }, 200,
+    { "Cache-Control": user ? "private, no-store" : "public, max-age=60" });
 }
 
 async function follow(app, { projectId }) {
@@ -38,6 +52,7 @@ async function unfollow(app, { projectId }) {
 
 export const routes = [
   ["GET", "/api/projects", projects],
+  ["GET", "/api/projects/browse", browsePage],
   ["PUT", "/api/follows/:projectId", follow],
   ["DELETE", "/api/follows/:projectId", unfollow]
 ];
