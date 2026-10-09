@@ -1,7 +1,7 @@
 ---
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects browser and its API, /explore for releases, news and shows, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
-covers: [projects.html, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql]
+covers: [projects.html, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql]
 updated: 2026-10-09
 ---
 
@@ -43,7 +43,7 @@ It reads `data/music.js`, `news.js` and `shows.js`; drafts and past shows never 
 
 The home page has, in order:
 
-- the cover;
+- the banner: the cover's headline and buttons over a DAW arrange view drawn in code (`js/daw-stage.js`, `css/daw-stage.css`; lanes of clips in the track colours, a playhead the arrangement scrolls past, mixer meters). It takes about 85% of the first screen and is fixed behind the page: every section after it is frosted and slides over it like a curtain, so the studio stays faintly visible to the bottom. It is decorative (`aria-hidden`), always dark in both themes, stops moving once the hero is scrolled away, and never moves for visitors who ask for less motion (owner decision 2026-10-09);
 - a store search and three ways in (Store, Projects, Releases, news and shows);
 - two store sections from the store's recommendations, with the same tune, forget and turn-off controls (`[data-store-sections data-sections="2" data-brief]`). The featured products show instead while the store has no picks;
 - **Projects to follow** (`js/project-picks.js`), ordered by how well their genres match this browser's own history (`js/taste.js`, read on the device and never sent), leaving out projects already followed;
