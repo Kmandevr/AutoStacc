@@ -102,16 +102,19 @@
 [data-track="presets"] { --track: var(--violet); }
 
 /* ---------- platform pages ---------- */
-/* An arrange view behind the content: faint bars and beats. */
+/* A calm, flat page: the arrange-view grid is only a whisper at the top and fades out, so content, not decoration, leads. */
 .platform {
   background:
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 64px 100%,
-    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 56px;
+    linear-gradient(to bottom, var(--bg), transparent 360px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 64px 100% no-repeat,
+    var(--bg);
+  background-size: 100% 360px, 100% 360px, auto;
+  background-repeat: no-repeat;
   min-height: 70vh;
 }
-.platform .page-hero { padding: 48px 0 28px; }
+.platform .page-hero { padding: 40px 0 20px; }
 .platform .page-hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
-.platform section { padding: 48px 0; }
+.platform section { padding: 40px 0; }
 .platform .alt { background: color-mix(in srgb, var(--panel) 70%, transparent); border-block: 1px solid var(--line); }
 
 /* section titles carry a small track-colour chip, like a track header */
@@ -123,15 +126,22 @@
   border-radius: 3px;
   background: var(--track, var(--teal));
 }
-.platform .btn:hover { box-shadow: 0 4px 0 var(--stack); transform: translateY(-2px); }
+.platform .btn { border-radius: 999px; box-shadow: none; }
+.platform .btn:hover { box-shadow: 0 6px 16px color-mix(in srgb, var(--teal) 28%, transparent); transform: translateY(-1px); }
+.platform .btn:active { transform: scale(.98); box-shadow: none; }
 .platform .btn.ghost { color: var(--text); background: var(--panel); }
 .platform .btn.ghost:hover { background: var(--panel-2); color: var(--text); border-color: var(--teal); }
 .platform .owned-badge { transform: none; letter-spacing: .1em; font-family: var(--mono); font-weight: 600; box-shadow: none; color: var(--teal); border-color: var(--teal); }
 
-/* panels: stacked cards (a softer copy sits behind each, like layered clips) */
+/* panels: one soft shadow, no offset copies; hovering a card lifts it a little and tints its edge */
 .platform .panel, .platform .card, .platform .tile, .platform .project-card, .platform .stacc-stacclet, .platform .vault-item {
-  border-radius: var(--radius);
-  box-shadow: var(--shadow), 0 6px 0 -2px var(--stack);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: var(--shadow);
+  transition: border-color .18s, box-shadow .2s var(--snap), transform .2s var(--snap);
+}
+.platform .card:hover, .platform .card:focus-within, .platform .project-card:hover { border-color: color-mix(in srgb, var(--teal) 55%, var(--line)); box-shadow: 0 10px 28px color-mix(in srgb, var(--teal) 14%, rgba(0, 0, 0, .12)); transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) {
+  .platform .card:hover, .platform .card:focus-within, .platform .project-card:hover { transform: none; }
 }
 
 /* meters and counts read as hardware */
