@@ -144,9 +144,13 @@ const GS = (function () {
   };
   // Keeps root's .cart-count (visible) and .cart-count-sr (screen readers) showing this browser's cart size.
   const showCartCount = (root) => {
+    let was = cart.count();
     const draw = () => {
-      const n = cart.count();
-      $(".cart-count", root).textContent = n ? ` ${n}` : "";
+      const n = cart.count(), el = $(".cart-count", root);
+      el.textContent = n ? ` ${n}` : "";
+      // Something was added: the count gives a small bump (css/layout.css).
+      if (n > was) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+      was = n;
       $(".cart-count-sr", root).textContent = n ? `, ${n} item${n === 1 ? "" : "s"}` : "";
     };
     draw();
@@ -185,6 +189,10 @@ const GS = (function () {
     m.className = "msg" + (error ? " error" : "");
     m.setAttribute("role", error ? "alert" : "status");
     m.textContent = text;
+    // Replay its arrival (css/forms.css), so a second message in the same place is noticed too.
+    m.style.animation = "none";
+    void m.offsetWidth;
+    m.style.animation = "";
   };
 
   return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, moduleProject, wear, shopItemPath, viewSwap, say };
