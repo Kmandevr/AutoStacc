@@ -225,7 +225,7 @@ export default (ctx) => describe("impersonation", () => {
     assert.equal((await admin.post("/api/admin/test-purchases", { userId: user.id, productId: "dev-unpublished" })).status, 409);
     const start = await admin.post("/api/admin/test-purchases", { userId: user.id, productId: "vj-loops" });
     assert.equal(start.status, 201);
-    assert.match(start.data.redirect, /item=vj-loops/);
+    assert.match(start.data.redirect, /^\/shop\/vj-loops$/, "opens the product it is for");
     assert.equal((await admin.get("/api/account")).data.impersonation.purpose, "test-purchase");
 
     const order = await mockBuy(admin, [{ productId: "vj-loops" }]);

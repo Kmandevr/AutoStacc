@@ -25,7 +25,7 @@ A project is creative work owned by a creator ([creators](creators.md)), at `/<c
 | `skin` | `true`: its pages load `css/projects/<id>/skin.css` (its own look inside the AutoStacc frame) |
 | `sounds` | `true`: its pages load the UI sounds and easter eggs. Platform pages never play sounds |
 | `entity` | its schema.org type (`MusicGroup`, `Person`, `Organization`) |
-| `bio`, `tagline`, `genres`, `alternateNames`, `image`, `logo` | identity for its pages and structured data (alternate names only for search engines); `logo` also sits beside the wordmark in its header, linking to its home |
+| `bio`, `tagline`, `genres`, `alternateNames`, `image`, `logo` | identity for its pages and structured data (alternate names only for search engines); `logo` also sits beside the wordmark in its header, linking to its home. `genres` are also the store genre of its products that state none ([discovery](discovery.md)); a store item from any project links to the item's own page (`GS.shopItemPath` in `js/util.js`) |
 | `email`, `pressKitUrl`, `newsletterAction`, `socials` | its own contact, press kit, newsletter form and official profiles (empty = not set; never made up) |
 | `draft` | `true` keeps it out of the directory and the database sync |
 

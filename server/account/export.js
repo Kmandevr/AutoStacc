@@ -8,6 +8,7 @@ import { emailsTo } from "../email/index.js";
 import { ordersOfPerson, orderItems, publicOrder } from "../orders/orders.js";
 import { entitlementsOfPerson } from "../entitlements/grants.js";
 import { listFollows, publicFollow } from "../projects/follows.js";
+import { listWishlist } from "../wishlist/wishlist.js";
 import { votesOfUser } from "../polls/polls.js";
 import { creatorsOfUser } from "../creators/creators.js";
 import { limit } from "../lib/ratelimit.js";
@@ -16,7 +17,7 @@ export async function collect(app, user) {
   const db = app.db;
   const email = String(user.email).toLowerCase();
   // Every section reads only its own tables, so they are read together.
-  const [emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent] = await Promise.all([
+  const [emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist] = await Promise.all([
     getPreferences(db, user.id),
     listDevices(db, user.id),
     ordersOfPerson(db, user.id, email).then((list) => Promise.all(list.map(async (o) => ({ ...publicOrder(o, await orderItems(db, o.id)), promoCode: o.promo_code || null })))),
@@ -24,7 +25,8 @@ export async function collect(app, user) {
     listFollows(db, user.id),
     votesOfUser(db, user.id),
     creatorsOfUser(db, user.id),
-    emailsTo(db, email)
+    emailsTo(db, email),
+    listWishlist(db, user.id)
   ]);
   return {
     exportedAt: new Date().toISOString(),
@@ -36,6 +38,7 @@ export async function collect(app, user) {
       productId: e.product_id, source: e.source_type, status: e.status, grantedAt: e.granted_at, expiresAt: e.expires_at, revokedAt: e.revoked_at
     })),
     follows: follows.map(publicFollow),
+    wishlist: wishlist.map((w) => ({ productId: w.product_id, addedAt: w.created_at })),
     pollVotes: pollVotes.map((v) => ({ pollId: v.poll_id, optionId: v.option_id, votedAt: v.created_at, changedAt: v.updated_at })),
     creators: creators.map((c) => ({ id: c.id, slug: c.slug, name: c.name, role: c.role })),
     emailsSent: emailsSent.map((m) => ({ kind: m.kind, subject: m.subject, status: m.status, at: m.created_at }))
