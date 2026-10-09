@@ -4,9 +4,9 @@ export const meta = {
   whenToUse: 'A change that touches more than one area of the project. Pass args: { task: "what to change", agents?: { test, review } } (names of subagents to use for verification). Small one-file edits do not need it. Project-specific rules and checks come from CLAUDE.md and .claude/rules/, not from this file.',
   phases: [
     { title: 'Plan', detail: 'one agent maps the task to files using the repo map and Graphify' },
-    { title: 'Build', detail: 'one agent per independent work item, disjoint files' },
+    { title: 'Build', detail: 'one agent per independent work item, disjoint files; owner-question issues opened at the same time' },
     { title: 'Verify', detail: 'the project checks and an adversarial diff review in parallel' },
-    { title: 'Docs', detail: 'update log and decisions' },
+    { title: 'Docs', detail: 'update log and decisions (after Verify: it records a verified change and must not show up in the diff review)' },
   ],
 }
 
@@ -81,8 +81,18 @@ for (const it of plan.items) {
 if (plan.openQuestions && plan.openQuestions.length) log('Needs the owner: ' + plan.openQuestions.join(' | '))
 
 phase('Build')
-const built = (
-  await parallel(
+// Owner questions don't depend on the build or its verification, so their issues are opened while the build runs.
+// That agent edits no files, so it can't clash with the build items.
+const questions = plan.openQuestions || []
+const askOwner = questions.length
+  ? agent(
+      `While another agent works on the task "${task}", open a GitHub issue (search for duplicates first) for each fact only ` +
+        `the owner can supply: ${questions.join('; ')}. Do not edit any file and do not commit.`,
+      { phase: 'Build', label: 'owner-questions' }
+    )
+  : null
+const [builtAll] = await Promise.all([
+  parallel(
     items.map((it) => () =>
       agent(
         `Task overall: ${task}\n\nYour item (${it.id}): ${it.goal}\n` +
@@ -91,8 +101,10 @@ const built = (
         { phase: 'Build', label: `build:${it.id}`, schema: BUILT }
       )
     )
-  )
-).filter(Boolean)
+  ),
+  askOwner,
+])
+const built = builtAll.filter(Boolean)
 const changed = [...new Set(built.flatMap((b) => b.changed))]
 log(`changed: ${changed.join(', ') || 'nothing'}`)
 
@@ -101,6 +113,8 @@ const verify = () =>
     () =>
       agent(
         'Run the checks described under "Checking changes" in CLAUDE.md and report pass=false with each problem if anything fails. ' +
+          'Start checks that do not depend on each other at the same time (one shell call with background jobs and wait, ' +
+          'collecting each exit code) and keep only real dependencies in order, such as a build before the checks that read its output. ' +
           'Clean up anything you start (servers, temp files).',
         { phase: 'Verify', label: 'verify:checks', schema: CHECK, agentType: AGENTS.test }
       ),
@@ -130,8 +144,8 @@ if (problems.length) {
 phase('Docs')
 if (!problems.length) {
   await agent(
-    `The task "${task}" is done and verified (changed: ${changed.join(', ')}). Update docs/: add a dated line to docs/log.md, ` +
-      `open a GitHub issue (search for duplicates first) for each fact only the owner can supply: ${(plan.openQuestions || []).join('; ') || 'none'}, ` +
+    `The task "${task}" is done and verified (changed: ${changed.join(', ')}). Update docs/: add a dated line to docs/log.md ` +
+      `(issues for the owner's open questions were already opened during Build: ${questions.join('; ') || 'none'}), ` +
       `and add docs/decisions.md only if a real decision was made. Bump \`updated:\` on notes you touch. Do not commit.`,
     { phase: 'Docs', label: 'docs' }
   )
@@ -142,6 +156,6 @@ return {
   changed,
   verified: problems.length === 0,
   remainingProblems: problems,
-  openQuestions: plan.openQuestions || [],
+  openQuestions: questions,
   next: problems.length ? 'Fix the remaining problems by hand.' : 'Review the diff, then commit and push.',
 }
