@@ -8,6 +8,7 @@ updated: 2026-10-08
 
 Newest first.
 
+- 2026-10-09: Live checkout works (a real Stripe page opens). CI: the store workflow runs the unit and API suite and the browser suite as two parallel jobs (`store`, `store-browser`) instead of one after the other.
 - 2026-10-09: API tests 222 s to 92 s with the same 123 tests. The `sql()` helper started a wrangler process per query; it now reads the local D1 file with Node's built-in SQLite (`test/support/client.js`, needs Node 22.13+).
 - 2026-10-09: Live checkout, second cause. The Stripe account uses Managed Payments, which refuses any Checkout line without an eligible product tax code (`TAX_CODE` in `server/payments/stripe.js`, `txcd_10000000` general digital download; owner to confirm with a tax adviser, per-kind codes possible). Refusals now show Stripe's message and field. The fake Stripe enforces the tax-code rule.
 - 2026-10-09: Live checkout fixed. `POST /api/checkout` failed on the real Stripe because the session expiry was exactly 30 minutes after our own clock reading, and Stripe needs 30 minutes after it receives the request; the test fake of Stripe didn't enforce that rule, so every test passed. Expiry now carries a margin (`expiresAtFor`), the fake enforces Stripe's rule, and a provider failure answers 503 with the provider's error type and code (Cloudflare was replacing our 502 with an empty page). Creator selling work is shelved on this branch's history (reverted; restore with `git revert 590ddd2`).
