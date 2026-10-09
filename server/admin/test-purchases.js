@@ -41,29 +41,38 @@ const check = (key, label, ok, detail) => ({ key, label, ok, detail });
 
 // The checklist for one test order, each step answered by the same code the customer's requests go through.
 export async function verifyTestOrder(db, order) {
-  const items = await orderItems(db, order.id);
-  const customer = order.user_id ? await userById(db, order.user_id) : null;
+  // Every lookup here only reads, so they run together; the checklist is assembled in its fixed order afterwards.
+  const [items, customer, ents, tried, mail] = await Promise.all([
+    orderItems(db, order.id),
+    order.user_id ? userById(db, order.user_id) : null,
+    all(db, "SELECT product_id, status FROM entitlements WHERE source_type = 'purchase' AND source_id = ?", order.id),
+    first(db, `SELECT SUM(event = 'issued') AS issued, SUM(event = 'served') AS served, SUM(event = 'denied') AS denied
+      FROM download_events WHERE impersonation_id = ?`, order.impersonation_id),
+    first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", `purchase-confirmation:${order.id}`)
+  ]);
   const access = { user: customer && customer.emailVerified ? customer : null, guestOrderIds: [] };
-  const ents = await all(db, "SELECT product_id, status FROM entitlements WHERE source_type = 'purchase' AND source_id = ?", order.id);
+  const [active, perItem] = await Promise.all([
+    activeEntitlements(db, access),
+    Promise.all(items.map(async (i) => {
+      const [n, mine] = await Promise.all([countDeliverable(db, i.product_id), activeEntitlements(db, access, i.product_id)]);
+      return { n, allowed: mine.length > 0 };
+    }))
+  ]);
   const out = [
     check("test", "Placed as a test (test payments, admin impersonation)", Boolean(order.impersonation_id) && !order.livemode, `${order.provider}, livemode ${order.livemode}`),
     check("paid", "Payment confirmed by the provider", order.status === "paid", `status ${order.status}`)
   ];
   out.push(check("entitlements", "Entitlement created for every item",
     items.every((i) => ents.some((e) => e.product_id === i.product_id && e.status === "active")), `${ents.filter((e) => e.status === "active").length} of ${items.length} active`));
-  const owned = new Set((await activeEntitlements(db, access)).map((e) => e.product_id));
+  const owned = new Set(active.map((e) => e.product_id));
   out.push(check("library", "Shows in the customer's library", items.every((i) => owned.has(i.product_id)),
     access.user ? `${items.filter((i) => owned.has(i.product_id)).length} of ${items.length} items` : "customer's email isn't verified, so their library is empty"));
-  for (const i of items) {
-    const files = { n: await countDeliverable(db, i.product_id) };
-    const allowed = (await activeEntitlements(db, access, i.product_id)).length > 0;
-    out.push(check(`download:${i.product_id}`, `Download authorized: ${i.title}`, files.n ? allowed : null,
-      files.n ? `${files.n} file(s), ${allowed ? "a download link would be issued" : "a download would be refused"}` : "no files uploaded for this product yet"));
-  }
-  const tried = await first(db, `SELECT SUM(event = 'issued') AS issued, SUM(event = 'served') AS served, SUM(event = 'denied') AS denied
-    FROM download_events WHERE impersonation_id = ?`, order.impersonation_id);
+  items.forEach((i, k) => {
+    const { n, allowed } = perItem[k];
+    out.push(check(`download:${i.product_id}`, `Download authorized: ${i.title}`, n ? allowed : null,
+      n ? `${n} file(s), ${allowed ? "a download link would be issued" : "a download would be refused"}` : "no files uploaded for this product yet"));
+  });
   out.push(check("downloaded", "Downloaded during the test", tried.served ? true : null, `${tried.issued || 0} issued, ${tried.served || 0} served, ${tried.denied || 0} denied`));
-  const mail = await first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", `purchase-confirmation:${order.id}`);
   out.push(check("receipt", "Receipt email", mail ? mail.status !== "failed" : null, mail ? mail.status : "none yet"));
   return out;
 }
