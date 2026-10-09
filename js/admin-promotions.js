@@ -54,9 +54,10 @@
     $("[data-off-hint]", f).textContent = percent ? "1–90%. A sale never takes a price below $0.50, a code never takes an order below $0.50." : "Dollars off (per item for a sale, per order for a code).";
   }
 
-  async function draw() {
+  // pending: a promotions request already on its way (the first draw starts it beside the products request).
+  async function draw(pending) {
     const el = $("#admin-promotions");
-    const res = await api("/api/admin/promotions");
+    const res = await (pending || api("/api/admin/promotions"));
     if (!res.ok) { el.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     const rows = res.data.promotions.map((p) => `<tr data-status="${e(p.status)}"><td><strong>${e(p.name)}</strong>${p.code ? ` <code>${e(p.code)}</code>` : ""}</td>
       <td>${p.kind === "sale" ? "sale" : "code"}</td><td>${e(offText(p))}</td><td>${e(scopeText(p))}</td><td>${e(p.status)}</td>
@@ -93,9 +94,10 @@
   }
 
   addEventListener("gs:admin", async () => {
+    const promotions = api("/api/admin/promotions");
     const res = await api("/api/admin/products");
     products = res.ok ? res.data.products : [];
-    draw();
+    draw(promotions);
     root.addEventListener("change", (ev) => { const f = ev.target.closest("[data-promo-new]"); if (f) sync(f); });
     root.addEventListener("submit", (ev) => {
       if (!ev.target.matches("[data-promo-new]")) return;
