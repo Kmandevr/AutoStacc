@@ -65,6 +65,54 @@ export const templates = {
       button(adminUrl, "Open the admin") + para("Refund it in the payment dashboard, or grant access by hand."))
   }),
 
+  // A full refund went through (the customer's own, or one made in the payment dashboard). Partial refunds keep access
+  // and send nothing.
+  "refund-confirmation": ({ order, items, amountCents }) => ({
+    subject: `Order ${order.id} refunded — AutoStacc`,
+    text: `Order ${order.id} was refunded: ${money(amountCents, order.currency)} goes back to the card or account you paid with. Banks usually take 5–10 days to show it.\n\n${items.map((i) => `${i.title}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n")}\n\nThese files are no longer in Your Stacc. Didn't ask for this? Reply to this email.`,
+    html: layout("Order refunded", para(`Order ${order.id} was refunded: ${money(amountCents, order.currency)} goes back to the card or account you paid with. Banks usually take 5–10 days to show it.`) +
+      para(items.map((i) => `${i.title}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(", ")) +
+      para("These files are no longer in Your Stacc. Didn't ask for this? Reply to this email."))
+  }),
+
+  // A creator's payout request was settled by AutoStacc.
+  "payout-settled": ({ status, amountCents, currency, note, studioUrl }) => {
+    const paid = status === "paid";
+    const head = paid ? `Your payout of ${money(amountCents, currency)} is on its way` : `Your payout request of ${money(amountCents, currency)} was declined`;
+    const body = paid ? "AutoStacc has sent it. Stripe or your payment provider shows when it arrives." : "The amount is back in your balance, and you can ask again once anything that needed fixing is sorted.";
+    return {
+      subject: `${head} — AutoStacc`,
+      text: `${head}.\n${body}${note ? `\nNote from AutoStacc: ${note}` : ""}\n\nYour earnings: ${studioUrl}`,
+      html: layout(head, para(body) + (note ? para(`Note from AutoStacc: ${note}`) : "") + button(studioUrl, "Open the Studio"))
+    };
+  },
+
+  // To the admins: something in the Control Center is waiting for them.
+  "admin-alert": ({ title, lines, adminUrl }) => ({
+    subject: `Store alert: ${title}`,
+    text: `${lines.join("\n")}\n\n${adminUrl}`,
+    html: layout(title, lines.map(para).join("") + button(adminUrl, "Open the Control Center"))
+  }),
+
+  // A followed project put out something new (sent from the Control Center's Products tab).
+  "new-release": ({ project, title, description, url, settingsUrl }) => ({
+    subject: `New from ${project}: ${title}`,
+    text: `${project} just put out ${title}.${description ? `\n\n${description}` : ""}\n\n${url}\n\nYou get this because you follow ${project} and new-release emails are on. Switch them off: ${settingsUrl}`,
+    html: layout(`New from ${project}: ${title}`, (description ? para(description) : "") + button(url, "Take a look") +
+      `<p style="color:#5b6470;font-size:12px;margin-top:20px">You get this because you follow ${esc(project)} and new-release emails are on. <a href="${esc(settingsUrl)}">Switch them off</a>.</p>`)
+  }),
+
+  // AutoStacc news, written in the Control Center, to accounts that switched it on. Plain text in, paragraphs out.
+  "platform-news": ({ subject, body, settingsUrl }) => {
+    const paras = String(body).split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+    return {
+      subject: `${subject} — AutoStacc`,
+      text: `${paras.join("\n\n")}\n\nYou get this because AutoStacc news is on in your settings. Switch it off: ${settingsUrl}`,
+      html: layout(subject, paras.map(para).join("") +
+        `<p style="color:#5b6470;font-size:12px;margin-top:20px">You get this because AutoStacc news is on in your settings. <a href="${esc(settingsUrl)}">Switch it off</a>.</p>`)
+    };
+  },
+
   "purchase-confirmation": ({ order, items, libraryUrl, guestUrl }) => {
     const lines = items.map((i) => `${i.title}${i.quantity > 1 ? ` ×${i.quantity}` : ""} — ${money(i.line_total_cents, order.currency)}`);
     // A promo code's discount, as its own line before the total.
@@ -89,7 +137,7 @@ export const templates = {
 };
 
 // Purchase mail comes from the store address (customers reply about orders); everything else is automated, from noreply.
-const STORE_MAIL = new Set(["purchase-confirmation", "purchases-linked"]);
+const STORE_MAIL = new Set(["purchase-confirmation", "purchases-linked", "refund-confirmation"]);
 export const senderOf = (kind) => (STORE_MAIL.has(kind) ? "store" : "noreply");
 
 export function render(kind, data) {

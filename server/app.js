@@ -39,10 +39,11 @@ import { routes as adminPayouts } from "./admin/payouts.js";
 import { routes as adminCreators } from "./admin/creators.js";
 import { routes as adminFiles } from "./admin/files.js";
 import { routes as newsletter } from "./newsletter/routes.js";
+import { routes as adminNews } from "./admin/news.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioPayoutAccount, adminCreators, adminPayouts, adminFiles, newsletter, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioPayoutAccount, adminCreators, adminPayouts, adminFiles, adminNews, newsletter, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

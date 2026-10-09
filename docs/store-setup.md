@@ -30,6 +30,8 @@ R2 must be enabled once in the dashboard (Cloudflare → R2 → Purchase/enable;
 | `BREVO_API_KEY` | API key `xkeysib-...` (not the SMTP key `xsmtpsib-...`; the deploy refuses that) | Brevo → SMTP & API → API keys |
 | `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified (optional to the deploy, but without it nobody can open `/admin`) | You |
 
+Optional, for AutoStacc news in Brevo: `BREVO_NEWS_LIST` = the id of a Brevo list for it. Accounts that switch on AutoStacc news are kept in it. You can also send news straight from the Control Center's News tab without it.
+
 Optional, for a project's newsletter sign-up: `BREVO_NEWSLETTER_LISTS` = `glitches-and-stitches:<list id>` (Brevo → Contacts → Lists → create a list; its id is the number in the list). Sign-ups are confirmed by email first; write and send the newsletter itself in Brevo (Campaigns), which adds the unsubscribe link.
 
 Optional, for creators' sales and payouts on a second Stripe account: `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` ([payouts-setup](payouts-setup.md)). `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are already there for the static deploy.

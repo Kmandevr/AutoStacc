@@ -12,7 +12,8 @@ import { anonymiseOrdersStmt, hasOpenCheckout } from "../orders/orders.js";
 import { eraseEntitlementsStmt } from "../entitlements/grants.js";
 import { anonymiseEmailLogStmt } from "../email/index.js";
 import { anonymiseDownloadsStmt } from "../downloads/routes.js";
-import { erasePreferencesStmt } from "../email/preferences.js";
+import { erasePreferencesStmt, getPreferences } from "../email/preferences.js";
+import { syncNewsList } from "../email/contacts.js";
 import { removeAllFollowsStmt } from "../projects/follows.js";
 import { removeVotesStmt } from "../polls/polls.js";
 import { creatorsOfUser, leaveAllCreatorsStmt } from "../creators/creators.js";
@@ -50,6 +51,7 @@ async function deleteAccount(app) {
 
   const db = app.db;
   const anon = anonymousEmail();
+  const wantedNews = (await getPreferences(db, user.id)).platformNews;
   await db.batch([
     anonymiseOrdersStmt(db, user.id, email, anon),
     eraseEntitlementsStmt(db, user.id, email, anon),
@@ -61,6 +63,7 @@ async function deleteAccount(app) {
     leaveAllCreatorsStmt(db, user.id),
     ...eraseUserStmts(db, user.id)
   ]);
+  if (wantedNews) syncNewsList(app, email, false);
   const res = json({ ok: true });
   for (const cookie of expiredAuthCookies(app.config.secure)) res.headers.append("Set-Cookie", cookie);
   return res;

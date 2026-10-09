@@ -7,7 +7,7 @@ updated: 2026-10-09
 
 # Control Center
 
-`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Payouts, Test purchases, Audit log. On phones a section menu replaces the tabs and tables become cards (`js/admin-mobile.js`). A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
+`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Payouts, News, Test purchases, Audit log. News writes AutoStacc news to accounts that switched it on (send a test to yourself first); a published product's **Email followers** tells its project's followers who want new-release emails ([store](store.md#email)). Admins are emailed when a creator asks for a payout or uploads a file waiting for approval. On phones a section menu replaces the tabs and tables become cards (`js/admin-mobile.js`). A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
 
 ## Statistics (Overview)
 

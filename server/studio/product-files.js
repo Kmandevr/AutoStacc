@@ -12,6 +12,7 @@ import { checkUpload } from "../files/policy.js";
 import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
 import { putVerifiedFile } from "../files/upload.js";
 import { newFileKey, safeFilename, deleteFile } from "../storage/buckets.js";
+import { alertAdmins } from "../email/alerts.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
 const usedBytes = async (db, creatorId) => (await first(db, `SELECT COALESCE(SUM(f.size_bytes), 0) AS n FROM product_files f JOIN products p ON p.id = f.product_id
@@ -43,6 +44,8 @@ async function upload(app, { productId }) {
     await deleteFile(app.env, key);
     fail(409, "quota_exceeded", `That would go over your ${LIMITS.productFilesQuotaBytes / 1048576} MB of file storage. Remove a file first.`);
   }
+  if (status === "pending") await alertAdmins(app, { key: `file:${id}`, title: "a creator's file is waiting for approval",
+    lines: [`${creator.name} (/${creator.slug}) uploaded ${filename} to "${product.title}".`, "Publish or reject it in the Control Center, Products."] });
   return json({ file: { id, filename, sizeBytes: object.size, status } }, 201);
 }
 

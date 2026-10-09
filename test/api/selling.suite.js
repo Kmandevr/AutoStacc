@@ -5,7 +5,7 @@
 // settling them, and nobody reaching another creator's products, files, earnings or payouts.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { Client, sql } from "../support/client.js";
+import { Client, sql, outbox } from "../support/client.js";
 import { newBuyer, mockBuy, adminClient } from "../support/flows.js";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
@@ -107,6 +107,8 @@ export default (ctx) => describe("selling", () => {
     const good = await up(s.c, "pack.zip", ZIP);
     assert.equal(good.status, 201);
     assert.equal(good.data.file.status, "pending", "an untrusted creator's file waits for approval");
+    const alerts = (await outbox(base(), "admin@autostacc.test")).filter((m) => m.kind === "admin-alert" && m.body_text.includes(good.data.file.filename));
+    assert.equal(alerts.length, 1, "the admins are told a file is waiting");
     assert.equal(db(`SELECT content_type FROM product_files WHERE id = '${good.data.file.id}'`)[0].content_type, "application/zip");
 
     // Not deliverable yet, so it can't go on sale.
@@ -196,6 +198,8 @@ export default (ctx) => describe("selling", () => {
     // Asking: details required, the amount is what the server says is available, one open request at a time.
     for (const details of [undefined, "", "abc", "x".repeat(201), 5]) assert.equal((await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, { details })).status, 400, String(details));
     const ask = await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, { details: "PayPal: me@seller.test", amountCents: 999999 });
+    assert.ok((await outbox(base(), "admin@autostacc.test")).some((m) => m.kind === "admin-alert" && m.body_text.includes(s.creator.slug) && m.subject.includes("payout")),
+      "the admins are told about the payout request");
     assert.equal(ask.status, 201);
     assert.equal(ask.data.payout.amountCents, 1800, "the client can't choose the amount");
     const twice = await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, { details: "PayPal: me@seller.test" });
@@ -213,6 +217,9 @@ export default (ctx) => describe("selling", () => {
     assert.equal((await s.c.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "paid" } })).status, 404, "creators can't pay themselves");
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "maybe" } })).status, 400);
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "paid", note: "Sent by PayPal" } })).status, 200);
+    const settled = (await outbox(base(), s.user.email)).filter((m) => m.kind === "payout-settled");
+    assert.equal(settled.length, 1, "the creator hears it was paid");
+    assert.match(settled[0].body_text, /Sent by PayPal/);
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "declined" } })).status, 404, "settled once");
     const after = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data;
     assert.equal(after.earnings.paidOutCents, 1800);
@@ -234,7 +241,7 @@ export default (ctx) => describe("selling", () => {
     assert.equal(ask.status, 201);
     const admin = await adminClient(base());
     assert.equal((await admin.req("PATCH", `/api/admin/payouts/${ask.data.payout.id}`, { body: { status: "declined", note: "Call me" } })).status, 200);
-    assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings.availableCents, 3000, "declined money is available again");
+    assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings.availableCents, 2400, "declined money is available again");
     db(`UPDATE orders SET status = 'refunded', refunded_cents = 3000 WHERE id = '${order.orderId}'`);
     const e = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;
     assert.deepEqual([e.shareCents, e.availableCents], [0, 0]);

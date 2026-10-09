@@ -86,7 +86,7 @@ window.HELP = [
     title: "Projects and Your Stacc",
     items: [
       { id: "follow", q: "What does following a project do?", a: [
-        "Following puts a project's new releases on your [dashboard](/dashboard). Turn on Auto-Stacc as well, and its free releases are added to Your Stacc automatically, now and whenever new ones come out. Follow from [Projects](/projects)."
+        "Following puts a project's new releases on your [dashboard](/dashboard). Turn on Auto-Stacc as well, and its free releases are added to Your Stacc automatically, now and whenever new ones come out. Want an email too? Switch on new-release emails in [Settings › Emails](/settings/email). Follow from [Projects](/projects)."
       ] },
       { id: "your-stacc", q: "What is Your Stacc?", a: [
         "Your library: everything you've Stacc'd, sorted by project, Stacclet, Pac and kind, with downloads. It's at [Your Stacc](/library)."
