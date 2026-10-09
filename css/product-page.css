@@ -5,3 +5,7 @@
 .product-desc { white-space: pre-line; }
 .product-info h2 { font-size: 1.1rem; margin: 18px 0 6px; }
 @media (min-width: 760px) { .product-page { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); align-items: start; } }
+.product-info .facts { margin: 6px 0 16px; }
+.product-info .wish-btn { margin-top: 10px; }
+.product-info .wish-btn[aria-pressed="true"] { border-color: var(--coral); color: var(--coral); }
+.product-info .wish-btn[aria-pressed="true"]::before { content: "♥ "; }

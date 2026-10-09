@@ -15,13 +15,16 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 - Templates that a module renders live in their own file and set one namespace on `GS` (e.g. `js/product-card.js` → `GS.productCard`).
 - Project styling travels with the item: `GS.look(projectId)` returns `look-<id>` and loads `css/projects/<id>/look.css` (the project's colours, type, buttons and tiles). Inside a project's own pages the same rules apply through `.skin-<id>`. A project with `skin: true` ships both `look.css` (portable) and `skin.css` (page effects).
 - A module's project is its `data-project`, else the open project's (`GS.moduleProject(el)`); `GS.wear(el, projectId)` puts that project's look on the module when it sits outside the project's own pages.
-- Links between modules are shared helpers in `js/util.js` (`GS.shopItemPath`, `GS.projectPath`) and the same addresses in the generator (`projectPath` in `scripts/lib/data.js`, `shopItemPath` in `scripts/lib/pages.js`).
+- Links between modules are shared helpers in `js/util.js` (`GS.shopItemPath`: a product's own page; `GS.projectPath`) and the same addresses in the generator (`projectPath` in `scripts/lib/data.js`, `shopItemPath` in `scripts/lib/pages.js`).
 
 ## Drop-in now
 
 | Module | Element | Options |
 | --- | --- | --- |
-| Store browser (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-filters="project type"` (each option shows its count), `data-search` (search box), `data-spotlight` (first featured item large when nothing is filtered), `data-picks="3"` ("Picked for you" from `js/taste.js`, which must load first), `data-sort` (recommended, price, name), `data-level`, `data-url` (state in the address: `/shop?project=&type=&q=&item=&sort=`) |
+| Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`; each card opens the product's own page |
+| The store page (`js/store-browse.js`, `js/store-filters.js`, `js/store-suggest.js`, `js/store-sections.js`) | `[data-browse]`, `[data-store-sections]` | none: one per page, state in the address ([discovery](discovery.md)) |
+| Wishlist hearts (`js/wishlist.js`) | `[data-wish]` | the product id |
+| Similar products (`js/similar.js`) | `[data-similar]` | the product id (else `?p=` in the address) |
 | Buy buttons, live prices, status (`js/store.js`) | `[data-buy]`, `[data-price]`, `[data-status]` | the product id |
 | Projects rack (`js/projects.js`) | `[data-project-list]` | `data-creator` (only that creator's projects, on its profile) |
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |

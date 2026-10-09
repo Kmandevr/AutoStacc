@@ -91,3 +91,7 @@
 /* a fact the store fills in later (download size) sits in a wrapper that keeps the dt/dd grid */
 .facts > div { display: contents; }
 .facts > div[hidden] { display: none; }
+/* the product page's wishlist button (js/wishlist.js sets aria-pressed) and the "You might also like" row (css/store.css) */
+.buy-panel .wish-btn[aria-pressed="true"] { border-color: var(--coral); color: var(--coral); }
+.buy-panel .wish-btn[aria-pressed="true"]::before { content: "♥ "; }
+.similar-section[hidden] { display: none; }

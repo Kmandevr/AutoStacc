@@ -125,18 +125,15 @@ async function checkPage(browser, base, page, width) {
         }
       } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
     }
+    // The store page with the store API offline (this checker serves static files): it must still show AutoStacc's own
+    // catalog and say that search and filters are offline. Filters and search themselves are tested against a real
+    // store by test/browser/flows.test.js.
     if (page === "shop.html" && width === 1280) {
-      const before = await tab.locator(".card").count();
-      const buttons = tab.locator("[data-filter=type] button");
-      if ((await buttons.count()) > 2) {
-        await buttons.nth(1).click();
-        await tab.waitForTimeout(300); // the filter swaps cards inside a view transition, a frame or two later
-        const after = await tab.locator(".card").count();
-        if (!(after > 0 && after < before)) problems.push(["FAIL", "shop-filter", `cards ${before} -> ${after} after choosing a category`]);
-        await buttons.nth(0).click();
-        await tab.waitForTimeout(300);
-        if ((await tab.locator(".card").count()) !== before) problems.push(["FAIL", "shop-filter", "'All' did not restore the full list"]);
-      } else problems.push(["WARN", "shop-filter", "fewer than two categories, filter not exercised"]);
+      await tab.waitForSelector(".browse-grid .card", { timeout: 5000 }).catch(() => {});
+      const cards = await tab.locator(".browse-grid .card").count();
+      if (!cards) problems.push(["FAIL", "shop-offline", "the store showed no products with its API offline"]);
+      const note = await tab.locator(".browse-count").innerText().catch(() => "");
+      if (!/offline/i.test(note)) problems.push(["WARN", "shop-offline", "no note that search and filters are offline"]);
     }
     if (width === 1280 && (await tab.locator("[data-newsletter] form").count())) {
       await tab.fill("[data-newsletter] input[type=email]", "test@example.com");

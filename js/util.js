@@ -170,8 +170,8 @@ const GS = (function () {
     const cls = projectId && projectId !== currentProject().id ? look(projectId) : "";
     if (cls) el.classList.add(cls);
   };
-  // Where a store item opens: the store filtered to its project, with the item selected at the top.
-  const shopItemPath = (p) => `/shop?project=${encodeURIComponent(p.project || "")}&item=${encodeURIComponent(p.id)}`;
+  // Where a store item opens: its own page (Studio products carry theirs as path; catalog products are /shop/<id>).
+  const shopItemPath = (p) => p.path || `/shop/${encodeURIComponent(p.id)}`;
 
   // An in-page swap animated as a view transition; an aborted one rejects its promises, so they're handled (page
   // changes are handled in js/theme.js, which runs before the first paint).

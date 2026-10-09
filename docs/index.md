@@ -20,6 +20,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Artist](artist.md): confirmed facts and what is still unknown
 - [Brand](brand.md): the Glitches & Stitches skin: logo, colours, fonts, motion, sound, easter eggs and tone
 - [Shop](shop.md): the catalogue (products, types, prices) and what is still placeholder
+- [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
 - [Creator pages](creator-pages.md): PLANNED / NOT IMPLEMENTED: blueprint for sandboxed creator HTML/CSS (later JavaScript) on project pages
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
 - [Control Center](admin.md): the owner's admin: statistics and their sources, sales and promo codes, customer preview, support impersonation, test purchases, audit log
