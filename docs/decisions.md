@@ -6,6 +6,18 @@ updated: 2026-10-09
 
 # Decisions
 
+## 2026-10-09: Owner answers to the docs audit's open questions
+
+- **Store is live:** the owner switched it on (Cloudflare permissions, secrets, Stripe, Brevo; issue #44). Real products are in progress (#5).
+- **Newsletter provider: Brevo** (already the store's email service; issue #8).
+- **Logo:** the placeholder stacked-blocks mark stays for now.
+- **Studio projects are not trusted by default:** they stay out of `/projects`, follows, Auto-Stacc and polls until a trust step exists that lets a project in (issue #85). Naming them in Your Stacc is unaffected.
+- **Legal facts confirmed:** AutoStacc is run by an individual in Utah County, Utah, under Utah law; bank refunds take 5–10 days; the terms keep "AutoStacc's fee, if any"; /privacy should name the session cookie both ways (`gs.session_token`, `__Secure-gs.session_token` on the live site) (issue #83).
+- **Titles:** the home page's title must start with "AutoStacc"; the separator after it is grammar, not a rule.
+- **Stripe Checkout and statements say AutoStacc**, not Glitches & Stitches.
+- **"Stacc'd" gets used** somewhere in the site's copy (where is still to choose; issue #86).
+- **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. The live platform fee and the marketplace Stripe key's permissions are still unchecked.
+
 ## 2026-10-09: Docs are checked against the repository, not trusted
 
 - **Each note names the code it describes** (`covers:` frontmatter), so "which note must change with this file" is data, not memory.

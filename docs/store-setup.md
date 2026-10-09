@@ -38,7 +38,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 
 ## 3. Stripe
 
-1. Activate the Stripe account (business details, payouts). Set the statement descriptor and branding (Settings → Branding) so Checkout looks like Glitches & Stitches.
+1. Activate the Stripe account (business details, payouts). Set the statement descriptor and branding (Settings → Branding) so Checkout and bank statements show AutoStacc (the store sells for every project; owner, 2026-10-09).
 2. Developers → Webhooks → Add endpoint: `https://autostacc.com/api/webhooks/stripe`, events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`.
    Copy its signing secret into `STRIPE_WEBHOOK_SECRET`.
