@@ -95,7 +95,7 @@ export default (ctx) => describe("promotions", () => {
     assert.deepEqual([cart.subtotalCents, cart.discountCents, cart.totalCents, cart.promoCode], [3000, 450, 2550, "STRIPE15"]);
     const order = await stripeCheckout(c, items, { promoCode: " stripe15 " });
     const { res, session } = await stripePay(ctx, c, order);
-    assert.equal(session.amount_total, 2550, "Stripe is asked for exactly the order total");
+    assert.equal(session.amount_subtotal, 2550, "Stripe is asked for exactly the order total");
     assert.equal(res.status, 200);
     const row = sql(ctx.stripe.stateDir, `SELECT status, total_cents, discount_cents, promo_code FROM orders WHERE id = '${order.orderId}'`)[0];
     assert.deepEqual(row, { status: "paid", total_cents: 2550, discount_cents: 450, promo_code: "STRIPE15" });

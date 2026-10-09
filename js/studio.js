@@ -1,7 +1,8 @@
 // The Studio (/studio): claim a creator name, see your creator's address and free storage, make, rename and delete
-// projects, and open a project's site in the editor (js/studio-editor.js; #project=<id> reopens it). All checks
-// (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/studio-blocks.js and
-// js/studio-editor.js.
+// projects, open a project's site in the editor (js/studio-editor.js; #project=<id> reopens it), its products
+// (js/studio-products.js; #products=<id>) and see earnings (js/studio-earnings.js). All checks
+// (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/studio-blocks.js,
+// js/studio-editor.js, js/studio-products.js and js/studio-earnings.js.
 (function () {
   "use strict";
 
@@ -35,6 +36,7 @@
           <strong>${e(p.name)}</strong> <span class="tag">${p.published ? "Live" : "Draft"}</span>
           <a href="${e(p.path)}" target="_blank" rel="noopener">${e(p.path)}</a>
           <button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>
+          <button class="btn small" type="button" data-products="${e(p.id)}">Products</button>
           <details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
               <button class="btn ghost small" type="submit">Save</button></form>
@@ -44,13 +46,16 @@
         ${c.projects.length < data.limits.projectsPerCreator ? `<form data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
         ${c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
+        ${c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
         <p class="msg" role="status" hidden></p>
       </section>`).join("");
+    root.querySelectorAll("[data-earnings]").forEach((el) => window.GS.studioEarnings.draw(el, el.dataset.earnings));
   }
 
   async function load() {
     const hash = new URLSearchParams(location.hash.slice(1));
     if (hash.get("project")) return window.GS.studioEditor.open(root, hash.get("project"), back);
+    if (hash.get("products")) return window.GS.studioProducts.open(root, hash.get("products"), back);
     const res = await api("/api/studio");
     if (!res.ok) { root.innerHTML = `<p class="msg error">${e(res.status === 403 ? "Confirm your email first (check your inbox), then come back." : res.error.message)}</p>`; return; }
     overview(res.data);
@@ -100,6 +105,11 @@
   });
 
   root.addEventListener("click", (ev) => {
+    const prod = ev.target.closest("[data-products]");
+    if (prod) {
+      history.replaceState(null, "", `#products=${encodeURIComponent(prod.dataset.products)}`);
+      return window.GS.studioProducts.open(root, prod.dataset.products, back);
+    }
     const edit = ev.target.closest("[data-edit]");
     if (!edit) return;
     history.replaceState(null, "", `#project=${encodeURIComponent(edit.dataset.edit)}`);

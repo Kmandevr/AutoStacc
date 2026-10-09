@@ -15,7 +15,7 @@ export default (ctx) => describe("commerce", () => {
     });
     assert.equal(co.status, 201);
     const sent = ctx.stripe.fake.created.find((x) => x.session.metadata.order_id === co.data.orderId);
-    assert.equal(sent.session.amount_total, 999); // data/products.js: 9.99
+    assert.equal(sent.session.amount_subtotal, 999); // data/products.js: 9.99
     assert.equal(sent.form.line_items["0"].price_data.product_data.name, "Patchwork (Remix Stems)");
     assert.equal(sent.form.line_items["0"].price_data.currency, "usd");
   });
