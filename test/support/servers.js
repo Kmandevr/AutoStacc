@@ -18,9 +18,17 @@ export const ADMIN_EMAIL = "admin@autostacc.test";
 export async function startStores({ mock = true, stripe = true, name = "", ports = {} } = {}) {
   const { mock: mockPort = 8801, stripe: stripePort = 8802, fakeStripe: fakePort = 8812 } = ports;
   const out = { fileIdFor, servers: [] };
+  let stopping = false;
   const state = (kind) => path.join(ROOT, ".wrangler", `test-${kind}${name ? "-" + name : ""}`);
-  const start = (opts) => { const s = startDevServer({ ...opts, fresh: true, quiet: true, build: false }); out.servers.push(s); return s; };
+  // A store that fails stops the group; anything still starting then is stopped as it comes up.
+  const start = (opts) => {
+    const s = startDevServer({ ...opts, fresh: true, quiet: true, build: false, inspectorPort: opts.port + 1000 });
+    out.servers.push(s);
+    if (stopping) s.stop();
+    return s;
+  };
   out.stop = async () => {
+    stopping = true;
     out.servers.forEach((s) => s.stop());
     if (out.stripe) await out.stripe.fake.close();
   };
@@ -32,6 +40,7 @@ export async function startStores({ mock = true, stripe = true, name = "", ports
     })(),
     stripe && (async () => {
       const fake = await startFakeStripe(fakePort);
+      if (stopping) { await fake.close(); return; }
       const stateDir = state("stripe");
       out.stripe = { fake, stateDir };
       const s = start({ port: stripePort, stateDir, vars: {

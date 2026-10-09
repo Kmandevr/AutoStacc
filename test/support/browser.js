@@ -21,7 +21,7 @@ export function browserStore({ name, port }) {
   let server, browser, base;
   const stateDir = path.join(ROOT, ".wrangler", `test-browser-${name}`);
   before(async () => {
-    server = startDevServer({ port, stateDir, fresh: true, quiet: true, build: false, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL } });
+    server = startDevServer({ port, stateDir, fresh: true, quiet: true, build: false, inspectorPort: port + 1000, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL } });
     base = await server.ready;
     browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
   }, { timeout: 240000 });
