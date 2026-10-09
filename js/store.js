@@ -64,8 +64,9 @@
   }
 
   async function load() {
-    // On the store page, every catalog item: filters and search draw cards that weren't on screen at first.
-    const all = document.querySelector("[data-shop][data-url]") ? (window.PRODUCTS || []).map((p) => p.id) : [];
+    // Every item a store browser can show (js/shop.js lists them in data-catalog): filters and search draw cards that
+    // weren't on screen at first.
+    const all = [...document.querySelectorAll("[data-catalog]")].flatMap((el) => el.dataset.catalog.split(",").filter(Boolean));
     const ids = [...new Set([...slots().map((el) => el.dataset.buy), ...all])];
     const res = await api(`/api/products/state?ids=${encodeURIComponent(ids.join(","))}`);
     if (res.ok) state = res.data;
