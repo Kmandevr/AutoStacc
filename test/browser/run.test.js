@@ -381,14 +381,16 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
-    await page.click(".menu-toggle");
+    await page.click("[data-tab-menu]");
     await page.waitForSelector(".side.open");
     assert.equal(await page.evaluate(() => document.activeElement.className), "side-close");
     assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
     await page.keyboard.press("Tab");
     assert.ok(await page.evaluate(() => Boolean(document.activeElement.closest(".side"))), "Tab stays in the drawer");
     await page.keyboard.press("Escape");
-    assert.equal(await page.evaluate(() => document.activeElement.className), "menu-toggle");
+    assert.equal(await page.evaluate(() => document.activeElement.hasAttribute("data-tab-menu")), true, "focus returns to the Menu button");
+    assert.equal(await page.locator(".menu-toggle").isVisible(), false, "no second menu button in the top bar");
+    assert.equal(await page.locator(".topbar-brand").isVisible(), true, "the logo is there instead");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
     assert.deepEqual(page.errors, []);
     await ctx.close();
@@ -898,6 +900,7 @@ describe("store in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
+<<<<<<< HEAD
   test("a skinned project is a rounded, shadowed card with soft gray on light pages and stays full-bleed black in dark mode", async () => {
     const probe = (page) => page.evaluate(() => {
       const card = document.querySelector(".project-card");
@@ -924,5 +927,34 @@ describe("store in the browser", () => {
     assert.equal(d.bg, "rgb(0, 0, 0)", "dark: true black");
     assert.deepEqual(dark.page.errors, []);
     await dark.ctx.close();
+=======
+  test("a guest can refund an unused order from the confirmation page; after a download they can't", async () => {
+    const { ctx, page } = await open(PHONE);
+    const email = unique("guest-refund");
+    await toMockPay(page, email, "wallpapers");
+    await page.click("[data-mock=paid]");
+    await page.waitForSelector("text=Payment confirmed");
+    await page.waitForSelector("[data-refund]");
+    page.once("dialog", (d) => d.accept());
+    await page.click("[data-refund]");
+    await page.waitForSelector("text=This order was refunded");
+    assert.deepEqual(ordersFor(email).map((o) => o.status), ["refunded"]);
+    // A second order, downloaded from first: no refund offered.
+    await toMockPay(page, email, "stems-patchwork");
+    await page.click("[data-mock=paid]");
+    await page.waitForSelector("text=Payment confirmed");
+    await page.waitForSelector("[data-refund]");
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-asset");
+    const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-download]")]);
+    assert.ok(download.suggestedFilename());
+    await page.goBack();
+    await page.reload();
+    await page.waitForSelector("text=Payment confirmed");
+    await page.waitForTimeout(500);
+    assert.equal(await page.locator("[data-refund]").count(), 0, "no refund once something was downloaded");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+>>>>>>> origin/main
   });
 });
