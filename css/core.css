@@ -144,7 +144,11 @@ section { padding: 80px 0; }
   text-shadow: var(--glow-2);
 }
 
-/* OWNED stamp: product cards, product pages and the library */
+/* A Studio creator AutoStacc hasn't verified: on cards and product pages, in a warning colour on every look. */
+.tag.unverified { padding: 1px 6px; color: var(--coral, #e0645c); border: 1px solid currentColor; text-shadow: none; }
+.unverified-note { border-left: 3px solid var(--coral, #e0645c); padding-left: 10px; }
+
+/* STACC'D stamp: product cards, product pages and the library */
 .owned-badge {
   display: inline-block;
   padding: 4px 10px;

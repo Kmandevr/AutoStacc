@@ -134,7 +134,7 @@ export async function productViews(db, rows) {
   return rows.map((p) => ({
     id: p.id, title: p.title, description: p.description, type: p.type, priceCents: p.price_cents, currency: p.currency, artwork: p.artwork,
     tags: parseJson(p.tags, []), includes: parseJson(p.metadata, {}).includes || [], published: Boolean(p.published), salesPaused: Boolean(p.sales_paused),
-    deleted: Boolean(p.deleted_at), path: productPath(p), createdAt: p.created_at,
+    deleted: Boolean(p.deleted_at), path: productPath(p), preview: p.preview || null, createdAt: p.created_at,
     files: files.filter((f) => f.product_id === p.id && f.active).map((f) => ({ id: f.id, filename: f.filename, sizeBytes: f.size_bytes, status: f.status, note: f.status_note || "" }))
   }));
 }

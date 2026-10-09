@@ -201,7 +201,7 @@
     // Rejecting takes a file away from owners for good (a creator's product with no file left goes back to draft).
     const rej = e.target.closest("[data-reject-file]");
     if (rej) {
-      const note = prompt("Reject this file? Owners lose it and it can't be published again. Reason (optional, kept with the file):");
+      const note = prompt("Reject this file? Owners lose it and it can't be published again. Reason (optional; a creator sees it in the Studio):");
       if (note === null) return;
       rej.disabled = true;
       await api(`/api/admin/files/${encodeURIComponent(rej.dataset.rejectFile)}`, { method: "PATCH", body: { status: "rejected", ...(note.trim() && { note: note.trim() }) } });
