@@ -2,7 +2,7 @@
 // /api/downloads/<token> checks the link, the requester and the entitlement again, then streams the private file.
 // Unknown, unowned, unpublished-and-unowned and revoked all fail the same way.
 import { json, fail, readJson, str } from "../lib/http.js";
-import { run, newId, now } from "../lib/db.js";
+import { run, stmt, newId, now } from "../lib/db.js";
 import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access.js";
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
 import { signDownload, readDownload } from "./tokens.js";
@@ -17,6 +17,9 @@ const logEvent = (app, event, f) =>
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     newId("dl"), event, f.productId || null, f.fileId || null, f.entitlementId || null, f.subject || null, f.reason || null, now(), impersonationIdOf(app));
 
+// Account deletion: the download history stays (statistics, refund checks) but no longer names the account.
+export const anonymiseDownloadsStmt = (db, userId, anonId) =>
+  stmt(db, "UPDATE download_events SET subject = ? WHERE subject = ?", `d:${anonId}`, `u:${userId}`);
 
 // Which of the requester's identities an entitlement belongs to (accounts first).
 function subjectFor(access, ent) {

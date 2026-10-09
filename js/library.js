@@ -13,7 +13,7 @@
   if (!root) return;
   const { libraryView: V } = window.GS;
   const model = window.GS.staccClient();
-  const catalog = { projects: window.PROJECTS || [], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
+  const catalog = { projects: [...(window.PROJECTS || [])], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
   const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
   const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
@@ -67,6 +67,10 @@
       return;
     }
     const { items, signedIn } = res.data;
+    // Projects made in the Studio aren't in data/projects.js; the store names them.
+    items.forEach((i) => {
+      if (i.projectId && i.projectName && !catalog.projects.some((p) => p.id === i.projectId)) catalog.projects.push({ id: i.projectId, name: i.projectName });
+    });
     const built = await model.ask({ type: "build", items, catalog });
     if (n !== asked) return;
     state.items = items;

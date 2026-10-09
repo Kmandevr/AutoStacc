@@ -11,6 +11,7 @@ import pages from "./pages.suite.js";
 import stats from "./stats.suite.js";
 import creators from "./creators.suite.js";
 import account from "./account.suite.js";
+import newsletter from "./newsletter.suite.js";
 
 runGroup({ name: "accounts", ports: { mock: 8801 }, stripe: false },
-  [auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account]);
+  [auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account, newsletter]);

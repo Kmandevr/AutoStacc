@@ -38,7 +38,7 @@ Hierarchy: AutoStacc → (Creator →) Project → Stacclet → Pac → content.
 
 ## Plain words stay plain
 
-Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) stay normal words. Good: "Library — Everything you've Stacc'd." Bad: renaming the cart, the download button or the account page into puns.
+Download, Store, Shop, Cart, Account, Settings, Log in, Library (as a subtitle) stay normal words. Used: Your Stacc's intro ("Everything you've Stacc'd"), the payment-confirmed message and claiming a free product ("Stacc'd!"). Good: "Library — Everything you've Stacc'd." Bad: renaming the cart, the download button or the account page into puns.
 
 ## Site structure
 

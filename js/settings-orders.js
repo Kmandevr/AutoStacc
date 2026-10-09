@@ -25,7 +25,7 @@
     return r.reason === "downloaded" ? '<p class="order-note">Downloaded, so it can\'t be refunded here. Something wrong? <a href="/contact">Contact us</a>.</p>' : "";
   };
 
-  const titles = (o) => o.items.map((i) => `<a href="/shop/${escapeHTML(i.productId)}">${escapeHTML(i.title)}</a>${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(", ");
+  const titles = (o) => o.items.map((i) => `<a href="${escapeHTML(i.path || `/shop/${i.productId}`)}">${escapeHTML(i.title)}</a>${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(", ");
 
   // A finished order (paid or refunded): what you got, when, what it cost, and what you can do about it.
   const done = (o) => `<li class="order status-${escapeHTML(o.status)}">

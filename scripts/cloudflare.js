@@ -21,11 +21,12 @@ const PROJECT = "autostacc";
 const TOML = path.join(ROOT, "wrangler.toml");
 // Must match [env.production] in wrangler.toml.
 const PROD = { db: "autostacc", placeholder: "00000000-0000-0000-0000-000000000002", buckets: ["autostacc-files", "autostacc-previews"] };
-// The last four are optional: ADMIN_EMAILS can come from the user table, and the marketplace account (creators' sales and
-// Connect payouts, docs/payouts-setup.md) is off until its key and webhook secret are both set.
+// The last five are optional: ADMIN_EMAILS can come from the user table, the marketplace account (creators' sales and
+// Connect payouts, docs/payouts-setup.md) is off until its key and webhook secret are both set, and a project's newsletter
+// sign-up says "coming soon" until BREVO_NEWSLETTER_LISTS names its Brevo list.
 const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "BREVO_API_KEY", "ADMIN_EMAILS",
-  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY"];
-const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY"]);
+  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS"];
+const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS"]);
 
 // quiet: capture and resolve with the output; otherwise it goes straight to the deploy log and resolves with "".
 // Rejects like execFileSync threw: the error carries stderr when quiet.
@@ -51,6 +52,9 @@ async function checkSecrets(toml, secrets) {
   try {
     loadConfig({ ...vars, ...secrets, DB: {}, FILES: {} });
     console.log("cloudflare: store settings pass the production check");
+    // Not a reason to take the store offline, but a sign a key was forgotten: creator sales stay off without it.
+    if (secrets.STRIPE_MARKETPLACE_WEBHOOK_SECRET && !secrets.STRIPE_MARKETPLACE_KEY)
+      console.log("::warning::STRIPE_MARKETPLACE_WEBHOOK_SECRET is set without STRIPE_MARKETPLACE_KEY, so creator sales and payouts stay off");
   } catch (e) {
     if (!(e instanceof ConfigError)) throw e;
     for (const p of e.problems) console.log(`::error::Store offline until fixed: ${p}`);

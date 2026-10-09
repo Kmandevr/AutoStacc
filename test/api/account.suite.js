@@ -118,6 +118,7 @@ export default (ctx) => describe("account", () => {
     evil.jar = c.jar;
     assert.equal((await evil.post("/api/account/delete", { confirm: user.email, password: PASSWORD })).status, 403);
     assert.equal(sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM "user" WHERE id = '${user.id}'`)[0].n, 1, "nothing happened yet");
+    sql(ctx.mock.stateDir, `INSERT INTO download_events (id, event, product_id, subject, created_at) VALUES ('dl_${user.id}', 'served', 'wallpapers', 'u:${user.id}', '2026-01-01T00:00:00Z')`);
 
     const ok = await c.post("/api/account/delete", { confirm: user.email.toUpperCase(), password: PASSWORD });
     assert.equal(ok.status, 200);
@@ -136,6 +137,8 @@ export default (ctx) => describe("account", () => {
     assert.equal(db(`SELECT COUNT(*) AS n FROM entitlements WHERE user_id = '${user.id}' OR email = '${user.email}' OR (email = '${order.email}' AND status = 'active')`)[0].n, 0);
     for (const t of ["follows", "poll_votes", "email_preferences", "creator_members"]) assert.equal(db(`SELECT COUNT(*) AS n FROM ${t} WHERE user_id = '${user.id}'`)[0].n, 0, t);
     assert.equal(db(`SELECT COUNT(*) AS n FROM email_events WHERE to_email = '${user.email}'`)[0].n, 0);
+    const [dl] = db(`SELECT subject FROM download_events WHERE id = 'dl_${user.id}'`);
+    assert.match(dl.subject, /^d:[a-z2-7]+$/, "the download record stays but no longer names the account");
 
     // The same email can start over, and gets nothing of the old account.
     const again = new Client(ctx.mock.url);

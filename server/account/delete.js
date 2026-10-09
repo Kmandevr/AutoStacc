@@ -11,6 +11,7 @@ import { eraseUserStmts, expiredAuthCookies } from "../auth/erase.js";
 import { anonymiseOrdersStmt, hasOpenCheckout } from "../orders/orders.js";
 import { eraseEntitlementsStmt } from "../entitlements/grants.js";
 import { anonymiseEmailLogStmt } from "../email/index.js";
+import { anonymiseDownloadsStmt } from "../downloads/routes.js";
 import { erasePreferencesStmt } from "../email/preferences.js";
 import { removeAllFollowsStmt } from "../projects/follows.js";
 import { removeVotesStmt } from "../polls/polls.js";
@@ -53,6 +54,7 @@ async function deleteAccount(app) {
     anonymiseOrdersStmt(db, user.id, email, anon),
     eraseEntitlementsStmt(db, user.id, email, anon),
     anonymiseEmailLogStmt(db, email, anon),
+    anonymiseDownloadsStmt(db, user.id, randomToken(10)),
     erasePreferencesStmt(db, user.id),
     removeAllFollowsStmt(db, user.id),
     removeVotesStmt(db, user.id),

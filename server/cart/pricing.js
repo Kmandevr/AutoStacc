@@ -2,7 +2,7 @@
 // prices, sales, discounts, totals and availability always come from here. Used by the cart page (to show problems)
 // and by checkout (to refuse them), so what the cart shows is what checkout charges.
 import { fail } from "../lib/http.js";
-import { getProducts, isVisible, isPurchasable } from "../catalog/products.js";
+import { getProducts, isVisible, isPurchasable, productPath } from "../catalog/products.js";
 import { runningSales, salePrice, findCode, usageProblem, codeDiscount, normalizeCode, publicPromotion } from "../promotions/promotions.js";
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -35,7 +35,7 @@ export async function priceCart(db, items, { owned = [], promoCode = "", email =
     // Unknown and unpublished look the same, so drafts can't be discovered through the cart.
     if (!isVisible(p)) return { productId, quantity, problem: "not_found" };
     const { priceCents, sale } = salePrice(p, sales);
-    const line = { productId, title: p.title, type: p.type, currency: p.currency, unitPriceCents: priceCents, listPriceCents: p.price_cents,
+    const line = { productId, title: p.title, path: productPath(p), type: p.type, currency: p.currency, unitPriceCents: priceCents, listPriceCents: p.price_cents,
       sale: sale ? { id: sale.id, name: sale.name, endsAt: sale.ends_at || null } : null, quantity, maxQuantity: p.max_quantity,
       lineTotalCents: priceCents * quantity, discountCents: 0 };
     if (!isPurchasable(p)) line.problem = p.price_cents === 0 && !p.sales_paused ? "free" : "unavailable";

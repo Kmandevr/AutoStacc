@@ -21,6 +21,14 @@ const button = (url, label) =>
 const para = (s) => `<p style="line-height:1.6;margin:0 0 12px">${esc(s)}</p>`;
 
 export const templates = {
+  // Double opt-in: nobody joins a project's mailing list until the address's owner clicks.
+  "newsletter-confirm": ({ url, project }) => ({
+    subject: `Confirm your sign-up to ${project} — AutoStacc`,
+    text: `Confirm you want news from ${project} by email:\n${url}\n\nThe link works for 7 days. Didn't sign up? Ignore this mail and nothing happens. Every newsletter has an unsubscribe link.`,
+    html: layout(`Confirm your sign-up to ${project}`, para(`One click and you'll get news from ${project}: new releases, presales and free downloads.`) +
+      button(url, "Confirm sign-up") + para("The link works for 7 days. Didn't sign up? Ignore this mail and nothing happens. Every newsletter has an unsubscribe link."))
+  }),
+
   "verify-email": ({ url }) => ({
     subject: "Confirm your email — AutoStacc",
     text: `Confirm your email to finish creating your account:\n${url}\n\nThe link works for 24 hours.\nDidn't sign up? Don't click: confirming gives that account anything bought with this email. Ignore this mail and nothing happens.`,
