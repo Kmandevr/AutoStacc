@@ -1,5 +1,5 @@
 // News and updates. Order doesn't matter, newest is shown first. Each published post gets its own page at
-// /projects/<project>/news/<id>.
+// /<creator>/<project>/news/<id>.
 // `id`: lowercase-hyphenated, the page address. Never change it once published.
 // `summary` is plain text (home page and search description). `body` may contain simple HTML (news page and post page).
 // `project`: id of the project the post is from (data/projects.js). Required: the post lives at /projects/<project>/news/<id>.

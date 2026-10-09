@@ -25,3 +25,6 @@ playwright-report/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Worktrees for parallel agents (CLAUDE.md "Parallel by default")
+.claude/worktrees/
