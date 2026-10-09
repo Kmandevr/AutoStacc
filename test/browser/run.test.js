@@ -843,6 +843,7 @@ describe("store in the browser", () => {
     await page.waitForSelector("text=Go to your cart");
     assert.deepEqual(page.errors, []);
     await ctx.close();
+  });
   test("phone quick-links bar: Store, Projects, Log in and Menu are within reach; Menu opens the drawer and Escape closes it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/shop");
