@@ -77,6 +77,19 @@ async function signUp(page, email, password = "browser-pass-123") {
   await page.waitForURL((u) => u.pathname === "/dashboard");
 }
 
+// Opens a customer's preview in the Control Center and starts impersonating them. If the button never shows, the error
+// says what the preview showed instead (it once failed only in CI, and a bare timeout said nothing).
+async function startImpersonating(page, id) {
+  await page.click(`[data-preview="${id}"]`);
+  await page.waitForSelector(".admin-preview h2");
+  page.once("dialog", (d) => d.accept());
+  try {
+    await page.click("[data-impersonate]", { timeout: 15000 });
+  } catch (e) {
+    throw new Error("no Impersonate button; the preview shows: " + (await page.locator("#customer-preview").innerText()).replace(/\s+/g, " ").slice(0, 500));
+  }
+}
+
 describe("store in the browser", () => {
   test("phone: browse, add, pay as a guest, see it owned, download it", async () => {
     const { ctx, page } = await open(PHONE);
@@ -665,10 +678,7 @@ describe("store in the browser", () => {
     const id = sql(stateDir, `SELECT id FROM "user" WHERE email = '${customer}'`)[0].id;
     await page.goto("/admin");
     await page.click("#tab-customers");
-    await page.click(`[data-preview="${id}"]`);
-    await page.waitForSelector(".admin-preview h2");
-    page.once("dialog", (d) => d.accept());
-    await page.click("[data-impersonate]");
+    await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
     for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/autostacc/glitches-and-stitches"]) {
       await page.goto(path);
@@ -688,9 +698,7 @@ describe("store in the browser", () => {
 
     // Ended elsewhere (here: its time limit): the page says so instead of quietly turning back into the admin.
     await page.click("#tab-customers");
-    await page.click(`[data-preview="${id}"]`);
-    page.once("dialog", (d) => d.accept());
-    await page.click("[data-impersonate]");
+    await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
     sql(stateDir, `UPDATE impersonations SET expires_at = '2000-01-01T00:00:00.000Z' WHERE ended_at IS NULL AND customer_user_id = '${id}'`);
     await page.goto("/library");
