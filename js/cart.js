@@ -145,7 +145,24 @@
     refocus(hint);
   }
 
-  async function checkout(btn) {
+  // AutoStacc's own items and creators' items are paid to different Stripe accounts, so they are paid in two steps.
+  function splitPanel(groups) {
+    const lines = (priced && priced.lines) || [];
+    const part = (ids) => {
+      const mine = lines.filter((l) => ids.includes(l.productId));
+      const total = mine.reduce((s, l) => s + (l.lineTotalCents ?? l.unitPriceCents * l.quantity), 0);
+      return { count: mine.length || ids.length, total, names: mine.map((l) => l.title) };
+    };
+    const group = (account, label) => {
+      const g = part(groups[account] || []);
+      return `<li><strong>${label}</strong> (${g.count}): ${escapeHTML(g.names.join(", "))}
+        <button class="btn" type="button" data-pay-account="${account}"${groups[account] && groups[account].length ? "" : " disabled"}>Pay ${cents(g.total, "USD")}</button></li>`;
+    };
+    return `<div class="msg" role="status"><p>Your cart has AutoStacc items and items from creators. They're paid separately, one after the other. Pay for one group now; the other stays in your cart.</p>
+      <ul class="split-groups">${group("main", "AutoStacc")}${group("marketplace", "Creators")}</ul></div>`;
+  }
+
+  async function checkout(btn, account = null) {
     if (busy) return;
     const items = cart.items();
     const emailInput = $("#cart-email");
@@ -158,8 +175,9 @@
     btn.disabled = true;
     btn.classList.add("busy");
     btn.textContent = "Opening checkout";
-    const key = checkoutKey(items);
-    const body = { items, promoCode: promo.get(), ...(emailInput && { email: emailInput.value.trim() }) };
+    // One account per payment: a key per account, so the second step isn't mistaken for the first.
+    const key = checkoutKey(items) && (account ? `${checkoutKey(items)}-${account}` : checkoutKey(items));
+    const body = { items, promoCode: promo.get(), ...(account && { account }), ...(emailInput && { email: emailInput.value.trim() }) };
     if (emailInput) try { sessionStorage.setItem("gs:email", body.email); } catch {}
     const res = await api("/api/checkout", { method: "POST", body, headers: key ? { "Idempotency-Key": key } : {}, timeout: 30000 });
     if (res.ok && res.data.url) {
@@ -171,6 +189,7 @@
     sound("error");
     const err = res.error;
     if (err.code === "checkout_finished") { forgetKey(); return load(); }
+    if (err.code === "split_checkout" && err.groups) return render(splitPanel(err.groups));
     if ((err.code === "cart_changed" || err.code === "promo_invalid") && err.cart) { priced = err.cart; return render(`<p class="msg error">${escapeHTML(err.message)}</p>`); }
     const text = res.status === 0 ? "We couldn't reach the store before checkout opened. Nothing was charged; please try again."
       : res.status === 401 || res.status === 403 ? `${escapeHTML(err.message)} <a href="/login?next=/cart">Log in</a>` : escapeHTML(err.message);
@@ -190,6 +209,8 @@
     if (e.target.closest("[data-promo-remove]")) { promo.set(""); return load(); }
     const btn = e.target.closest("#checkout-btn");
     if (btn && !btn.disabled) checkout(btn);
+    const pay = e.target.closest("[data-pay-account]");
+    if (pay && !pay.disabled) checkout(pay, pay.dataset.payAccount);
   });
   root.addEventListener("submit", (e) => {
     if (!e.target.matches("[data-promo]")) return;
