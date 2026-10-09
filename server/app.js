@@ -18,6 +18,7 @@ import { routes as account } from "./account/routes.js";
 import { routes as accountSettings } from "./account/settings.js";
 import { routes as accountExport } from "./account/export.js";
 import { routes as accountDelete } from "./account/delete.js";
+import { routes as accountEmail } from "./account/email-change.js";
 import { routes as admin } from "./admin/routes.js";
 import { routes as analytics } from "./analytics/routes.js";
 import { routes as dev } from "./dev/routes.js";
@@ -42,7 +43,7 @@ import { routes as newsletter } from "./newsletter/routes.js";
 import { routes as adminNews } from "./admin/news.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
-const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, admin, analytics, projects, polls,
+const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, admin, analytics, projects, polls,
   impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioPayoutAccount, adminCreators, adminPayouts, adminFiles, adminNews, newsletter, dev]);
 
 export async function handleApi(request, env, ctx) {
