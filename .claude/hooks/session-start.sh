@@ -24,4 +24,15 @@ echo 'Repo map, top level (layer 0). Stop here if it answers the task. Details: 
 cat "$T/map" 2>/dev/null
 if [ -s "$T/branch" ]; then cat "$T/branch"; echo 'Last commits:'; cat "$T/commits"; fi
 if [ -s "$T/log" ]; then echo "Newest in $LOG_NOTE (trimmed):"; cat "$T/log"; fi
+# A handoff from an earlier session (the handoff skill): printed at start and after compaction, with how far the
+# repository has moved since, so it is checked before it is relied on.
+H=.claude/handoff.md
+if [ -f "$H" ]; then
+  c=$(sed -n 's/^Commit: *\([0-9a-f]\{7,40\}\).*/\1/p' "$H" | head -1)
+  n=$( [ -n "$c" ] && git rev-list --count "$c..HEAD" 2>/dev/null || echo "?")
+  echo "Handoff ($H, written at ${c:-unknown}; $n commit(s) since: verify against the repo before relying on it):"
+  head -40 "$H"
+fi
+# Bring the code graph up to date in the background, so the first graph.sh query of the session doesn't wait for it.
+[ -x .claude/tools/graph.sh ] && command -v graphify >/dev/null 2>&1 && (nohup .claude/tools/graph.sh refresh >/dev/null 2>&1 &)
 exit 0
