@@ -1,5 +1,5 @@
 // The profile page of each first-party creator (data/creators.js): /<creator>, listing its published projects as
-// cards, with the same card markup as the /projects directory (js/projects.js upgrades it to follow controls).
+// cards, with the same card markup as the /projects directory (js/projects.js upgrades it, js/follow.js adds the follow controls).
 // Creators made in the Studio get their profile from the store instead (server/sites/profile.js), in the same layout.
 const { abs, projectPath } = require("./data");
 const H = require("./head");
@@ -33,7 +33,7 @@ function creatorPage(SITE, data, c) {
         <ul class="projects" data-project-list data-creator="${esc(c.id)}">${projects.map(projectCard).join("")}</ul>
       </div>
     </section>`;
-  return { file: `${c.id}.html`, page, html: shell(SITE, { page, section: "creator", styles: ["projects", "detail"], scripts: ["js/projects.js"], main }) };
+  return { file: `${c.id}.html`, page, html: shell(SITE, { page, section: "creator", styles: ["projects", "detail"], scripts: ["js/projects.js", "js/follow.js"], main }) };
 }
 
 module.exports = { creatorPage, projectCard, url: (SITE, c) => abs(SITE, "/" + c.id) };
