@@ -32,6 +32,12 @@ export function startFakeStripe(port) {
         const idem = req.headers["idempotency-key"];
         if (idem && byIdem.has(idem)) return send(200, sessions.get(byIdem.get(idem)));
         const p = parseForm(body);
+        // Stripe's real rule: a session may expire between 30 minutes and 24 hours after Stripe receives the request,
+        // so a timestamp computed before the network call at exactly 30 minutes is refused (this once broke live checkout).
+        const expiresIn = Number(p.expires_at) - Date.now() / 1000;
+        if (p.expires_at !== undefined && (!(expiresIn >= 1800) || expiresIn > 86400)) {
+          return send(400, { error: { type: "invalid_request_error", message: "The `expires_at` timestamp must be between 30 minutes and 24 hours from now." } });
+        }
         const items = Object.values(p.line_items || {});
         const amount = items.reduce((s, i) => s + Number(i.price_data.unit_amount) * Number(i.quantity), 0);
         const id = "cs_test_" + crypto.randomBytes(12).toString("hex");
