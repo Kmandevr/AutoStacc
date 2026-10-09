@@ -52,7 +52,7 @@ async function checkout(app) {
   if (cart.totalCents <= 0) fail(409, "cart_changed", "Nothing in the cart costs money; claim free items from their page.");
 
   // Each line knows who sold it and how its money splits (server/revenue/split.js), fixed now for the record.
-  const lines = await attributeLines(db, cart.lines.map((l) => ({ productId: l.productId, title: l.title, unitPriceCents: l.unitPriceCents, quantity: l.quantity,
+  const lines = await attributeLines(db, cart.lines.map((l) => ({ productId: l.productId, title: l.title, type: l.type, unitPriceCents: l.unitPriceCents, quantity: l.quantity,
     listPriceCents: l.listPriceCents, saleId: l.sale ? l.sale.id : null, discountCents: l.discountCents })));
   // An admin's test purchase never picks up the customer's own pending order (or the other way round).
   const impersonationId = impersonationIdOf(app);
