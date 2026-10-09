@@ -20,6 +20,12 @@ function client(config) {
 
 const crypto = Stripe.createSubtleCryptoProvider();
 
+// Stripe only accepts a session that expires between 30 minutes and 24 hours after it RECEIVES the request. The time
+// is worked out before the network call, so asking for exactly 30 minutes is always a little short and Stripe refuses
+// every checkout. The margin keeps the page open at least as long as configured (docs/store.md).
+const EXPIRY_MARGIN_SECONDS = 120;
+export const expiresAtFor = (config, nowMs = Date.now()) => Math.floor(nowMs / 1000) + Math.max(config.checkoutTtlMinutes, 30) * 60 + EXPIRY_MARGIN_SECONDS;
+
 // One Checkout line per order line, at the price the store charged (after any sale). A line carrying part of a promo
 // code's discount becomes a single line at its exact discounted amount, so the session total always equals the
 // order total to the cent (server/payments/events.js refuses a payment that doesn't).
@@ -46,7 +52,7 @@ export const stripeProvider = {
       line_items: items.map((i) => lineItem(order, i)),
       success_url: successUrl,
       cancel_url: cancelUrl,
-      expires_at: Math.floor(Date.now() / 1000) + config.checkoutTtlMinutes * 60
+      expires_at: expiresAtFor(config)
     }, { idempotencyKey: `checkout-${order.id}` });
     return { sessionId: session.id, url: session.url };
   },
