@@ -252,24 +252,10 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .side .brand { padding-right: 48px; }
   .side-label { margin-top: 6px; }
   .topbar { padding: 0 12px; }
-  .menu-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--panel);
-    color: var(--text);
-    cursor: pointer;
-  }
-  .menu-bars, .menu-bars::before, .menu-bars::after { display: block; width: 18px; height: 2px; border-radius: 2px; background: currentColor; position: relative; }
-  .menu-bars::before, .menu-bars::after { content: ""; position: absolute; left: 0; }
-  .menu-bars::before { top: -6px; width: 12px; }
-  .menu-bars::after { top: 6px; width: 15px; }
-  .topbar-brand { display: inline-flex; padding: 4px; }
-  .topbar-brand .mark { width: 32px; height: 32px; }
+  /* The bottom quick-links bar has the Menu button, so the top bar shows the logo instead of a second menu button. */
+  .menu-toggle { display: none; }
+  .topbar-brand { display: inline-flex; align-items: center; min-height: 44px; padding: 4px 8px 4px 4px; }
+  .topbar-brand .mark { width: 34px; height: 34px; }
 }
 @media (max-width: 700px) {
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -284,7 +270,6 @@ body:has(> .site-frame) { padding-left: var(--side); }
 /* the narrowest phones: the top bar keeps every tool on screen (project pages add the sound switch) */
 @media (max-width: 380px) {
   .topbar { gap: 6px; padding: 0 8px; }
-  .topbar-brand { display: none; }
   .topbar-tools { gap: 3px; min-width: 0; }
   .tool-link, .theme-switch, .snd { padding: 6px 8px; font-size: .82rem; }
   .snd { font-size: .68rem; }
