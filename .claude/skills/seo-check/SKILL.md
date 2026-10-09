@@ -7,7 +7,7 @@ description: Check search visibility for AutoStacc: metadata, canonicals, struct
 
 How the system works is in [docs/seo.md](../../../docs/seo.md). Don't restate it; run the checks.
 
-1. **Regenerate:** `node scripts/build.js`. It rewrites each page's head block, the release/product/news pages and `sitemap.xml` from `data/`, and adds new URLs to `scripts/public-urls.txt`. A build error names the file and the fix (missing `<title>`, description or seo markers, bad id).
+1. **Regenerate:** `node scripts/build.js`. It rewrites each page's head block, the release/product/news pages, creator profile pages, trust pages (`/privacy`, `/terms`, ...), `sitemap.xml`, `llms.txt` and `db/catalog.sql` from `data/`, and adds new URLs to `scripts/public-urls.txt`. A build error names the file and the fix (missing `<title>`, description or seo markers, bad id).
 2. **Static tests and rendered pages, at the same time** (both only read the build, so they run together once step 1 has finished). One Bash call; each check keeps its own output and exit code:
 
    ```sh
@@ -25,7 +25,7 @@ How the system works is in [docs/seo.md](../../../docs/seo.md). Don't restate it
 
 ## Fixing
 
-- A FAIL in a generated file: change `data/` or the page's own title/description, then rebuild. Never edit inside `<!-- seo:start ... seo:end -->` or a file under `music/`, `shop/`, `news/`.
+- A FAIL in a generated file: change `data/` or the page's own title/description, then rebuild. Never edit inside `<!-- seo:start ... seo:end -->` or any generated page (`shop/`, a project's `music/` and `news/`, `<creator>.html`, the trust pages).
 - `url-disappeared`: a public page was removed or renamed. Add a `301` from the old path in `_redirects`, or, if the removal is deliberate and the page should drop out of search, delete its line from `scripts/public-urls.txt`.
 - `placeholder-profile`: set the real profile URL or `""`. Never a site's home page.
 

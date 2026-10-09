@@ -1,5 +1,5 @@
-// Payout requests: a creator asks to be paid what has cleared the hold (server/revenue/earnings.js). The owner pays by
-// hand for now (a bank transfer, PayPal, ...) and marks the request paid or declined in the Control Center. One open
+// Payout requests: a creator asks to be paid what has cleared the hold (server/revenue/earnings.js). The owner sends it
+// from the Control Center as a Stripe transfer (docs/payouts-setup.md) or pays by hand and marks it paid, or declines. One open
 // request per creator, enforced by a unique index, so two clicks can't both succeed. The details the creator writes
 // ("PayPal: name@example.com") are visible only to them and the admin.
 import { all, first, run, newId, now } from "../lib/db.js";

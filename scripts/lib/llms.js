@@ -29,7 +29,7 @@ function llmsTxt(data) {
     "",
     `> ${SITE.description}`,
     "",
-    `${SITE.name} is the site at ${SITE.url}: a store for music, samples, presets, stems and visuals, straight from the projects (artists and creators) that make them. ${SITE.name} sells and delivers them, and keeps what each customer owns in their account. A project is never the site; each one has its own pages under ${url("/projects/<project>")}.`,
+    `${SITE.name} is the site at ${SITE.url}: a store for music, samples, presets, stems and visuals, straight from the projects (artists and creators) that make them. ${SITE.name} sells and delivers them, and keeps what each customer owns in their account. A project is never the site; each one has its own pages under ${url("/<creator>/<project>")}.`,
     "",
     "## Platform",
     "",

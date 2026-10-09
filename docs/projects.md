@@ -1,7 +1,8 @@
 ---
 title: Projects
 summary: Projects on AutoStacc: the data contract, which features a project uses, Glitches & Stitches as the first project, and how to add another.
-updated: 2026-10-08
+covers: [data/projects.js, data/creators.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/creator-page.js, js/project-frame.js, js/util.js, css/projects/, autostacc/, autostacc.html, data/news.js, data/shows.js]
+updated: 2026-10-09
 ---
 
 # Projects
@@ -28,6 +29,8 @@ A project is creative work owned by a creator ([creators](creators.md)), at `/<c
 | `email`, `pressKitUrl`, `newsletterAction`, `socials` | its own contact, press kit, newsletter form and official profiles (empty = not set; never made up) |
 | `draft` | `true` keeps it out of the directory and the database sync |
 
+This contract is for first-party projects in `data/`. Projects made in the Studio exist only in the database and have no such entry ([creators](creators.md)); the `/projects` directory, follows and polls don't list them yet.
+
 Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it). The build fails if any of these point at a project that doesn't exist.
 
 ## Glitches & Stitches
@@ -39,6 +42,6 @@ The first project (`glitches-and-stitches`). It uses every feature, including po
 1. Add an entry to `data/projects.js` with only the features it uses.
 2. Give its products, releases, news, Stacclets and Pacs `project: "<id>"` (Pacs via their Stacclet).
 3. Give it a `creator` (an entry of `data/creators.js`; first-party projects belong to `autostacc`). Run `node scripts/build.js`; it validates every link and syncs the project into the store database.
-4. It appears on `/projects`; customers can follow it; its products show "by <name>" and its content files itself in Your Stacc.
+4. It appears on `/projects` and on its creator's generated profile (`/<creator>`, `scripts/lib/creator-page.js`); customers can follow it; its products show "by <name>" and its content files itself in Your Stacc.
 
 No platform code changes. Its home page is `<creator>/<id>.html` (copy a project page, set `data-project`; title and description come from its data entry) and any further pages go in `<creator>/<id>/`; a skin is `css/projects/<id>/skin.css` scoped to `.skin-<id>` (set `skin: true`), without one its pages use the AutoStacc look. Not built yet: a generated default home page for projects that don't want to write one.

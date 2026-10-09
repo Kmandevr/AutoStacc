@@ -14,10 +14,11 @@ const { createServer } = require(path.join(root, "scripts/serve.js"));
 const { loadData } = require(path.join(root, "scripts/lib/data.js"));
 const htmlUnder = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("projects")];
+const { SITE, products, projects, creators } = loadData(root);
+// Root pages, product pages and every first-party creator's folder (its projects' pages), as in scripts/seo-test.js.
+const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...creators.flatMap((c) => htmlUnder(c.id))];
 const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
-const { SITE, products, projects } = loadData(root);
 const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
 const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|product)(\/|$)/;
@@ -109,13 +110,18 @@ async function checkPage(browser, base, page, width) {
         // so compare pixels: hiding the first link must change what's on screen.
         else if (await tab.locator(`${menu} a`).count()) {
           const link = tab.locator(`${menu} a`).first();
+          // The drawer slides in: measure only once its finite animations are done, and only a link fully on screen.
+          await link.evaluate(() => Promise.all(document.getAnimations().filter((x) => x.effect?.getTiming().iterations !== Infinity).map((x) => x.finished.catch(() => {}))));
           const clip = await link.boundingBox();
-          const shot = () => tab.screenshot({ clip, animations: "disabled", caret: "hide" });
-          const shown = await shot();
-          await link.evaluate((a) => { a.style.visibility = "hidden"; });
-          const hidden = await shot();
-          await link.evaluate((a) => { a.style.visibility = ""; });
-          if (shown.equals(hidden)) problems.push(["FAIL", "nav-toggle", "menu opened but is covered by the page"]);
+          const vp = tab.viewportSize();
+          if (clip && clip.width >= 1 && clip.height >= 1 && clip.x >= 0 && clip.y >= 0 && clip.x + clip.width <= vp.width && clip.y + clip.height <= vp.height) {
+            const shot = () => tab.screenshot({ clip, animations: "disabled", caret: "hide" });
+            const shown = await shot();
+            await link.evaluate((a) => { a.style.visibility = "hidden"; });
+            const hidden = await shot();
+            await link.evaluate((a) => { a.style.visibility = ""; });
+            if (shown.equals(hidden)) problems.push(["FAIL", "nav-toggle", "menu opened but is covered by the page"]);
+          }
         }
       } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
     }

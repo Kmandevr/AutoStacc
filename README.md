@@ -16,6 +16,7 @@ It is a static site (HTML, CSS and JavaScript, no framework), hosted on Cloudfla
 | `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` | Glitches & Stitches' home, music, news and press pages, in its own skin |
 | `dashboard.html`, `library.html`, `settings.html`, `studio.html` | The signed-in app: dashboard, Your Stacc, Settings (one page for `/settings/profile`, `/security`, `/orders`, `/email`, `/privacy`), the Studio (kept out of search) |
 | `cart.html`, `login.html`, `checkout.html`, `admin.html` | Cart, sign-in, checkout status and the owner's Control Center (kept out of search) |
+| `product.html` (`/product?p=<id>`) | A Studio creator's product, fetched from the store API (kept out of search) |
 | `privacy.html`, `terms.html`, `refunds.html`, `security.html`, `contact.html`, `help.html`, `license.html` | Generated trust pages from `data/legal.js`, `data/help.js` and `data/licenses.js` ([docs/production.md](docs/production.md)). Don't edit; change the data and rebuild |
 | `404.html` | Shown for any address that doesn't exist |
 | `shop/`, `<creator>/<project>/music/`, `<creator>/<project>/news/` | Generated: one page per product (`/shop/<id>`), release and news post. Don't edit; change `data/` and rebuild |
@@ -55,7 +56,7 @@ Until the store is switched on (repository variable `STORE_ENABLED`), the deploy
 
 ## Running locally
 
-Serve the folder the way Cloudflare Pages does (clean addresses like `/shop`, redirects, real 404s):
+Needs Node 22.13 or later. Serve the folder the way Cloudflare Pages does (clean addresses like `/shop`, redirects, real 404s):
 
 ```sh
 node scripts/serve.js        # static pages only, store offline: http://localhost:8000/
@@ -67,9 +68,9 @@ npm test                     # store unit tests; npm run test:store for the atta
 
 ## Deploying to Cloudflare Pages
 
-The live site is deployed by `.github/workflows/deploy.yml` on every push to `main`. It first checks that the generated files match `data/` and runs the SEO and store unit tests; any failure stops the deploy. Pull requests run the same SEO checks (`seo.yml`) and all three store test suites (`store.yml`). With the store enabled it also provisions and migrates the database ([docs/store-setup.md](docs/store-setup.md)), and afterwards checks the live site answers. One-time setup:
+The live site is deployed by `.github/workflows/deploy.yml` on every push to `main`. It first checks that the generated files match `data/` and runs the SEO and store unit tests; any failure stops the deploy. Pull requests and pushes to `main` run the same SEO checks plus the `verify-site` browser checks (`seo.yml`) and all three store test suites (`store.yml`; skipped for pull requests that only change `docs/`, `.claude/` or Markdown). With the store enabled it also provisions and migrates the database ([docs/store-setup.md](docs/store-setup.md)), and afterwards checks the live site answers. One-time setup:
 
-1. In Cloudflare, create an API token (**My Profile → API Tokens → Create Token**, custom token with **Account → Cloudflare Pages → Edit**) and copy your **Account ID** from the dashboard.
+1. In Cloudflare, create an API token (**My Profile → API Tokens → Create Token**, custom token with **Account → Cloudflare Pages → Edit**; with the store on, also **D1 → Edit** and **Workers R2 Storage → Edit**) and copy your **Account ID** from the dashboard.
 2. In this repository, open **Settings → Secrets and variables → Actions** and add them as `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 3. Run the workflow (**Actions → Deploy to Cloudflare Pages → Run workflow**) or push to `main`.
 4. In Cloudflare, open **Workers & Pages → autostacc → Custom domains** and add the domain. Cloudflare provides the HTTPS certificate automatically; no certificate or key goes in this repository.

@@ -1,12 +1,13 @@
 ---
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
-updated: 2026-10-08
+covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/lib/, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
+updated: 2026-10-09
 ---
 
 # Store
 
-The store is a digital product system bolted onto the static site without turning it into an app. Pages stay static HTML on Cloudflare Pages; only `/api/*` (and `/media/previews/*`) run code, as Cloudflare Pages Functions. Setup for the owner: [store-setup](store-setup.md). Running and testing it locally: [development](development.md). Why it's built this way: [decisions](decisions.md).
+The store is a digital product system bolted onto the static site without turning it into an app. Pages stay static HTML on Cloudflare Pages; only `/api/*`, the media routes (`/media/previews/*`, `/media/sites/*`), the account and admin page gates and creators' pages run code, as Cloudflare Pages Functions (`functions/`). Setup for the owner: [store-setup](store-setup.md). Running and testing it locally: [development](development.md). Why it's built this way: [decisions](decisions.md).
 
 ```
 static pages (HTML/CSS/JS, data/)          browser: cart in localStorage, ids + quantities only
@@ -16,6 +17,7 @@ functions/api (catch-all)  →  server/app.js  →  one module per area (below)
        D1 (db/migrations)          R2: FILES (private), PREVIEWS (public clips)
         │                                   │
 Stripe Checkout + signed webhooks      Brevo (email, behind server/email/)
+(main and marketplace accounts)
 ```
 
 ## Modules (`server/`)
@@ -30,14 +32,14 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `catalog/` | reading products (price, availability) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
-| `payments/` | providers (Stripe, mock), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/dev/mock-payment` |
-| `orders/` | orders, status machine, fulfilment, guest keys | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/guest/key` |
+| `payments/` | providers (Stripe, mock), which Stripe account takes a product's money (`accounts.js`), Connect payout accounts and transfers (`connect.js`), tax codes per product type (`tax-codes.js`), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/webhooks/stripe-marketplace`, `POST /api/dev/mock-payment` |
+| `orders/` | orders, status machine, fulfilment, guest keys, customer refunds (`refunds.js`) | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/orders/:id/refund`, `POST /api/guest/key` |
 | `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
 | `downloads/` | signed links, streaming private files | `POST /api/downloads`, `GET /api/downloads/:token` |
 | `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits | (used by downloads, library, admin) |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
-| `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
+| `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), payout requests (`payouts.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
 | `analytics/` | daily counters | `POST /api/events` |
 | `stats/` | admin statistics: sections of typed metrics | `GET /api/admin/stats`, `/api/admin/stats/:section` |
 | `impersonation/` | support impersonation: rules, the per-request policy, start and exit | `POST /api/admin/customers/:userId/impersonate`, `POST /api/impersonation/exit` |
@@ -46,14 +48,14 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `projects/` | projects (synced), follows | `GET /api/projects`, `PUT`/`DELETE /api/follows/:projectId` |
 | `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
 | `creators/` | creators, members, Studio projects, slug holds, free-plan limits ([creators](creators.md)) | (used by studio, sites, revenue, admin) |
-| `studio/` | the Studio API: claim a creator, projects, site drafts, preview, publish, images | `/api/studio/*` |
+| `studio/` | the Studio API: claim a creator, projects, site drafts, preview, publish, images, products and their files, earnings and payout requests, the payout account | `/api/studio/*` |
 | `sites/` | creator sites: the document, blocks, embeds, themes, rendering, publishing, images, public pages | `/<creator>[/<project>[/<page>]]` (`functions/[[path]].js`), `/media/sites/:id` |
-| `revenue/` | who sold each order line and how its money splits | (used by checkout) |
+| `revenue/` | who sold each order line and how its money splits (`split.js`), creators' earnings and the 14-day hold (`earnings.js`), payout requests (`payouts.js`) | (used by checkout, studio, admin) |
 | `integrations/` | connected accounts: the provider registry (none switched on) | |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
-Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, the account menu, sign-out), `js/dashboard.js`, `js/settings.js` (the Settings shell) + one script per section (`js/settings-profile.js`, `-security.js`, `-orders.js`, `-email.js`, `-privacy.js`), `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-promotions.js`, `js/admin-creators.js`, `js/admin-audit.js`, `js/impersonation.js` (banner), `js/studio.js` + `js/studio-editor.js`, `js/studio-blocks.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
+Frontend pieces, one script each: `js/store.js` (live buttons, OWNED), `js/cart.js`, `js/auth.js` (login page), `js/account-nav.js` (signed-in or signed-out links in both frames, the account menu, sign-out), `js/dashboard.js`, `js/settings.js` (the Settings shell) + one script per section (`js/settings-profile.js`, `-security.js`, `-orders.js`, `-email.js`, `-privacy.js`), `js/library.js`, `js/checkout.js`, `js/admin.js` + `js/admin-records.js`, `js/admin-stats.js`, `js/admin-customer.js`, `js/admin-promotions.js`, `js/admin-creators.js`, `js/admin-payouts.js`, `js/admin-audit.js`, `js/admin-mobile.js` (tables as cards on phones), `js/impersonation.js` (banner), `js/studio.js` + `js/studio-editor.js`, `js/studio-blocks.js`, `js/studio-products.js`, `js/studio-earnings.js`; shared `GS.api`, `GS.cart`, `GS.track` in `js/util.js`.
 
 ## Platform layer
 
@@ -96,6 +98,8 @@ One area, `/settings`, with a page per section: Profile (name; the email can't c
 
 The cart is ids and quantities in `localStorage`. `POST /api/cart/price` prices it from D1 and lists problems per line (gone, unpublished, paused, free, owned, too many). `POST /api/checkout` refuses any problem, creates a `pending` order with price snapshots, then a Stripe Checkout Session built from those server-side prices (`client_reference_id` and `metadata.order_id` = our order id; Stripe idempotency key per order; the payment page stays open 30 minutes: Stripe requires an expiry of at least 30 minutes after it *receives* the request, so the value sent carries a 2-minute margin, `expiresAtFor` in `server/payments/stripe.js`). An `Idempotency-Key` header from the cart page makes double clicks, refreshes and the back button return the same order; a signed-in customer's identical open order is reused too. Guests give an email and get an httpOnly order key cookie.
 
+Creators' products are charged on a second Stripe account, the marketplace account, and AutoStacc's own on the main one (`server/payments/accounts.js`; everything is main with the mock provider). One payment page can't take both, so a cart holding both answers 409 `split_checkout` with the two groups and is paid in two steps; each order records its `payment_account`. Without the marketplace keys a creator's product answers 503 `creator_sales_closed`. Each order line records who sold it and how its money splits (platform fee and creator's share, `server/revenue/split.js`), fixed at checkout. Setup and payouts: [payouts-setup](payouts-setup.md).
+
 ## Payments and orders
 
 Order states: `pending → paid → refunded`, `pending → failed`, `pending → cancelled` (expired). A verified payment also moves `failed`/`cancelled` to `paid` (the money was taken). Every move is compare-and-set in SQL, so racing events can't double-apply and a refunded order can't become paid again. Orders keep `provider`, `provider_session_id`, `provider_payment_id` and `livemode`, so another provider can be added later without reshaping them.
@@ -104,10 +108,12 @@ All outcomes go through `server/payments/events.js`, which accepts only verified
 
 1. **Signature and freshness:** Stripe's library checks the `Stripe-Signature` HMAC and refuses timestamps older than 5 minutes (replays).
 2. **Once per event:** `payment_events` keyed by event id; a duplicate is acknowledged and ignored; an attempt that errored, or died half-way (still processing after 5 minutes), is redone on Stripe's retry.
-3. **Must match the order:** same provider, session or payment id, order id, live/test mode, and for payments the exact total and currency.
+3. **Must match the order:** same provider and Stripe account (main or marketplace webhook), session or payment id, order id, live/test mode, and for payments the exact total (before tax) and currency.
 4. **Then:** paid → grant entitlements and send the receipt (both idempotent, so a retry finishes a half-done job); expired → cancelled; async failure → failed; full refund → refunded and access revoked; partial refund → noted, access kept; chargeback opened → access suspended, won → restored. A refund or chargeback that arrives before its payment is held by payment id and applied the moment the payment lands. A paid event the store refuses (amount, mode or order mismatch) mails every admin and shows as an alert at the top of `/admin`.
 
 Handled Stripe events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Others are logged and ignored. If a webhook is late, the checkout page calls `POST /api/orders/:id/reconcile`, which asks Stripe directly with the secret key and feeds the answer through the same pipeline. The browser's "success" page never changes anything.
+
+Customer refunds: `POST /api/orders/:id/refund` refunds a paid order itself, within 14 days of payment and only if nothing from it was downloaded (`server/orders/refunds.js`; anything else goes to support). The money goes back through the provider, and the order, library and creators' earnings change through the same refund event a webhook would bring, so whichever arrives first wins. The order pages show whether an order can be refunded.
 
 ## Entitlements
 
@@ -121,11 +127,11 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 ## Email
 
-`server/email/index.js` sends a template through a provider and logs it in `email_events` (dedupe key so a receipt goes out once; failures are logged, never block a payment; the admin can resend). Templates (`server/email/templates.js`): verify email, reset password, account exists, purchase confirmation, in the terminal style. Optional kinds (new releases, AutoStacc news) are opt-in per account ([settings](#settings)). Providers (`server/email/providers.js`): `brevo` (production) and `log` (development: bodies kept in the database, readable at `/api/dev/outbox`). Another provider or a new kind of mail (abandoned cart, release announcement, newsletter) is one function or one template.
+`server/email/index.js` sends a template through a provider and logs it in `email_events` (dedupe key so a receipt goes out once; failures are logged, never block a payment; the admin can resend). Templates (`server/email/templates.js`): verify email, reset password, account exists, purchases linked to the account, purchase confirmation, and the admins' payment-rejected alert, in the terminal style. Purchase mail goes from `EMAIL_FROM`, the rest from `EMAIL_FROM_NOREPLY`. Optional kinds (new releases, AutoStacc news) are opt-in per account ([settings](#settings)). Providers (`server/email/providers.js`): `brevo` (production) and `log` (development: bodies kept in the database, readable at `/api/dev/outbox`). Another provider or a new kind of mail (abandoned cart, release announcement, newsletter) is one function or one template.
 
 ## Admin
 
-`/admin` (the Control Center), for verified accounts whose email is in `ADMIN_EMAILS` (or whose `role` is `admin`); the API answers 404 to everyone else, including an admin who is impersonating a customer. It shows statistics, pauses/resumes sales, uploads, replaces and deactivates paid files, uploads preview clips, lists and searches orders (with their payment events, entitlements and emails, and a resend-receipt button), customers (with a read-only preview, support impersonation and, in a test store, test purchases), entitlements (grant manual/promo/replacement access, revoke) and the audit log. How each works and its safety rules: [control center](admin.md). Titles and descriptions are edited in `data/products.js` (see decisions); releases in `data/music.js`. The owner can change a price, publish a product out of draft, hide it, remove and restore it, and pause sales in the Control Center (`PATCH /api/admin/products/:id`); such a product is marked `admin_managed` so the deploy's catalog sync leaves it alone, and a product's very first appearance still comes from `data/products.js`.
+`/admin` (the Control Center), for verified accounts whose email is in `ADMIN_EMAILS` (or whose `role` is `admin`); the API answers 404 to everyone else, including an admin who is impersonating a customer. It shows statistics, pauses/resumes sales, uploads, replaces, publishes and deactivates paid files (including creators' held uploads), uploads preview clips, lists and searches orders (with their payment events, entitlements and emails, and a resend-receipt button), customers (with a read-only preview, support impersonation and, in a test store, test purchases), entitlements (grant manual/promo/replacement access, revoke), sales and promo codes, creators, creators' payout requests and the audit log. How each works and its safety rules: [control center](admin.md). Titles and descriptions are edited in `data/products.js` (see decisions); releases in `data/music.js`. The owner can change a price, publish a product out of draft, hide it, remove and restore it, and pause sales in the Control Center (`PATCH /api/admin/products/:id`, which also accepts a title and description, though the page doesn't offer them); a change other than pausing marks the product `admin_managed` (`db/migrations/0008_admin_catalog.sql`) so the deploy's catalog sync leaves it alone, and a product's very first appearance still comes from `data/products.js`.
 
 ## Analytics
 
@@ -140,10 +146,10 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 - Admin and unknown things answer 404; unpublished products look exactly like missing ones.
 - Support impersonation is a separate, server-verified session bound to the admin's own sign-in, read-mostly, never live payments, always bannered and fully attributed in the append-only audit log ([control center](admin.md#impersonate-customer-support)).
 - Signed-out visitors never receive the account pages (server gate above); public pages and their JSON-LD are static and carry nobody's data; `robots.txt` is a crawl hint, never the boundary.
-- Headers (`_headers`): no framing, no MIME sniffing, a restricted referrer and permissions on every page; a strict Content Security Policy (only this site's scripts and API) on account and store pages; API responses are `no-store` and `noindex`.
+- Headers (`_headers`): no framing by other sites, no MIME sniffing, a restricted referrer and permissions on every page; a strict Content Security Policy (only this site's scripts and API, no framing at all) on account and store pages. API responses are `no-store` and `noindex` (`server/lib/http.js`).
 - Test mode can't leak into production: separate databases and buckets per environment (`wrangler.toml`), mock orders are always `livemode 0`, and live/test mismatches between an event and its order are rejected.
 - Proven by tests that attack it: [development](development.md#tests).
 
 ## Not built yet
 
-Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts are sales and promo codes ([control center](admin.md#sales-and-promo-codes-promotions)); there are no automatic bundle or quantity discounts. Account deletion is manual (admin). Editing titles and prices from the admin needs the static pages to be built from the database first.
+Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts are sales and promo codes ([control center](admin.md#sales-and-promo-codes-promotions)); there are no automatic bundle or quantity discounts. A price changed in the Control Center shows live on product cards and pages (`js/store.js`) and is what checkout charges, but the static HTML and search data keep the `data/products.js` price until the pages are built from the database.

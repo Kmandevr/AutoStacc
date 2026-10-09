@@ -1,5 +1,5 @@
 // Renders a project's news: the latest three on its home page and the full list on its news page, each linking to its
-// page at /projects/<project>/news/<id>. Only the open project's posts (<body data-project>).
+// page at /<creator>/<project>/news/<id>. Only the open project's posts (<body data-project>).
 // Needs data/news.js and js/util.js.
 (function () {
   "use strict";

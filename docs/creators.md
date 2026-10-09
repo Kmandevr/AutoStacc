@@ -1,7 +1,8 @@
 ---
 title: Creators and the Studio
-summary: Creators own projects; addresses /<creator>/<project>; the Studio's free no-code sites (blocks, themes, images), how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
-updated: 2026-10-08
+summary: Creators own projects; addresses /<creator>/<project>; the Studio's free no-code sites (blocks, themes, images) and selling, how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
+covers: [data/creators.js, server/creators/, server/studio/, server/sites/, server/revenue/, server/files/, server/integrations/providers.js, server/lib/slugs.js, functions/[[path]].js, functions/media/sites/, functions/studio.js, studio.html, js/studio*.js, js/product-page.js, css/studio.css, css/creator-site.css, scripts/dist.js, scripts/lib/creator-page.js, db/migrations/0006_creators.sql, db/migrations/0009_creator_selling.sql, db/migrations/0011_marketplace_payouts.sql]
+updated: 2026-10-09
 ---
 
 # Creators and the Studio
@@ -27,7 +28,7 @@ updated: 2026-10-08
 - **First-party** (`data/creators.js`, today only `autostacc`). Their projects' pages are hand-written in this repo (`<creator>/<project>.html`, `<creator>/<project>/`, a skin, sounds, scripts), the build generates the creator's profile (`<creator>.html`), and all of it is static. The deploy's catalog sync writes their rows (`source = 'catalog'`) and never touches anything else.
 - **Studio creators** sign up in `/studio`. They exist only in the database (`source = 'studio'`), and their pages are rendered by the store (`server/sites/`) and served by the catch-all Function `functions/[[path]].js`.
 
-Both live in D1 `creators`. Projects point at their creator (`projects.creator_id`), products at their project, and order lines at both. When creator-made products come, they will be `products.source = 'studio'` rows in the same tables.
+Both live in D1 `creators`. Projects point at their creator (`projects.creator_id`), products at their project, and order lines at both. Creator-made products are `products.source = 'studio'` rows in the same tables (`created_by` records who made them); their store page is `/product?p=<id>` (`js/product-page.js`), while first-party products keep `/shop/<id>`.
 
 ## The Studio (`/studio`)
 
@@ -44,8 +45,9 @@ Signed-in accounts with a confirmed email (the page is gated like `/dashboard`):
 4. **Look:** a style preset, an accent colour and a font from a short list.
 5. **Images:** upload PNG, JPEG, GIF or WebP. Delete one and the quota is freed at once.
 6. **Save the draft, preview it** (private, noindex) **and publish.** Unpublish takes the site offline.
+7. **Sell** (`server/studio/products.js`, `product-files.js`): products of its projects (up to 25 per creator; kinds, price range and payout hold in `SELLING`, `server/creators/policy.js`). A product goes on sale only with a deliverable file. Paid files from a creator not yet trusted wait as `pending` until approved in the Control Center. Owners and editors manage products; only the owner sees earnings, connects a payout account and asks for payouts (`earnings.js`, `payout-account.js`; [payouts-setup](payouts-setup.md)).
 
-Code: `studio.html`, `js/studio.js` (overview), `js/studio-editor.js` (editor), `js/studio-blocks.js` (block forms), `css/studio.css`. API: `server/studio/` (`creators.js`, `sites.js`).
+Code: `studio.html`, `js/studio.js` (overview), `js/studio-editor.js` (editor), `js/studio-blocks.js` (block forms), `js/studio-products.js` (products and files), `js/studio-earnings.js` (earnings and payouts), `css/studio.css`. API: `server/studio/` (`creators.js`, `sites.js`, `products.js`, `product-files.js`, `earnings.js`, `payout-account.js`).
 
 ## How creator pages stay safe
 
@@ -55,9 +57,9 @@ Code: `studio.html`, `js/studio.js` (overview), `js/studio-editor.js` (editor), 
 - **Images are checked by their bytes.** The type comes from the file's first bytes, never from its name or the browser, so HTML or SVG can't pass as an image. Images are served from `/media/sites/<id>` with `nosniff`, a sandbox CSP and only while active, and never while the creator is suspended.
 - **Ownership.** Only a creator's members see or change it. Anyone else gets a 404 (`requireCreator`, `requireProject`). A document may show only its creator's own images and products; anything else is left out at render time.
 - **New creators aren't indexed.** Their pages are `noindex` until an admin marks the creator **trusted** in the Control Center (Creators tab), so spam can't ride on autostacc.com's reputation. Studio pages are not in `sitemap.xml` yet.
-- **Suspension** (Control Center) takes a creator's pages and images offline within a minute (the edge and browser cache time) and stops it from publishing.
+- **Suspension** (Control Center) takes a creator's pages and images offline within a minute (the edge and browser cache time), stops it from publishing and takes its products off sale (buyers keep what they own).
 - **Limits hold under load.** The creator and project limits are checked inside the insert, so parallel requests can't exceed them.
-- **The project directory, follows and polls** cover first-party projects only until Studio creators can sell.
+- **The project directory, follows and polls** cover first-party projects only (`source = 'catalog'`, `server/projects/projects.js`); Studio projects aren't listed there yet, even though their creators can sell.
 
 Future custom HTML/CSS needs its own model before it's allowed: creator code runs only in a sandboxed iframe on its own origin (`sandbox.autostacc.com`, opaque-origin sandbox), never on autostacc.com where logins and checkout live. The plan: [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED). The block document is the extension point: a "custom section" block can be added there later without changing anything else.
 
@@ -65,12 +67,12 @@ Future custom HTML/CSS needs its own model before it's allowed: creator code run
 
 - A creator page is **not a deployment**. Publishing renders each page once into `site_pages`. A view is one indexed D1 read, cached at the edge for a minute in production (`server/sites/public.js`).
 - Static pages never invoke the catch-all Function: `scripts/dist.js` writes `_routes.json` to exclude every static page and folder, first-party creators' folders and every `_redirects` source. Only unknown top-level addresses (Studio creators, typos) reach it.
-- Free-plan limits live in one file (`server/creators/policy.js`): projects, pages, blocks, document size, image size and count, and a storage quota (50 MB). An admin can raise a creator's quota. The quota is checked before an upload is stored, and again atomically when it's recorded, so parallel uploads can't squeeze past it.
+- Free-plan limits live in one file (`server/creators/policy.js`): projects, pages, blocks, document size, image size and count, an image storage quota (50 MB), and for selling products per creator, files per product and a separate paid-file quota (250 MB). An admin can raise a creator's quota. The quota is checked before an upload is stored, and again atomically when it's recorded, so parallel uploads can't squeeze past it.
 
 ## Store foundations under creators
 
-- **Seller and split per order line** (`server/revenue/split.js`). Each line records its project, creator, share of a promo code, net, platform fee and creator share, fixed when the order is written. The fee is the creator's own (admin-set, basis points) or the platform default, which is **0** until pricing is decided. Changing it only affects later orders. Refunds are recorded on the order (`refunded_cents`) and, for full refunds, on each line. The Control Center's **Creators** statistics show fees and creators' shares. Nothing is paid out automatically; payouts will read these records.
-- **Paid file lifecycle** (`server/files/`). Each paid file is `pending`, `published`, `rejected` or `deleted`, and only published, active files reach customers (downloads, Your Stacc, test-purchase checks). The admin can upload a file held back ("Hold back until I publish it") and publish it later. Uploads are limited by file type, size (95 MB) and count per product (`server/files/policy.js`). This is the upload, check, publish path creator uploads will use; a scanner would sit between pending and published.
+- **Seller and split per order line** (`server/revenue/split.js`). Each line records its project, creator, share of a promo code, net, platform fee and creator share, fixed when the order is written. The fee is the creator's own (admin-set, basis points) or the platform default, which is **0** until pricing is decided. Changing it only affects later orders. Refunds are recorded on the order (`refunded_cents`) and, for full refunds, on each line. The Control Center's **Creators** statistics show fees and creators' shares. Nothing is paid out automatically: a creator's earnings and payout requests read these records (`server/revenue/earnings.js`, `payouts.js`), and the owner sends each payout from the Control Center ([payouts-setup](payouts-setup.md)).
+- **Paid file lifecycle** (`server/files/`). Each paid file is `pending`, `published`, `rejected` or `deleted`, and only published, active files reach customers (downloads, Your Stacc, test-purchase checks). The admin can upload a file held back ("Hold back until I publish it") and publish it later. Uploads are limited by file type, size (95 MB) and count per product (`server/files/policy.js`). Creators' paid uploads use the same path (`server/studio/product-files.js`); a scanner would sit between pending and published.
 - **Connected accounts** (`server/integrations/providers.js`, D1 `connected_accounts`). This is the extension point for Spotify, SoundCloud, YouTube, Instagram, TikTok and so on, with no provider switched on yet. The planned flow: OAuth with PKCE, the fewest read-only scopes, tokens encrypted before storage (or not kept at all), and the creator choosing what appears on their pages.
 
 ## Not built yet (on purpose)
