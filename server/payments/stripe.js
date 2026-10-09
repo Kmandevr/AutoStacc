@@ -62,6 +62,12 @@ export const stripeProvider = {
     return { sessionId: session.id, url: session.url };
   },
 
+  // Full refund of a paid order, to the card it was paid with. The key makes a repeated click the same refund.
+  async refund(app, order) {
+    return client(app.config).refunds.create({ payment_intent: order.provider_payment_id, reason: "requested_by_customer", metadata: { order_id: order.id } },
+      { idempotencyKey: `refund-${order.id}` });
+  },
+
   async retrieveCheckout(app, sessionId) {
     const s = await client(app.config).checkout.sessions.retrieve(sessionId);
     return normalizeSession(s, s.payment_status === "paid" ? "paid" : s.status === "expired" ? "expired" : "pending");
