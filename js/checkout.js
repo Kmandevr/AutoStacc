@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  const { $, escapeHTML, cents, api, cart, track } = window.GS;
+  const { $, escapeHTML, cents, fmtDate, api, cart, track } = window.GS;
   const root = $("#checkout-app");
   if (!root) return;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
@@ -24,7 +24,9 @@
       try { first = !sessionStorage.getItem("gs:done:" + o.id); sessionStorage.setItem("gs:done:" + o.id, "1"); } catch {}
       if (first) { sound("cinch"); track("purchase_complete"); }
       root.innerHTML = state("Payment confirmed", false, `<p>Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
-        ${lines(o)}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>`);
+        ${lines(o)}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>
+        <div data-refund-slot></div>`);
+      refundOption(o);
     } else if (o.status === "failed") {
       root.innerHTML = state("Payment didn't go through", true, `<p>The payment didn't go through, so nothing is owed. Your cart is still here.</p>
         <div class="actions"><a class="btn" href="/cart">Back to cart</a></div>`);
@@ -36,6 +38,20 @@
     // Move focus to the outcome so screen readers announce it.
     const big = $(".big", root);
     if (big) { big.tabIndex = -1; big.focus(); }
+  }
+
+  // Signed in or a guest with this order's key: a paid order can be refunded here within 14 days if nothing from it was
+  // downloaded. The store decides (the status route says whether it is eligible); this only offers the button.
+  async function refundOption(o) {
+    let r = o.refund;
+    if (!r) {
+      const res = await api(`/api/orders/${encodeURIComponent(o.id)}`);
+      r = res.ok ? res.data.order.refund : null;
+    }
+    const slot = $("[data-refund-slot]", root);
+    if (!slot || !r || !r.eligible) return;
+    slot.innerHTML = `<p class="small-print">Bought the wrong thing? <button class="link-btn" type="button" data-refund="${escapeHTML(o.id)}">Refund this order</button>
+      until ${escapeHTML(fmtDate(r.until.slice(0, 10)))}, if you haven't downloaded anything from it.</p><p class="msg error" role="alert" hidden></p>`;
   }
 
   // Drawn once; later polls only change the message, so the panel doesn't re-glitch and screen readers hear each change once.
@@ -91,6 +107,18 @@
 
   root.addEventListener("click", async (e) => {
     if (e.target.closest("[data-recheck]")) return poll();
+    const refund = e.target.closest("[data-refund]");
+    if (refund) {
+      if (refund.disabled || !confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
+      refund.disabled = true;
+      const res = await api(`/api/orders/${encodeURIComponent(refund.dataset.refund)}/refund`, { method: "POST", body: {} });
+      if (res.ok) return show(res.data.order);
+      refund.disabled = false;
+      const msg = $("[data-refund-slot] .msg", root);
+      msg.hidden = false;
+      msg.textContent = res.error.message;
+      return;
+    }
     const btn = e.target.closest("[data-mock]");
     if (!btn || btn.disabled) return;
     const buttons = root.querySelectorAll("[data-mock]");
