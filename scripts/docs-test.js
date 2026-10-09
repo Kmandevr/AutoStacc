@@ -54,7 +54,7 @@ for (const [note, pats] of Object.entries(covers)) {
 const DOCS = [...NOTES, ...FILES.filter((f) => /^(README\.md|CLAUDE\.md|\.claude\/.*\.md)$/.test(f) && !f.startsWith(".claude/worktrees/") && f !== ".claude/handoff.md")];
 const OPTIONAL = new Set([".claude/handoff.md"]); // written by the handoff skill only while a task is unfinished
 const TOP = new Set(FILES.map((f) => f.split("/")[0]));
-const stripCode = (s) => s.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+const stripCode = (s) => s.replace(/^---\n[\s\S]*?\n---\n/, "").replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
 for (const doc of DOCS) {
   const text = read(doc);
   if (/\[\[[^\]]+\]\]/.test(stripCode(text))) add("FAIL", "wikilink", "use [text](note.md), not [[wikilinks]]", doc);

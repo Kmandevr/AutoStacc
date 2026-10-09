@@ -11,7 +11,7 @@ description: Add, edit, remove or feature a shop product in AutoStacc. Use for a
 2. Get the facts from the user: title, type, price, description, what's inside. **Never invent** them. For anything missing, ask, or leave a placeholder (`draft: true`) and open a GitHub issue.
 3. Edit:
    - `id`: unique, lowercase, hyphenated. Never change a published id (it's the page address and the key orders and entitlements point at).
-   - `type`: a key of `data/product-types.js`. A new kind of product is a new entry there (label, `maxQuantity`, `preview`, and `license`: a key of `data/licenses.js`, which sets the licence box on its page; never write licence text on a product). Only real facts in `includes` and `metadata` (docs/production.md).
+   - `type`: a key of `data/product-types.js`. A new kind of product is a new entry there (label, `maxQuantity`, `preview`, `track` (its AutoStacc track colour, a key of `data/content-types.js` or `""`), and `license`: a key of `data/licenses.js`, which sets the licence box on its page; never write licence text on a product). Only real facts in `includes` and `metadata` (docs/production.md).
    - `price`: a number with at most two decimals, in `SITE.currency`; `0` makes it free (claimed into the library).
    - `featured: true`: the home page shows at most 3, in file order. `hue` only colours the generated cover.
    - Required: `project` (an id in `data/projects.js`). Optional `pacs`: Pac ids from `data/pacs.js` of the same project that the product delivers (the build refuses other projects' Pacs and, for a published product, draft Pacs). See `docs/architecture.md`.

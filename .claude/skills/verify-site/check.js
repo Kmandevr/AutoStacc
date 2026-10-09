@@ -14,10 +14,11 @@ const { createServer } = require(path.join(root, "scripts/serve.js"));
 const { loadData } = require(path.join(root, "scripts/lib/data.js"));
 const htmlUnder = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("projects")];
+const { SITE, products, projects, creators } = loadData(root);
+// Root pages, product pages and every first-party creator's folder (its projects' pages), as in scripts/seo-test.js.
+const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...creators.flatMap((c) => htmlUnder(c.id))];
 const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
-const { SITE, products, projects } = loadData(root);
 const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
 const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|product)(\/|$)/;

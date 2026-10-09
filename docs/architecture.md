@@ -1,7 +1,8 @@
 ---
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
-updated: 2026-10-08
+covers: [data/site.js, data/creators.js, data/projects.js, data/stacclets.js, data/pacs.js, data/content-types.js, data/product-types.js, data/polls.js, data/relationships.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/relations.js, db/migrations/0003_platform.sql, server/projects/, server/polls/, server/entitlements/autostacc.js, server/app.js, js/stacc-model.js, js/projects.js, js/polls.js]
+updated: 2026-10-09
 ---
 
 # Architecture
@@ -22,7 +23,7 @@ The platform layer is built **on top** of that store. Authentication, checkout, 
 ## The model
 
 ```
-AutoStacc (platform: data/site.js → SITE.platform)
+AutoStacc (platform: data/site.js → SITE)
 └── Creator            data/creators.js / D1   owns projects; seller of record; address /<creator> (creators.md)
     └── Project        data/projects.js        creative entity; owns identity and features; /<creator>/<project>
     ├── Release        data/music.js           project: <id>
@@ -55,7 +56,7 @@ The build (`scripts/lib/platform.js`) refuses: unknown projects, Stacclets or Pa
 
 ### Sync to the database
 
-`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), projects and polls (`scripts/lib/platform-catalog.js`). Stacclets and Pacs stay in `data/` (the library joins them in the browser) until a server feature needs them. Schema: `db/migrations/0003_platform.sql` (forward-only).
+`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), first-party creators, projects and polls (`scripts/lib/platform-catalog.js`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). Stacclets and Pacs stay in `data/` (the library joins them in the browser) until a server feature needs them. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql` (forward-only).
 
 ## Your Stacc
 
@@ -64,7 +65,7 @@ The library page (`/library`) is "Your Stacc": every asset the customer can use,
 ## Auto
 
 - **Purchase → Stacc:** already true; a paid order grants entitlements and the library reads them.
-- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). Followed projects' published products surface in Your Stacc under "New from projects you follow".
+- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory, follows and polls cover first-party (`source = 'catalog'`) projects only; Studio projects aren't in them yet. Followed projects' published products surface in Your Stacc under "New from projects you follow".
 - **Auto-Stacc:** a follow with `autoStacc: true` grants every free, published product of that project (source `free`, the same idempotent grant as claiming it by hand), now and whenever the library is opened, so free releases added later arrive by themselves. Paid products are never granted by following; they appear as available until bought.
 - **Automatic organization:** assets are placed by their Pac, kind and format with no per-customer work.
 
@@ -85,13 +86,13 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | a kind of product | one entry in `data/product-types.js` |
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |
-| a server feature | a folder in `server/` with its own `routes`, one line in `server/app.js` |
+| a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` |
 
 ## Not built yet (on purpose)
 
 - **ZIP of a selection:** "Download selected" fetches each file's own signed link in turn. A server-side ZIP (`POST /api/downloads/bundle {fileIds}` → one signed link, streamed store-only ZIP) is the next step if customers want it.
 - **Pac-level ownership:** access is per product. Bundles that share Pacs across products need a `product_pacs` table and a Pac-aware access check; the entitlement `bundle` source is reserved.
 - **Notifications:** follows record who wants news; nothing sends it yet. A "new release" mail is one template in `server/email/templates.js` plus a send when a product is published.
-- **Licences:** shown per product only as metadata; no licence records.
-- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own no-code sites are built ([creators](creators.md)); the planned design for creator code (sandboxed HTML/CSS, later JavaScript) is in [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED).
+- **Licences:** one licence per kind of product (`data/licenses.js`, picked by `license` in `data/product-types.js`), shown on `/license` and each product page; no per-purchase licence records.
+- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own no-code sites and selling from the Studio are built ([creators](creators.md)); the planned design for creator code (sandboxed HTML/CSS, later JavaScript) is in [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED).
 - (Resolved 2026-10-08: the site is AutoStacc; projects live at `/<creator>/<project>` and creators build free sites in the Studio; see [creators](creators.md) and [decisions](decisions.md).)
