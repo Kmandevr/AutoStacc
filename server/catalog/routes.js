@@ -1,20 +1,22 @@
 // Public catalog API: published products with live price and availability, plus "owned" for the requester.
 import { json, fail, id } from "../lib/http.js";
-import { listProducts, getProduct, isVisible, publicProduct } from "./products.js";
+import { listProducts, getProduct, isVisible, publicProduct, sellersOf } from "./products.js";
 import { resolveAccess } from "../entitlements/access.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { runningSales } from "../promotions/promotions.js";
 
 async function list(app) {
   const [listed, sales] = await Promise.all([listProducts(app.db), runningSales(app.db)]);
-  const products = listed.map((p) => publicProduct(p, sales));
+  const sellers = await sellersOf(app.db, listed);
+  const products = listed.map((p) => publicProduct(p, sales, sellers.get(p.id)));
   return json({ products }, 200, { "Cache-Control": "public, max-age=60" });
 }
 
 async function one(app, { productId }) {
   const [p, sales] = await Promise.all([getProduct(app.db, id(productId, "productId")), runningSales(app.db)]);
   if (!isVisible(p)) fail(404, "not_found", "No product with that id.");
-  return json({ product: publicProduct(p, sales) }, 200, { "Cache-Control": "public, max-age=60" });
+  const sellers = await sellersOf(app.db, [p]);
+  return json({ product: publicProduct(p, sales, sellers.get(p.id)) }, 200, { "Cache-Control": "public, max-age=60" });
 }
 
 // Live state for product pages and cards: availability and price for the given ids, and which ones this person owns.
@@ -24,10 +26,10 @@ async function state(app) {
   ids.forEach((x) => id(x, "ids"));
   const [listed, sales, access] = await Promise.all([listProducts(app.db), runningSales(app.db), resolveAccess(app)]);
   const products = listed.filter((p) => !ids.length || ids.includes(p.id));
-  const owned = await ownedProductIds(app.db, access);
+  const [owned, sellers] = await Promise.all([ownedProductIds(app.db, access), sellersOf(app.db, products)]);
   return json({
     signedIn: Boolean(access.user),
-    products: Object.fromEntries(products.map((p) => [p.id, { ...publicProduct(p, sales), owned: owned.includes(p.id) }]))
+    products: Object.fromEntries(products.map((p) => [p.id, { ...publicProduct(p, sales, sellers.get(p.id)), owned: owned.includes(p.id) }]))
   });
 }
 

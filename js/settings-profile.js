@@ -13,7 +13,7 @@
         <h2>Profile</h2><p class="msg" role="status"></p>
         <div class="field"><label for="name">Name</label><input id="name" type="text" autocomplete="name" maxlength="80" required value="${escapeHTML(user.name || "")}"></div>
         <div class="field"><label for="email">Email</label><input id="email" type="email" value="${escapeHTML(user.email)}" readonly aria-describedby="email-note"></div>
-        <p class="small-print" id="email-note">Your email can't be changed: your purchases are tied to it.${user.createdAt ? ` Member since ${fmtDate(user.createdAt.slice(0, 10))}.` : ""}</p>
+        <p class="small-print" id="email-note">Your email can't be changed: your Stacc is tied to it.${user.createdAt ? ` Member since ${fmtDate(user.createdAt.slice(0, 10))}.` : ""}</p>
         <div class="actions"><button class="btn" type="submit">Save name</button></div>
       </form>`;
   }, { once: true });

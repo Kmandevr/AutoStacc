@@ -195,7 +195,7 @@ function releasePage(SITE, data, r) {
     <section class="alt">
       <div class="wrap">
         <div class="section-head"><h2>Listen</h2></div>
-        <div id="listen-player" data-release="${esc(r.id)}"></div>
+        <div data-listen data-release="${esc(r.id)}"></div>
       </div>
     </section>
 
@@ -235,7 +235,7 @@ ${relationsSection(data, "release:" + r.id)}${related.length ? `
 
 // ---------- product ----------
 // The buy area is a static fallback inside data-buy; js/store.js replaces it with the live control (Add to cart,
-// Get it free, OWNED + library link) from the store API. Drafts stay "Coming soon".
+// Get it free, STACC'D + library link) from the store API. Drafts stay "Coming soon".
 function productPage(SITE, data, p) {
   const url = abs(SITE, "/shop/" + p.id);
   const crumbs = [["Home", "/"], ["Store", "/shop"], [p.title, "/shop/" + p.id]];

@@ -2,7 +2,7 @@
 // /api/downloads/<token> checks the link, the requester and the entitlement again, then streams the private file.
 // Unknown, unowned, unpublished-and-unowned and revoked all fail the same way.
 import { json, fail, readJson, str } from "../lib/http.js";
-import { run, newId, now } from "../lib/db.js";
+import { run, stmt, newId, now } from "../lib/db.js";
 import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access.js";
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
 import { signDownload, readDownload } from "./tokens.js";
@@ -17,6 +17,9 @@ const logEvent = (app, event, f) =>
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     newId("dl"), event, f.productId || null, f.fileId || null, f.entitlementId || null, f.subject || null, f.reason || null, now(), impersonationIdOf(app));
 
+// Account deletion: the download history stays (statistics, refund checks) but no longer names the account.
+export const anonymiseDownloadsStmt = (db, userId, anonId) =>
+  stmt(db, "UPDATE download_events SET subject = ? WHERE subject = ?", `d:${anonId}`, `u:${userId}`);
 
 // Which of the requester's identities an entitlement belongs to (accounts first).
 function subjectFor(access, ent) {
@@ -35,7 +38,7 @@ async function issue(app) {
   const ent = ents.find((e) => subjectFor(access, e));
   if (!file || !ent) {
     await logEvent(app, "denied", { fileId, productId: file && file.product_id, reason: "no entitlement", subject: subjectsOf(access)[0] });
-    fail(403, "download_denied", "You don't own that file.");
+    fail(403, "download_denied", "That file isn't in your Stacc.");
   }
   const subject = subjectFor(access, ent);
   const { token, expiresAt } = await signDownload(app.config.downloadSecret, { fileId, entitlementId: ent.id, subject, ttlSeconds: app.config.downloadTtlSeconds });

@@ -1,24 +1,23 @@
-// Renders an embedded player (with a backup) into #listen-player, and on the home page the release's streaming links.
-// Plays the release named by the player's data-release, or data/music.js `featured`. Needs data/music.js and js/util.js.
+// Listen, a drop-in for any [data-listen] element: an embedded player (with a backup) for one release and, with
+// data-links, that release's streaming links under it. data-release picks the release (a release page; counts as a
+// release view); otherwise data/music.js `featured` when it belongs to the project, else the project's newest.
+// data-project picks the project (default: the open project's; none: every project). Outside the project's pages it
+// wears the project's look. Needs data/projects.js, data/music.js and js/util.js.
 (function () {
   "use strict";
 
-  const { $, escapeHTML, isSet } = window.GS;
+  const { escapeHTML, isSet, parseDate, moduleProject, wear } = window.GS;
   const MUSIC = window.MUSIC || {};
-  const PROJECT = window.GS.currentProject();
-
-  const player = $("#listen-player");
-  if (!player) return;
-  const platforms = $("#listen-platforms");
-  const releases = (MUSIC.releases || []).filter((r) => !r.draft);
-  const release = releases.find((r) => r.id === (player.dataset.release || MUSIC.featured)) || releases[0] || {};
-  // A release page (not the home page's Listen section) counts as a release view (privacy-friendly, js/util.js).
-  if (player.dataset.release && release.id) window.GS.track("release_view", release.id);
+  const PROJECTS = window.PROJECTS || [];
+  const boxes = [...document.querySelectorAll("[data-listen]")];
+  if (!boxes.length) return;
+  const RELEASES = (MUSIC.releases || []).filter((r) => !r.draft).sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
   // Only well-known players are embedded, so a typo can't load an unrelated page into the site.
   const PLAYERS = ["open.spotify.com", "w.soundcloud.com", "widget.deezer.com", "bandcamp.com", "embed.music.apple.com",
     "www.youtube.com", "www.youtube-nocookie.com"];
   const EMPTY = `<div class="player-empty"><span>&gt; awaiting signal</span><span class="cursor">first release incoming</span></div>`;
+  let ytCount = 0; // each YouTube player gets its own element id
 
   // Returns { src, host } for an https link to a known player, or null.
   function vet(url) {
@@ -33,48 +32,72 @@
     }
   }
 
-  function frame({ src, host }) {
-    // Spotify's, SoundCloud's and Deezer's players are short; the others need a 16:9 frame.
-    const tall = !/spotify|soundcloud|deezer/.test(host);
-    return `<iframe class="player${tall ? " tall" : ""}" src="${escapeHTML(src)}"
-      title="${escapeHTML(release.title ? `${release.title} by ${PROJECT.name || ""}` : "Music player")}" loading="lazy"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+  // The YouTube player API loads once per page; every player waits for it.
+  let ytApi = null;
+  function youtubeApi() {
+    ytApi = ytApi || new Promise((resolve, reject) => {
+      const api = document.createElement("script");
+      api.src = "https://www.youtube.com/iframe_api";
+      api.onerror = reject;
+      api.onload = () => window.YT.ready(resolve);
+      document.head.append(api);
+    });
+    return ytApi;
   }
 
-  // YouTube goes through its official player API so that if a video can't play for this visitor
-  // (not released in their country, embedding blocked, offline), the backup player takes over instead of an error box.
-  function youtube(id, backup) {
-    const fail = () => (player.innerHTML = backup ? frame(backup) : EMPTY);
-    player.innerHTML = `<div class="player tall"><div id="yt-player"></div></div>`;
-    const api = document.createElement("script");
-    api.src = "https://www.youtube.com/iframe_api";
-    api.onerror = fail;
-    api.onload = () =>
-      window.YT.ready(() => {
-        new window.YT.Player("yt-player", {
+  function mount(box) {
+    const project = moduleProject(box);
+    const mine = project ? RELEASES.filter((r) => r.project === project) : RELEASES;
+    const release = RELEASES.find((r) => r.id === box.dataset.release) || mine.find((r) => r.id === MUSIC.featured) || mine[0] || {};
+    const artist = (PROJECTS.find((p) => p.id === release.project) || {}).name || "";
+    // A release page (not a Listen section) counts as a release view (privacy-friendly, js/util.js).
+    if (box.dataset.release && release.id) window.GS.track("release_view", release.id);
+    wear(box, release.project || project);
+    box.innerHTML = `<div class="listen-player"></div>${"links" in box.dataset ? `<div class="platforms"></div>` : ""}`;
+    const player = box.querySelector(".listen-player");
+    const platforms = box.querySelector(".platforms");
+
+    function frame({ src, host }) {
+      // Spotify's, SoundCloud's and Deezer's players are short; the others need a 16:9 frame.
+      const tall = !/spotify|soundcloud|deezer/.test(host);
+      return `<iframe class="player${tall ? " tall" : ""}" src="${escapeHTML(src)}"
+        title="${escapeHTML(release.title ? `${release.title} by ${artist}` : "Music player")}" loading="lazy"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+    }
+
+    // YouTube goes through its official player API so that if a video can't play for this visitor
+    // (not released in their country, embedding blocked, offline), the backup player takes over instead of an error box.
+    function youtube(id, backup) {
+      const fail = () => (player.innerHTML = backup ? frame(backup) : EMPTY);
+      const slot = `yt-player-${++ytCount}`;
+      player.innerHTML = `<div class="player tall"><div id="${slot}"></div></div>`;
+      youtubeApi().then(() => {
+        new window.YT.Player(slot, {
           videoId: id,
           width: "100%",
           height: "100%",
           playerVars: { rel: 0, playsinline: 1 },
           events: { onError: fail }
         });
-      });
-    document.head.append(api);
+      }, fail);
+    }
+
+    const main = vet(release.embedUrl);
+    const backup = vet(release.fallbackEmbedUrl);
+    const ytId = main && /youtube/.test(main.host) && (main.src.match(/\/embed\/([\w-]{11})/) || [])[1];
+    if (ytId) youtube(ytId, backup);
+    else if (main || backup) player.innerHTML = frame(main || backup);
+    else player.innerHTML = EMPTY;
+
+    // Release pages list their streaming links in the page itself; a Listen section asks for them with data-links.
+    if (!platforms) return;
+    const live = (release.links || []).filter((p) => isSet(p.url));
+    platforms.innerHTML = live.length
+      ? `<span class="platforms-label">Stream ${escapeHTML(release.title)} on</span>` +
+        live.map((p) => `<a class="btn ghost" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.name)}</a>`).join("") +
+        `<a class="btn" href="${escapeHTML(window.GS.projectPath(release.project, "music", release.id))}">${escapeHTML(release.title)}: release page</a>`
+      : `<p class="empty">Streaming links land here with the first release. <a href="#newsletter">Get told first</a>.</p>`;
   }
 
-  const main = vet(release.embedUrl);
-  const backup = vet(release.fallbackEmbedUrl);
-  const ytId = main && /youtube/.test(main.host) && (main.src.match(/\/embed\/([\w-]{11})/) || [])[1];
-  if (ytId) youtube(ytId, backup);
-  else if (main || backup) player.innerHTML = frame(main || backup);
-  else player.innerHTML = EMPTY;
-
-  // Release pages list their streaming links in the page itself; the home page gets them here.
-  if (!platforms) return;
-  const live = (release.links || []).filter((p) => isSet(p.url));
-  platforms.innerHTML = live.length
-    ? `<span class="platforms-label">Stream ${escapeHTML(release.title)} on</span>` +
-      live.map((p) => `<a class="btn ghost" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.name)}</a>`).join("") +
-      `<a class="btn" href="${escapeHTML(window.GS.projectPath(release.project, "music", release.id))}">${escapeHTML(release.title)}: release page</a>`
-    : `<p class="empty">Streaming links land here with the first release. <a href="#newsletter">Get told first</a>.</p>`;
+  boxes.forEach(mount);
 })();
