@@ -15,7 +15,18 @@
     <li><strong>Total</strong><strong>${cents(o.totalCents, o.currency)}</strong></li></ul>`;
   const state = (big, bad, body) => `<div class="panel appear wide checkout-state"><p class="big${bad ? " bad" : ""}">${big}</p>${body}</div>`;
 
+  // The steps under the heading follow the order: paid moves on to Your Stacc; anything else stays on Payment.
+  function journey(paid) {
+    const steps = document.querySelectorAll("[data-journey] li");
+    steps.forEach((li, i) => {
+      const at = paid ? 2 : 1;
+      li.classList.toggle("done", i < at || (paid && i === at));
+      if (i === at) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+    });
+  }
+
   function show(o) {
+    journey(o.status === "paid");
     if (o.status === "paid") {
       // The purchased pieces leave the cart; the success effects run once per order.
       o.items.forEach((i) => cart.remove(i.productId));

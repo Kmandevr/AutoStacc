@@ -14,6 +14,13 @@ export const deliverableFiles = (db, productIds) => (productIds.length
       WHERE ${DELIVERABLE} AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
   : Promise.resolve([]));
 
+// What a buyer would download per product (published, active files only): { productId: { files, bytes } }.
+export const downloadSizes = async (db, productIds) => (productIds.length
+  ? Object.fromEntries((await all(db, `SELECT product_id, COUNT(*) AS files, COALESCE(SUM(size_bytes), 0) AS bytes FROM product_files
+      WHERE ${DELIVERABLE} AND product_id IN (${productIds.map(() => "?").join(",")}) GROUP BY product_id`, ...productIds))
+      .map((r) => [r.product_id, { files: r.files, bytes: r.bytes }]))
+  : {});
+
 export const countDeliverable = async (db, productId) => (await first(db, `SELECT COUNT(*) AS n FROM product_files WHERE product_id = ? AND ${DELIVERABLE}`, productId)).n;
 
 // Files counted against a product's limit: everything not rejected or deleted.

@@ -2,7 +2,7 @@
 // owned, unpublished, paused and free products can't be bought; the success page proves nothing.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { Client, unique, sql } from "../support/client.js";
+import { Client, unique, sql, sqlAll } from "../support/client.js";
 import { newBuyer, mockBuy, stripeCheckout } from "../support/flows.js";
 
 export default (ctx) => describe("commerce", () => {
@@ -138,5 +138,21 @@ export default (ctx) => describe("commerce", () => {
     const again = await c.post("/api/checkout", body, { headers });
     assert.equal(again.status, 409);
     assert.equal(again.data.error.code, "checkout_finished");
+  });
+  test("product state tells the download size from published files only, and only for asked-for ids", async () => {
+    const c = new Client(ctx.mock.url);
+    const size = async () => (await c.get("/api/products/state?ids=vj-loops")).data.products["vj-loops"].download;
+    const before = await size();
+    const [[row]] = sqlAll(ctx.mock.stateDir, "SELECT COUNT(*) AS files, SUM(size_bytes) AS bytes FROM product_files WHERE product_id = 'vj-loops' AND active = 1 AND status = 'published'");
+    assert.deepEqual(before, { files: row.files, bytes: row.bytes });
+    assert.ok(before.files >= 1 && before.bytes > 0, "the dev catalog has a file");
+    // A file held back (pending) or deactivated isn't what a buyer gets, so it doesn't count.
+    sql(ctx.mock.stateDir, "UPDATE product_files SET status = 'pending' WHERE product_id = 'vj-loops'");
+    assert.deepEqual(await size(), { files: 0, bytes: 0 });
+    sql(ctx.mock.stateDir, "UPDATE product_files SET status = 'published' WHERE product_id = 'vj-loops'");
+    assert.deepEqual(await size(), before);
+    // Without ids there is no per-product size (no unbounded query).
+    const all = (await c.get("/api/products/state")).data.products;
+    assert.equal(all["vj-loops"].download, undefined);
   });
 });

@@ -43,12 +43,14 @@
     const q = new URLSearchParams({ ...(action && { action }), ...(before && { before }) });
     const res = await api(`/api/admin/audit?${q}`);
     if (!res.ok) { el.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
-    const rows = res.data.entries.map((a) => `<tr><td>${when(a.at)}</td>
+    // Each action wears its area (the part before the dot); anything done while impersonating stands out.
+    const rows = res.data.entries.map((a) => `<tr${a.impersonationId ? ' class="audit-as"' : ""}><td>${when(a.at)}</td>
       <td>${e(a.actor)}${a.impersonationId ? ` <span class="admin-as">→ as ${e(a.subjectEmail || a.subjectUserId || "customer")}</span>` : ""}</td>
-      <td>${e(a.action)}</td><td>${e([a.targetType, a.targetId].filter(Boolean).join(" "))}${!a.impersonationId && a.subjectEmail ? ` <span class="small-print">(${e(a.subjectEmail)})</span>` : ""}</td>
+      <td><span class="audit-action" data-area="${e(String(a.action).split(".")[0])}">${e(a.action)}</span></td><td>${e([a.targetType, a.targetId].filter(Boolean).join(" "))}${!a.impersonationId && a.subjectEmail ? ` <span class="small-print">(${e(a.subjectEmail)})</span>` : ""}</td>
       <td class="small-print">${e(Object.entries(a.detail).map(([k, v]) => `${k}: ${v}`).join(", "))}</td></tr>`).join("");
     const head = before ? "" : `<form class="admin-search" data-audit><label for="audit-action">Show</label><select id="audit-action">${ACTIONS.map((x) =>
-      `<option value="${x}"${x === action ? " selected" : ""}>${x || "everything"}</option>`).join("")}</select><button class="btn ghost" type="submit">Filter</button></form>
+      `<option value="${x}"${x === action ? " selected" : ""}>${x || "everything"}</option>`).join("")}</select><button class="btn ghost" type="submit">Filter</button>
+      <label for="audit-find">Find</label><input id="audit-find" type="search" placeholder="Email, id, action…" data-audit-find></form>
       <p class="small-print">Append-only: entries can't be edited or deleted. Catalog changes are recorded by the database as "catalog sync"; news and events are changed in git, so their history is the repository's.</p>`;
     const body = `<tbody>${rows || `<tr><td colspan="5">Nothing recorded.</td></tr>`}</tbody>`;
     if (before) {
@@ -56,7 +58,17 @@
     } else {
       el.innerHTML = head + `<div class="admin-table"><table><thead><tr><th scope="col">When (UTC)</th><th scope="col">Who</th><th scope="col">Action</th><th scope="col">On</th><th scope="col">Detail</th></tr></thead>${body}</table></div><div data-audit-more></div>`;
     }
+    findRows();
     $("[data-audit-more]", el).innerHTML = res.data.next ? `<button class="btn ghost" type="button" data-audit-older="${e(res.data.next)}">Older</button>` : "";
+  }
+
+  // Narrows the entries already loaded (Older loads more) to rows containing every typed word.
+  function findRows() {
+    const input = $("[data-audit-find]");
+    const words = input ? input.value.toLowerCase().split(/\s+/).filter(Boolean) : [];
+    document.querySelectorAll("#admin-audit tbody tr").forEach((tr) => {
+      tr.hidden = words.length > 0 && !words.every((w) => tr.textContent.toLowerCase().includes(w));
+    });
   }
 
   addEventListener("gs:admin", (ev) => {
@@ -68,6 +80,8 @@
       const o = e2.target.closest("[data-audit-older]");
       if (o) { o.disabled = true; return audit($("#audit-action").value, o.dataset.auditOlder); }
     });
+    root.addEventListener("input", (e2) => { if (e2.target.matches("[data-audit-find]")) findRows(); });
+    root.addEventListener("change", (e2) => { if (e2.target.id === "audit-action") audit(e2.target.value); });
     root.addEventListener("submit", (e2) => {
       if (!e2.target.matches("[data-audit]")) return;
       e2.preventDefault();

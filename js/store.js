@@ -16,6 +16,7 @@
   document.body.append(live);
   const say = (text) => { live.textContent = ""; setTimeout(() => (live.textContent = text), 50); };
 
+  const bytes = (n) => (n >= 1073741824 ? `${(n / 1073741824).toFixed(1)} GB` : n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
   let state = null; // { signedIn, products: { id: { available, free, owned, priceCents, listPriceCents, sale, currency } } }
 
   // The live price; during a sale the catalog price struck through beside it and the sale's name.
@@ -51,10 +52,30 @@
       const p = state.products[el.dataset.status];
       if (p) el.textContent = p.owned ? "In Your Stacc" : p.available ? "Available now" : "Unavailable";
     });
+    // Download size, once the store says what a buyer gets; hidden while unknown or without files yet.
+    document.querySelectorAll("[data-size]").forEach((el) => {
+      const d = (state.products[el.dataset.size] || {}).download;
+      const box = el.closest("[data-size-row]") || el;
+      box.hidden = !(d && d.files);
+      if (d && d.files) el.textContent = `${bytes(d.bytes)} · ${d.files} file${d.files === 1 ? "" : "s"}`;
+    });
+    // Cards say what they are at a glance (styles: css/shop.css), and the store says how much of it is already yours.
+    document.querySelectorAll(".card[data-product]").forEach((el) => {
+      const p = state.products[el.dataset.product];
+      el.classList.toggle("is-owned", Boolean(p && p.owned));
+    });
+    const owned = Object.values(state.products).filter((p) => p.owned).length;
+    document.querySelectorAll("[data-owned-summary]").forEach((el) => {
+      el.hidden = !owned;
+      if (owned) el.innerHTML = `You've Stacc'd ${owned} of these. <a href="/library">Open Your Stacc</a>`;
+    });
   }
 
   async function load() {
-    const ids = [...new Set(slots().map((el) => el.dataset.buy))];
+    // Every item a store browser can show (js/shop.js lists them in data-catalog): filters and search draw cards that
+    // weren't on screen at first.
+    const all = [...document.querySelectorAll("[data-catalog]")].flatMap((el) => el.dataset.catalog.split(",").filter(Boolean));
+    const ids = [...new Set([...slots().map((el) => el.dataset.buy), ...all])];
     const res = await api(`/api/products/state?ids=${encodeURIComponent(ids.join(","))}`);
     if (res.ok) state = res.data;
     paint();

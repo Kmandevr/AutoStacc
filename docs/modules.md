@@ -21,7 +21,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 
 | Module | Element | Options |
 | --- | --- | --- |
-| Store browser (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-filters="project type"`, `data-level`, `data-url` (state in the address: `/shop?project=&type=&item=`) |
+| Store browser (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-filters="project type"` (each option shows its count), `data-search` (search box), `data-spotlight` (first featured item large when nothing is filtered), `data-picks="3"` ("Picked for you" from `js/taste.js`, which must load first), `data-sort` (recommended, price, name), `data-level`, `data-url` (state in the address: `/shop?project=&type=&q=&item=&sort=`) |
 | Buy buttons, live prices, status (`js/store.js`) | `[data-buy]`, `[data-price]`, `[data-status]` | the product id |
 | Projects rack (`js/projects.js`) | `[data-project-list]` | `data-creator` (only that creator's projects, on its profile) |
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |

@@ -54,7 +54,7 @@ window.LEGAL = [
           "**gs.session_token** (named **__Secure-gs.session_token** on autostacc.com, which marks it as sent only over a secure connection): keeps you signed in (only after you sign in).",
           "**gs.dont_remember**: only if you untick \"Keep me logged in\", so you're signed out when you close the browser.",
           "**gs_guest**: lets a guest open their own orders (only after a guest checkout; 30 days).",
-          "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, a note that this browser was signed in (not who) and, until you close the tab, the email and promo code you typed at checkout."
+          "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, a note that this browser was signed in (not who), for the store's \"Picked for you\" the products you open or add to your cart there and the type filters you use (forget it or turn it off on the [store](/shop)), and, until you close the tab, the email and promo code you typed at checkout."
         ] },
         "No advertising, analytics or cross-site tracking cookies are used."
       ] },

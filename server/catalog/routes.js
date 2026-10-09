@@ -4,6 +4,7 @@ import { listProducts, getProduct, isVisible, publicProduct, sellersOf } from ".
 import { resolveAccess } from "../entitlements/access.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { runningSales } from "../promotions/promotions.js";
+import { downloadSizes } from "../files/files.js";
 
 async function list(app) {
   const [listed, sales] = await Promise.all([listProducts(app.db), runningSales(app.db)]);
@@ -26,10 +27,14 @@ async function state(app) {
   ids.forEach((x) => id(x, "ids"));
   const [listed, sales, access] = await Promise.all([listProducts(app.db), runningSales(app.db), resolveAccess(app)]);
   const products = listed.filter((p) => !ids.length || ids.includes(p.id));
-  const [owned, sellers] = await Promise.all([ownedProductIds(app.db, access), sellersOf(app.db, products)]);
+  // Sizes only for an asked-for list (at most 50 ids, one bound parameter each).
+  const [owned, sellers, sizes] = await Promise.all([ownedProductIds(app.db, access), sellersOf(app.db, products),
+    ids.length ? downloadSizes(app.db, products.map((p) => p.id)) : null]);
   return json({
     signedIn: Boolean(access.user),
-    products: Object.fromEntries(products.map((p) => [p.id, { ...publicProduct(p, sales, sellers.get(p.id)), owned: owned.includes(p.id) }]))
+    // download: what a buyer gets (file count and total size), so the store can label it before anyone pays.
+    products: Object.fromEntries(products.map((p) => [p.id, { ...publicProduct(p, sales, sellers.get(p.id)), owned: owned.includes(p.id),
+      ...(sizes && { download: sizes[p.id] || { files: 0, bytes: 0 } }) }]))
   });
 }
 
