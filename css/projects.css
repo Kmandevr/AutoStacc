@@ -51,3 +51,5 @@
   .pcard .btn.small { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { .pcard { transition: none; } }
+.pcard-body .pcard-actions .btn, .pcard .project-follow .btn { width: auto; flex: none; }
+.pcard-body { align-content: start; }
