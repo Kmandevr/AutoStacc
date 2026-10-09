@@ -60,7 +60,7 @@ The current search and filters always win: while the store is narrowed, the sect
 
 ## Pages
 
-- `/shop`: `js/store-browse.js` (state in the address, results, chips, pages, the filter drawer on phones; offline it shows `data/products.js`), `js/store-filters.js` (panel and chip templates), `js/store-suggest.js` (combobox), `js/store-sections.js` (rows, tune picks, not interested, your wishlist, coming soon; on the home page `data-sections="2" data-brief` keeps two rows and the same controls, [browse](browse.md)), `js/wishlist.js` (hearts), `css/store.css`.
+- `/shop`: `js/store-browse.js` (state in the address, results, chips, pages, the filter drawer on phones; offline it shows `data/products.js`), `js/store-filters.js` (panel and chip templates), `js/store-suggest.js` (combobox), `js/store-sections.js` (rows, tune picks, not interested, your wishlist, coming soon; on the home page `data-sections="2" data-brief` keeps two rows and the same controls, [browse](browse.md)), `js/wishlist.js` (hearts), `css/store.css` (on phones the filter drawer is frosted glass over a blurred page).
 - Product pages: every stated detail in "Details", a wishlist button, and "You might also like" (`js/similar.js`).
 - Other pages' grids (`js/shop.js`) stay simple: featured or a project's products, each opening its own page.
 
