@@ -866,4 +866,28 @@ describe("store in the browser", () => {
     assert.equal(await wide.page.locator(".tabbar").isVisible(), false, "no quick-links bar on a computer");
     await wide.ctx.close();
   });
+  test("Orders: finished orders are tidy rows, failed and cancelled ones are folded away with a plain reason", async () => {
+    const { ctx, page } = await open(PHONE);
+    await signUp(page, unique("orders"));
+    await page.evaluate(async () => {
+      const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+      for (const [productId, outcome] of [["wallpapers", "paid"], ["vj-loops", "failed"], ["serum-presets", "expired"]]) {
+        const co = await post("/api/checkout", { items: [{ productId }] });
+        await post("/api/dev/mock-payment", { orderId: co.orderId, sessionId: new URL(co.url).searchParams.get("mock"), outcome });
+      }
+    });
+    await page.goto("/settings/orders");
+    await page.waitForSelector(".orders .order");
+    assert.equal(await page.locator(".orders:not(.orders-other .orders) > .order").count(), 1, "one finished order in the main list");
+    assert.match(await page.textContent(".order .order-chip"), /Paid/);
+    const folded = page.locator(".orders-other");
+    assert.match(await folded.locator("summary").textContent(), /Failed or cancelled \(2\)/);
+    assert.equal(await folded.locator(".order-reason").first().isVisible(), false, "reasons stay folded until opened");
+    await folded.locator("summary").click();
+    const reasons = await folded.locator(".order-reason").allTextContents();
+    assert.ok(reasons.some((t) => /payment didn't go through/.test(t)) && reasons.some((t) => /left before paying/.test(t)), reasons.join(" | "));
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "nothing scrolls sideways");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
 });
