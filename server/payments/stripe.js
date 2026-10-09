@@ -2,6 +2,7 @@
 // library (signature + timestamp tolerance), and session lookups for reconciliation. Normalizes Stripe events into the
 // provider-neutral shape that server/payments/events.js processes.
 import Stripe from "stripe";
+import { taxCodeFor } from "./tax-codes.js";
 
 const clients = new Map();
 function client(config) {
@@ -26,17 +27,12 @@ const crypto = Stripe.createSubtleCryptoProvider();
 const EXPIRY_MARGIN_SECONDS = 120;
 export const expiresAtFor = (config, nowMs = Date.now()) => Math.floor(nowMs / 1000) + Math.max(config.checkoutTtlMinutes, 30) * 60 + EXPIRY_MARGIN_SECONDS;
 
-// The live Stripe account sells through Managed Payments, which refuses any line without a product tax code from its
-// list of eligible digital codes. One general code covers every kind of product (taxed like a generic digital download);
-// a per-kind code (music, software, artwork) can replace it later. Owner to confirm with their tax adviser.
-export const TAX_CODE = "txcd_10000000";
-
 // One Checkout line per order line, at the price the store charged (after any sale). A line carrying part of a promo
 // code's discount becomes a single line at its exact discounted amount, so the session total always equals the
 // order total to the cent (server/payments/events.js refuses a payment that doesn't).
 function lineItem(order, i) {
   const currency = order.currency.toLowerCase();
-  const product_data = { name: i.title, tax_code: TAX_CODE, metadata: { product_id: i.productId } };
+  const product_data = { name: i.title, tax_code: taxCodeFor(i.type), metadata: { product_id: i.productId } };
   if (!i.discountCents) return { quantity: i.quantity, price_data: { currency, unit_amount: i.unitPriceCents, product_data } };
   const name = `${i.title}${i.quantity > 1 ? ` × ${i.quantity}` : ""} (${order.promo_code || "discount"})`;
   return { quantity: 1, price_data: { currency, unit_amount: i.unitPriceCents * i.quantity - i.discountCents, product_data: { ...product_data, name } } };
