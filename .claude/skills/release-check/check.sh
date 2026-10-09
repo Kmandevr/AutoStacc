@@ -24,4 +24,7 @@ git grep -nE '(sk|rk)_live_[A-Za-z0-9]{8,}|whsec_[A-Za-z0-9]{20,}|xkeysib-[a-f0-
 grep -q 'email: ""' data/projects.js && report WARN placeholder "a project has no booking email (data/projects.js)"
 grep -q "draft: true" data/*.js && report WARN placeholder "draft (placeholder) entries kept out of search (data/)"
 grep -q 'newsletterAction: ""' data/projects.js && report WARN placeholder "a project has an empty newsletterAction (data/projects.js)"
+# Context hygiene: no requirement lost from CLAUDE.md or the rules, CLAUDE.md within budget, handoff sound.
+ctx=$(.claude/skills/handoff/check.sh) || fail=1
+echo "$ctx" | grep -v '^PASS context$' || true
 exit $fail

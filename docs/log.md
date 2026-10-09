@@ -8,6 +8,7 @@ updated: 2026-10-09
 
 Newest first.
 
+- 2026-10-09: Context hygiene, event-driven: CLAUDE.md "Context" says when to clean up (task boundary or crowded context only), what to drop and what every compaction keeps; the `handoff` skill writes `.claude/handoff.md` (resume snapshot, never the only copy of a fact), which the session-start hook prints with its age in commits; `.claude/skills/handoff/check.sh` (in release-check) fails if a requirement in `must-keep.txt` goes missing or CLAUDE.md passes 1100 words. Title formats moved from CLAUDE.md to `.claude/rules/html.md`.
 - 2026-10-09: Faster without more work, behaviour unchanged.
   - Site: pages load fingerprinted copies of scripts, styles and data from `/assets/<hash>/` (made by `scripts/dist.js` in the deploy copy only), cached for a year (`_headers`), so repeat visits skip about 15 re-checks per page; plain `/js`, `/css` and `/data` addresses stay no-cache for files loaded by name. `logo.png` was re-compressed losslessly (235 to 217 KB, pixel-identical).
   - Tests: fixed sleeps after navigation became `settle()` (`test/support/browser.js`: own requests done, finite animations finished, two frames), and three layout-style tests moved from `flows` to `layout` to balance the groups. Browser suite 123 to 110 s, full store run about 130 s. Test stores set up D1 then R2 in sequence again (running them together sometimes failed with "database is locked").

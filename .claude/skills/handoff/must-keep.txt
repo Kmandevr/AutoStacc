@@ -1,0 +1,19 @@
+# Requirements that must not be lost when CLAUDE.md, rules or skills are trimmed or reorganised.
+# One per line: <file> TAB <exact phrase>. Moving a requirement on purpose means moving its line here too.
+CLAUDE.md	Never hard-code a project
+CLAUDE.md	Never invent facts
+CLAUDE.md	docs/identity.md
+CLAUDE.md	docs/production.md
+CLAUDE.md	update `/privacy`
+CLAUDE.md	never trusted with prices
+CLAUDE.md	card details never reach the site
+CLAUDE.md	Never hand-edit generated output
+CLAUDE.md	no creator HTML or JavaScript ever runs
+CLAUDE.md	Every title ends
+CLAUDE.md	Record decisions and new facts
+CLAUDE.md	Closes #N
+CLAUDE.md	never re-read
+CLAUDE.md	never the only copy
+.claude/rules/html.md	(title `<page> · <project> · AutoStacc`)
+.claude/rules/html.md	The hub's title starts with "AutoStacc ·"
+.claude/rules/html.md	Platform pages wear the AutoStacc look (light and dark, no sounds)
