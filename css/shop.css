@@ -210,3 +210,4 @@ a.cover:hover { color: #fff; }
 }
 .card.selected .card-desc { flex: 0; font-size: 1rem; }
 .card.selected .card-foot { margin-top: auto; padding-top: 14px; }
+.shop-how .small-print a { display: inline-block; padding-block: 2px; }

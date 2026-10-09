@@ -32,6 +32,7 @@
     const projects = PROJECTS.filter((x) => base.some((p) => p.project === x.id));
     const types = [...new Set(base.map(card.label))];
     const state = { project: "", type: "", q: "", item: "" };
+    root.dataset.catalog = base.map((p) => p.id).join(","); // for js/store.js: live state for every item, drawn or not
     // Lower-case text each item is searched by.
     const haystack = new Map(base.map((p) => [p, [p.title, p.description, card.label(p), projectName(p.project), ...(p.tags || [])].join(" ").toLowerCase()]));
     const spot = "spotlight" in cfg && base.find((p) => p.featured);
