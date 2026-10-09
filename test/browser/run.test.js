@@ -890,4 +890,32 @@ describe("store in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
+  test("a guest can refund an unused order from the confirmation page; after a download they can't", async () => {
+    const { ctx, page } = await open(PHONE);
+    const email = unique("guest-refund");
+    await toMockPay(page, email, "wallpapers");
+    await page.click("[data-mock=paid]");
+    await page.waitForSelector("text=Payment confirmed");
+    await page.waitForSelector("[data-refund]");
+    page.once("dialog", (d) => d.accept());
+    await page.click("[data-refund]");
+    await page.waitForSelector("text=This order was refunded");
+    assert.deepEqual(ordersFor(email).map((o) => o.status), ["refunded"]);
+    // A second order, downloaded from first: no refund offered.
+    await toMockPay(page, email, "stems-patchwork");
+    await page.click("[data-mock=paid]");
+    await page.waitForSelector("text=Payment confirmed");
+    await page.waitForSelector("[data-refund]");
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-asset");
+    const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-download]")]);
+    assert.ok(download.suggestedFilename());
+    await page.goBack();
+    await page.reload();
+    await page.waitForSelector("text=Payment confirmed");
+    await page.waitForTimeout(500);
+    assert.equal(await page.locator("[data-refund]").count(), 0, "no refund once something was downloaded");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
 });
