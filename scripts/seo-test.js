@@ -37,7 +37,7 @@ const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "
 const metaVal = (head, key) => tags(head, "meta").filter((m) => m.name === key || m.property === key).map((m) => m.content);
 const draftProducts = new Set(data.products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages (cart, login, library...) are private: noindex, out of the sitemap, blocked in robots.txt.
-const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|api|private)(\/|$)/;
+const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|product|api|private)(\/|$)/;
 const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f) || PRIVATE.test(urlPath(f));
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
