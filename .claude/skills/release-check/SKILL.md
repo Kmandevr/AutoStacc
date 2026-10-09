@@ -5,7 +5,7 @@ description: Final pre-merge check for AutoStacc. Use before calling a change re
 
 # Release check
 
-Steps 1, 2 and 5 are independent shell checks: start them together in one Bash call, each with its own output and exit code. Start the store suites (1b) and any reviewer agents in the same message, and do the reading in steps 3 and 4 while they run. These checks only read the repo, so none waits for another (the store suites keep their own order inside `store-check`).
+Steps 1, 2 and 5 are independent shell checks: start them together in one Bash call, each with its own output and exit code. Start the store suites (1b) and the reviewer agents the diff calls for (none for a small or single-area change; at most one per area touched) in the same message, and do the reading in steps 3 and 4 while they run. These checks only read the repo, so none waits for another (the store suites keep their own order inside `store-check`).
 
 ```sh
 L=$(mktemp -d)
