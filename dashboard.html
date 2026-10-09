@@ -36,6 +36,8 @@
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/projects.css">
   <link rel="stylesheet" href="/css/panels.css">
+  <link rel="stylesheet" href="/css/store.css">
+  <link rel="stylesheet" href="/css/latest.css">
   <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body data-page="dashboard">
@@ -47,6 +49,11 @@
         <p class="dash-hello" data-dashboard-hello>Your workspace</p>
         <h1 class="glitch" data-text="Dashboard">Dashboard</h1>
         <p>Your Stacc at a glance, new releases from the projects you follow, and your account.</p>
+        <form class="browse-search dash-search" role="search" action="/library" method="get">
+          <label for="dash-q" class="sr-only">Search Your Stacc</label>
+          <input id="dash-q" name="q" type="search" placeholder="Search Your Stacc…" autocomplete="off" enterkeyhint="search" maxlength="80">
+          <button class="btn" type="submit">Search</button>
+        </form>
       </div>
     </div>
 
@@ -62,8 +69,18 @@
       </section>
 
       <section class="mix-panel dash-projects" data-track="presets" aria-labelledby="dash-projects-title">
-        <div class="mix-head"><h2 id="dash-projects-title">Projects</h2><a href="/projects">All projects &rarr;</a></div>
-        <ul class="projects rack" data-project-list></ul>
+        <div class="mix-head"><h2 id="dash-projects-title">Projects you follow</h2><a href="/projects?followed=1">All you follow &rarr;</a></div>
+        <div data-project-picks data-picks="following" data-limit="4"><p class="msg pending">Loading the projects you follow…</p></div>
+      </section>
+
+      <section class="mix-panel dash-latest" data-track="loops" aria-labelledby="dash-latest-title">
+        <div class="mix-head"><h2 id="dash-latest-title">Latest from the projects</h2><a href="/explore">Explore &rarr;</a></div>
+        <div class="latest" data-latest data-limit="3"></div>
+      </section>
+
+      <section class="mix-panel dash-discover" data-track="samples" aria-labelledby="dash-discover-title">
+        <div class="mix-head"><h2 id="dash-discover-title">Projects to try</h2><a href="/projects">All projects &rarr;</a></div>
+        <div data-project-picks data-limit="2"><p class="small-print">Find more on the <a href="/projects">projects page</a>.</p></div>
       </section>
 
       <section class="mix-panel dash-links" data-track="loops" aria-labelledby="dash-links-title">
@@ -89,6 +106,8 @@
   <script src="/data/product-types.js"></script>
   <script src="/data/products.js"></script>
   <script src="/data/music.js"></script>
+  <script src="/data/news.js"></script>
+  <script src="/data/shows.js"></script>
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/account-nav.js"></script>
@@ -96,7 +115,11 @@
   <script src="/js/dashboard.js"></script>
   <script src="/js/stacc-glance.js"></script>
   <script src="/js/release-feed.js"></script>
-  <script src="/js/projects.js"></script>
+  <script src="/js/taste.js"></script>
+  <script src="/js/project-card.js"></script>
+  <script src="/js/project-picks.js"></script>
+  <script src="/js/explore-items.js"></script>
+  <script src="/js/latest.js"></script>
   <script src="/js/follow.js"></script>
   <script src="/js/motion.js"></script>
 </body>

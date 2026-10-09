@@ -48,8 +48,10 @@
     return out;
   }
 
-  // Empty filter fields match everything.
+  // Empty filter fields match everything. q: words that must all appear in the file's name, file name or product title.
+  const words = (q) => String(q || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
   const matches = (a, f = {}) =>
+    words(f.q).every((w) => `${a.name} ${a.filename} ${a.productTitle}`.toLowerCase().includes(w)) &&
     (!f.project || a.projectId === f.project) && (!f.stacclet || a.staccletId === f.stacclet) &&
     (!f.pac || a.pacId === f.pac) && (!f.kind || a.kind === f.kind) && (!f.format || a.format === f.format);
   const filter = (assets, f) => assets.filter((a) => matches(a, f));
@@ -110,7 +112,7 @@
   }
 
   // One request from js/stacc-client.js, answered the same in the worker or on the page. "build" turns the owned items
-  // into assets and keeps them (and the catalog) in memo; "view" builds one view, filtered, plus the filter menus.
+  // into assets and keeps them (and the catalog) in memo; "view" builds one view, filtered, plus the filter menus and how many files match.
   function answer(memo, msg) {
     if (msg.type === "build") {
       memo.catalog = msg.catalog || {};
@@ -120,7 +122,7 @@
     if (msg.type !== "view") throw new Error(`Unknown Stacc request: ${msg.type}`);
     const assets = memo.assets || [], catalog = memo.catalog || {};
     const groups = msg.view === "kinds" ? byKind(assets, catalog, msg.filter) : tree(assets, catalog, msg.filter);
-    return { view: msg.view, groups, facets: facets(assets) };
+    return { view: msg.view, groups, facets: facets(assets), count: filter(assets, msg.filter).length, total: assets.length };
   }
 
   const api = { assetsFrom, kindOf, formatOf, filter, byKind, tree, facets, answer };

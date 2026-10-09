@@ -40,3 +40,8 @@
   .stacc-asset .btn { flex: 1 1 100%; text-align: center; }
   .stacc-filter { flex: 1 1 40%; }
 }
+.stacc-search { max-width: 560px; margin: 0 0 12px; }
+.stacc-search input { width: 100%; min-height: 46px; padding: 10px 14px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
+.stacc-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.stacc-found { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
+.stacc-found .link-btn { margin-left: 8px; }
