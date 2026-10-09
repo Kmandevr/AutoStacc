@@ -5,7 +5,7 @@ import { all } from "../lib/db.js";
 import { requireUser, currentUser } from "../auth/session.js";
 import { getOrder, orderItems, publicOrder } from "./orders.js";
 import { guestOrderIds, checkGuestKey, guestCookie, guestKeysFromRequest } from "./guest.js";
-import { providerByName } from "../payments/index.js";
+import { providerForOrder } from "../payments/index.js";
 import { processPaymentEvent } from "../payments/events.js";
 import { limit } from "../lib/ratelimit.js";
 import { refundStatus, refundOrder } from "./refunds.js";
@@ -51,7 +51,7 @@ async function reconcile(app, { orderId }) {
   await limit(app, "reconcile", 30, 60);
   const order = await ownedOrder(app, orderId);
   if (order.status === "pending" && order.provider_session_id) {
-    const provider = providerByName(order.provider);
+    const provider = providerForOrder(app, order);
     try {
       const ev = await provider.retrieveCheckout(app, order.provider_session_id);
       if (ev.type === "paid" || ev.type === "expired") {

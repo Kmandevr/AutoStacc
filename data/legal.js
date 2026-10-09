@@ -34,7 +34,7 @@ window.LEGAL = [
       { id: "purchases", heading: "Orders and purchases", body: [
         "For every order: the email it was placed with, what was in it, the prices charged, any promo code, its status (paid, refunded and so on) and when. Stripe's reference numbers for the payment are kept so refunds and disputes can be matched to the order.",
         "What you own is recorded separately, so your library knows which files you can download.",
-        "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, when you ask for a payout, the payment details you type in (for example a PayPal address). Only you and AutoStacc see them, and they are kept with the payout record.",
+        "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, once you set up payouts, the reference of your Stripe payout account and whether it is ready (Stripe, not AutoStacc, collects and keeps your ID, tax and bank details; see [Stripe's privacy policy](https://stripe.com/privacy)). Each payout is recorded with its amount and Stripe's transfer reference. If payouts are still sent by hand, the payment details you type in (for example a PayPal address) are kept with the payout record, visible only to you and AutoStacc.",
         "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link."
       ] },
       { id: "payments", heading: "Payments", body: [
@@ -135,7 +135,7 @@ window.LEGAL = [
       { id: "creators", heading: "Artists and creators", body: [
         "Products and pages are made by the projects and creators named on them, who keep the rights in their work. AutoStacc sells and delivers it for them.",
         "If you make a creator space in the Studio, you're responsible for what you publish there and confirm you have the rights to it.",
-        "Creators can sell products in the Studio. A sale is held for 14 days (the refund window) before it can be paid out, and payouts are sent by AutoStacc by hand on request. AutoStacc's fee, if any, is shown in the Studio before you sell. Creators are responsible for their own taxes."
+        "Creators can sell products in the Studio. Sales of creators' products are taken on a separate Stripe account from AutoStacc's own, which is also why a cart holding both is paid in two steps. A sale is held for 14 days (the refund window) before it can be paid out. To be paid you connect a Stripe account; Stripe verifies you and its [connected account terms](https://stripe.com/legal/connect-account) apply to it. AutoStacc sends a payout when you ask and AutoStacc approves it. If a sale is refunded after you were paid for it, that amount is taken from your next sales. Sales tax on creators' products is worked out and collected at checkout by Stripe Tax; creators are responsible for their own income taxes. AutoStacc's fee, if any, is shown in the Studio before you sell."
       ] },
       { id: "ip", heading: "Rights in the site", body: [
         "AutoStacc's name, logo, design and code belong to AutoStacc. Artists' and creators' names, artwork and music belong to them."

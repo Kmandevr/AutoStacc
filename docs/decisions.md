@@ -6,6 +6,10 @@ updated: 2026-10-08
 
 # Decisions
 
+## 2026-10-09: Creator payouts through a second Stripe account (Connect)
+
+Stripe's Managed Payments (AutoStacc's own products) doesn't allow marketplaces or Connect, so creators' products are charged on a second "marketplace" Stripe account and creators are paid from it with Connect transfers. Owner decisions: separate Stripe account; payout on request after the 14-day hold (minimum $10, owner approves and sends); creators from anywhere Stripe supports; a refund after payout is taken from the creator's next sales (negative balance); a cart with both kinds is paid in two steps; Stripe Tax on the marketplace account (the owner decides where to register). Off until the marketplace keys are set. How to switch it on: [payouts-setup](payouts-setup.md).
+
 ## 2026-10-08: Support address, who runs AutoStacc, refunds and licences
 
 Chosen by the owner, for the trust pages (`data/legal.js`) and the licences to come:

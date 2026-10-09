@@ -38,6 +38,7 @@ Plain settings are `[vars]` in `wrangler.toml` (per environment: top level = loc
 | `BETTER_AUTH_SECRET` | secret | 32+ chars, signs sessions |
 | `DOWNLOAD_SIGNING_SECRET` | secret | 32+ chars, different, signs download links |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | secret | Stripe keys (`sk_live_` only in production, never elsewhere) |
+| `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` | secret, optional | The second Stripe account for creators' sales and payouts; off without the first two ([payouts-setup](payouts-setup.md)) |
 | `BREVO_API_KEY` | secret | Brevo key |
 | `ADMIN_EMAILS` | secret | Admin emails, comma-separated |
 | `STRIPE_API_BASE` | var | Tests only: points the Stripe SDK at the fake Stripe server (ignored outside development/test) |
