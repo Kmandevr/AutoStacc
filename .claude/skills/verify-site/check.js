@@ -110,13 +110,18 @@ async function checkPage(browser, base, page, width) {
         // so compare pixels: hiding the first link must change what's on screen.
         else if (await tab.locator(`${menu} a`).count()) {
           const link = tab.locator(`${menu} a`).first();
+          // The drawer slides in: measure only once its finite animations are done, and only a link fully on screen.
+          await link.evaluate(() => Promise.all(document.getAnimations().filter((x) => x.effect?.getTiming().iterations !== Infinity).map((x) => x.finished.catch(() => {}))));
           const clip = await link.boundingBox();
-          const shot = () => tab.screenshot({ clip, animations: "disabled", caret: "hide" });
-          const shown = await shot();
-          await link.evaluate((a) => { a.style.visibility = "hidden"; });
-          const hidden = await shot();
-          await link.evaluate((a) => { a.style.visibility = ""; });
-          if (shown.equals(hidden)) problems.push(["FAIL", "nav-toggle", "menu opened but is covered by the page"]);
+          const vp = tab.viewportSize();
+          if (clip && clip.width >= 1 && clip.height >= 1 && clip.x >= 0 && clip.y >= 0 && clip.x + clip.width <= vp.width && clip.y + clip.height <= vp.height) {
+            const shot = () => tab.screenshot({ clip, animations: "disabled", caret: "hide" });
+            const shown = await shot();
+            await link.evaluate((a) => { a.style.visibility = "hidden"; });
+            const hidden = await shot();
+            await link.evaluate((a) => { a.style.visibility = ""; });
+            if (shown.equals(hidden)) problems.push(["FAIL", "nav-toggle", "menu opened but is covered by the page"]);
+          }
         }
       } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
     }
