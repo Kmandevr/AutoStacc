@@ -42,14 +42,15 @@ export function summarise(lines, { nowMs, holdDays = SELLING.holdDays, paidOutCe
 }
 
 export async function earningsOf(db, creator, { livemode, nowMs = Date.now() }) {
-  const lines = (await all(db,
-    `SELECT oi.product_id, p.title, oi.net_cents, oi.platform_fee_cents, oi.creator_share_cents, o.id AS order_id, o.paid_at, o.total_cents, o.refunded_cents, o.status
+  const [rows, payouts] = await Promise.all([
+    all(db, `SELECT oi.product_id, p.title, oi.net_cents, oi.platform_fee_cents, oi.creator_share_cents, o.id AS order_id, o.paid_at, o.total_cents, o.refunded_cents, o.status
      FROM order_items oi JOIN orders o ON o.id = oi.order_id LEFT JOIN products p ON p.id = oi.product_id
-     WHERE oi.creator_id = ? AND o.status IN ('paid', 'refunded') AND o.livemode = ? AND o.paid_at IS NOT NULL ORDER BY o.paid_at DESC`, creator.id, livemode ? 1 : 0))
-    .map((r) => ({ productId: r.product_id, title: r.title, netCents: r.net_cents || 0, platformFeeCents: r.platform_fee_cents || 0, creatorShareCents: r.creator_share_cents || 0,
+     WHERE oi.creator_id = ? AND o.status IN ('paid', 'refunded') AND o.livemode = ? AND o.paid_at IS NOT NULL ORDER BY o.paid_at DESC`, creator.id, livemode ? 1 : 0),
+    first(db, `SELECT COALESCE(SUM(CASE WHEN status = 'paid' THEN amount_cents END), 0) AS paid,
+      COALESCE(SUM(CASE WHEN status = 'requested' THEN amount_cents END), 0) AS requested FROM payout_requests WHERE creator_id = ?`, creator.id)
+  ]);
+  const lines = rows.map((r) => ({ productId: r.product_id, title: r.title, netCents: r.net_cents || 0, platformFeeCents: r.platform_fee_cents || 0, creatorShareCents: r.creator_share_cents || 0,
       orderId: r.order_id, paidAt: r.paid_at, orderTotalCents: r.total_cents, orderRefundedCents: r.refunded_cents || 0, orderStatus: r.status }));
-  const payouts = await first(db, `SELECT COALESCE(SUM(CASE WHEN status = 'paid' THEN amount_cents END), 0) AS paid,
-    COALESCE(SUM(CASE WHEN status = 'requested' THEN amount_cents END), 0) AS requested FROM payout_requests WHERE creator_id = ?`, creator.id);
   return { ...summarise(lines, { nowMs, paidOutCents: payouts.paid, requestedCents: payouts.requested }),
     feeBps: feeBpsOf(creator), holdDays: SELLING.holdDays, minPayoutCents: SELLING.minPayoutCents, currency: "USD" };
 }

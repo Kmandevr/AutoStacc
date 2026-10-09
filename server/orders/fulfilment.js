@@ -10,8 +10,7 @@ import { orderItems, getOrder } from "./orders.js";
 export async function fulfil(app, orderId, { notify = true } = {}) {
   const order = await getOrder(app.db, orderId);
   if (!order || order.status !== "paid") return;
-  const items = await orderItems(app.db, order.id);
-  const userId = order.user_id || (await verifiedUserIdForEmail(app.db, order.email));
+  const [items, userId] = await Promise.all([orderItems(app.db, order.id), order.user_id || verifiedUserIdForEmail(app.db, order.email)]);
   await app.db.batch(items.map((i) =>
     grantStmt(app.db, { userId, email: order.email, productId: i.product_id, sourceType: "purchase", sourceId: order.id })));
   if (notify) await sendConfirmation(app, order, items);

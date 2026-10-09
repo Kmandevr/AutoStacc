@@ -26,8 +26,9 @@ export const roleOf = async (db, creatorId, userId) =>
 
 // A Studio creator this account may change (owner, or editor when allowed). Anything else looks like nothing there.
 export async function requireCreator(db, creatorId, user, roles = ["owner", "editor"]) {
-  const creator = typeof creatorId === "string" ? await getCreator(db, creatorId) : null;
-  const role = creator && creator.source === "studio" ? await roleOf(db, creator.id, user.id) : null;
+  // The creator and this account's role in it are read together; nothing is returned until both checks below pass.
+  const [creator, memberRole] = typeof creatorId === "string" ? await Promise.all([getCreator(db, creatorId), roleOf(db, creatorId, user.id)]) : [null, null];
+  const role = creator && creator.source === "studio" ? memberRole : null;
   if (!role || !roles.includes(role)) fail(404, "not_found", "Nothing here.");
   if (creator.status !== "active") fail(403, "creator_suspended", "This creator is suspended. Contact AutoStacc support.");
   return { creator, role };
@@ -48,8 +49,9 @@ const reservedName = () => fail(409, "name_taken", "That name belongs to a proje
 
 // The limit is checked inside the insert itself, so parallel requests can't each squeeze in one more creator.
 export async function createCreator(db, user, { slug, name }) {
-  if (!(await creatorSlugFree(db, slug))) taken();
-  if (await namePosesAsFirstParty(db, name)) reservedName();
+  const [free, posing] = await Promise.all([creatorSlugFree(db, slug), namePosesAsFirstParty(db, name)]);
+  if (!free) taken();
+  if (posing) reservedName();
   const id = newId("cr");
   const t = now();
   let res;
@@ -72,10 +74,16 @@ export async function createCreator(db, user, { slug, name }) {
 export async function updateCreator(db, creator, { slug, name }) {
   const t = now();
   const writes = [];
-  if (name && name !== creator.name && await namePosesAsFirstParty(db, name)) reservedName();
-  if (slug && slug !== creator.slug) {
-    if (!(await creatorSlugFree(db, slug, creator.id))) taken();
-    if (await holdsOf(db, "creator", creator.id) >= MAX_HOLDS) fail(429, "rename_limit", "This creator has been renamed too often lately. Try again later.");
+  const renaming = Boolean(slug && slug !== creator.slug);
+  const [posing, free, holds] = await Promise.all([
+    name && name !== creator.name ? namePosesAsFirstParty(db, name) : false,
+    renaming ? creatorSlugFree(db, slug, creator.id) : true,
+    renaming ? holdsOf(db, "creator", creator.id) : 0
+  ]);
+  if (posing) reservedName();
+  if (renaming) {
+    if (!free) taken();
+    if (holds >= MAX_HOLDS) fail(429, "rename_limit", "This creator has been renamed too often lately. Try again later.");
     writes.push(...holdStmt(db, "creator", "", creator.slug, slug, creator.id));
   }
   writes.push(stmt(db, "UPDATE creators SET slug = ?, name = ?, updated_at = ? WHERE id = ?", slug || creator.slug, name || creator.name, t, creator.id));

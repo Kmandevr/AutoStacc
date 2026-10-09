@@ -18,16 +18,18 @@ import { listProjectProducts } from "../catalog/products.js";
 import { productPath } from "../creators/products.js";
 import { safeFilename } from "../storage/buckets.js";
 
+// The products of all the creator's projects (a page may show any of them).
+const creatorProducts = async (db, creatorId) => listProjectProducts(db, (await projectsOf(db, creatorId)).map((p) => p.id));
+
 async function getSite(app, { projectId }) {
   const user = await requireUser(app);
   const { project, creator } = await requireProject(app.db, projectId, user);
-  const [site, images, projects] = await Promise.all([
+  const [site, images, products] = await Promise.all([
     first(app.db, "SELECT draft, draft_updated_at, published_at, version FROM project_sites WHERE project_id = ?", project.id),
     listImages(app.db, creator.id),
-    projectsOf(app.db, creator.id)
+    creatorProducts(app.db, creator.id)
   ]);
   const draft = parseJson(site && site.draft, {});
-  const products = await listProjectProducts(app.db, projects.map((p) => p.id));
   return json({
     project: { id: project.id, slug: project.slug, name: project.name, published: Boolean(project.published), path: `/${creator.slug}/${project.slug}` },
     creator: { id: creator.id, slug: creator.slug, name: creator.name, trusted: Boolean(creator.trusted) },
@@ -54,14 +56,15 @@ async function saveSite(app, { projectId }) {
 async function preview(app, { projectId }) {
   const user = await requireUser(app);
   const { project, creator } = await requireProject(app.db, projectId, user);
-  const site = await first(app.db, "SELECT draft FROM project_sites WHERE project_id = ?", project.id);
+  const [site, products] = await Promise.all([
+    first(app.db, "SELECT draft FROM project_sites WHERE project_id = ?", project.id),
+    creatorProducts(app.db, creator.id)
+  ]);
   const raw = parseJson(site && site.draft, {});
   const { doc, assets } = cleanDocument(raw.pages ? raw : starterDocument(project.name));
   const slug = new URL(app.request.url).searchParams.get("page") || "";
   const page = doc.pages.find((p) => p.slug === slug) || doc.pages[0];
-  const projects = await projectsOf(app.db, creator.id);
   const images = await ownImages(app.db, creator.id, [...assets]);
-  const products = await listProjectProducts(app.db, projects.map((p) => p.id));
   const ctx = { images: new Map(images.map((x) => [x.id, imageSrc(x.id)])), products: new Map(products.map((p) => [p.id, { title: p.title, path: productPath(p), artwork: p.artwork }])) };
   const html = renderPage({ siteUrl: app.config.siteUrl, creator, project, doc, page, ctx, indexable: false });
   return new Response(html, { headers: { ...PAGE_HEADERS, "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });

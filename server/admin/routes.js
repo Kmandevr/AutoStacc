@@ -32,8 +32,10 @@ async function summary(app) {
 
 async function products(app) {
   await requireAdmin(app);
-  const rows = await all(app.db, "SELECT * FROM products ORDER BY deleted_at IS NOT NULL, title");
-  const files = await all(app.db, "SELECT id, product_id, filename, label, size_bytes, active, status, created_at, pac_id, kind FROM product_files ORDER BY sort, filename");
+  const [rows, files] = await Promise.all([
+    all(app.db, "SELECT * FROM products ORDER BY deleted_at IS NOT NULL, title"),
+    all(app.db, "SELECT id, product_id, filename, label, size_bytes, active, status, created_at, pac_id, kind FROM product_files ORDER BY sort, filename")
+  ]);
   return json({
     products: rows.map((p) => ({ ...publicProduct(p), published: Boolean(p.published), salesPaused: Boolean(p.sales_paused), deleted: Boolean(p.deleted_at),
       updatedAt: p.updated_at, createdAt: p.created_at, files: files.filter((f) => f.product_id === p.id) }))

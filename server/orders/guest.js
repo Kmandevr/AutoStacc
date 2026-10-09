@@ -30,8 +30,7 @@ export function guestCookie(config, keys) {
 export async function checkGuestKey(app, key) {
   if (!KEY_SHAPE.test(key)) return null;
   const [orderId, secret] = key.split(".");
-  const order = await getOrder(app.db, orderId);
-  const hash = await sha256(secret);
+  const [order, hash] = await Promise.all([getOrder(app.db, orderId), sha256(secret)]);
   if (!order || !(hash === order.access_key_hash || hash === order.email_key_hash)) return null;
   const ageDays = (Date.parse(now()) - Date.parse(order.created_at)) / 86400000;
   return ageDays <= app.config.guestAccessDays ? order : null;
@@ -42,11 +41,8 @@ export async function checkGuestKey(app, key) {
 export async function guestOrderIds(app) {
   if (app._guestOrderIds) return app._guestOrderIds;
   if (hasImpersonationCookie(app.request)) return (app._guestOrderIds = []);
-  const ids = [];
-  for (const key of readCookie(app.request)) {
-    const order = await checkGuestKey(app, key);
-    if (order) ids.push(order.id);
-  }
+  const orders = await Promise.all(readCookie(app.request).map((key) => checkGuestKey(app, key)));
+  const ids = orders.filter(Boolean).map((o) => o.id);
   app._guestOrderIds = ids;
   return ids;
 }

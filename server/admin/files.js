@@ -30,10 +30,12 @@ async function uploadFile(app, { productId }) {
   const kind = url.searchParams.get("kind") ? str(url.searchParams.get("kind"), "kind", { max: 30, pattern: /^[a-z0-9]+(-[a-z0-9]+)*$/ }) : "";
   const status = url.searchParams.get("status") ? str(url.searchParams.get("status"), "status", { pattern: /^(pending|published)$/ }) : "published";
   const replaces = url.searchParams.get("replaces") ? str(url.searchParams.get("replaces"), "replaces", { max: 40, pattern: FILE_ID }) : null;
-  if (replaces && !(await first(app.db, "SELECT id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", replaces, p.id))) {
-    fail(404, "not_found", "The file to replace isn't an active file of this product.");
-  }
-  checkUpload({ filename, sizeBytes: Number(app.request.headers.get("content-length") || 0), existing: await countKept(app.db, p.id) - (replaces ? 1 : 0) });
+  const [replaced, kept] = await Promise.all([
+    replaces ? first(app.db, "SELECT id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", replaces, p.id) : null,
+    countKept(app.db, p.id)
+  ]);
+  if (replaces && !replaced) fail(404, "not_found", "The file to replace isn't an active file of this product.");
+  checkUpload({ filename, sizeBytes: Number(app.request.headers.get("content-length") || 0), existing: kept - (replaces ? 1 : 0) });
   const key = newFileKey(p.id, filename);
   const { object, contentType } = await putVerifiedFile(app, key, filename, app.request.body);
   const fileId = newId("pf");
