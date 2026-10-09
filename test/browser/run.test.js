@@ -890,4 +890,31 @@ describe("store in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
+  test("a skinned project is a rounded, shadowed card with soft gray on light pages and stays full-bleed black in dark mode", async () => {
+    const probe = (page) => page.evaluate(() => {
+      const card = document.querySelector(".project-card");
+      const cs = getComputedStyle(card);
+      return { has: Boolean(card), radius: parseFloat(cs.borderTopLeftRadius), shadow: cs.boxShadow, bg: getComputedStyle(document.querySelector("main")).backgroundColor,
+        over: document.documentElement.scrollWidth - innerWidth, headerInCard: card.contains(document.querySelector(".project-header")), footerInCard: card.contains(document.querySelector(".project-footer")) };
+    });
+    const light = await open({ ...PHONE, colorScheme: "light" });
+    await light.page.goto("/autostacc/glitches-and-stitches");
+    await light.page.waitForSelector(".project-card");
+    const l = await probe(light.page);
+    assert.ok(l.has && l.headerInCard && l.footerInCard, "header, page and footer are in the card");
+    assert.ok(l.radius >= 12 && l.shadow !== "none", `light: rounded (${l.radius}px) with a shadow`);
+    assert.notEqual(l.bg, "rgb(0, 0, 0)", "light: the black is a soft gray");
+    assert.ok(l.over <= 0, "nothing scrolls sideways");
+    assert.deepEqual(light.page.errors, []);
+    await light.ctx.close();
+    const dark = await open({ ...DESK, colorScheme: "dark" });
+    await dark.page.goto("/autostacc/glitches-and-stitches");
+    await dark.page.waitForSelector(".project-card");
+    const d = await probe(dark.page);
+    assert.equal(d.radius, 0, "dark: full-bleed");
+    assert.equal(d.shadow, "none");
+    assert.equal(d.bg, "rgb(0, 0, 0)", "dark: true black");
+    assert.deepEqual(dark.page.errors, []);
+    await dark.ctx.close();
+  });
 });
