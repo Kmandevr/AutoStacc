@@ -7,6 +7,8 @@ import crypto from "node:crypto";
 export function startFakeStripe(port) {
   const sessions = new Map();
   const byIdem = new Map();
+  const refunds = []; // refund requests received
+  let refundFails = false;
   const created = []; // every create call, so tests can check what the store asked Stripe to charge
 
   function parseForm(body) {
@@ -56,6 +58,12 @@ export function startFakeStripe(port) {
         created.push({ session: s, form: p });
         return send(200, s);
       }
+      if (req.method === "POST" && req.url === "/v1/refunds") {
+        const p = parseForm(body);
+        refunds.push(p);
+        if (refundFails) return send(402, { error: { type: "invalid_request_error", message: "refund refused" } });
+        return send(200, { id: "re_" + crypto.randomBytes(8).toString("hex"), object: "refund", status: "succeeded", payment_intent: p.payment_intent });
+      }
       const m = req.url.match(/^\/v1\/checkout\/sessions\/([\w]+)/);
       if (req.method === "GET" && m) return sessions.has(m[1]) ? send(200, sessions.get(m[1])) : send(404, { error: { message: "no such session" } });
       send(404, { error: { message: "not faked" } });
@@ -66,6 +74,8 @@ export function startFakeStripe(port) {
     url: `http://127.0.0.1:${port}`,
     sessions,
     created,
+    refunds,
+    failRefunds(on) { refundFails = on; },
     // Marks a session paid the way Stripe would, and returns it (for building the webhook event).
     pay(id) {
       const s = sessions.get(id);

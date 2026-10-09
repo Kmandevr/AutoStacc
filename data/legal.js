@@ -175,7 +175,7 @@ window.LEGAL = [
         "The store won't let you buy something you already own, and pressing the button twice opens one order, not two. If you're still charged twice for the same thing, the extra payment is refunded in full."
       ] },
       { id: "accidental", heading: "Bought the wrong thing", body: [
-        "If you haven't downloaded anything from the purchase yet, ask within 14 days and it will be refunded."
+        "If you haven't downloaded anything from the purchase yet, you can refund it yourself within 14 days: open [Settings › Orders](/settings/orders) and press Refund this order. The money goes back to your card and the files leave Your Stacc. Once anything from the order has been downloaded, it can't be refunded this way; see the cases below, or ask."
       ] },
       { id: "broken", heading: "Missing, broken or not as described", body: [
         "If files are missing, won't open, or aren't what the product page described, tell AutoStacc. The files are fixed or replaced first; if that isn't possible, you get a refund."
