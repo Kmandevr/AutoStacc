@@ -97,8 +97,8 @@ export const templates = {
   // Changing an account's email: the link goes to the new address, which must be proven before anything moves.
   "email-change-confirm": ({ url }) => ({
     subject: "Confirm your new email — AutoStacc",
-    text: `Confirm this as your AutoStacc account's new email:\n${url}\n\nThe link works for 1 hour. Your Stacc moves with the account. Didn't ask for this? Ignore this mail and nothing changes.`,
-    html: layout("Confirm your new email", para("Confirm this as your AutoStacc account's new email. Your Stacc moves with the account.") + button(url, "Confirm new email") +
+    text: `To make this your AutoStacc account's new email, open this link while logged in to that account and press Confirm:\n${url}\n\nThe link works for 1 hour. Your Stacc moves with the account. Didn't ask for this? Ignore this mail and nothing changes.`,
+    html: layout("Confirm your new email", para("To make this your AutoStacc account's new email, open this link while logged in to that account and press Confirm. Your Stacc moves with the account.") + button(url, "Open AutoStacc to confirm") +
       para("The link works for 1 hour. Didn't ask for this? Ignore this mail and nothing changes."))
   }),
 
