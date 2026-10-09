@@ -46,7 +46,7 @@ window.LEGAL = [
         "Each download link is made for you when you ask for it and stops working after a few minutes. AutoStacc records that a link was made and used (which file, for which purchase, and whether it was allowed), without your IP address."
       ] },
       { id: "picks", heading: "The store's picks for you", body: [
-        "To choose \"Recommended for you\" and similar rows, your browser sends a summary of its own store history (above) with that one request. AutoStacc uses it to rank the products and keeps none of it: it isn't stored, logged or linked to your account. When you're signed in, the ranking also uses your wishlist and what you already own (so it never offers you something you have). Turn personal picks off on the [store](/shop) and nothing is sent; everyone then sees the same rows.",
+        "To choose \"Recommended for you\" and similar rows, your browser sends a summary of its own store history (above) with that one request. AutoStacc uses it to rank the products and keeps none of it: it isn't stored, logged or linked to your account. When you're signed in, the ranking also uses your wishlist and what you already own (so it never offers you something you have). Turn personal picks off on the [store](/shop) or the [home page](/) and nothing is sent; everyone then sees the same rows.",
         "\"Bestselling\" and \"bought recently\" come from completed purchases counted together, never from who bought what."
       ] },
       { id: "analytics", heading: "Visit counts", body: [
@@ -60,7 +60,7 @@ window.LEGAL = [
           "**gs.dont_remember**: only if you untick \"Keep me logged in\", so you're signed out when you close the browser.",
           "**gs_guest**: lets a guest open their own orders (only after a guest checkout; 30 days).",
           "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, a note that this browser was signed in (not who), and, until you close the tab, the email and promo code you typed at checkout.",
-          "**The store's history**, also only in your browser: which products you open, preview, add to your cart, save or mark \"not interested\", which filters you use, what you search for and which picks you were shown, plus the genres and kinds you choose, for at most 90 days. Forget it or turn it off on the [store](/shop)."
+          "**The store's history**, also only in your browser: which products you open, preview, add to your cart, save or mark \"not interested\", which filters you use and what you search for (in the store, on [Projects](/projects) and on [Explore](/explore)), which picks you were shown, plus the genres and kinds you choose, for at most 90 days. The home page also reads it, without sending it, to suggest projects whose genres match. Forget it or turn it off on the [store](/shop) or the [home page](/)."
         ] },
         "No advertising, analytics or cross-site tracking cookies are used."
       ] },

@@ -540,7 +540,11 @@ describe("store in the browser", () => {
   test("anonymous: the home page is a public cover; the app sends you to log in, then back where you were going", async () => {
     const { ctx, page } = await open(DESK);
     const privateCalls = [];
-    page.on("request", (r) => { if (/\/api\/(library|orders|projects)/.test(r.url())) privateCalls.push(r.url()); });
+    // The hub's project cards read the public project list and follow state (GET /api/projects[/browse]); nothing else.
+    page.on("request", (r) => {
+      const u = new URL(r.url());
+      if (/^\/api\/(library|orders)/.test(u.pathname) || (/^\/api\/projects/.test(u.pathname) && (r.method() !== "GET" || !/^\/api\/projects(\/browse)?$/.test(u.pathname)))) privateCalls.push(r.url());
+    });
     await page.goto("/");
     await page.waitForSelector("main >> text=straight from the artists");
     assert.ok(await page.locator("main a[href='/login#signup']").first().isVisible(), "Create account on the cover");

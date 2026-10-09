@@ -22,11 +22,15 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Module | Element | Options |
 | --- | --- | --- |
 | Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`; each card opens the product's own page |
-| The store page (`js/store-browse.js`, `js/store-filters.js`, `js/store-suggest.js`, `js/store-sections.js`) | `[data-browse]`, `[data-store-sections]` | none: one per page, state in the address ([discovery](discovery.md)) |
+| The store page (`js/store-browse.js`, `js/store-filters.js`, `js/store-suggest.js`, `js/store-sections.js`) | `[data-browse]`, `[data-store-sections]` | none: one per page, state in the address ([discovery](discovery.md)); sections elsewhere take `data-sections`, `data-brief`, `data-fallback` |
 | Wishlist hearts (`js/wishlist.js`) | `[data-wish]` | the product id |
 | Similar products (`js/similar.js`) | `[data-similar]` | the product id (else `?p=` in the address) |
 | Buy buttons, live prices, status (`js/store.js`) | `[data-buy]`, `[data-price]`, `[data-status]` | the product id |
 | Projects rack (`js/projects.js`) | `[data-project-list]` | `data-creator` (only that creator's projects, on its profile) |
+| Project cards and follow controls (`js/project-card.js`, `js/follow.js`) | `[data-follow-slot]` | the project id, `data-name` |
+| Projects to follow (`js/project-picks.js`) | `[data-project-picks]` | `data-limit`, `data-picks="following"` (the projects you follow instead) |
+| Latest releases, news and shows (`js/latest.js`) | `[data-latest]` | `data-limit` (per list) |
+| Projects browser, explore (`js/projects-browse.js`, `js/explore-browse.js`) | `[data-projects-browse]`, `[data-explore]` | none: one per page, state in the address ([browse](browse.md)) |
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |
 | Account links and menu (`js/account-nav.js`) | `[data-auth="in"\|"out"]`, `[data-account-menu]`, `[data-signout]` | |
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |

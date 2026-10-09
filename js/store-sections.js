@@ -4,7 +4,8 @@
 // Each product appears once across sections. Visitors can pick genres and kinds they make ("Tune your picks"), say
 // "Not interested", forget their history or turn personal picks off. Saved products show as "Your wishlist" (live data
 // from /api/products/state), and AutoStacc's placeholder products as "Coming soon". Hidden while the store browser
-// is narrowed by a search or filter (gs:store-view). Needs js/util.js, js/product-card.js, js/taste.js, data/vocabulary.js.
+// is narrowed by a search or filter (gs:store-view). Elsewhere (the home page) data-sections="2" keeps the first sections
+// only and data-brief leaves out the wishlist and "Coming soon" rows. Needs js/util.js, js/product-card.js, js/taste.js, data/vocabulary.js.
 (function () {
   "use strict";
 
@@ -58,13 +59,16 @@
   function paint() {
     if (hidden) { root.hidden = true; return; }
     root.hidden = false;
-    const secs = data ? data.sections : [];
+    const brief = "brief" in root.dataset;
+    const secs = data ? data.sections.slice(0, Number(root.dataset.sections) || undefined) : [];
     const personal = new Set(["for-you", "your-genres", "similar", "different"]);
     const soon = (window.PRODUCTS || []).filter((p) => p.draft);
     root.innerHTML = controls()
       + secs.map((s) => row(s.id, s.title, s.reason, s.products, { dismissable: personal.has(s.id) && taste.enabled() })).join("")
-      + (wished.length ? row("wishlist", "Your wishlist", "Saved for later", wished) : "")
-      + (soon.length ? row("soon", "Coming soon", "Announced by AutoStacc's projects; not on sale yet", soon) : "");
+      + (wished.length && !brief ? row("wishlist", "Your wishlist", "Saved for later", wished) : "")
+      + (soon.length && !brief ? row("soon", "Coming soon", "Announced by AutoStacc's projects; not on sale yet", soon) : "");
+    const alt = root.dataset.fallback && document.querySelector(root.dataset.fallback);
+    if (alt) alt.hidden = secs.length > 0; // data-fallback: what to show instead while the store has no picks
     dispatchEvent(new CustomEvent("gs:cards"));
     watch();
   }

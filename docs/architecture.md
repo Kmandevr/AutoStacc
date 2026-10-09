@@ -65,11 +65,11 @@ The library page (`/library`) is "Your Stacc": every asset the customer can use,
 ## Auto
 
 - **Purchase → Stacc:** already true; a paid order grants entitlements and the library reads them.
-- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory, follows and polls cover first-party (`source = 'catalog'`) projects only; Studio projects aren't in them yet. Followed projects' published products surface in Your Stacc under "New from projects you follow".
+- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory (`GET /api/projects/browse`, [browse](browse.md)), follows and Auto-Stacc cover published Studio projects of active creators too; polls need a feature only `data/projects.js` sets. Followed projects' published products surface in Your Stacc under "New from projects you follow".
 - **Auto-Stacc:** a follow with `autoStacc: true` grants every free, published product of that project (source `free`, the same idempotent grant as claiming it by hand), now and whenever the library is opened, so free releases added later arrive by themselves. Paid products are never granted by following; they appear as available until bought.
 - **Automatic organization:** assets are placed by their Pac, kind and format with no per-customer work.
 
-Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js` (the grant), `js/projects.js` (the `/projects` page and follow buttons).
+Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js` (the grant), `js/projects.js` (the static projects rack), `js/projects-browse.js` (the `/projects` browser) and `js/follow.js` (follow buttons anywhere).
 
 ## Reusable interactive infrastructure
 

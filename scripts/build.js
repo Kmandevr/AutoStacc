@@ -28,7 +28,7 @@ const outputs = new Map(); // file -> content
 // Each writes its own <title> and <meta name="description">, except the home page (from data/site.js) and each
 // project's home, <its folder>.html (from its entry in data/projects.js); everything else in the head block is
 // generated. A page opts out of search with its own <meta name="robots" content="noindex">.
-const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", press: "AboutPage", about: "AboutPage" };
+const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", explore: "CollectionPage", press: "AboutPage", about: "AboutPage" };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const strip = (html) => html.replace(new RegExp(`${H.START.slice(0, 15)}[\\s\\S]*?${H.END}`), "");
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");

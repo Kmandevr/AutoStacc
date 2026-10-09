@@ -106,3 +106,13 @@ test("the worker's requests (answer) build once, then give each view with its me
   assert.deepEqual(stacc.answer({}, { type: "view", view: "projects" }).groups, []);
   assert.throws(() => stacc.answer(memo, { type: "nope" }), /Unknown Stacc request/);
 });
+
+test("search: every word must appear in a file's name, file name or product title, alongside the other filters", () => {
+  assert.deepEqual(ids(stacc.filter(assets, { q: "bass" })), ["pf_bass1", "pf_bass2"]);
+  assert.deepEqual(ids(stacc.filter(assets, { q: "FRAYED kick" })), ["pf_kick"], "product title and file name, any case");
+  assert.deepEqual(ids(stacc.filter(assets, { q: "01", project: "two" })), ["pf_pad", "pf_chords"]);
+  assert.deepEqual(stacc.filter(assets, { q: "nothing-like-this" }), []);
+  const view = stacc.answer({ assets, catalog }, { type: "view", view: "kinds", filter: { q: "bass" } });
+  assert.equal(view.count, 2);
+  assert.equal(view.total, 8);
+});

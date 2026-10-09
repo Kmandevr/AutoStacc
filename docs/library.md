@@ -21,6 +21,8 @@ updated: 2026-10-09
 - **By content type:** MIDI, Samples, Loops, Presets, … each with a count, across every project, each file showing where it came from.
 - **Filters:** project, content type and format apply to both views.
 
+Search narrows files as you type (every word in the file's name, file name or product title); on `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&view=kinds`) ([browse](browse.md)).
+
 Owned products with no deliverable file yet are listed under **On the way**. Projects not in `data/projects.js` (Studio projects) take their name from the store (`projectName` on each `/api/library` item), and every item links to its product page (`path`: `/shop/<id>`, or `/product?p=<id>` for a Studio product). Markup is `js/library-view.js` (`GS.libraryView`); `js/library.js` also redeems a guest receipt key (`/library#key=...`).
 
 Both views are built from the same asset objects (`GS.stacc.tree`, `GS.stacc.byKind`); unit tests (`test/unit/stacc-model.test.js`) check that the same object is reached through both.
@@ -33,6 +35,6 @@ Every file has its own Download button (a fresh 5-minute signed link per click, 
 
 ## Follows and Auto-Stacc
 
-On `/projects` a signed-in customer can follow a project and switch Auto-Stacc on. Your Stacc then lists the followed projects' published products they don't own yet ("New from projects you follow"). With Auto-Stacc on, free products of that project are granted automatically (on follow, and every time the library opens), so they appear as owned with the source "auto". Paid products are never granted by following. Unfollowing keeps what was already added.
+On `/projects` (or any project card: home page, dashboard) a signed-in customer can follow a project and switch Auto-Stacc on. Your Stacc then lists the followed projects' published products they don't own yet ("New from projects you follow"). With Auto-Stacc on, free products of that project are granted automatically (on follow, and every time the library opens), so they appear as owned with the source "auto". Paid products are never granted by following. Unfollowing keeps what was already added.
 
 API: `GET /api/projects` (published projects, plus your follows when signed in), `PUT /api/follows/:projectId {autoStacc}`, `DELETE /api/follows/:projectId`. Tests: `test/api/platform.suite.js`.

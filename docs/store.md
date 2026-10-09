@@ -47,7 +47,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `impersonation/` | support impersonation: rules, the per-request policy, start and exit | `POST /api/admin/customers/:userId/impersonate`, `POST /api/impersonation/exit` |
 | `audit/` | the append-only admin audit log | `GET /api/admin/audit` |
 | `promotions/` | sales and promo codes: what's running and what it takes off | `GET`/`POST /api/admin/promotions`, `POST /api/admin/promotions/:id/end` |
-| `projects/` | projects (synced), follows | `GET /api/projects`, `PUT`/`DELETE /api/follows/:projectId` |
+| `projects/` | projects (synced, plus Studio ones), follows, the projects browser | `GET /api/projects`, `GET /api/projects/browse` ([browse](browse.md)), `PUT`/`DELETE /api/follows/:projectId` |
 | `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
 | `creators/` | creators, members, Studio projects, slug holds, free-plan limits ([creators](creators.md)) | (used by studio, sites, revenue, admin) |
 | `studio/` | the Studio API: claim a creator, projects, site drafts, preview, publish, images, products and their files, earnings and payout requests, the payout account | `/api/studio/*` |

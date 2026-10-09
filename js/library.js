@@ -17,14 +17,31 @@
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
   const params = new URLSearchParams(location.search);
 
+  // The page's own Stacc (no data-project) keeps its view, search and filters in the address (/library?q=&kind=...).
+  const FILTERS = ["q", "project", "kind", "format"];
+  let mounted = 0;
   function mount(root) {
+    const uid = ++mounted;
+    const addressed = !root.dataset.project && uid === 1;
     const model = window.GS.staccClient();
     const catalog = { projects: [...(window.PROJECTS || [])], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
     const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
     const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
-    const state = { view: root.dataset.staccView === "kinds" ? "kinds" : "projects", filter: { project: root.dataset.project || "", kind: "", format: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [] };
+    const state = { view: root.dataset.staccView === "kinds" ? "kinds" : "projects", filter: { q: "", project: root.dataset.project || "", kind: "", format: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [] };
     let asked = 0, shown = null; // the newest model request, and the last answer drawn
+    if (addressed) {
+      for (const k of FILTERS) state.filter[k] = (params.get(k) || "").slice(0, 80);
+      if (params.get("view") === "kinds") state.view = "kinds";
+    }
     wear(root, state.filter.project);
+    function remember() {
+      if (!addressed) return;
+      const p = new URLSearchParams(location.search);
+      for (const k of FILTERS) state.filter[k] ? p.set(k, state.filter[k]) : p.delete(k);
+      state.view === "kinds" ? p.set("view", "kinds") : p.delete("view");
+      const qs = p.toString();
+      history.replaceState(null, "", location.pathname + (qs ? `?${qs}` : "") + location.hash);
+    }
 
     function banner() {
       const d = params.get("download");
@@ -38,7 +55,11 @@
     function paint() {
       const box = root.querySelector("[data-stacc-files]");
       if (!box || !shown) return;
-      const ctx = { catalog, names, selected: state.selected };
+      const ctx = { catalog, names, selected: state.selected, uid };
+      const head = root.querySelector("[data-stacc-head]");
+      if (head && state.assets.length && !head.firstChild) head.innerHTML = V.search(state, ctx);
+      const count = root.querySelector("[data-stacc-found]"), said = V.found(state, shown);
+      if (count && count.dataset.said !== said) { count.innerHTML = said; count.dataset.said = said; } // announce changes only
       const view = shown.view === "kinds" ? V.kindView(shown.groups, ctx) : V.treeView(shown.groups, ctx);
       const files = state.assets.length ? `${V.toolbar(shown.facets, state, ctx)}${V.selection(state.selected.size)}
         <div class="stacc-view">${view || `<p class="msg">Nothing matches those filters.</p>`}</div>` : "";
@@ -50,6 +71,7 @@
     // one. Resolves true when this answer was drawn.
     async function render() {
       const n = ++asked;
+      remember();
       const answer = await model.ask({ type: "view", view: state.view, filter: { ...state.filter } });
       if (n !== asked) return false;
       shown = answer;
@@ -81,7 +103,7 @@
       state.items = items;
       state.assets = built.assets;
       const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
-      root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc-files></div>`;
+      root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc-head></div><div data-stacc-files></div>`;
       if (signedIn) await discover(new Set(items.map((it) => it.productId)));
       await render();
     }
@@ -155,6 +177,12 @@
       if (sel && !sel.disabled) downloadSelected(sel);
       const view = e.target.closest("[data-view]");
       if (view) { state.view = view.dataset.view; render(); }
+      if (e.target.closest("[data-clear-filters]")) {
+        for (const k of FILTERS) if (k !== "project" || !root.dataset.project) state.filter[k] = "";
+        const box = root.querySelector('[data-filter="q"]');
+        if (box) { box.value = ""; box.focus(); }
+        render();
+      }
       if (e.target.closest("[data-clear-selection]")) { state.selected.clear(); paint(); }
       if (e.target.closest("[data-retry]")) load();
     });
@@ -173,10 +201,23 @@
       if (t.matches("[data-select]")) set(t.dataset.select);
       else if (t.matches("[data-select-group]")) t.dataset.selectGroup.split(" ").forEach(set);
       if (t.matches("[data-select], [data-select-group]")) return syncSelection();
-      if (!t.matches("[data-filter]")) return;
+      if (!t.matches("[data-filter]") || t.dataset.filter === "q") return;
       state.filter[t.dataset.filter] = t.value;
       render().then((drawn) => drawn && root.querySelector(`[data-filter="${t.dataset.filter}"]`).focus());
     });
+
+    // Search narrows as you type (a short pause first); the box itself is never redrawn.
+    let typing = 0;
+    root.addEventListener("input", (e) => {
+      const t = e.target;
+      if (!t.matches('[data-filter="q"]')) return;
+      clearTimeout(typing);
+      typing = setTimeout(() => {
+        state.filter.q = t.value.trim().slice(0, 80);
+        render();
+      }, 220);
+    });
+    root.addEventListener("submit", (e) => { if (e.target.matches("[data-stacc-search]")) e.preventDefault(); });
 
     return load;
   }

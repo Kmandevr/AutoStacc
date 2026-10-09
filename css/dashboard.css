@@ -4,8 +4,11 @@
 .dash-hello { margin: 0 0 8px; font-family: var(--mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
 .dash-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; gap: 18px; padding-bottom: 56px; }
 .dash-grid > .dash-stacc, .dash-grid > .dash-releases { grid-column: span 6; }
-.dash-grid > .dash-projects { grid-column: span 7; }
+.dash-grid > .dash-projects, .dash-grid > .dash-latest { grid-column: 1 / -1; }
+.dash-grid > .dash-discover { grid-column: span 7; }
 .dash-grid > .dash-links { grid-column: span 5; }
+.dash-search { margin: 18px 0 0; }
+.dash-latest .latest { margin-inline: 18px; }
 
 .dash-total { margin: 0 0 12px; color: var(--muted); }
 .dash-total strong { color: var(--text); font-family: var(--mono); }
