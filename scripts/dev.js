@@ -98,25 +98,21 @@ function startDevServer({ port = 8788, stateDir = path.join(ROOT, ".wrangler", "
   server.ready = (async () => {
     const q = { quiet: true, track: setup };
     const { seedFile, ids } = devSeed(stateDir);
-    // The catalog and the test data go in as one file, after the migrations; the sample files don't need the database.
+    // The catalog and the test data go in as one file, after the migrations.
     const dataFile = path.join(stateDir, "dev-data.sql");
     fs.writeFileSync(dataFile, fs.readFileSync(path.join(ROOT, "db/catalog.sql"), "utf8") + "\n" + fs.readFileSync(seedFile, "utf8"));
-    await Promise.all([
-      (async () => {
-        await wrangler(["d1", "migrations", "apply", "DB", "--local", "--persist-to", stateDir], { ...q, env: { CI: "1" } });
-        await wrangler(["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--file", dataFile], q);
-      })(),
-      // Every sample file in one Wrangler call, one at a time inside it (local storage refuses concurrent writes).
-      (async () => {
-        const manifest = path.join(stateDir, "dev-files.json");
-        fs.writeFileSync(manifest, JSON.stringify(ids.map((id) => {
-          const file = path.join(stateDir, `dev-file-${id}.txt`);
-          fs.writeFileSync(file, `Test download for ${id}. If you can read this, the entitlement check let you in.\n`);
-          return { key: `dev/${id}/readme.txt`, file };
-        })));
-        await wrangler(["r2", "bulk", "put", "autostacc-files-dev", "--local", "--persist-to", stateDir, "--filename", manifest, "--concurrency", "1", "--force"], q);
-      })()
-    ]);
+    // One step after another: Wrangler's local D1 and R2 share state on disk, and running them together sometimes
+    // fails with "database is locked".
+    await wrangler(["d1", "migrations", "apply", "DB", "--local", "--persist-to", stateDir], { ...q, env: { CI: "1" } });
+    await wrangler(["d1", "execute", "DB", "--local", "--persist-to", stateDir, "--file", dataFile], q);
+    // Every sample file in one Wrangler call, one at a time inside it (local storage refuses concurrent writes).
+    const manifest = path.join(stateDir, "dev-files.json");
+    fs.writeFileSync(manifest, JSON.stringify(ids.map((id) => {
+      const file = path.join(stateDir, `dev-file-${id}.txt`);
+      fs.writeFileSync(file, `Test download for ${id}. If you can read this, the entitlement check let you in.\n`);
+      return { key: `dev/${id}/readme.txt`, file };
+    })));
+    await wrangler(["r2", "bulk", "put", "autostacc-files-dev", "--local", "--persist-to", stateDir, "--filename", manifest, "--concurrency", "1", "--force"], q);
     if (stopped) throw new Error("dev server stopped before it started");
     const args = ["pages", "dev", "dist", "--port", String(port), ...(inspectorPort ? ["--inspector-port", String(inspectorPort)] : []), "--ip", "127.0.0.1", "--persist-to", stateDir, "--show-interactive-dev-session=false",
       ...Object.entries({ SITE_URL: url, ...vars }).flatMap(([k, v]) => ["--binding", `${k}=${v}`])];

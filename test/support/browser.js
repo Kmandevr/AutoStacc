@@ -38,6 +38,12 @@ export function browserStore({ name, port }) {
       route.continue({ headers: { ...route.request().headers(), "cf-connecting-ip": `10.250.${(n >> 8) & 255}.${n & 255}` } }));
     const page = await ctx.newPage();
     page.errors = [];
+    // The site's own requests still on their way, for settle() (embedded players' requests aren't the page's).
+    page.inflight = 0;
+    const own = (r) => r.url().startsWith(base);
+    page.on("request", (r) => own(r) && page.inflight++);
+    page.on("requestfinished", (r) => own(r) && page.inflight--);
+    page.on("requestfailed", (r) => own(r) && page.inflight--);
     page.on("pageerror", (e) => page.errors.push(e.message));
     // Newer Chromium logs an aborted page-change animation (the tests navigate faster than a view transition) as an
     // error; it isn't the page's error, so it doesn't count. Nor do messages from other sites' frames (the YouTube and
@@ -92,4 +98,19 @@ export function browserStore({ name, port }) {
   }
 
   return { get base() { return base; }, get browser() { return browser; }, stateDir, open, logOut, ordersFor, setCart, toMockPay, signUp, startImpersonating };
+}
+
+// Waits until a page has finished drawing what it loads: no request of its own in flight for 100 ms, every finite
+// animation and transition done (sizes are measured at rest), then two frames. Replaces fixed sleeps after navigation;
+// as strict, without the dead time.
+export async function settle(page) {
+  await page.waitForLoadState("load");
+  for (let quiet = 0, waited = 0; quiet < 2 && waited < 5000; waited += 50) {
+    quiet = page.inflight <= 0 ? quiet + 1 : 0;
+    await page.waitForTimeout(50);
+  }
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter((a) => a.effect && a.effect.getComputedTiming().iterations !== Infinity)
+    .map((a) => a.finished.catch(() => {}))));
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
