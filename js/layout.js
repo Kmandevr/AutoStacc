@@ -109,6 +109,7 @@
     // Phones: a drawer over the page. Closed, it is inert (no hidden links to Tab into); open, the rest of the page is
     // inert, focus moves into it, and the close button, Escape or the scrim close it.
     const toggle = $(".menu-toggle", header);
+    const opener = $("[data-tab-menu]", header); // the Menu button of the bottom bar; the top-bar button is hidden on phones
     const scrim = $(".side-scrim", header);
     const behind = () => [$(".topbar", header), $(".tabbar", header), main, footer].filter(Boolean);
     const setOpen = (open, refocus = true) => {
@@ -116,17 +117,17 @@
       scrim.hidden = !open;
       root.classList.toggle("menu-open", open);
       toggle.setAttribute("aria-expanded", String(open));
-      $("[data-tab-menu]", header).setAttribute("aria-expanded", String(open));
+      opener.setAttribute("aria-expanded", String(open));
       side.inert = narrow.matches && !open;
       behind().forEach((el) => (el.inert = open));
       if (open) $(".side-close", side).focus();
-      else if (refocus && narrow.matches) toggle.focus();
+      else if (refocus && narrow.matches) opener.focus();
     };
     setOpen(false, false);
     // Crossing the drawer breakpoint closes it, so it doesn't reappear open when narrowed again.
     narrow.addEventListener("change", () => setOpen(false, false));
     toggle.addEventListener("click", () => setOpen(true));
-    $("[data-tab-menu]", header).addEventListener("click", () => setOpen(true));
+    opener.addEventListener("click", () => setOpen(true));
     $(".side-close", side).addEventListener("click", () => setOpen(false));
     scrim.addEventListener("click", () => setOpen(false));
     side.addEventListener("click", (ev) => { if (ev.target.closest("a")) setOpen(false, false); });

@@ -368,14 +368,16 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
-    await page.click(".menu-toggle");
+    await page.click("[data-tab-menu]");
     await page.waitForSelector(".side.open");
     assert.equal(await page.evaluate(() => document.activeElement.className), "side-close");
     assert.equal(await page.evaluate(() => document.querySelector("main").inert), true);
     await page.keyboard.press("Tab");
     assert.ok(await page.evaluate(() => Boolean(document.activeElement.closest(".side"))), "Tab stays in the drawer");
     await page.keyboard.press("Escape");
-    assert.equal(await page.evaluate(() => document.activeElement.className), "menu-toggle");
+    assert.equal(await page.evaluate(() => document.activeElement.hasAttribute("data-tab-menu")), true, "focus returns to the Menu button");
+    assert.equal(await page.locator(".menu-toggle").isVisible(), false, "no second menu button in the top bar");
+    assert.equal(await page.locator(".topbar-brand").isVisible(), true, "the logo is there instead");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
     assert.deepEqual(page.errors, []);
     await ctx.close();
