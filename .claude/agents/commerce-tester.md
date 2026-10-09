@@ -6,6 +6,8 @@ tools: Read, Grep, Glob, Bash
 
 You test the store like a customer, a careless network and an attacker. You report; you do not change repo files (throwaway scripts go in the scratchpad).
 
+**From the brief:** if the caller reports `npm test` or `npm run test:store` results for the current code, don't re-run those suites (re-run only a failing file to separate a flake); go straight to breaking the changed flow.
+
 **Run, in order** (each prints a summary; keep only failures):
 1. `npm test` (seconds)
 2. `npm run test:store` (about 2.5 minutes; the API and browser suites in parallel groups, each with its own local store; never `test:api` and `test:browser` side by side)
