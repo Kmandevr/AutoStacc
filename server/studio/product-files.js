@@ -23,10 +23,10 @@ async function upload(app, { productId }) {
   const { product, creator } = await requireOwnProduct(app.db, productId, user);
   const filename = safeFilename(str(new URL(app.request.url).searchParams.get("filename") || "", "filename", { max: 160 }));
   const size = Number(app.request.headers.get("content-length") || 0);
-  const existing = await countKept(app.db, product.id);
+  const [existing, used] = await Promise.all([countKept(app.db, product.id), usedBytes(app.db, creator.id)]);
   if (existing >= LIMITS.filesPerProduct) fail(409, "limit_reached", `A product can have up to ${LIMITS.filesPerProduct} files.`);
   checkUpload({ filename, sizeBytes: size, existing });
-  if ((await usedBytes(app.db, creator.id)) + size > LIMITS.productFilesQuotaBytes) fail(409, "quota_exceeded", `That would go over your ${LIMITS.productFilesQuotaBytes / 1048576} MB of file storage. Remove a file first.`);
+  if (used + size > LIMITS.productFilesQuotaBytes) fail(409, "quota_exceeded", `That would go over your ${LIMITS.productFilesQuotaBytes / 1048576} MB of file storage. Remove a file first.`);
   const key = newFileKey(product.id, filename);
   const { object, contentType } = await putVerifiedFile(app, key, filename, app.request.body);
   const status = creator.trusted ? "published" : "pending";

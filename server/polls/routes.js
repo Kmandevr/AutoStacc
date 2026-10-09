@@ -13,10 +13,10 @@ async function visible(app, pollId) {
 
 async function read(app, { pollId }) {
   const poll = await visible(app, pollId);
-  const user = await currentUser(app);
+  const [user, counts] = await Promise.all([currentUser(app), tally(app.db, poll)]);
   const signedIn = Boolean(user && user.emailVerified);
   const mine = signedIn ? await myVote(app.db, poll.id, user.id) : null;
-  return json({ signedIn, id: poll.id, projectId: poll.project_id, question: poll.question, open: isOpen(poll), opensAt: poll.opens_at, closesAt: poll.closes_at, ...(await tally(app.db, poll)), myVote: mine });
+  return json({ signedIn, id: poll.id, projectId: poll.project_id, question: poll.question, open: isOpen(poll), opensAt: poll.opens_at, closesAt: poll.closes_at, ...counts, myVote: mine });
 }
 
 async function vote(app, { pollId }) {

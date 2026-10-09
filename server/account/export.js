@@ -15,21 +15,30 @@ import { limit } from "../lib/ratelimit.js";
 export async function collect(app, user) {
   const db = app.db;
   const email = String(user.email).toLowerCase();
-  const orders = [];
-  for (const o of await ordersOfPerson(db, user.id, email)) orders.push({ ...publicOrder(o, await orderItems(db, o.id)), promoCode: o.promo_code || null });
+  // Every section reads only its own tables, so they are read together.
+  const [emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent] = await Promise.all([
+    getPreferences(db, user.id),
+    listDevices(db, user.id),
+    ordersOfPerson(db, user.id, email).then((list) => Promise.all(list.map(async (o) => ({ ...publicOrder(o, await orderItems(db, o.id)), promoCode: o.promo_code || null })))),
+    entitlementsOfPerson(db, user.id, email),
+    listFollows(db, user.id),
+    votesOfUser(db, user.id),
+    creatorsOfUser(db, user.id),
+    emailsTo(db, email)
+  ]);
   return {
     exportedAt: new Date().toISOString(),
     account: { id: user.id, name: user.name, email, emailVerified: Boolean(user.emailVerified), createdAt: iso(user.createdAt) },
-    emailPreferences: await getPreferences(db, user.id),
-    devices: (await listDevices(db, user.id)).map(({ id, ...d }) => d),
+    emailPreferences,
+    devices: devices.map(({ id, ...d }) => d),
     orders,
-    library: (await entitlementsOfPerson(db, user.id, email)).map((e) => ({
+    library: library.map((e) => ({
       productId: e.product_id, source: e.source_type, status: e.status, grantedAt: e.granted_at, expiresAt: e.expires_at, revokedAt: e.revoked_at
     })),
-    follows: (await listFollows(db, user.id)).map(publicFollow),
-    pollVotes: (await votesOfUser(db, user.id)).map((v) => ({ pollId: v.poll_id, optionId: v.option_id, votedAt: v.created_at, changedAt: v.updated_at })),
-    creators: (await creatorsOfUser(db, user.id)).map((c) => ({ id: c.id, slug: c.slug, name: c.name, role: c.role })),
-    emailsSent: (await emailsTo(db, email)).map((m) => ({ kind: m.kind, subject: m.subject, status: m.status, at: m.created_at }))
+    follows: follows.map(publicFollow),
+    pollVotes: pollVotes.map((v) => ({ pollId: v.poll_id, optionId: v.option_id, votedAt: v.created_at, changedAt: v.updated_at })),
+    creators: creators.map((c) => ({ id: c.id, slug: c.slug, name: c.name, role: c.role })),
+    emailsSent: emailsSent.map((m) => ({ kind: m.kind, subject: m.subject, status: m.status, at: m.created_at }))
   };
 }
 

@@ -60,9 +60,9 @@ async function redeem(app, { token }) {
   };
   // The link only works for the person it was issued to (copying it to someone else doesn't help them).
   if (!subjectsOf(access).includes(payload.s)) return deny("subject mismatch");
-  const ent = await usableEntitlement(app.db, access, payload.e);
+  // Both looked up together; the checks below still run in the same order, so the logged reason is unchanged.
+  const [ent, file] = await Promise.all([usableEntitlement(app.db, access, payload.e), getActiveFile(app.db, payload.f)]);
   if (!ent) return deny("entitlement inactive");
-  const file = await getActiveFile(app.db, payload.f);
   if (!file || file.product_id !== ent.product_id) return deny("file mismatch");
   const object = await getFile(app.env, file.r2_key);
   if (!object) return deny("file missing from storage");
