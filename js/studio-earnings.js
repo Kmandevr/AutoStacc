@@ -7,13 +7,12 @@
   const { $, escapeHTML: e, cents, api } = window.GS;
   const day = (iso) => (iso ? iso.slice(0, 10) : "");
 
-  // The countries a payout account can be opened in; Stripe refuses any it can't pay and says so.
-  const COUNTRIES = { US: "United States", CA: "Canada", GB: "United Kingdom", AU: "Australia", NZ: "New Zealand", IE: "Ireland", DE: "Germany", FR: "France", ES: "Spain",
-    IT: "Italy", NL: "Netherlands", BE: "Belgium", AT: "Austria", CH: "Switzerland", SE: "Sweden", NO: "Norway", DK: "Denmark", FI: "Finland", PT: "Portugal", PL: "Poland",
-    CZ: "Czechia", EE: "Estonia", LV: "Latvia", LT: "Lithuania", LU: "Luxembourg", HU: "Hungary", RO: "Romania", BG: "Bulgaria", HR: "Croatia", GR: "Greece", SK: "Slovakia",
-    SI: "Slovenia", CY: "Cyprus", MT: "Malta", JP: "Japan", SG: "Singapore", HK: "Hong Kong", KR: "South Korea", IN: "India", BR: "Brazil", MX: "Mexico", AR: "Argentina",
-    CL: "Chile", CO: "Colombia", PE: "Peru", ZA: "South Africa", NG: "Nigeria", KE: "Kenya", AE: "United Arab Emirates", IL: "Israel", TR: "Türkiye", TH: "Thailand",
-    MY: "Malaysia", PH: "Philippines", ID: "Indonesia", VN: "Vietnam", TW: "Taiwan" };
+  // The countries a payout account can be opened in: the same list as PAYOUT_COUNTRIES in server/payments/connect.js (Stripe's
+  // self-serve payouts reach the US, UK, European Economic Area, Canada and Switzerland; the server refuses any other).
+  const COUNTRIES = { US: "United States", CA: "Canada", GB: "United Kingdom", CH: "Switzerland", AT: "Austria", BE: "Belgium", BG: "Bulgaria", HR: "Croatia", CY: "Cyprus",
+    CZ: "Czechia", DK: "Denmark", EE: "Estonia", FI: "Finland", FR: "France", DE: "Germany", GR: "Greece", HU: "Hungary", IS: "Iceland", IE: "Ireland", IT: "Italy",
+    LV: "Latvia", LI: "Liechtenstein", LT: "Lithuania", LU: "Luxembourg", MT: "Malta", NL: "Netherlands", NO: "Norway", PL: "Poland", PT: "Portugal", RO: "Romania",
+    SK: "Slovakia", SI: "Slovenia", ES: "Spain", SE: "Sweden" };
 
   // Where the creator is paid: with the marketplace account set up they connect a Stripe account (Stripe collects the ID and
   // bank details; none reach AutoStacc); without it they say how they'd like to be paid and AutoStacc pays by hand.

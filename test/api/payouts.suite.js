@@ -116,7 +116,7 @@ export default (ctx) => describe("payouts", () => {
     assert.equal((await b.c.get(`/api/orders/${own.orderId}`)).data.order.status, "pending");
   });
 
-  test("connecting a payout account: owners only, a country first, one account however many clicks, cross-border outside the platform's country", async () => {
+  test("connecting a payout account: owners only, a supported country first, one account however many clicks", async () => {
     const s = await seller("connect");
     const stranger = await newBuyer(base(), "stranger");
     const path = `/api/studio/creators/${s.creator.id}/payout-account`;
@@ -124,6 +124,14 @@ export default (ctx) => describe("payouts", () => {
     assert.equal((await stranger.c.post(path, { country: "US" })).status, 404);
     assert.equal((await stranger.c.get(path)).status, 404);
     for (const country of ["", "usa", "1", "u s", null]) assert.equal((await s.c.post(path, { country })).status, 400, String(country));
+    const opened = fake().accounts.size;
+    // (Each try counts against the hourly limit on this route, so only two unsupported countries are tried.)
+    for (const country of ["JP", "BR"]) {
+      const r = await s.c.post(path, { country });
+      assert.equal(r.status, 400, country);
+      assert.equal(r.data.error.code, "unsupported_country", country);
+    }
+    assert.equal(fake().accounts.size, opened, "no account opened for a refused country");
     assert.equal((await s.c.get(path)).data.connected, false);
 
     const before = fake().accounts.size;
@@ -135,7 +143,7 @@ export default (ctx) => describe("payouts", () => {
     assert.equal(two.data.url, one.data.url);
     const acct = [...fake().accounts.values()].at(-1);
     assert.equal(acct.country, "DE", "the first country sticks");
-    assert.equal(acct.form.tos_acceptance.service_agreement, "recipient", "outside the platform's country: cross-border recipient");
+    assert.equal(acct.form.tos_acceptance, undefined, "the normal service agreement, in every supported country");
     assert.equal(acct.key, `Bearer ${MARKETPLACE_KEY}`);
     const st = await s.c.get(path);
     assert.deepEqual([st.data.connected, st.data.payoutsEnabled], [true, false], "not ready until Stripe says so");
@@ -143,7 +151,6 @@ export default (ctx) => describe("payouts", () => {
     assert.equal((await s.c.get(path)).data.payoutsEnabled, true);
     const us = await seller("connect-us");
     await connect(us, "US");
-    assert.equal([...fake().accounts.values()].at(-1).form.tos_acceptance, undefined, "in the platform's own country: the normal agreement");
   });
 
   test("a payout request needs a ready account; the admin's Send is one Stripe transfer of exactly the cleared share", async () => {
