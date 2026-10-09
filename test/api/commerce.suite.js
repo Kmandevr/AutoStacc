@@ -18,6 +18,7 @@ export default (ctx) => describe("commerce", () => {
     assert.equal(sent.session.amount_subtotal, 999); // data/products.js: 9.99
     assert.equal(sent.form.line_items["0"].price_data.product_data.name, "Patchwork (Remix Stems)");
     assert.equal(sent.form.line_items["0"].price_data.currency, "usd");
+    assert.equal(sent.form.line_items["0"].price_data.product_data.tax_code, "txcd_10401100", "stems carry the digital audio tax code");
   });
 
   test("the cart is priced by the server", async () => {
