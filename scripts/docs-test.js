@@ -67,7 +67,7 @@ for (const doc of DOCS) {
   // Repo paths in `code`: only plain ones under a real top-level entry (no <placeholders>, globs or site URLs).
   for (const [, span] of text.matchAll(/`([^`\n]+)`/g)) {
     for (const tok of span.split(/\s+/)) {
-      const p = tok.replace(/^\.\//, "").replace(/[,;:.)]+$/, "");
+      const p = tok.replace(/^\.\//, "").replace(/[,;:.)\]]+$/, "");
       if (!/^[\w.-]+\/[\w./[\]-]*$/.test(p) || p.startsWith("/") || /\.\.\.|\/\//.test(p)) continue;
       if (!TOP.has(p.split("/")[0]) || exists(p)) continue;
       if (OPTIONAL.has(p) || git("check-ignore", "-q", "--no-index", p) !== null) continue; // generated or local-only (dist/)

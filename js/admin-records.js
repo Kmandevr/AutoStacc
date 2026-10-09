@@ -1,5 +1,5 @@
 // Admin records: orders (with payment events, entitlements and a resend-receipt button), customers (each with a
-// Preview button that js/admin-ops.js answers) and entitlements (grant manual/promo/replacement access, revoke).
+// Preview button that js/admin-customer.js answers) and entitlements (grant manual/promo/replacement access, revoke).
 // Starts when js/admin.js fires "gs:admin" after the access check. Needs js/util.js.
 (function () {
   "use strict";
