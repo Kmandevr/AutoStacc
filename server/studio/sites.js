@@ -13,7 +13,7 @@ import { PRESETS, FONTS } from "../sites/theme.js";
 import { EMBED_PROVIDERS } from "../sites/embeds.js";
 import { renderPage, PAGE_HEADERS } from "../sites/render.js";
 import { publishProject, unpublishProject } from "../sites/publish.js";
-import { listImages, ownImages, uploadImage, deleteImage, imageSrc, usageOf } from "../sites/images.js";
+import { listImages, ownImages, uploadImage, deleteImage, imageSrc } from "../sites/images.js";
 import { listProjectProducts } from "../catalog/products.js";
 import { productPath } from "../creators/products.js";
 import { safeFilename } from "../storage/buckets.js";
@@ -84,13 +84,6 @@ async function unpublish(app, { projectId }) {
   return json({ ok: true });
 }
 
-async function images(app, { creatorId }) {
-  const user = await requireUser(app);
-  const { creator } = await requireCreator(app.db, creatorId, user);
-  const [list, usage] = await Promise.all([listImages(app.db, creator.id), usageOf(app.db, creator.id)]);
-  return json({ images: list.map((i) => ({ id: i.id, src: imageSrc(i.id), filename: i.filename, sizeBytes: i.size_bytes })), usage });
-}
-
 // Raw upload: PUT the image bytes with ?filename=... .
 async function upload(app, { creatorId }) {
   const user = await requireUser(app);
@@ -114,7 +107,6 @@ export const routes = [
   ["GET", "/api/studio/projects/:projectId/preview", preview],
   ["POST", "/api/studio/projects/:projectId/publish", publish],
   ["POST", "/api/studio/projects/:projectId/unpublish", unpublish],
-  ["GET", "/api/studio/creators/:creatorId/images", images],
   ["PUT", "/api/studio/creators/:creatorId/images", upload],
   ["DELETE", "/api/studio/creators/:creatorId/images/:imageId", removeImage]
 ];
