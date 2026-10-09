@@ -8,7 +8,7 @@ export const RESERVED = new Set([
   // platform pages and the signed-in app
   "index", "home", "about", "shop", "store", "cart", "checkout", "login", "logout", "signup", "register", "account", "accounts",
   "settings", "dashboard", "library", "stacc", "your-stacc", "studio", "editor", "create", "admin", "projects", "project",
-  "creators", "creator", "explore", "discover", "search", "browse", "new", "featured", "trending", "pricing", "plans", "fees", "help", "support", "contact",
+  "creators", "creator", "product", "explore", "discover", "search", "browse", "new", "featured", "trending", "pricing", "plans", "fees", "help", "support", "contact",
   "faq", "docs", "blog", "news", "music", "press", "events", "shows", "legal", "terms", "privacy", "cookies", "licence",
   "license", "licenses", "refunds", "security", "status", "jobs", "careers", "brand", "team", "partners", "developers",
   // site files and folders
