@@ -10,7 +10,8 @@ import { currentUser, impersonationIdOf } from "../auth/session.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { createOrder, attachCheckout, transition, findReusablePending, getOrderByIdempotencyKey } from "../orders/orders.js";
 import { newGuestKey, guestCookie, guestKeysFromRequest } from "../orders/guest.js";
-import { paymentProvider } from "../payments/index.js";
+import { providerForAccount } from "../payments/index.js";
+import { accountsOfProducts, MAIN, MARKETPLACE } from "../payments/accounts.js";
 import { attributeLines } from "../revenue/split.js";
 import { limit } from "../lib/ratelimit.js";
 
@@ -42,6 +43,23 @@ async function checkout(app) {
     if (prior) fail(409, "checkout_finished", "That checkout already finished. Refresh the cart.", { orderId: prior.id, status: prior.status });
   }
 
+  // Creators' products are paid on the marketplace Stripe account, AutoStacc's own on the main one; one payment page can't
+  // take both, so a cart with both is paid in two steps, one account at a time (the browser says which).
+  const accountOf = config.paymentProvider === "stripe" ? await accountsOfProducts(db, items.map((i) => i.productId)) : new Map();
+  const present = [...new Set(items.map((i) => accountOf.get(i.productId) || MAIN))];
+  let account = present[0] || MAIN;
+  if (present.length > 1) {
+    const chosen = body.account === MAIN || body.account === MARKETPLACE ? body.account : null;
+    if (!chosen) {
+      fail(409, "split_checkout", "Your cart has AutoStacc items and creators' items, which are paid separately. Pay for one group first.", {
+        groups: { [MAIN]: items.filter((i) => accountOf.get(i.productId) !== MARKETPLACE).map((i) => i.productId),
+          [MARKETPLACE]: items.filter((i) => accountOf.get(i.productId) === MARKETPLACE).map((i) => i.productId) } });
+    }
+    account = chosen;
+    items.splice(0, items.length, ...items.filter((i) => (accountOf.get(i.productId) === MARKETPLACE) === (chosen === MARKETPLACE)));
+  }
+  if (account === MARKETPLACE && !config.marketplaceEnabled) fail(503, "creator_sales_closed", "Creators' products can't be bought with real payments yet.");
+
   const owned = user ? await ownedProductIds(db, { user }) : [];
   const promoCode = typeof body.promoCode === "string" ? body.promoCode.slice(0, 40) : "";
   if (promoCode.trim()) await limit(app, "promo", 15, 60);
@@ -59,14 +77,14 @@ async function checkout(app) {
   const reusable = impersonationId ? null : await findReusablePending(db, user && user.id, lines, config.checkoutTtlMinutes - 5, cart.promotionId);
   if (reusable) return json({ orderId: reusable.id, url: reusable.checkout_url, reused: true });
 
-  const provider = paymentProvider(app);
+  const provider = providerForAccount(app, account);
   const guestKey = user ? null : await newGuestKey();
   let order;
   try {
     order = await createOrder(db, {
       userId: user ? user.id : null, email, currency: cart.currency, items: lines, provider: provider.name,
       livemode: provider.livemode(config), idempotencyKey: idemKey, accessKeyHash: guestKey ? guestKey.hash : null, impersonationId,
-      discountCents: cart.discountCents, promotionId: cart.promotionId, promoCode: cart.promoCode
+      discountCents: cart.discountCents, promotionId: cart.promotionId, promoCode: cart.promoCode, paymentAccount: account
     });
   } catch (e) {
     // Lost a race with an identical request carrying the same Idempotency-Key.

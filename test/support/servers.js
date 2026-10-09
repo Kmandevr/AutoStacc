@@ -9,6 +9,8 @@ const require = createRequire(import.meta.url);
 const { startDevServer, fileIdFor } = require("../../scripts/dev.js");
 
 export const WEBHOOK_SECRET = "whsec_test_" + "a".repeat(32);
+export const MARKETPLACE_WEBHOOK_SECRET = "whsec_test_" + "b".repeat(32);
+export const MARKETPLACE_KEY = "sk_test_marketplace_key_for_tests";
 export const ADMIN_EMAIL = "admin@autostacc.test";
 
 export async function startStores({ mock = true, stripe = true } = {}) {
@@ -24,7 +26,8 @@ export async function startStores({ mock = true, stripe = true } = {}) {
     const stateDir = path.join(ROOT, ".wrangler", "test-stripe");
     const s = startDevServer({ port: 8802, stateDir, fresh: true, quiet: true, vars: {
       APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, PAYMENT_PROVIDER: "stripe", STRIPE_SECRET_KEY: "sk_test_fake_key_for_tests",
-      STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET, STRIPE_API_BASE: fake.url
+      STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET, STRIPE_API_BASE: fake.url,
+      STRIPE_MARKETPLACE_KEY: MARKETPLACE_KEY, STRIPE_MARKETPLACE_WEBHOOK_SECRET: MARKETPLACE_WEBHOOK_SECRET
     } });
     out.children.push(s.child);
     out.stripe = { url: await s.ready, stateDir, fake, log: s.log };

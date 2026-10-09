@@ -5,7 +5,7 @@
 // Anything else (downloaded, too old, free) is a conversation with support, not a button.
 import { first } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { providerByName } from "../payments/index.js";
+import { providerForOrder } from "../payments/index.js";
 import { processPaymentEvent } from "../payments/events.js";
 
 export const REFUND_DAYS = 14;
@@ -34,7 +34,7 @@ export async function refundOrder(app, order) {
   const state = await refundStatus(app.db, order);
   if (!state.eligible) fail(409, "not_refundable", MESSAGES[state.reason] || "This order can't be refunded here.", { reason: state.reason });
   try {
-    await providerByName(order.provider).refund(app, order);
+    await providerForOrder(app, order).refund(app, order);
   } catch (e) {
     console.error("refund failed", e && e.type, e && e.code, e && e.message);
     fail(503, "refund_unavailable", "The payment service couldn't refund this just now. Nothing changed; try again in a minute or contact support.");

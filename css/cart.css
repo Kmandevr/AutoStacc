@@ -42,3 +42,8 @@
 .cart-promo label { flex: 1 0 100%; color: var(--muted); font-size: .85rem; }
 .cart-promo input { flex: 1 1 160px; min-height: 44px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); color: var(--text); font: inherit; text-transform: uppercase; }
 .cart-promo .cart-problem { flex: 1 0 100%; }
+
+/* paying AutoStacc's items and creators' items in two steps */
+.split-groups { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+.split-groups li { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.split-groups .btn { margin-left: auto; }

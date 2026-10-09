@@ -43,6 +43,22 @@ export function loadConfig(env) {
   const stripeLive = /^(sk|rk)_live_/.test(stripeKey);
   if (production && paymentProvider === "stripe" && !stripeLive) problems.push("production needs a live Stripe key (sk_live_ or rk_live_), not a test key");
   if (!production && stripeLive) problems.push("live Stripe keys are only allowed in production");
+  // The marketplace Stripe account (creator sales, Connect payouts). Optional: without it creator products can't be bought
+  // with real payments and payouts stay manual. Same rules as the main key: live in production only, test elsewhere.
+  const marketplaceKey = env.STRIPE_MARKETPLACE_KEY || "";
+  const marketplaceWebhookSecret = env.STRIPE_MARKETPLACE_WEBHOOK_SECRET || "";
+  if (marketplaceKey) {
+    if (!/^(sk|rk)_(test|live)_/.test(marketplaceKey)) problems.push("STRIPE_MARKETPLACE_KEY must be a Stripe secret key (sk_live_... or rk_live_...)");
+    if (!marketplaceWebhookSecret.startsWith("whsec_")) problems.push("STRIPE_MARKETPLACE_WEBHOOK_SECRET must be set (whsec_...) with STRIPE_MARKETPLACE_KEY");
+    if (marketplaceKey === stripeKey) problems.push("STRIPE_MARKETPLACE_KEY must be a different Stripe account's key from STRIPE_SECRET_KEY");
+  }
+  const marketplaceLive = /^(sk|rk)_live_/.test(marketplaceKey);
+  if (marketplaceKey && production && !marketplaceLive) problems.push("production needs a live marketplace Stripe key");
+  if (marketplaceKey && !production && marketplaceLive) problems.push("live Stripe keys are only allowed in production");
+  // Where the platform is based: creators elsewhere are paid as cross-border recipients. Stripe Tax on creator checkouts
+  // is on unless STRIPE_MARKETPLACE_TAX=off (the account must have Stripe Tax set up).
+  const platformCountry = /^[A-Z]{2}$/.test(env.PLATFORM_COUNTRY || "") ? env.PLATFORM_COUNTRY : "US";
+  const marketplaceTax = env.STRIPE_MARKETPLACE_TAX !== "off";
   // Only for local tests against a fake Stripe server; ignored outside development and test.
   const stripeApiBase = devLike && env.STRIPE_API_BASE ? env.STRIPE_API_BASE : "";
 
@@ -76,6 +92,12 @@ export function loadConfig(env) {
     stripeWebhookSecret,
     stripeLive,
     stripeApiBase,
+    marketplaceKey,
+    marketplaceWebhookSecret,
+    marketplaceLive,
+    marketplaceEnabled: Boolean(marketplaceKey),
+    platformCountry,
+    marketplaceTax,
     emailProvider,
     brevoKey,
     emailFrom,

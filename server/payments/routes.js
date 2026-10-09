@@ -1,22 +1,25 @@
 // Payment-provider webhooks and the dev-only mock payment buttons. Both end in processPaymentEvent.
 import { json, fail, readJson, str } from "../lib/http.js";
-import { stripeProvider } from "./stripe.js";
+import { stripeProvider, marketplaceProvider } from "./stripe.js";
 import { mockEvent } from "./mock.js";
 import { processPaymentEvent } from "./events.js";
 import { getOrder } from "../orders/orders.js";
 
 // Stripe calls this. Anything unsigned, mis-signed or older than 5 minutes is refused before it touches the database.
-async function stripeWebhook(app) {
-  if (!app.config.stripeWebhookSecret) fail(404, "not_found", "Nothing here.");
+const webhook = (provider, configured) => async (app) => {
+  if (!configured(app.config)) fail(404, "not_found", "Nothing here.");
   let ev;
   try {
-    ev = await stripeProvider.verifyWebhook(app, app.request);
+    ev = await provider.verifyWebhook(app, app.request);
   } catch {
     fail(400, "bad_signature", "Webhook signature check failed.");
   }
   const result = await processPaymentEvent(app, ev);
   return json({ received: true, outcome: result.outcome });
-}
+};
+const stripeWebhook = webhook(stripeProvider, (c) => c.stripeWebhookSecret);
+// The marketplace account (creators' sales) has its own endpoint, signing secret and key.
+const marketplaceWebhook = webhook(marketplaceProvider, (c) => c.marketplaceEnabled && c.marketplaceWebhookSecret);
 
 // Development and tests only: simulate what Stripe would report for a mock checkout.
 async function mockPayment(app) {
@@ -31,5 +34,6 @@ async function mockPayment(app) {
 
 export const routes = [
   ["POST", "/api/webhooks/stripe", stripeWebhook, { external: true }],
+  ["POST", "/api/webhooks/stripe-marketplace", marketplaceWebhook, { external: true }],
   ["POST", "/api/dev/mock-payment", mockPayment, { impersonation: "test-payments" }]
 ];
