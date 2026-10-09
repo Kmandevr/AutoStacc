@@ -41,7 +41,7 @@
         <p class="pcard-activity">${p.nextShow ? `<strong>Show ${e(showDate(p.nextShow))}</strong> · ` : ""}${p.lastActive ? `Active ${e(ago(p.lastActive))}` : "New on AutoStacc"}${facts.length ? ` · ${e(facts.join(" · "))}` : ""}</p>
         <div class="pcard-actions">
           <a class="btn small" href="${e(p.path)}">Visit<span class="sr-only"> ${e(p.name)}</span></a>
-          ${p.items ? `<a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.id)}">Its items in the store<span class="sr-only">: ${e(p.name)}</span></a>` : ""}
+          ${p.items ? `<a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.id)}">Store items<span class="sr-only"> from ${e(p.name)}</span></a>` : ""}
         </div>
         ${compact ? "" : `<div class="project-follow" data-follow-slot="${e(p.id)}" data-name="${e(p.name)}"></div>`}
       </div>

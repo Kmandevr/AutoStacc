@@ -61,10 +61,11 @@
     return `<h2 class="sr-only">Filters</h2>
       <details class="f-group" open><summary>Activity</summary><ul class="f-list">
         <li><label for="pf-active"><input type="checkbox" id="pf-active" data-flag="active"${params.get("active") === "1" ? " checked" : ""}>
-          <span>Active in the last 30 days, or a show coming up</span><span class="f-count">${d.toggles.active}</span></label></li></ul></details>
-      ${d.canFollow ? `<details class="f-group" open><summary>Following</summary><div class="f-seg" role="radiogroup" aria-label="Following">
-        ${[["", "All"], ["1", "Following"], ["0", "Not yet"]].map(([v, t]) => `<label for="pf-fol-${v || "all"}"><input type="radio" name="followed" id="pf-fol-${v || "all"}" data-followed="${v}"${(followed || "") === v ? " checked" : ""}> ${t}</label>`).join("")}
-      </div></details>` : ""}
+          <span>Recently active</span><span class="f-count">${d.toggles.active}</span></label></li></ul>
+        <p class="f-hint small-print">New in the last 30 days, or a show coming up.</p></details>
+      ${d.canFollow ? `<details class="f-group" open><summary>Following</summary><ul class="f-list">
+        ${[["", "All projects"], ["1", "Ones I follow"], ["0", "Ones I don't follow yet"]].map(([v, t]) => `<li><label for="pf-fol-${v || "all"}"><input type="radio" name="followed" id="pf-fol-${v || "all"}" data-followed="${v}"${(followed || "") === v ? " checked" : ""}> <span>${t}</span></label></li>`).join("")}
+      </ul></details>` : ""}
       ${group("genre", "Genre", d.facets.genre)}${group("style", "Style", d.facets.style)}`;
   }
 
