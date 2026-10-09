@@ -2,7 +2,7 @@
 // data-name for messages) from the store API (GET /api/projects: who you follow), and handles Follow, Unfollow and the
 // Auto-Stacc switch (PUT / DELETE /api/follows/:id). Signed out it offers to log in; with an unconfirmed email it says
 // to confirm. Cards drawn later (a filter, a page) fire gs:projects on window and get their controls then.
-// Tells other features what changed with gs:follows ({ ids }). Needs js/util.js.
+// Tells other features who is followed, once loaded and after each change, with gs:follows ({ ids }). Needs js/util.js.
 (function () {
   "use strict";
 
@@ -44,6 +44,7 @@
     follows = res.ok && res.data.follows ? Object.fromEntries(res.data.follows.map((f) => [f.projectId, f])) : null;
     signedIn = Boolean(res.ok && res.data.signedIn);
     paint();
+    if (follows) dispatchEvent(new CustomEvent("gs:follows", { detail: { ids: Object.keys(follows) } }));
   }
   const changed = (message) => { paint(message); dispatchEvent(new CustomEvent("gs:follows", { detail: { ids: Object.keys(follows || {}) } })); };
 
