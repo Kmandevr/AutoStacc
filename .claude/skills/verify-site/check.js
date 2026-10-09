@@ -104,7 +104,20 @@ async function checkPage(browser, base, page, width) {
       const toggle = tab.locator(project ? ".ph-toggle" : "[data-tab-menu]");
       if (await toggle.isVisible()) {
         await toggle.click();
-        if (!(await tab.locator(project ? ".ph-nav.open" : ".side.open").count())) problems.push(["FAIL", "nav-toggle", "menu did not open"]);
+        const menu = project ? ".ph-nav.open" : ".side.open";
+        if (!(await tab.locator(menu).count())) problems.push(["FAIL", "nav-toggle", "menu did not open"]);
+        // Open but painted under the page (a lost z-index) still fails. Hit-testing can't tell (the page behind is inert),
+        // so compare pixels: hiding the first link must change what's on screen.
+        else if (await tab.locator(`${menu} a`).count()) {
+          const link = tab.locator(`${menu} a`).first();
+          const clip = await link.boundingBox();
+          const shot = () => tab.screenshot({ clip, animations: "disabled", caret: "hide" });
+          const shown = await shot();
+          await link.evaluate((a) => { a.style.visibility = "hidden"; });
+          const hidden = await shot();
+          await link.evaluate((a) => { a.style.visibility = ""; });
+          if (shown.equals(hidden)) problems.push(["FAIL", "nav-toggle", "menu opened but is covered by the page"]);
+        }
       } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
     }
     if (page === "shop.html" && width === 1280) {
