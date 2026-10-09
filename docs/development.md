@@ -1,7 +1,8 @@
 ---
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
-updated: 2026-10-08
+covers: [package.json, scripts/dev.js, scripts/dist.js, scripts/serve.js, wrangler.toml, server/lib/config.js, db/migrations/, test/, .github/workflows/store.yml, server/payments/index.js, server/email/, server/app.js, server/dev/, scripts/docs-test.js, .github/workflows/clear-status-on-close.yml]
+updated: 2026-10-09
 ---
 
 # Development
@@ -20,7 +21,7 @@ Test mode (local only):
 
 - **Payments:** the mock provider. Checkout opens `/checkout?...&mock=...` with buttons: pay, decline, abandon. They go through the same pipeline as Stripe events.
 - **Email:** kept in the database. Read verification and reset links at `http://localhost:8788/api/dev/outbox?to=<email>`.
-- **Catalog:** every product is for sale (drafts included), plus `dev-free`, `dev-paused` and `dev-unpublished`, and each product has a small test file to download.
+- **Catalog:** every product is for sale (drafts included), plus `dev-free`, `dev-paused` and `dev-unpublished`, and each product has a small test file to download. A second project (`dev-other`) and test polls (open, closed, and one on that project) are seeded too.
 - **Admin:** sign up as `admin@autostacc.test` (in `.dev.vars` `ADMIN_EMAILS`), confirm via the outbox, open `/admin`.
 
 ## Environment variables
@@ -38,38 +39,44 @@ Plain settings are `[vars]` in `wrangler.toml` (per environment: top level = loc
 | `BETTER_AUTH_SECRET` | secret | 32+ chars, signs sessions |
 | `DOWNLOAD_SIGNING_SECRET` | secret | 32+ chars, different, signs download links |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | secret | Stripe keys (`sk_live_` only in production, never elsewhere) |
-| `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` | secret, optional | The second Stripe account for creators' sales and payouts; off without the first two ([payouts-setup](payouts-setup.md)) |
+| `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` | secret, optional | The second Stripe account for creators' sales and payouts; off without the key, which needs the webhook secret beside it; `PLATFORM_COUNTRY` defaults to `US` ([payouts-setup](payouts-setup.md)) |
+| `STRIPE_MARKETPLACE_TAX` | optional | `off` switches Stripe Tax off on creators' checkouts (testing only; the deploy doesn't set it) |
 | `BREVO_API_KEY` | secret | Brevo key |
-| `ADMIN_EMAILS` | secret | Admin emails, comma-separated |
+| `ADMIN_EMAILS` | secret | Admin emails, comma-separated (optional: `role = admin` in the user table works too) |
 | `STRIPE_API_BASE` | var | Tests only: points the Stripe SDK at the fake Stripe server (ignored outside development/test) |
 
 Bindings: `DB` (D1), `FILES` (private R2), `PREVIEWS` (R2 for preview clips).
 
 ## Database
 
-Schema changes are new files in `db/migrations/` with the next number (`0007_....sql`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
+Schema changes are new files in `db/migrations/` with the next number after the highest (today `0011_marketplace_payouts.sql`, so `0012_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
 
 ## Tests
 
 | Command | What | Time |
 | --- | --- | --- |
 | `node scripts/seo-test.js` | Search visibility (also checks the build is current) | seconds |
-| `npm test` | Unit tests (`test/unit`): config refusals, download tokens, cart parsing, Stripe event mapping, router, catalog SQL, platform hierarchy and links (a second project added as data), Your Stacc views over one asset list | seconds |
-| `npm run test:api` | API security suites (`test/api`) in two groups run in parallel, `accounts.test.js` and `payments.test.js`, each with its own local stores: mock payments, and (payments) Stripe mode with a fake Stripe API (`test/support/fake-stripe.js`) and really signed webhooks | ~45 s |
+| `npm test` | Unit tests (`test/unit`): config refusals, download tokens, cart pricing, Stripe event mapping and checkout expiry, tax codes per product type, payout countries, router and catalog SQL, devices, email, the impersonation policy, redirects, rich text, creator sites, platform hierarchy and links (a second project added as data), Your Stacc views over one asset list | seconds |
+| `npm run test:api` | API security suites (`test/api`) in two groups run in parallel, `accounts.test.js` (auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account) and `payments.test.js` (commerce, webhooks, impersonation, promotions, selling, refunds, payouts), each with its own local stores: mock payments, and (payments) Stripe mode with a fake Stripe API (`test/support/fake-stripe.js`) and really signed webhooks | ~45 s |
 | `npm run test:browser` | Browser and chaos tests (`test/browser`) in Chromium at phone and desktop sizes, in three groups run in parallel (`flows`, `layout`, `features`), each with its own store | ~2 min |
-| `npm run test:store` | Both of the above at once, building `dist/` once (never run `test:api` and `test:browser` side by side: each rebuilds `dist/`) | ~2.5 min |
+| `npm run test:store` | The API and browser suites at once (up to 5 files side by side), building `dist/` once (never run `test:api` and `test:browser` side by side: each rebuilds `dist/`) | ~2.5 min |
 | `verify-site` skill | Every page in a browser with the store offline | ~1 min |
+| `node scripts/docs-test.js` | The notes match the repo (below) | seconds |
 
-The API suites attack: the account pages' server gate (anonymous, forged, expired and signed-out sessions, open redirects, unknown Settings sections, nothing private in any page's HTML), account settings (another account's devices, tokens in answers, unknown or non-boolean email switches, the export leaking another customer, deletion without the right email or password, from another site, by an admin or creator owner, or while impersonating; what deletion keeps and removes), anonymous and forged/expired sessions, cross-account access, enumeration, reset abuse, rate limits, role escalation; price, id, quantity tampering, duplicate and racing checkouts; unsigned, mis-signed, replayed, duplicated, racing and mismatched webhooks; cancel, fail, refund, reconciliation; downloads without login or entitlement, someone else's file or link, edited, forged and expired links, guessed paths, unpublished files, revoked access; guest keys, adoption by verified email, account hijack by unverified email; follows and Auto-Stacc (free only, once, never paid), Pac/kind tags on files with downloads still per product, poll votes (one per verified account, closed polls, projects without polls); malformed input, cross-site requests, admin access. The browser suite walks the public cover, the gate (log in and land back where you were going) and the signed-in app's navigation and sign-out, and breaks the purchase flow with double clicks, the back button, refresh, offline, slow and failing API, store down, declined and abandoned payments, expired sessions and links, keyboard-only use, and checks overflow, tap targets and CSP errors at 320–1280px. CI: `.github/workflows/store.yml`.
+The API suites attack: the account pages' server gate (anonymous, forged, expired and signed-out sessions, open redirects, unknown Settings sections, nothing private in any page's HTML), account settings (another account's devices, tokens in answers, unknown or non-boolean email switches, the export leaking another customer, deletion without the right email or password, from another site, by an admin or creator owner, or while impersonating; what deletion keeps and removes), anonymous and forged/expired sessions, cross-account access, enumeration, reset abuse, rate limits, role escalation; price, id, quantity tampering, duplicate and racing checkouts; unsigned, mis-signed, replayed, duplicated, racing and mismatched webhooks; cancel, fail, refund, reconciliation; downloads without login or entitlement, someone else's file or link, edited, forged and expired links, guessed paths, unpublished files, revoked access; guest keys, adoption by verified email, account hijack by unverified email; follows and Auto-Stacc (free only, once, never paid), Pac/kind tags on files with downloads still per product, poll votes (one per verified account, closed polls, projects without polls); promo codes and sales, impersonation and test purchases, creators selling from the Studio, customer refunds, payout requests and Stripe transfers; malformed input, cross-site requests, admin access. The browser suite walks the public cover, the gate (log in and land back where you were going) and the signed-in app's navigation and sign-out, and breaks the purchase flow with double clicks, the back button, refresh, offline, slow and failing API, store down, declined and abandoned payments, expired sessions and links, keyboard-only use, and checks overflow, tap targets and CSP errors at 320–1280px. CI: `.github/workflows/store.yml` (unit and API tests in one job, browser tests in another; skipped on pull requests that change only `docs/`, `.claude/` or `*.md`); the deploy runs only the unit tests.
 
 When fixing a store bug, write the failing test first in the suite for that area.
 
 Groups run in parallel, so each starts its own stores on its own ports with its own state folder (`.wrangler/test-<kind>-<group>`); tests inside a group run in order and may build on each other (the `features` browser tests reuse the admin account the impersonation test creates). A new API suite goes into the group whose stores it needs; a new browser test into the group it belongs to.
 
+## Keeping docs true
+
+Each note in `docs/` names the code it describes in its `covers:` frontmatter. `node scripts/docs-test.js` (in CI's `seo.yml` and `release-check`) fails on broken facts in the notes, README, CLAUDE.md and `.claude/` docs (frontmatter, links, named repo paths, `npm run` scripts, `covers:` entries, the vault index, store settings no note mentions) and warns about notes whose covered code changed on the branch while the note didn't, and about code areas no note covers. The Stop hook (`.claude/hooks/docs-reminder.sh`) asks Claude once to check those notes before finishing. A new note or code area gets its `covers:` line in the same change. Closed issues lose their status labels (`.github/workflows/clear-status-on-close.yml`).
+
 ## Extending
 
 - **New product type:** one entry in `data/product-types.js`.
-- **New payment provider:** a file in `server/payments/` with `name`, `livemode`, `createCheckout`, `retrieveCheckout` (and webhook verification producing the normalized event), plus one line in `server/payments/index.js` and its webhook route. Orders already store `provider`.
+- **New payment provider:** a file in `server/payments/` with `name`, `livemode`, `createCheckout`, `retrieveCheckout`, `refund` (and webhook verification producing the normalized event), plus one line in `server/payments/index.js` and its webhook route. Orders already store `provider`.
 - **New email provider:** one function in `server/email/providers.js`. **New email:** one template in `server/email/templates.js`, sent with `sendEmail(app, kind, to, data, { dedupeKey })`.
 - **New entitlement source** (bundle, subscription): grant with `grantStmt` and a new `source_type` (add it to the CHECK in a migration).
 - **New API route:** add it to the owning module's `routes` table; a new module adds one import and one entry in `server/app.js`.

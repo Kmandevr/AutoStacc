@@ -1,7 +1,7 @@
 ---
 title: Projects
 summary: Projects on AutoStacc: the data contract, which features a project uses, Glitches & Stitches as the first project, and how to add another.
-covers: [data/projects.js, data/creators.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/creator-page.js, js/project-frame.js, js/util.js, css/projects/, autostacc/, autostacc.html]
+covers: [data/projects.js, data/creators.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/creator-page.js, js/project-frame.js, js/util.js, css/projects/, autostacc/, autostacc.html, data/news.js, data/shows.js]
 updated: 2026-10-09
 ---
 

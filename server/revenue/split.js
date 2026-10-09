@@ -1,7 +1,7 @@
 // Who sold each order line and how its money divides, fixed when the order is written so later fee changes never
 // rewrite history. net = line total minus the line's share of a promo code; the platform fee is the creator's basis
 // points of net (rounded to the cent, default server/creators/policy.js); the creator's share is the rest, so
-// fee + share always equals net. No payouts happen yet: these are the records a payout will read.
+// fee + share always equals net. These are the records earnings and payouts read (server/revenue/).
 import { sellersOfProducts } from "../creators/creators.js";
 import { feeBpsOf } from "../creators/policy.js";
 

@@ -1,10 +1,17 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-08
+updated: 2026-10-09
 ---
 
 # Decisions
+
+## 2026-10-09: Docs are checked against the repository, not trusted
+
+- **Each note names the code it describes** (`covers:` frontmatter), so "which note must change with this file" is data, not memory.
+- **Broken facts fail, staleness warns.** `scripts/docs-test.js` fails CI and `release-check` on things that are plainly wrong (missing files, dead links, unknown `npm run` scripts, store settings no note mentions, a note missing from the index). A note whose covered code changed only warns, because not every code change alters what the note says; a person or Claude decides.
+- **Claude is reminded at the moment it can act:** a Stop hook asks once per new set of stale notes, never in a loop. The owner chose these three (CI check, Stop hook, code→doc map) over a scheduled audit routine.
+- Facts the repo can't confirm (external services, artist details) stay as written and become issues, never guesses.
 
 ## 2026-10-09: Creator payouts through a second Stripe account (Connect)
 

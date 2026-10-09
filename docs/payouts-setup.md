@@ -1,6 +1,7 @@
 ---
 title: Payouts setup
 summary: How creators get paid (Stripe Connect on a second Stripe account), what the owner sets up in Stripe and GitHub to switch it on, and how the code behaves until then.
+covers: [server/payments/connect.js, server/payments/accounts.js, server/payments/stripe.js, server/payments/routes.js, server/revenue/, server/studio/earnings.js, server/studio/payout-account.js, server/admin/payouts.js, server/checkout/routes.js, server/lib/config.js, server/creators/policy.js, db/migrations/0011_marketplace_payouts.sql, js/admin-payouts.js, js/studio-earnings.js, scripts/cloudflare.js]
 updated: 2026-10-09
 ---
 
@@ -12,7 +13,7 @@ Creators' products are sold on a **second Stripe account** (the "marketplace" ac
 
 1. A creator owner opens the Studio, picks the country of their bank account and presses **Set up payouts**. Stripe's own page collects their ID, tax and bank details (none reach AutoStacc; we keep the Stripe account id and whether it is ready). Creators can be in the United States, the United Kingdom, Canada, Switzerland or the European Economic Area: those are the regions Stripe's self-serve payouts from a US platform reach ([cross-border payouts](https://docs.stripe.com/connect/cross-border-payouts)). Other countries need Stripe's separate Global Payouts product, which isn't built; the Studio doesn't offer them.
 2. A buyer pays for a creator's product on the marketplace account (Stripe Tax on). A cart with both kinds is paid in two steps; each order records its account (`orders.payment_account`) and each account has its own webhook, believed only for its own orders.
-3. A sale is held 14 days (the refund window). After that the creator presses **Request a payout** (minimum $10, one open request at a time).
+3. A sale is held 14 days (the refund window). After that the creator presses **Request a payout** (minimum $10, one open request at a time); with the marketplace account on, their payout account must be ready first.
 4. In the Control Center → **Payouts** the owner presses **Send via Stripe**: one Stripe transfer keyed by the request, so a retry never pays twice. If Stripe refuses (for example not enough balance) nothing is marked paid and the reason is shown.
 5. A sale refunded after it was paid out leaves a negative balance, taken from the creator's next sales before anything more is available.
 
@@ -23,8 +24,8 @@ Until the keys below are set, creator products can't be bought with real payment
 1. **Create the second Stripe account** (a new Stripe account, in the same legal entity) and activate it. Turn on **Connect** (Settings → Connect), fill in the platform profile, and turn on **Stripe Tax** with your tax registrations (Settings → Tax). Check these with a tax adviser: you decide where you must register.
 2. **API key:** Developers → API keys → create a restricted key (`rk_live_...`) with write access to Checkout Sessions, Refunds, Accounts, Account Links and Transfers, and read access to Charges and Payment Intents. Put it in GitHub (Settings → Secrets → Actions) as `STRIPE_MARKETPLACE_KEY`.
 3. **Webhook:** Developers → Webhooks → Add endpoint `https://autostacc.com/api/webhooks/stripe-marketplace` with the same events as the main one ([store-setup](store-setup.md#3-stripe)): `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Put its signing secret in GitHub as `STRIPE_MARKETPLACE_WEBHOOK_SECRET`.
-4. Optional: `PLATFORM_COUNTRY` (two letters, default `US`; the platform must be in the US, UK, EEA, Canada or Switzerland for these payouts); `STRIPE_MARKETPLACE_TAX=off` only to switch Stripe Tax off for testing.
-5. Deploy (push to `main`, or Actions → Deploy → Run workflow). The store refuses to start if only one of the key and secret is set, if they equal the main account's, or if production isn't given a live key.
+4. Optional: `PLATFORM_COUNTRY` as a GitHub secret (two capital letters, default `US`; the platform must be in the US, UK, EEA, Canada or Switzerland for these payouts). `STRIPE_MARKETPLACE_TAX=off` switches Stripe Tax off, for testing only; the deploy doesn't copy it, so it is set in `.dev.vars` or by hand in Cloudflare.
+5. Deploy (push to `main`, or Actions → Deploy → Run workflow). The store refuses to start ("store offline", with the reason in the deploy log) if the key is set without its webhook secret, if the key is the main account's, if production isn't given a live key, or if a live key is used outside production. A webhook secret without the key is ignored and the marketplace stays off.
 6. **Test in Stripe test mode first** (the same setup with `sk_test_` keys on a preview or locally with `npm run dev`), then switch to live keys.
 
 Keep the marketplace account's balance funded: transfers come out of it, and charges become available after Stripe's usual delay (the 14-day hold covers it).

@@ -1,5 +1,6 @@
-// Control Center, Payouts tab: creators' payout requests with how each wants to be paid. After sending the money by
-// hand, mark the request paid (or declined, with a note); that is recorded in the audit log. Talks to /api/admin/payouts.
+// Control Center, Payouts tab: creators' payout requests with how each wants to be paid. Send it as a Stripe
+// transfer, or pay by hand and mark it paid, or decline with a note; each is recorded in the audit log.
+// Talks to /api/admin/payouts.
 // Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
