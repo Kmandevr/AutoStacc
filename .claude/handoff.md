@@ -19,14 +19,15 @@ products, reviews or figures; accessible, responsive, reduced-motion aware. Bala
   verify-site: 0 fail, 0 warn.
 
 ## Open
-- Not yet re-run as a whole after the last commit: `npm run test:store` (run it first).
+- Final `npm run test:store`: 184/185; the one failure (layout: signed-in pages at 320px) timed out at sign-up
+  while a dev server also ran, and passed when re-run alone. Watch it in CI.
 - Cart and checkout pages were checked end to end (mock pay → Payment confirmed → Open Your Stacc) but not restyled;
   a step indicator (Cart → Pay → Your Stacc) across both would tie the journey together.
 - Library (Your Stacc) not reviewed visually this round. The admin Customers/Orders tables have no sort/search yet.
 - No PR opened (not asked).
 
 ## Next
-Run `npm run test:store`; then the cart/checkout step indicator (cart.html, checkout.html, js/checkout.js, css/cart.css).
+Cart/checkout step indicator (cart.html, checkout.html, js/checkout.js, css/cart.css).
 
 ## Read first
 `docs/log.md`, `js/shop.js`, `js/admin.js`, `js/studio-editor.js`
