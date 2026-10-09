@@ -24,7 +24,9 @@
 .as-strip .tool-link, .as-strip .theme-switch { min-height: 30px; padding: 4px 10px; font-size: .82rem; }
 
 /* ---------- the project's header: sticky, in the project's own look ---------- */
-.project-frame .project-header {
+/* A skinned project's header moves into .project-card (below), so this matches it there too; two classes, so it
+   outranks a skin's own `position: relative` and the open phone menu stays above the page. */
+.project-frame .project-header, .project-card > .project-header {
   position: sticky;
   top: 0;
   z-index: 50;
