@@ -44,7 +44,7 @@ Nothing is accepted that isn't on a list. Paid files and previews: only the exte
 
 ## Accounts and privacy
 
-Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`, wishlist included) and delete their account (which erases the wishlist). The store's personal picks use history kept only in the browser and sent with each request, never stored by the server ([discovery](discovery.md)). Deletion keeps orders only as anonymous sales records ([store](store.md#settings)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track. Deletion is refused while the account owns a Studio creator, has a checkout that could still be paid, or is an admin (`server/account/delete.js`).
+Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`, wishlist included) and delete their account (which erases the wishlist). The store's personal picks use history kept only in the browser and sent with each request, never stored by the server ([discovery](discovery.md)); searches and filters on Projects and Explore join that same history, and the home page reads it on the device to suggest projects ([browse](browse.md)). Deletion keeps orders only as anonymous sales records ([store](store.md#settings)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track. Deletion is refused while the account owns a Studio creator, has a checkout that could still be paid, or is an admin (`server/account/delete.js`).
 
 ## Security
 
@@ -59,7 +59,7 @@ Keep: skip link, one `h1`, landmarks, labels on every field, errors announced (`
 
 ## Footer and navigation
 
-The platform footer has Explore (Store, Projects, About, Studio), Help (Help, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
+The platform footer has Explore (Store, Projects, Releases, news and shows, About, Studio), Help (Help, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
 
 ## Not built yet (on purpose)
 

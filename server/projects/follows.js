@@ -1,5 +1,6 @@
 // Follows: which projects a verified account follows, and whether Auto-Stacc (automatic free grants) is on.
 import { all, run, stmt, now } from "../lib/db.js";
+import { VISIBLE } from "./projects.js";
 
 export const listFollows = (db, userId) =>
   all(db, "SELECT project_id, auto_stacc, created_at FROM follows WHERE user_id = ? ORDER BY created_at", userId);
@@ -11,10 +12,11 @@ export const setFollow = (db, userId, projectId, autoStacc) =>
 
 export const removeFollow = (db, userId, projectId) => run(db, "DELETE FROM follows WHERE user_id = ? AND project_id = ?", userId, projectId);
 
-// Projects whose free content this account wants added automatically (published projects only).
+// Projects whose free content this account wants added automatically (visible projects only: published, and a Studio
+// project's creator active).
 export async function autoStaccProjectIds(db, userId) {
-  const rows = await all(db, `SELECT f.project_id FROM follows f JOIN projects p ON p.id = f.project_id
-    WHERE f.user_id = ? AND f.auto_stacc = 1 AND p.published = 1 AND p.deleted_at IS NULL`, userId);
+  const rows = await all(db, `SELECT f.project_id FROM follows f JOIN projects p ON p.id = f.project_id LEFT JOIN creators c ON c.id = p.creator_id
+    WHERE f.user_id = ? AND f.auto_stacc = 1 AND ${VISIBLE}`, userId);
   return rows.map((r) => r.project_id);
 }
 

@@ -4,6 +4,23 @@
 // never dropped (follows and votes point at them), and rows the Studio made (source 'studio') never touched.
 const crypto = require("crypto");
 const { q, NOW } = require("./catalog");
+const V = require("../../server/discovery/vocabulary.js");
+
+// What the projects browser needs about a first-party project: its genres in the store vocabulary ("genre:edm", or
+// "style:glitch" for a word that is a style), and the dates of its releases, news posts and shows (newest first).
+function projectGenres(p) {
+  const out = [];
+  for (const g of p.genres || []) {
+    const genre = V.canonical("genre", g), style = V.canonical("style", g);
+    const tag = genre ? `genre:${genre}` : style ? `style:${style}` : null;
+    if (tag && !out.includes(tag)) out.push(tag);
+  }
+  return out;
+}
+function projectActivity(data, id) {
+  const dates = (list) => list.filter((x) => x.project === id && x.date).map((x) => x.date).sort().reverse().slice(0, 20);
+  return { releases: dates(data.releases || []), news: dates(data.news || []), shows: dates(data.shows || []) };
+}
 
 const hash = (values) => crypto.createHash("sha256").update(JSON.stringify(values)).digest("hex").slice(0, 16);
 
@@ -26,7 +43,9 @@ function upserts(table, cols, rows, sourced = false) {
 function platformSql(data) {
   const creators = (data.creators || []).map((c) => ({ id: c.id, slug: c.id, name: c.name, source: "catalog", published: c.draft ? 0 : 1 }));
   const projects = data.projects.map((p) => ({
-    id: p.id, name: p.name, features: JSON.stringify(p.features || []), published: p.draft ? 0 : 1, creator_id: p.creator || null, slug: p.id, source: "catalog"
+    id: p.id, name: p.name, features: JSON.stringify(p.features || []), published: p.draft ? 0 : 1, creator_id: p.creator || null, slug: p.id, source: "catalog",
+    tagline: p.summary || p.tagline || null, image: p.logo ? "/" + p.logo.replace(/^\/+/, "") : null,
+    genres: JSON.stringify(projectGenres(p)), activity: JSON.stringify(projectActivity(data, p.id))
   }));
   const polls = data.polls.map((p) => ({
     id: p.id, project_id: p.project, question: p.question,
@@ -38,7 +57,7 @@ function platformSql(data) {
   return [
     "-- Platform sync: creators, projects and polls (data/creators.js, data/projects.js, data/polls.js).",
     ...upserts("creators", ["id", "slug", "name", "source", "published"], creators, true),
-    ...upserts("projects", ["id", "name", "features", "published", "creator_id", "slug", "source"], projects, true),
+    ...upserts("projects", ["id", "name", "features", "published", "creator_id", "slug", "source", "tagline", "image", "genres", "activity"], projects, true),
     ...upserts("polls", ["id", "project_id", "question", "options", "opens_at", "closes_at", "published"], polls)
   ].join("\n") + "\n";
 }

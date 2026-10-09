@@ -29,7 +29,7 @@ A project is creative work owned by a creator ([creators](creators.md)), at `/<c
 | `email`, `pressKitUrl`, `newsletterAction`, `socials` | its own contact, press kit, newsletter form and official profiles (empty = not set; never made up) |
 | `draft` | `true` keeps it out of the directory and the database sync |
 
-This contract is for first-party projects in `data/`. Projects made in the Studio exist only in the database and have no such entry ([creators](creators.md)); the `/projects` directory, follows and polls don't list them yet.
+This contract is for first-party projects in `data/`. Projects made in the Studio exist only in the database and have no such entry ([creators](creators.md)); they are listed on `/projects` and can be followed, marked unverified until their creator is trusted ([browse](browse.md)).
 
 Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it). The build fails if any of these point at a project that doesn't exist. Shows carry `project` too (`[data-shows]` lists only its project's dates).
 

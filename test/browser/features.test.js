@@ -1,6 +1,6 @@
 // Browser tests for staff and creator features against its own local store: impersonation, sales and promo codes, the
 // Studio (pages and selling), the Control Center on a phone, the phone quick-links bar, Settings › Orders, the skinned
-// project card, guest refunds and drop-in modules placed twice on one page. Tests run in order: the Control Center test signs in as the admin the impersonation
+// project card, guest refunds, drop-in modules placed twice on one page, and the discovery pages (projects, Your Stacc search, explore, home, dashboard). Tests run in order: the Control Center test signs in as the admin the impersonation
 // test created. Usage: npm run test:browser.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -350,6 +350,65 @@ describe("features in the browser", () => {
       return text && text !== "Signing you up…";
     });
     assert.equal(await page.locator("#newsletter [data-newsletter] .form-msg").innerText(), "");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("discovery pages: filter and follow on /projects, Your Stacc search, /explore views, the home hub and dashboard sections", async () => {
+    const { ctx, page } = await open(DESK);
+    await signUp(page, unique("discover"));
+    await page.goto("/projects");
+    const gs = page.locator(".pcard[data-project='glitches-and-stitches']");
+    await gs.waitFor();
+    assert.equal(await gs.locator("text=Unverified creator").count(), 0, "AutoStacc's own project is verified");
+    await page.check("[data-f=genre][data-v=electronic]");
+    await page.waitForURL(/genre=electronic/);
+    await page.waitForSelector("[data-chip=genre]");
+    await page.click("[data-chip=genre]");
+    await page.waitForURL((u) => !u.search.includes("genre"));
+    await gs.locator("[data-follow='glitches-and-stitches']").click();
+    await page.check("[data-auto='glitches-and-stitches']");
+    await page.waitForSelector("text=Auto-Stacc on.");
+    await page.check("[data-followed='1']");
+    await page.waitForURL(/followed=1/);
+    await page.waitForFunction(() => [...document.querySelectorAll(".pgrid .pcard")].every((c) => c.dataset.project === "glitches-and-stitches"));
+
+    // Your Stacc: search narrows as you type and lives in the address.
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-asset");
+    const all = await page.locator(".stacc-asset").count();
+    const word = (await page.locator(".stacc-asset").first().innerText()).trim().split(/[\s._-]+/)[0];
+    await page.goto(`/library?q=${encodeURIComponent(word)}`);
+    await page.waitForSelector(".stacc-found:has-text('match')");
+    const found = await page.locator(".stacc-asset").count();
+    assert.ok(found > 0 && found <= all, `${word}: ${found} of ${all}`);
+    await page.fill("[data-filter=q]", "zz-nothing-zz");
+    await page.waitForSelector("text=Nothing matches those filters.");
+    assert.match(page.url(), /q=zz-nothing-zz/);
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.filter), "q", "typing keeps focus in the box");
+    await page.click("[data-clear-filters]");
+    await page.waitForFunction(() => !location.search.includes("q="));
+
+    // /explore: views as tabs, filters and chips in the address, drafts never shown.
+    await page.goto("/explore");
+    await page.waitForSelector(".ex-item");
+    await page.click("[data-view=news]");
+    await page.waitForURL(/view=news/);
+    await page.waitForSelector("[data-view=news][aria-selected=true]");
+    await page.check("[data-f=project][data-v=glitches-and-stitches]");
+    await page.waitForURL(/project=glitches-and-stitches/);
+    assert.ok(await page.locator(".ex-item").count() > 0);
+    await page.focus("[data-view=news]");
+    await page.keyboard.press("ArrowRight");
+    await page.waitForURL(/view=shows/);
+    await page.waitForSelector("[data-view=shows][aria-selected=true]");
+
+    // Home and dashboard: the latest lists, followed projects first, and the projects you follow.
+    await page.goto("/");
+    await page.waitForSelector("[data-latest] .latest-list li");
+    await page.goto("/dashboard");
+    await page.waitForSelector("[data-picks=following] .pcard[data-project='glitches-and-stitches']");
+    assert.equal(await page.locator("[data-project-picks]:not([data-picks]) .pcard[data-project='glitches-and-stitches']").count(), 0, "no suggesting what you already follow");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
