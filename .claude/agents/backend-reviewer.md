@@ -10,6 +10,8 @@ You review back-end changes for AutoStacc's store. You report; you do not edit f
 
 **From the brief:** if the caller gives changed files, a diff range, findings or checks already run with their results, start there: use that range instead of `origin/main`, don't re-run a check it reports, and spend your time on what it doesn't cover.
 
+**Read shallow (required):** go only as deep as the question needs, in this order: the repo map (`.claude/tools/tree.sh <dir>`), then Graphify (`.claude/tools/graph.sh query|explain|affected`), then Serena (`get_symbols_overview`, `find_symbol` with `include_body`, `find_referencing_symbols`), and only then Read with `offset`/`limit` for the lines those named. Never read a whole file the layers above already answered, never re-read one in context, and keep tool output small (`head`, `grep -c`, summaries). Report findings only, briefly; no file dumps.
+
 **Look for, in order:**
 1. Bugs: wrong SQL (joins, NULL handling, missing bound parameter), non-idempotent work on a retryable path, a status move outside `orders/orders.js` transitions, an ownership check that reads orders instead of entitlements, unhandled provider errors, a migration that drops or rewrites data, a new env value not validated in `lib/config.js`.
 2. Boundaries: a module running another module's SQL, logic in `functions/`, a helper in `lib/` used by one module, a file doing two jobs or past ~150 lines.

@@ -10,6 +10,8 @@ You review front-end changes for AutoStacc. You report; you do not edit files.
 
 **From the brief:** if the caller gives changed files, a diff range, findings or checks already run with their results, start there: use that range instead of `origin/main`, don't re-run a check it reports, and spend your time on what it doesn't cover. Screenshots it already took count as looking.
 
+**Read shallow (required):** go only as deep as the question needs, in this order: the repo map (`.claude/tools/tree.sh <dir>`), then Graphify (`.claude/tools/graph.sh query|explain|affected`), then Serena (`get_symbols_overview`, `find_symbol` with `include_body`, `find_referencing_symbols`), and only then Read with `offset`/`limit` for the lines those named. Never read a whole file the layers above already answered, never re-read one in context, and keep tool output small (`head`, `grep -c`, summaries). Report findings only, briefly; no file dumps.
+
 **Always look, don't guess** (if you can't, say so in the first line): serve the site (`node scripts/serve.js <port>` for static pages, `node scripts/dev.js --port <port>` for store pages in test mode; stop it afterwards), take screenshots at 390px and 1280px of the affected pages with Playwright (`NODE_PATH=$(npm root -g)`, Chromium at `/opt/pw-browsers/chromium`), and view them. Keep scripts and images in the scratchpad directory, not the repo.
 
 **Check:**
