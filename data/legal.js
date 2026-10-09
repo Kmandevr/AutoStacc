@@ -34,6 +34,7 @@ window.LEGAL = [
       { id: "purchases", heading: "Orders and purchases", body: [
         "For every order: the email it was placed with, what was in it, the prices charged, any promo code, its status (paid, refunded and so on) and when. Stripe's reference numbers for the payment are kept so refunds and disputes can be matched to the order.",
         "What you own is recorded separately, so your library knows which files you can download.",
+        "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, when you ask for a payout, the payment details you type in (for example a PayPal address). Only you and AutoStacc see them, and they are kept with the payout record.",
         "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link."
       ] },
       { id: "payments", heading: "Payments", body: [
@@ -133,7 +134,8 @@ window.LEGAL = [
       ] },
       { id: "creators", heading: "Artists and creators", body: [
         "Products and pages are made by the projects and creators named on them, who keep the rights in their work. AutoStacc sells and delivers it for them.",
-        "If you make a creator space in the Studio, you're responsible for what you publish there and confirm you have the rights to it."
+        "If you make a creator space in the Studio, you're responsible for what you publish there and confirm you have the rights to it.",
+        "Creators can sell products in the Studio. A sale is held for 14 days (the refund window) before it can be paid out, and payouts are sent by AutoStacc by hand on request. AutoStacc's fee, if any, is shown in the Studio before you sell. Creators are responsible for their own taxes."
       ] },
       { id: "ip", heading: "Rights in the site", body: [
         "AutoStacc's name, logo, design and code belong to AutoStacc. Artists' and creators' names, artwork and music belong to them."
