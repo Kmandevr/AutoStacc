@@ -11,12 +11,13 @@
   const dollars = (c) => (c / 100).toFixed(2);
   const toCents = (v) => Math.round(Number(v) * 100);
 
+  const D = window.GS.studioDetails;
   function open(root, projectId, onBack) {
     let data = null;
     const base = `/api/studio/projects/${encodeURIComponent(projectId)}/products`;
     const say = (el, text, error = false) => { const m = el && $(".msg", el); if (m) { m.hidden = !text; m.className = `msg${error ? " error" : ""}`; m.textContent = text; } };
 
-    const kindSelect = (cur) => `<select name="type">${KINDS().map(([k, v]) => `<option value="${e(k)}"${k === cur ? " selected" : ""}>${e(v.label)}</option>`).join("")}</select>`;
+    const kindSelect = (cur) => `<select name="type" data-was="${e(cur)}">${KINDS().map(([k, v]) => `<option value="${e(k)}"${k === cur ? " selected" : ""}>${e(v.label)}</option>`).join("")}</select>`;
     const artSelect = (cur) => `<select name="artworkId"><option value="">No cover art</option>${data.images.map((i) => `<option value="${e(i.id)}"${i.src === cur ? " selected" : ""}>${e(i.filename)}</option>`).join("")}</select>`;
     const fields = (p = {}) => `
       <div class="field"><label>Name<input name="title" required minlength="3" maxlength="80" value="${e(p.title || "")}"></label></div>
@@ -27,7 +28,8 @@
       </div>
       <div class="field"><label>What's inside (one line each)<textarea name="includes" rows="3">${e((p.includes || []).join("\n"))}</textarea></label></div>
       <div class="field"><label>Tags (up to 8, separated by spaces or commas)<input name="tags" maxlength="220" value="${e((p.tags || []).join(", "))}" placeholder="drums, lo-fi, one-shots"></label></div>
-      ${p.id ? `<div class="field"><label>Cover art ${artSelect(p.artwork)}</label><p class="small-print">Upload images in the site editor, then pick one here.</p></div>` : ""}`;
+      ${p.id ? `<div class="field"><label>Cover art ${artSelect(p.artwork)}</label><p class="small-print">Upload images in the site editor, then pick one here.</p></div>` : ""}
+      ${D ? D.fields(p.type || "samples", p, p.id || "new") : ""}`;
 
     const card = (p) => `
       <li class="panel studio-product" data-id="${e(p.id)}">
@@ -67,7 +69,8 @@
 
     const read = (f) => ({ title: f.title.value, description: f.description.value, type: f.type.value, priceCents: toCents(f.price.value),
       includes: f.includes.value.split("\n").map((s) => s.trim()).filter(Boolean),
-      tags: [...new Set(f.tags.value.toLowerCase().split(/[\s,]+/).map((s) => s.trim()).filter(Boolean))], ...(f.artworkId ? { artworkId: f.artworkId.value || null } : {}) });
+      tags: [...new Set(f.tags.value.toLowerCase().split(/[\s,]+/).map((s) => s.trim()).filter(Boolean))], ...(f.artworkId ? { artworkId: f.artworkId.value || null } : {}),
+      ...(D ? D.read(f, f.type.value) : {}) });
 
     root.onsubmit = async (ev) => {
       const f = ev.target.closest("form[data-form]");
@@ -112,7 +115,17 @@
       }
     };
 
+    if (D) D.wire(root);
     root.onchange = async (ev) => {
+      // A different kind has different store details: redraw them, keeping what still applies.
+      const kind = ev.target.closest("select[name=type]");
+      if (kind && D) {
+        const f = kind.form, card = f.closest("[data-id]");
+        const now = D.read(f, kind.dataset.was || kind.value);
+        f.querySelector("[data-details]").outerHTML = D.fields(kind.value, { ...now, suggestions: {} }, card ? card.dataset.id : "new");
+        kind.dataset.was = kind.value;
+        return;
+      }
       const input = ev.target.closest("[data-upload], [data-upload-preview]");
       const card = ev.target.closest(".studio-product");
       if (!input || !card || !input.files[0]) return;

@@ -14,7 +14,7 @@ AutoStacc (the business, the store, accounts, library, delivery) is the technolo
 ## What existed before this layer (2026-10-07)
 
 - Static pages built from `data/*.js` by `scripts/build.js` (heads, item pages, sitemap, `db/catalog.sql`). See [seo](seo.md).
-- A complete store API in `server/` (Better Auth accounts, D1 catalog synced from `data/products.js`, Stripe Checkout, one verified payment pipeline, entitlements separate from orders, HMAC-signed downloads from private R2, admin, analytics), with unit, API-security and browser tests. See [store](store.md).
+- A complete store API in `server/` (Better Auth accounts, D1 catalog synced from `data/products.js`, Stripe Checkout, one verified payment pipeline, entitlements separate from orders, HMAC-signed downloads from private R2, admin, analytics), plus store discovery (search, filters, recommendations, wishlists: [discovery](discovery.md)), with unit, API-security and browser tests. See [store](store.md).
 - Already reusable and kept as is: entitlements (any source grants ownership), `product-types.js` (a new kind of product is data), the catalog sync, the download pipeline and its tests.
 - Single-artist assumptions: `SITE.artist` named the creator of every product and release, and the library listed products, not content.
 

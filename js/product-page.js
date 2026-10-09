@@ -13,6 +13,17 @@
 
   const missing = () => { root.innerHTML = '<p class="msg error">That product isn\'t available. <a href="/shop">Back to the store</a></p>'; };
 
+  // Store details the creator stated (labels from the API), as a list of facts.
+  const FIELDS = [["Contents", "contents"], ["File formats", "format"], ["Genre", "genre"], ["Style", "style"], ["Mood", "mood"], ["Energy", "energy"],
+    ["Made for", "use"], ["DAW", "daw"], ["Plugin", "plugin"], ["System", "os"], ["Key", "key"], ["Level", "skill"]];
+  function details(p) {
+    const f = p.facets || {}, sp = p.specs || {};
+    const rows = [...FIELDS.filter(([, k]) => (f[k] || []).length).map(([t, k]) => [t, f[k].map((x) => x.label).join(", ")]),
+      p.bpm ? ["BPM", p.bpm[0] === p.bpm[1] ? p.bpm[0] : `${p.bpm[0]}–${p.bpm[1]}`] : null,
+      sp.sampleRate ? ["Sample rate", `${sp.sampleRate / 1000} kHz`] : null, sp.bitDepth ? ["Bit depth", `${sp.bitDepth}-bit`] : null].filter(Boolean);
+    return rows.length ? `<h2>Details</h2><dl class="facts">${rows.map(([t, v]) => `<dt>${e(t)}</dt><dd>${e(v)}</dd>`).join("")}</dl>` : "";
+  }
+
   async function load() {
     if (!/^[a-z0-9_-]{3,60}$/i.test(id)) return missing();
     const [res, live] = await Promise.all([api(`/api/products/${encodeURIComponent(id)}`), api(`/api/products/state?ids=${encodeURIComponent(id)}`)]);
@@ -37,10 +48,15 @@
         ${p.description ? `<p class="product-desc">${e(p.description)}</p>` : ""}
         ${includes.length ? `<h2>What's inside</h2><ul>${includes.map((x) => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${p.tags && p.tags.length ? `<p class="small-print">${p.tags.map((t) => `<span class="tag">${e(t)}</span>`).join(" ")}</p>` : ""}
+        ${details(p)}
         ${action}
+        ${p.available !== false && !owned ? `<button class="btn ghost wish-btn" type="button" data-wish="${e(p.id)}" aria-pressed="false">Save to wishlist</button>` : ""}
         <p class="msg" role="status" hidden></p>
         <p class="small-print">By buying you accept the <a href="/terms">terms</a> and the <a href="/license">licence</a> for this kind of product. <a href="/refunds">Refunds</a>.</p>
       </div>`;
+    // Tell the store's on-device history (js/taste.js) and the wishlist hearts (js/wishlist.js) what's on the page.
+    document.dispatchEvent(new CustomEvent("gs:taste", { detail: { t: "view", id: p.id } }));
+    dispatchEvent(new CustomEvent("gs:cards"));
   }
 
   root.addEventListener("click", async (ev) => {

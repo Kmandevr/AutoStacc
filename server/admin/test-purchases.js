@@ -7,7 +7,7 @@ import { json, fail, readJson, id, str } from "../lib/http.js";
 import { all, first } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
 import { paymentProvider } from "../payments/index.js";
-import { getProduct, isPurchasable } from "../catalog/products.js";
+import { getProduct, isPurchasable, productPath } from "../catalog/products.js";
 import { getOrder, orderItems } from "../orders/orders.js";
 import { activeEntitlements } from "../entitlements/grants.js";
 import { audit } from "../audit/log.js";
@@ -26,7 +26,7 @@ async function start(app) {
   if (!isPurchasable(p)) fail(409, "not_purchasable", "That product can't be bought right now (unpublished, paused or free).");
   await audit(app, "test_purchase.started", { targetType: "product", targetId: p.id, subjectUserId: customer.id, detail: { provider: app.config.paymentProvider } });
   return beginImpersonation(app, { customer, purpose: "test-purchase", note: `test purchase: ${p.id}`,
-    redirect: `/shop?project=${encodeURIComponent(p.project_id || "")}&item=${encodeURIComponent(p.id)}` });
+    redirect: productPath(p) });
 }
 
 async function list(app) {

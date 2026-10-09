@@ -51,15 +51,15 @@ Bindings: `DB` (D1), `FILES` (private R2), `PREVIEWS` (R2 for preview clips).
 
 ## Database
 
-Schema changes are new files in `db/migrations/` with the next number after the highest (today `0011_marketplace_payouts.sql`, so `0012_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
+Schema changes are new files in `db/migrations/` with the next number after the highest (today `0012_discovery.sql`, so `0013_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
 
 ## Tests
 
 | Command | What | Time |
 | --- | --- | --- |
 | `node scripts/seo-test.js` | Search visibility (also checks the build is current) | seconds |
-| `npm test` | Unit tests (`test/unit`): config refusals, download tokens, cart pricing, Stripe event mapping and checkout expiry, tax codes per product type, payout countries, router and catalog SQL, devices, email, the impersonation policy, redirects, rich text, creator sites, platform hierarchy and links (a second project added as data), Your Stacc views over one asset list | seconds |
-| `npm run test:api` | API security suites (`test/api`) in two groups run in parallel, `accounts.test.js` (auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account) and `payments.test.js` (commerce, webhooks, impersonation, promotions, selling, refunds, payouts), each with its own local stores: mock payments, and (payments) Stripe mode with a fake Stripe API (`test/support/fake-stripe.js`) and really signed webhooks | ~45 s |
+| `npm test` | Unit tests (`test/unit`): config refusals, download tokens, cart pricing, Stripe event mapping and checkout expiry, tax codes per product type, payout countries, router and catalog SQL, devices, email, the impersonation policy, redirects, rich text, creator sites, platform hierarchy and links (a second project added as data), Your Stacc views over one asset list, the store vocabulary, the recommendation model and the store's on-device history | seconds |
+| `npm run test:api` | API security suites (`test/api`) in three groups run in parallel, `accounts.test.js` (auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account), `payments.test.js` (commerce, webhooks, impersonation, promotions, selling, refunds, payouts) and `discovery.test.js` (store search, filters, recommendations, wishlists and Studio store details, with a synthetic 3,000-product catalog and printed timings; its own store on port 8807), each with its own local stores: mock payments, and (payments) Stripe mode with a fake Stripe API (`test/support/fake-stripe.js`) and really signed webhooks | ~45 s |
 | `npm run test:browser` | Browser and chaos tests (`test/browser`) in Chromium at phone and desktop sizes, in three groups run in parallel (`flows`, `layout`, `features`), each with its own store | ~2 min |
 | `npm run test:store` | The API and browser suites at once (up to 5 files side by side), building `dist/` once (never run `test:api` and `test:browser` side by side: each rebuilds `dist/`) | ~2.5 min |
 | `verify-site` skill | Every page in a browser with the store offline | ~1 min |

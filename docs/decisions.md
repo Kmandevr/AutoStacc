@@ -6,6 +6,13 @@ updated: 2026-10-09
 
 # Decisions
 
+## 2026-10-09: Store discovery: server-side search, a transparent score, no invented signals
+
+- **Filtering, counting and paging run in D1** (`/api/store/search`), never by loading the catalog into the browser; one CTE applies running sales so filters and sorts use the price checkout charges.
+- **A weighted, documented score instead of machine learning:** eight components normalized to 0..1 with weights in one file (`server/discovery/weights.js`), hard limits (price ceiling, compatibility, ownership, dismissals) decided in SQL before ranking, diversity per creator, and room for new products and creators. Revisit when there is enough real engagement to measure it.
+- **Only real data makes claims:** "Bestselling" needs 3+ confirmed purchases in 90 days, cards say "5+ bought recently" at most as a floor, discounts exist only while a sale runs, and there are no ratings until there are reviews.
+- **Metadata is a controlled vocabulary** (`server/discovery/vocabulary.js`) shared by the API, the build and (generated) the browser; Studio input is checked on the server, and suggestions are never applied without the creator.
+
 ## 2026-10-09: Store recommendations stay on the visitor's device
 
 - **The owner asked for picks based on each visitor's habits and preferences.** They are computed in the browser (`js/taste.js`) from what that browser opened, added to its cart and filtered by; nothing is sent to the store or kept per account, so there is no tracking profile, nothing new for the privacy page beyond one line, and no recommendation backend.

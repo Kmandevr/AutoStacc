@@ -7,7 +7,7 @@ updated: 2026-10-09
 
 # Control Center
 
-`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Payouts, News, Test purchases, Audit log. News writes AutoStacc news to accounts that switched it on (send a test to yourself first); a published product's **Email followers** tells its project's followers who want new-release emails ([store](store.md#email)). Admins are emailed when a creator asks for a payout or uploads a file waiting for approval. On phones a section menu replaces the tabs and tables become cards (`js/admin-mobile.js`). A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
+`/admin`, for verified admin accounts (see [store](store.md#admin)). Anyone else, signed out, a customer, or an admin while impersonating, gets the site's ordinary 404 page from the server (`functions/admin.js` → `server/pages/guard.js`); the page itself is never sent to them. Everything here works on the store's real data; nothing is a mock-up. Tabs: Overview (statistics), Products, Orders, Customers, Entitlements, Promotions, Creators, Payouts, News, Test purchases, Audit log. News writes AutoStacc news to accounts that switched it on (send a test to yourself first); a published product's **Email followers** tells its project's followers who want new-release emails ([store](store.md#email)). Changing a product's title or description here also refreshes what store search matches ([discovery](discovery.md)). Admins are emailed when a creator asks for a payout or uploads a file waiting for approval. On phones a section menu replaces the tabs and tables become cards (`js/admin-mobile.js`). A **LIVE** or **TEST** badge at the top says whether this store takes real payments.
 
 ## Statistics (Overview)
 
@@ -64,7 +64,7 @@ Code: `server/impersonation/` (`sessions.js` rules, `policy.js` gate, `routes.js
 
 Only in a **TEST** store (mock payments, or Stripe with a test key: local `npm run dev` or a preview deployment). A live store refuses them, and the store's config already refuses test keys in production, so a test can't become revenue.
 
-1. Customers → preview a customer → choose a product → **Start test purchase**. This opens an impersonation (purpose "test-purchase") and takes you to the product.
+1. Customers → preview a customer → choose a product → **Start test purchase**. This opens an impersonation (purpose "test-purchase") and takes you to the product's own page.
 2. Buy it the normal way: cart, checkout, the payment page (Stripe test card `4242 4242 4242 4242`).
 3. Open Your Stacc, download a file, then **Exit impersonation**.
 4. **Test purchases** tab → **verify**: test order, paid, entitlement created, in their library, download authorized (same checks the store uses), downloaded during the test, receipt email.

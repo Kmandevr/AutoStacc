@@ -38,6 +38,7 @@
   <link rel="stylesheet" href="/css/platform.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/shop.css">
+  <link rel="stylesheet" href="/css/store.css">
   <link rel="stylesheet" href="/css/detail.css">
   <link rel="stylesheet" href="/css/projects/glitches-and-stitches/look.css">
 </head>
@@ -67,6 +68,7 @@
             <div class="detail-buy buy" data-buy="sample-pack-vol1">
               <span class="btn" aria-disabled="true">Coming soon</span>
             </div>
+            
             <ul class="buy-points">
               <li>Digital download, in <a href="/library">Your Stacc</a> the moment the payment clears</li>
               <li>Checkout runs on Stripe; this site never sees your card</li>
@@ -82,8 +84,8 @@
             <dt>Created by</dt><dd><a href="/autostacc/glitches-and-stitches">Glitches &amp; Stitches</a></dd>
             <dt>Sold by</dt><dd><a href="/about">AutoStacc</a></dd>
             <dt>Type</dt><dd>Sample Packs</dd>
-            <dt>Format</dt><dd>Digital download · WAV 24-bit</dd>
-            <dt>Genre</dt><dd>Electronic, EDM</dd>
+            <dt>Delivery</dt><dd>Digital download</dd>
+            <dt>Contents</dt><dd>One-shots, Loops, Vocals</dd><dt>File formats</dt><dd>WAV</dd><dt>Genre</dt><dd>Electronic, EDM</dd><dt>Style</dt><dd>Glitch</dd><dt>Bit depth</dt><dd>24-bit</dd>
             <div data-size-row hidden><dt>Download</dt><dd data-size="sample-pack-vol1"></dd></div>
             
             <dt>Tags</dt><dd class="tags"><span class="tag">wav</span> <span class="tag">one-shots</span> <span class="tag">loops</span></dd>
@@ -102,10 +104,12 @@
       </div>
     </section>
 
+    <section class="similar-section" data-similar="sample-pack-vol1" hidden></section>
+
     <section class="alt">
       <div class="wrap">
-        <div class="section-head"><h2>More from Glitches &amp; Stitches</h2><a href="/shop?project=glitches-and-stitches">All of it &rarr;</a></div>
-        <ul class="tiles"><li><a class="tile" href="/shop?project=glitches-and-stitches&amp;item=serum-presets"><span class="tag">Presets</span><strong>Seam Ripper — Serum Preset Bank</strong><span class="price">$19.99</span></a></li><li><a class="tile" href="/shop?project=glitches-and-stitches&amp;item=stems-patchwork"><span class="tag">Stems</span><strong>Patchwork (Remix Stems)</strong><span class="price">$9.99</span></a></li><li><a class="tile" href="/shop?project=glitches-and-stitches&amp;item=ep-corrupted-thread"><span class="tag">Music</span><strong>Corrupted Thread EP (Lossless)</strong><span class="price">$7.00</span></a></li></ul>
+        <div class="section-head"><h2>More from Glitches &amp; Stitches</h2><a href="/shop?creator=glitches-and-stitches">All of it &rarr;</a></div>
+        <ul class="tiles"><li><a class="tile" href="/shop/serum-presets"><span class="tag">Presets</span><strong>Seam Ripper — Serum Preset Bank</strong><span class="price">$19.99</span></a></li><li><a class="tile" href="/shop/stems-patchwork"><span class="tag">Stems</span><strong>Patchwork (Remix Stems)</strong><span class="price">$9.99</span></a></li><li><a class="tile" href="/shop/ep-corrupted-thread"><span class="tag">Music</span><strong>Corrupted Thread EP (Lossless)</strong><span class="price">$7.00</span></a></li></ul>
       </div>
     </section>
 
@@ -115,10 +119,15 @@
 
   <script src="/data/site.js"></script>
   <script src="/data/projects.js"></script>
+  <script src="/data/product-types.js"></script>
+  <script src="/data/vocabulary.js"></script>
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/account-nav.js"></script>
+  <script src="/js/product-card.js"></script>
   <script src="/js/taste.js"></script>
+  <script src="/js/similar.js"></script>
+  <script src="/js/wishlist.js"></script>
   <script src="/js/store.js"></script>
   <script src="/js/motion.js"></script>
 </body>

@@ -1,57 +1,84 @@
-// Product card template for js/shop.js (GS.productCard): one store item as a tile in its project's look, linking to the
-// store filtered to its project with it selected. Studio products are marked "Unverified creator" until AutoStacc trusts
-// their creator. Needs js/util.js, data/product-types.js and data/projects.js.
+// Product card template (GS.productCard) for the store (js/store-browse.js, js/store-sections.js) and the product grids
+// on other pages (js/shop.js): one item as a tile in its project's look, opening the product's own page. Takes either
+// shape: a data/products.js entry (price in dollars, facets as values) or a store API product (priceCents, sale, facets
+// with labels, badges). Shows only what the data says: labels from its facets, "New", a running sale's percent off and
+// a floor of recent confirmed sales. Studio products are marked "Unverified creator" until AutoStacc trusts their
+// creator. Needs js/util.js, data/product-types.js and data/projects.js (data/vocabulary.js for labels of data entries).
 (function () {
   "use strict";
 
   const GS = window.GS;
-  const { escapeHTML: e, money } = GS;
+  const { escapeHTML: e, money, cents } = GS;
   const TYPES = window.PRODUCT_TYPES || {};
+  const VOCAB = (window.VOCABULARY || {}).facets || {};
   const label = (p) => (TYPES[p.type] || {}).label || p.type;
   const projectOf = (id) => (window.PROJECTS || []).find((x) => x.id === id) || {};
-  const projectName = (id) => projectOf(id).name || "";
-  // The genre label is the project's own (data/projects.js genres): products don't claim one of their own.
-  const genre = (p) => (projectOf(p.project).genres || []).join(" · ");
   // Generated covers: a track-colour tile in AutoStacc's look; a project's look restyles it (Glitches & Stitches: the
   // hue picks a green or purple glow).
   const tint = (hue = 300) => (hue >= 90 && hue < 210 ? "green" : "purple");
+  const SHOWN = ["contents", "format", "plugin", "daw", "genre", "style"];
 
-  // level: heading level, so the card sits under its section. selected: the item opened large at the top of the store.
-  // label: what the large card is called ("Selected" by default, "Featured" for the store's spotlight).
-  // why: a short line saying why it's shown (personal picks).
-  function productCard(p, { level = 3, selected = false, label: kicker = "Selected", why = "" } = {}) {
-    // Static fallback; js/store.js swaps in the live control (Add to cart, OWNED, ...).
-    const button = p.draft
-      ? `<span class="btn" aria-disabled="true">Coming soon</span>`
+  // [{ facet, label }] from either shape, most telling first, at most `max`.
+  function labels(p, max = 4) {
+    const out = [];
+    for (const facet of SHOWN) {
+      for (const x of (p.facets || {})[facet] || []) {
+        const text = typeof x === "string" ? ((VOCAB[facet] || {}).values || {})[x] || x : x.label;
+        if (!out.some((o) => o.label === text)) out.push({ facet, label: text });
+      }
+    }
+    if (!p.facets || !p.facets.genre) {
+      const g = projectOf(p.projectId || p.project).genres || [];
+      if (g.length) out.push({ facet: "genre", label: g.join(" · ") });
+    }
+    return out.slice(0, max);
+  }
+
+  // level: heading level. selected: a large card (label names it, "Selected" by default). why: a line saying why it's
+  // shown (recommendations). dismissable: adds "Not interested" (recommendation sections). wish: adds the wishlist heart
+  // (only on pages that load js/wishlist.js, so it never sits there doing nothing). buy: false leaves out the buy control
+  // (a product page's "You might also like" row, so the page has one buy button: its own).
+  function productCard(p, { level = 3, selected = false, label: kicker = "Selected", why = "", dismissable = false, wish = false, buy = true } = {}) {
+    const project = p.projectId || p.project;
+    const live = p.priceCents !== undefined;
+    const priceText = live ? (p.free ? "Free" : `${p.sale ? `<s class="price-was">${e(cents(p.listPriceCents, p.currency))}</s> ` : ""}${e(cents(p.priceCents, p.currency))}`)
+      : (p.price ? money(p.price) : "Free");
+    // Static fallback; js/store.js swaps in the live control (Add to cart, STACC'D, ...).
+    const button = p.draft || (live && p.available === false)
+      ? `<span class="btn" aria-disabled="true">${p.draft ? "Coming soon" : "Unavailable"}</span>`
+      : live && p.free ? `<button class="btn" type="button" data-claim="${e(p.id)}">Get it free</button>`
       : `<button class="btn" type="button" data-add-to-cart="${e(p.id)}">Add to cart</button>`;
-    // Studio products (from the store API) carry their project's name, their own page and whether the creator is verified.
-    const by = p.projectName || projectName(p.project);
-    const details = p.path || `/shop/${p.id}`;
+    const by = p.projectName || projectOf(project).name || "";
+    const href = GS.shopItemPath(p);
+    const b = p.badges || {};
+    const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : ""].filter(Boolean);
+    const art = p.artwork || (p.image && "/" + p.image.src.replace(/^\/+/, ""));
+    const facts = [...labels(p).map((l) => `<li class="label-${l.facet}">${e(l.label)}</li>`),
+      p.bpm ? `<li class="label-bpm">${p.bpm[0] === p.bpm[1] ? p.bpm[0] : `${p.bpm[0]}–${p.bpm[1]}`} BPM</li>` : ""];
     return `
-      <article class="card${selected ? " selected" : ""} ${GS.look(p.project)}" data-product="${e(p.id)}">
-        <a class="cover tint-${tint(p.hue)}" href="${e(GS.shopItemPath(p))}" data-select="${e(p.id)}" data-track="${e((TYPES[p.type] || {}).track || "")}" tabindex="-1" aria-hidden="true"><span>${e(p.title.split(" — ")[0])}</span></a>
+      <article class="card${selected ? " selected" : ""} ${GS.look(project)}" data-product="${e(p.id)}">
+        <a class="cover tint-${tint(p.hue !== undefined ? p.hue : (p.metadata || {}).hue)}${art ? " has-art" : ""}" href="${e(href)}" data-track="${e((TYPES[p.type] || {}).track || "")}" tabindex="-1" aria-hidden="true">
+          ${art ? `<img src="${e(art)}" alt="" loading="lazy" width="400" height="400">` : `<span>${e(p.title.split(" — ")[0])}</span>`}
+          ${badges.length ? `<span class="card-badges">${badges.map((x) => `<em>${e(x)}</em>`).join("")}</span>` : ""}
+        </a>
+        ${wish ? `<button class="card-wish" type="button" data-wish="${e(p.id)}" aria-pressed="false" title="Save to your wishlist"><span class="sr-only">Save ${e(p.title)} to your wishlist</span></button>` : ""}
         <div class="card-body">
           <span class="tag">${selected ? `${e(kicker)} · ` : ""}${e(label(p))}</span>${p.verified === false ? ' <span class="tag unverified" title="AutoStacc hasn\'t verified this creator">Unverified creator</span>' : ""}
-          <h${level}><a href="${e(GS.shopItemPath(p))}" data-select="${e(p.id)}">${e(p.title)}</a></h${level}>
+          <h${level}><a href="${e(href)}">${e(p.title)}</a></h${level}>
           ${by ? `<p class="card-by">by ${e(by)}</p>` : ""}
           ${why ? `<p class="card-why">${e(why)}</p>` : ""}
           <p class="card-desc">${e(p.description || "")}</p>
-          <ul class="card-labels" aria-label="Details">
-            ${(p.formats || []).map((f) => `<li class="label-format">${e(f)}</li>`).join("")}
-            ${genre(p) ? `<li class="label-genre">${e(genre(p))}</li>` : ""}
-            <li class="label-size" data-size="${e(p.id)}" hidden></li>
-          </ul>
-          <a class="card-more" href="${e(details)}">${selected ? "Everything about it" : "Details"}<span class="sr-only"> about ${e(p.title)}</span> →</a>
+          <ul class="card-labels" aria-label="Details">${facts.join("")}<li class="label-size" data-size="${e(p.id)}" hidden></li></ul>
           <div class="card-foot">
-            <span class="price" data-price="${e(p.id)}">${p.price ? money(p.price) : "Free"}</span>
-            <div class="buy" data-buy="${e(p.id)}">${button}</div>
+            <span class="price" data-price="${e(p.id)}">${priceText}</span>
+            ${buy ? `<div class="buy" data-buy="${e(p.id)}">${button}</div>` : `<a class="btn ghost" href="${e(href)}">See it<span class="sr-only">: ${e(p.title)}</span></a>`}
           </div>
+          ${dismissable ? `<button class="card-dismiss" type="button" data-dismiss="${e(p.id)}">Not interested<span class="sr-only"> in ${e(p.title)}</span></button>` : ""}
         </div>
       </article>`;
   }
 
-  // One namespace: the template, with its type-label helper attached (shop.js builds the type filter from it).
+  // One namespace: the template, with its type-label helper attached.
   productCard.label = label;
-  productCard.genre = genre;
   GS.productCard = productCard;
 })();

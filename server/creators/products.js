@@ -10,6 +10,8 @@ import { getProject } from "./creators.js";
 import { productPath } from "../catalog/products.js";
 import { ownImages, imageSrc } from "../sites/images.js";
 import { DELIVERABLE } from "../files/files.js";
+import { cleanFacets, cleanBpm, cleanSpecs, suggestFacets, searchText, schemaOf } from "../discovery/vocabulary.js";
+import { facetsOf, replaceFacetsStmts } from "../discovery/facets.js";
 
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export { productPath };
@@ -46,6 +48,20 @@ export function cleanProductInput(body, { requireAll = false } = {}) {
     if (body.artworkId !== null && (typeof body.artworkId !== "string" || body.artworkId.length > 40)) fail(400, "invalid_field", "artworkId must be one of your images, or null.", { field: "artworkId" });
     out.artworkId = body.artworkId;
   }
+  // Store details (server/discovery/vocabulary.js): shape here; the values are checked against the kind on save.
+  if (has("facets")) {
+    const f = body.facets;
+    if (!f || typeof f !== "object" || Array.isArray(f) || Object.keys(f).length > 16
+      || Object.values(f).some((v) => !Array.isArray(v) || v.length > 12 || v.some((x) => typeof x !== "string" || x.length > 40))) {
+      fail(400, "invalid_field", "Store details are lists of words per field.", { field: "facets" });
+    }
+    out.facets = f;
+  }
+  if (has("bpm")) out.bpm = body.bpm;
+  if (has("specs")) {
+    if (body.specs !== null && (typeof body.specs !== "object" || Array.isArray(body.specs))) fail(400, "invalid_field", "specs is { sampleRate, bitDepth }.", { field: "specs" });
+    out.specs = body.specs || {};
+  }
   for (const k of ["published", "salesPaused", "deleted"]) {
     if (has(k)) { if (typeof body[k] !== "boolean") fail(400, "invalid_field", `${k} must be true or false.`, { field: k }); out[k] = body[k]; }
   }
@@ -81,8 +97,39 @@ async function artworkSrc(db, creatorId, artworkId) {
   return imageSrc(artworkId);
 }
 
+// Store details checked against the product's kind: { facets, bpm, specs } (each undefined when not sent). A value the
+// vocabulary doesn't know, or a field that doesn't apply to the kind, is refused with the reason.
+function cleanDetails(type, input) {
+  const out = {};
+  const refuse = (errors, field) => { if (errors.length) fail(400, "invalid_field", `Store details: ${errors[0]}.`, { field }); };
+  if (input.facets !== undefined) { const r = cleanFacets(type, input.facets); refuse(r.errors, "facets"); out.facets = r.facets; }
+  if (input.bpm !== undefined) { const r = cleanBpm(type, input.bpm); refuse(r.errors, "bpm"); out.bpm = r.bpm; }
+  if (input.specs !== undefined) { const r = cleanSpecs(type, input.specs); refuse(r.errors, "specs"); out.specs = r.specs; }
+  return out;
+}
+
+// After any change: facet rows (when sent, or trimmed to what a new kind allows), BPM, specs and the search text, in
+// one batch with nothing else in between.
+async function saveDetails(db, product, details, { project, creator }) {
+  const facets = details.facets !== undefined ? details.facets
+    : cleanFacets(product.type, (await facetsOf(db, [product.id]))[product.id] || {}).facets; // a kind change drops what no longer applies
+  const meta = parseJson(product.metadata, {});
+  if (details.specs !== undefined) { if (Object.keys(details.specs).length) meta.specs = details.specs; else delete meta.specs; }
+  else if (meta.specs) meta.specs = cleanSpecs(product.type, meta.specs).specs;
+  const bpm = details.bpm !== undefined ? details.bpm : (schemaOf(product.type).bpm && product.bpm_min ? [product.bpm_min, product.bpm_max] : null);
+  const text = searchText({ title: product.title, description: product.description, tags: parseJson(product.tags, []), facets,
+    by: [project && project.name, creator && creator.name].filter(Boolean).join(" ") });
+  await db.batch([
+    ...replaceFacetsStmts(db, product.id, facets),
+    db.prepare("UPDATE products SET metadata = ?, bpm_min = ?, bpm_max = ?, search_text = ? WHERE id = ?")
+      .bind(JSON.stringify(meta), bpm ? bpm[0] : null, bpm ? bpm[1] : null, text, product.id)
+  ]);
+  return first(db, "SELECT * FROM products WHERE id = ?", product.id);
+}
+
 // A new draft. The limit is checked inside the insert, so parallel requests can't each add one more.
 export async function createProduct(db, { creator, project, user, input }) {
+  const details = cleanDetails(input.type, input);
   const id = await freshId(db, creator, input.title);
   const t = now();
   const art = input.artworkId === undefined ? null : await artworkSrc(db, creator.id, input.artworkId);
@@ -93,14 +140,15 @@ export async function createProduct(db, { creator, project, user, input }) {
     id, input.title, input.description || "", input.type, input.priceCents, art, JSON.stringify(input.tags || []), JSON.stringify(input.includes ? { includes: input.includes } : {}),
     project.id, user.id, t, t, creator.id, LIMITS.productsPerCreator);
   if (!res.meta.changes) fail(409, "limit_reached", `A creator can have up to ${LIMITS.productsPerCreator} products.`);
-  return first(db, "SELECT * FROM products WHERE id = ?", id);
+  return saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", id), details, { project, creator });
 }
 
 export const hasDeliverableFile = async (db, productId) =>
   Boolean(await first(db, `SELECT 1 FROM product_files WHERE product_id = ? AND ${DELIVERABLE} LIMIT 1`, productId));
 
 // Applies a cleaned edit. Going on sale needs a downloadable file; removing takes it off sale (buyers keep their files).
-export async function updateProduct(db, { product, creator, input }) {
+export async function updateProduct(db, { product, project, creator, input }) {
+  const details = cleanDetails(input.type || product.type, input);
   const sets = [], args = [];
   const add = (col, v) => { sets.push(`${col} = ?`); args.push(v); };
   if (input.title !== undefined) add("title", input.title);
@@ -121,20 +169,26 @@ export async function updateProduct(db, { product, creator, input }) {
     add("deleted_at", input.deleted ? now() : null);
     if (input.deleted) add("published", 0);
   }
-  if (!sets.length) fail(400, "invalid_field", "Nothing to change.");
-  await run(db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), product.id);
-  return first(db, "SELECT * FROM products WHERE id = ?", product.id);
+  if (!sets.length && !Object.keys(details).length) fail(400, "invalid_field", "Nothing to change.");
+  if (sets.length) await run(db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), product.id);
+  else await run(db, "UPDATE products SET updated_at = ? WHERE id = ?", now(), product.id);
+  return saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", product.id), details, { project, creator });
 }
 
 // The creator's view of a product with its files (and why a file isn't delivered yet).
 export async function productViews(db, rows) {
   if (!rows.length) return [];
+  const facets = await facetsOf(db, rows.map((r) => r.id));
   const files = await all(db, `SELECT id, product_id, filename, size_bytes, status, status_note, active FROM product_files
     WHERE product_id IN (${rows.map(() => "?").join(",")}) AND status <> 'deleted' ORDER BY created_at`, ...rows.map((r) => r.id));
   return rows.map((p) => ({
     id: p.id, title: p.title, description: p.description, type: p.type, priceCents: p.price_cents, currency: p.currency, artwork: p.artwork,
     tags: parseJson(p.tags, []), includes: parseJson(p.metadata, {}).includes || [], published: Boolean(p.published), salesPaused: Boolean(p.sales_paused),
     deleted: Boolean(p.deleted_at), path: productPath(p), preview: p.preview || null, createdAt: p.created_at,
+    facets: facets[p.id] || {}, bpm: p.bpm_min ? [p.bpm_min, p.bpm_max] : null, specs: parseJson(p.metadata, {}).specs || {},
+    // Values the product's own words point to and it doesn't have yet, for the creator to accept or ignore.
+    suggestions: Object.fromEntries(Object.entries(suggestFacets(p.type, `${p.title} ${p.description} ${parseJson(p.tags, []).join(" ")}`))
+      .map(([f, vs]) => [f, vs.filter((v) => !((facets[p.id] || {})[f] || []).includes(v))]).filter(([, vs]) => vs.length)),
     files: files.filter((f) => f.product_id === p.id && f.active).map((f) => ({ id: f.id, filename: f.filename, sizeBytes: f.size_bytes, status: f.status, note: f.status_note || "" }))
   }));
 }

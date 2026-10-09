@@ -70,6 +70,7 @@
   <link rel="stylesheet" href="/css/platform.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/shop.css">
+  <link rel="stylesheet" href="/css/store.css">
 </head>
 <body data-page="shop">
   <header id="site-header"></header>
@@ -80,13 +81,15 @@
         <p class="shop-kicker">The AutoStacc store</p>
         <h1 class="glitch" data-text="Store">Store</h1>
         <p>Sample packs, presets, stems, music and visuals, straight from the projects that make them. Ready to download as soon as your payment is confirmed.</p>
-        <p class="shop-owned msg" data-owned-summary hidden></p>
       </div>
     </div>
 
     <section class="shop-section">
       <div class="wrap">
-        <div class="shop" data-shop data-filters="project type" data-search data-spotlight data-picks="3" data-sort data-level="2" data-url></div>
+        <div class="browse" data-browse>
+          <noscript><p class="msg">Search and filters need JavaScript. Every product also has its own page: start from <a href="/projects">the projects</a>.</p></noscript>
+        </div>
+        <div class="store-sections" data-store-sections aria-label="Picks and collections"></div>
       </div>
     </section>
 
@@ -109,12 +112,17 @@
   <script src="/data/projects.js"></script>
   <script src="/data/product-types.js"></script>
   <script src="/data/products.js"></script>
+  <script src="/data/vocabulary.js"></script>
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/account-nav.js"></script>
   <script src="/js/product-card.js"></script>
   <script src="/js/taste.js"></script>
-  <script src="/js/shop.js"></script>
+  <script src="/js/store-filters.js"></script>
+  <script src="/js/store-sections.js"></script>
+  <script src="/js/store-browse.js"></script>
+  <script src="/js/store-suggest.js"></script>
+  <script src="/js/wishlist.js"></script>
   <script src="/js/store.js"></script>
   <script src="/js/motion.js"></script>
 </body>
