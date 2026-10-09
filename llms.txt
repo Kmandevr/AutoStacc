@@ -2,7 +2,7 @@
 
 > AutoStacc sells sample packs, presets, stems and music straight from the artists who make them. Follow projects and get their free releases as they drop.
 
-AutoStacc is the site at https://autostacc.com: a store for music, samples, presets, stems and visuals, straight from the projects (artists and creators) that make them. AutoStacc sells and delivers them, and keeps what each customer owns in their account. A project is never the site; each one has its own pages under https://autostacc.com/projects/<project>.
+AutoStacc is the site at https://autostacc.com: a store for music, samples, presets, stems and visuals, straight from the projects (artists and creators) that make them. AutoStacc sells and delivers them, and keeps what each customer owns in their account. A project is never the site; each one has its own pages under https://autostacc.com/<creator>/<project>.
 
 ## Platform
 

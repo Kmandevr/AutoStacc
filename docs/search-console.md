@@ -1,7 +1,8 @@
 ---
 title: Search Console
 summary: Step-by-step for the owner: set up Google Search Console for autostacc.com, submit the sitemap, request indexing, and point every official profile back to the site.
-updated: 2026-10-08
+covers: [data/projects.js, data/music.js, robots.txt, _redirects, sitemap.xml]
+updated: 2026-10-09
 ---
 
 # Google Search Console and profile checklist
@@ -46,11 +47,13 @@ Open each of these in a browser. They should all work:
 
 Do the same (paste the address, Request indexing if needed) for:
 
-- https://autostacc.com/music/hail
-- https://autostacc.com/music
-- https://autostacc.com/press
+- https://autostacc.com/autostacc/glitches-and-stitches
+- https://autostacc.com/autostacc/glitches-and-stitches/music/hail
+- https://autostacc.com/autostacc/glitches-and-stitches/music
+- https://autostacc.com/autostacc/glitches-and-stitches/press
+- https://autostacc.com/autostacc/glitches-and-stitches/news
 - https://autostacc.com/shop
-- https://autostacc.com/news
+- https://autostacc.com/projects
 
 When a new release or real product goes live, inspect its page (`/autostacc/glitches-and-stitches/music/<name>` or `/shop/<name>`) the same way. Google allows a limited number of requests per day; only request the pages that matter.
 
@@ -59,7 +62,7 @@ When a new release or real product goes live, inspect its page (`/autostacc/glit
 **Indexing → Pages.** "Indexed" should grow to the number of addresses in the sitemap. Under "Why pages aren't indexed", these are expected and fine:
 
 - *Excluded by 'noindex' tag*: the 404 page and placeholder products (marked `draft` in the data). They join search once they're real.
-- *Page with redirect*: old addresses like /home and /shop.html.
+- *Page with redirect*: old addresses like /home, /shop.html and the pre-2026-10-08 /music, /news and /press pages.
 - *Alternate page with proper canonical tag*: addresses with `?something` on the end.
 
 Anything else (for example "Crawled – currently not indexed" on the home page or HAIL for more than a few weeks): open a GitHub issue with a screenshot.
@@ -83,12 +86,12 @@ Search engines connect an artist to their official site when the site links to t
 | Deezer artist page | Linked from the site | Deezer for Creators (via DistroKid's artist tools): add the website if offered |
 | Apple Music artist page | Linked from the site | The artist name is spelled "Glitches & Stiches" there. Ask DistroKid support to correct it to "Glitches & Stitches" (issue #10). Apple Music for Artists: claim the profile; it has no website field |
 | Spotify | Not found yet | Find the artist page (or ask DistroKid), claim it in Spotify for Artists, add autostacc.com in the bio. Then add the URL to the project's `socials` in `data/projects.js` and HAIL's Spotify link in `data/music.js` |
-| YouTube | HAIL is on the auto-generated "Release - Topic" channel | If there's an own channel: add autostacc.com under Customization → Links, then add the channel URL to `data/site.js` |
+| YouTube | HAIL is on the auto-generated "Release - Topic" channel | If there's an own channel: add autostacc.com under Customization → Links, then add the channel URL to the project's `socials` in `data/projects.js` |
 | SoundCloud | Not set | Profile → Edit → Your links: add autostacc.com |
 | Bandcamp | Not set | Profile → Edit profile → Website |
 | Instagram, TikTok | Not set | Put autostacc.com as the bio link |
 | Beatport | Not set | If releases go there, claim the artist page |
 | DistroKid HyperFollow | Not set | Optional pre-save/link page; add it to `data/music.js` if used |
-| Press kit | Not set | Mention autostacc.com in the bio and one-sheet; set `pressKitUrl` in `data/site.js` |
+| Press kit | Not set | Mention autostacc.com in the bio and one-sheet; set the project's `pressKitUrl` in `data/projects.js` |
 
 Always write the name exactly **Glitches & Stitches** on every profile. Missing profiles and the booking email are tracked in issue #7.
