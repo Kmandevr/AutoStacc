@@ -6,6 +6,14 @@ updated: 2026-10-09
 
 # Decisions
 
+## 2026-10-09: A clean, glassy look with motion as feedback
+
+Owner's request: the site should look very clean, use transparency more, and have clean animation on transitions and feedback. Applied to AutoStacc's platform pages (projects keep their own skins): see-through panels over soft ambient light, frosted chrome, and short, consistent feedback animations, all off for reduced motion. Details in [autostacc](autostacc.md).
+
+## 2026-10-09: The home page opens on a big banner over an animated DAW
+
+Owner's request, with their answers: the home page everyone sees starts with a large banner that takes most of the screen (about 85%), the site's call to action over it. Behind it, an animated DAW drawn in code (not a picture): lanes of clips, a playhead, meters, in AutoStacc's track colours. It stays in place as a fixed backdrop while the rest of the page slides over it, all the way down. The text stays as it was ("Sounds, presets and music, straight from the artists who make them.", Browse the store, Create account or Open your dashboard). It ships in the same pull request as the projects browser. Visitors who ask for less motion get it still.
+
 ## 2026-10-09: Projects get their own browser; the site's other pages follow the store's lead
 
 - **/projects becomes a browser of projects, separate from the store:** nothing is bought there. A project shows how many store items it has and links to the store filtered to it; no prices or buy buttons.
