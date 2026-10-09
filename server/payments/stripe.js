@@ -83,7 +83,9 @@ function normalizeSession(s, type) {
     sessionId: s.id,
     orderId: (s.metadata && s.metadata.order_id) || s.client_reference_id || null,
     paymentId: typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent && s.payment_intent.id,
-    amount: s.amount_total,
+    // Before tax: the live account sells through Managed Payments, which adds sales tax on top of our prices, so the
+    // session's total is the order total plus tax. The subtotal is what we asked for (our prices, discounts already in).
+    amount: s.amount_subtotal ?? s.amount_total,
     currency: String(s.currency || "").toUpperCase(),
     livemode: Boolean(s.livemode)
   };

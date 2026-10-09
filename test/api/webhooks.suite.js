@@ -37,7 +37,7 @@ export default (ctx) => describe("webhooks", () => {
     assert.equal((await sendWebhook(c, ev, "whsec_someone_elses_secret")).status, 400);
     // Signed for one body, sent with another (amount edited after signing).
     const { header } = signedEvent(ev, WEBHOOK_SECRET);
-    const edited = raw.replace(/"amount_total":\d+/, '"amount_total":1');
+    const edited = raw.replace(/"amount_subtotal":\d+/, '"amount_subtotal":1');
     assert.equal((await c.req("POST", "/api/webhooks/stripe", { raw: edited, headers: { "stripe-signature": header, "Content-Type": "application/json" } })).status, 400);
     assert.equal(await status(c, order.orderId), "pending");
     assert.deepEqual(await owned(c), []);
@@ -81,7 +81,7 @@ export default (ctx) => describe("webhooks", () => {
 
   test("signed events that don't match the order are rejected", async () => {
     const cases = [
-      ["amount", { amount_total: 1 }],
+      ["amount", { amount_subtotal: 1, amount_total: 1 }],
       ["currency", { currency: "eur" }],
       ["order id", { metadata: { order_id: "ord_aaaaaaaaaaaaaaaaaaaaaaaaaa" }, client_reference_id: "ord_aaaaaaaaaaaaaaaaaaaaaaaaaa" }],
       ["live mode", { livemode: true }],
@@ -197,7 +197,7 @@ export default (ctx) => describe("webhooks", () => {
 
   test("a refused paid event alerts the owner", async () => {
     const { c, order } = await buyer("alert");
-    await stripePay(ctx, c, order, { overrides: { amount_total: 5 } });
+    await stripePay(ctx, c, order, { overrides: { amount_subtotal: 5, amount_total: 5 } });
     const mails = await outbox(ctx.stripe.url, "admin@autostacc.test");
     assert.ok(mails.some((m) => m.kind === "payment-rejected" && m.body_text.includes("amount mismatch")));
   });

@@ -35,6 +35,8 @@ async function one(app, { orderId }) {
 }
 
 // Asks the payment provider (with our secret key) whether a pending order was paid. Safe to call any number of times.
+// The event id carries a version: v1 events refused real payments because the total included sales tax (fixed in
+// server/payments/stripe.js), and a refused event is final, so those orders are rechecked under a new id.
 async function reconcile(app, { orderId }) {
   await limit(app, "reconcile", 30, 60);
   const order = await ownedOrder(app, orderId);
@@ -43,7 +45,7 @@ async function reconcile(app, { orderId }) {
     try {
       const ev = await provider.retrieveCheckout(app, order.provider_session_id);
       if (ev.type === "paid" || ev.type === "expired") {
-        await processPaymentEvent(app, { ...ev, provider: order.provider, id: `reconcile-${order.provider_session_id}-${ev.type}`, rawType: `reconcile.${ev.type}` });
+        await processPaymentEvent(app, { ...ev, provider: order.provider, id: `reconcile2-${order.provider_session_id}-${ev.type}`, rawType: `reconcile.${ev.type}` });
       }
     } catch (e) {
       console.error("reconcile failed", e && e.message);
