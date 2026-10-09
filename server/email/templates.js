@@ -94,6 +94,27 @@ export const templates = {
     html: layout(title, lines.map(para).join("") + button(adminUrl, "Open the Control Center"))
   }),
 
+  // Changing an account's email: the link goes to the new address, which must be proven before anything moves.
+  "email-change-confirm": ({ url }) => ({
+    subject: "Confirm your new email — AutoStacc",
+    text: `To make this your AutoStacc account's new email, open this link while logged in to that account and press Confirm:\n${url}\n\nThe link works for 1 hour. Your Stacc moves with the account. Didn't ask for this? Ignore this mail and nothing changes.`,
+    html: layout("Confirm your new email", para("To make this your AutoStacc account's new email, open this link while logged in to that account and press Confirm. Your Stacc moves with the account.") + button(url, "Open AutoStacc to confirm") +
+      para("The link works for 1 hour. Didn't ask for this? Ignore this mail and nothing changes."))
+  }),
+
+  // To the old address, when a change is asked for and when it's done, so a stolen session can't move an account quietly.
+  "email-change-notice": ({ stage, newEmail, contactUrl }) => {
+    const done = stage === "done";
+    const head = done ? "Your account's email was changed" : "Someone asked to change your account's email";
+    const body = done ? `Your AutoStacc account now uses ${newEmail}. Sign in with that address from now on.`
+      : `A confirmation link was sent to ${newEmail}. Nothing changes unless it's clicked within an hour.`;
+    return {
+      subject: `${head} — AutoStacc`,
+      text: `${body}\n\nWasn't you? Change your password now and contact AutoStacc: ${contactUrl}`,
+      html: layout(head, para(body) + para("Wasn't you? Change your password now and contact AutoStacc.") + button(contactUrl, "Contact AutoStacc"))
+    };
+  },
+
   // A followed project put out something new (sent from the Control Center's Products tab).
   "new-release": ({ project, title, description, url, settingsUrl }) => ({
     subject: `New from ${project}: ${title}`,

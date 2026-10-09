@@ -96,7 +96,7 @@ window.LEGAL = [
       { id: "rights", heading: "Your choices", body: [
         { list: [
           "See and download your data: [Settings › Privacy and data](/settings/privacy).",
-          "Correct your name: [Settings › Profile](/settings/profile). Your email can't be changed yet, because purchases are tied to it.",
+          "Correct your name or change your email: [Settings › Profile](/settings/profile). A new email is confirmed by a link sent to it, and the old address is told.",
           "Stop optional emails: [Settings › Emails](/settings/email).",
           "Delete your account: [Settings › Privacy and data](/settings/privacy). Your sign-ins, follows, votes and choices are erased, your library stops downloading, and your orders stay only as anonymous sales records.",
           "Anything else: {contact}"
