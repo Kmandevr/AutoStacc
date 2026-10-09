@@ -11,7 +11,9 @@ permissions:
   contents: read
 jobs:
   # Two jobs run side by side (the browser suite used to wait for the API suite), so a pull request waits for the
-  # slower one, not the sum. The job named `store` keeps its name for anything that requires it.
+  # slower one, not the sum. Inside each, the suite's groups also run in parallel, each with its own local store
+  # (API: accounts, payments; browser: flows, layout, features). The job named `store` keeps its name for anything
+  # that requires it.
   store:
     runs-on: ubuntu-latest
     timeout-minutes: 30
