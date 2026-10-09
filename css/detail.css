@@ -88,3 +88,6 @@
 .product-info section.license-box { padding: 18px 20px; }
 /* computers: the artwork stays in view while the details scroll */
 @media (min-width: 861px) { .product > .product-art { position: sticky; top: 80px; } }
+/* a fact the store fills in later (download size) sits in a wrapper that keeps the dt/dd grid */
+.facts > div { display: contents; }
+.facts > div[hidden] { display: none; }

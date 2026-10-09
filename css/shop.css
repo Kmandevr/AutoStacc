@@ -208,6 +208,34 @@ a.cover:hover { color: #fff; }
   .shop-search { margin-bottom: 16px; }
   .shop-spotlight:not(:empty) { margin-bottom: 22px; }
 }
-.card.selected .card-desc { flex: 0; font-size: 1rem; }
+.card.selected .card-desc { font-size: 1rem; }
 .card.selected .card-foot { margin-top: auto; padding-top: 14px; }
 .shop-how .small-print a { display: inline-block; padding-block: 2px; }
+
+/* ---------- labels on cards: formats, genre, download size (filled by js/store.js) ---------- */
+.card-labels { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 0; padding: 0; }
+.card-labels li { padding: 2px 8px; font-size: .75rem; line-height: 1.5; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+.card-labels .label-format { color: var(--text); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.card-labels .label-size { font-family: var(--mono); }
+.card-labels li[hidden] { display: none; }
+.card-body .card-why { flex: none; font-size: .85rem; color: var(--accent-2); }
+.card-body .card-why::before { content: "★ "; }
+.card-body .card-by { flex: none; }
+
+/* ---------- sort menu and "Picked for you" ---------- */
+.shop-sort { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; color: var(--muted); font-size: .9rem; }
+.shop-sort select { min-height: 40px; padding: 6px 10px; font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.shop-foryou:not(:empty) { margin: 0 0 30px; }
+.shop-foryou-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
+.shop-foryou-head .shop-label { margin: 0; font-size: .8rem; }
+.shop-foryou-head p, .shop-foryou-off { margin: 0; }
+.shop-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 22px; }
+@media (max-width: 600px) {
+  .shop-sort { margin-left: 0; flex-basis: 100%; }
+  .shop-sort select { flex: 1; min-height: 44px; }
+  .shop-picks { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 78%; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -18px; padding: 4px 18px 10px; }
+  .shop-picks .card { scroll-snap-align: start; }
+}
+/* descriptions keep their natural height (clamped to 3 lines); the price row sits at the bottom of every card */
+.card-body .card-desc { flex: none; }
+.card-body .card-foot { margin-top: auto; padding-top: 10px; }
