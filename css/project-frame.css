@@ -96,3 +96,26 @@
 @media (max-width: 360px) {
   .as-home span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
+
+/* ---------- a skinned project as a card (js/project-frame.js) ---------- */
+/* On AutoStacc's light pages the project is a rounded card with soft layered shadows and a hairline edge, so its dark
+   screen sits on the page instead of cutting across it. Dark mode keeps it full-bleed, as it always was. `overflow: clip`
+   (not hidden) rounds the corners and keeps the header sticky. */
+.project-card {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: clamp(8px, 2vw, 24px);
+  border-radius: 18px;
+  overflow: clip;
+  border: 1px solid rgba(22, 26, 34, .22);
+  box-shadow: 0 1px 2px rgba(22, 26, 34, .08), 0 6px 14px rgba(22, 26, 34, .1), 0 22px 44px rgba(22, 26, 34, .12);
+}
+/* the skin's rolling scanline band is fixed to the window; inside the card it is pinned to the card so it can't spill onto the page */
+.project-card [class*="skin-"]::before { position: absolute; }
+.project-card > main { flex: 1 0 auto; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .project-card { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+}
+:root[data-theme="dark"] .project-card { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
