@@ -51,10 +51,22 @@
       const p = state.products[el.dataset.status];
       if (p) el.textContent = p.owned ? "In Your Stacc" : p.available ? "Available now" : "Unavailable";
     });
+    // Cards say what they are at a glance (styles: css/shop.css), and the store says how much of it is already yours.
+    document.querySelectorAll(".card[data-product]").forEach((el) => {
+      const p = state.products[el.dataset.product];
+      el.classList.toggle("is-owned", Boolean(p && p.owned));
+    });
+    const owned = Object.values(state.products).filter((p) => p.owned).length;
+    document.querySelectorAll("[data-owned-summary]").forEach((el) => {
+      el.hidden = !owned;
+      if (owned) el.innerHTML = `You already own ${owned} of these. <a href="/library">Open Your Stacc</a>`;
+    });
   }
 
   async function load() {
-    const ids = [...new Set(slots().map((el) => el.dataset.buy))];
+    // On the store page, every catalog item: filters and search draw cards that weren't on screen at first.
+    const all = document.querySelector("[data-shop][data-url]") ? (window.PRODUCTS || []).map((p) => p.id) : [];
+    const ids = [...new Set([...slots().map((el) => el.dataset.buy), ...all])];
     const res = await api(`/api/products/state?ids=${encodeURIComponent(ids.join(","))}`);
     if (res.ok) state = res.data;
     paint();

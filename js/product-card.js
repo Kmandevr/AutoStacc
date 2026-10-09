@@ -12,8 +12,9 @@
   // hue picks a green or purple glow).
   const tint = (hue = 300) => (hue >= 90 && hue < 210 ? "green" : "purple");
 
-  // level: heading level, so the card sits under its section. selected: the item opened at the top of the store.
-  function productCard(p, { level = 3, selected = false } = {}) {
+  // level: heading level, so the card sits under its section. selected: the item opened large at the top of the store.
+  // label: what the large card is called ("Selected" by default, "Featured" for the store's spotlight).
+  function productCard(p, { level = 3, selected = false, label: kicker = "Selected" } = {}) {
     // Static fallback; js/store.js swaps in the live control (Add to cart, OWNED, ...).
     const button = p.draft
       ? `<span class="btn" aria-disabled="true">Coming soon</span>`
@@ -21,13 +22,13 @@
     const by = projectName(p.project);
     return `
       <article class="card${selected ? " selected" : ""} ${GS.look(p.project)}" data-product="${e(p.id)}">
-        <div class="cover tint-${tint(p.hue)}" data-track="${e((TYPES[p.type] || {}).track || "")}"><span>${e(p.title.split(" — ")[0])}</span></div>
+        <a class="cover tint-${tint(p.hue)}" href="${e(GS.shopItemPath(p))}" data-select="${e(p.id)}" data-track="${e((TYPES[p.type] || {}).track || "")}" tabindex="-1" aria-hidden="true"><span>${e(p.title.split(" — ")[0])}</span></a>
         <div class="card-body">
-          <span class="tag">${selected ? "Selected · " : ""}${e(label(p))}</span>
+          <span class="tag">${selected ? `${e(kicker)} · ` : ""}${e(label(p))}</span>
           <h${level}><a href="${e(GS.shopItemPath(p))}" data-select="${e(p.id)}">${e(p.title)}</a></h${level}>
           ${by ? `<p class="card-by">by ${e(by)}</p>` : ""}
-          <p>${e(p.description)}</p>
-          <a class="card-more" href="/shop/${e(p.id)}">Details<span class="sr-only"> about ${e(p.title)}</span></a>
+          <p class="card-desc">${e(p.description)}</p>
+          <a class="card-more" href="/shop/${e(p.id)}">${selected ? "Everything about it" : "Details"}<span class="sr-only"> about ${e(p.title)}</span> →</a>
           <div class="card-foot">
             <span class="price" data-price="${e(p.id)}">${p.price ? money(p.price) : "Free"}</span>
             <div class="buy" data-buy="${e(p.id)}">${button}</div>
