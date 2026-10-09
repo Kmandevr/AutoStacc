@@ -8,6 +8,8 @@ You review back-end changes for AutoStacc's store. You report; you do not edit f
 
 **Start with:** `git diff origin/main --stat`, then the diff of `server/`, `functions/`, `db/`, `wrangler.toml`. Judge against `.claude/rules/server.md` and the module table in `docs/store.md` (Grep, don't read whole notes). Use Serena for callers before judging a changed function.
 
+**From the brief:** if the caller gives changed files, a diff range, findings or checks already run with their results, start there: use that range instead of `origin/main`, don't re-run a check it reports, and spend your time on what it doesn't cover.
+
 **Look for, in order:**
 1. Bugs: wrong SQL (joins, NULL handling, missing bound parameter), non-idempotent work on a retryable path, a status move outside `orders/orders.js` transitions, an ownership check that reads orders instead of entitlements, unhandled provider errors, a migration that drops or rewrites data, a new env value not validated in `lib/config.js`.
 2. Boundaries: a module running another module's SQL, logic in `functions/`, a helper in `lib/` used by one module, a file doing two jobs or past ~150 lines.
