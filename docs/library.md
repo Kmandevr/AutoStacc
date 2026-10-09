@@ -21,7 +21,7 @@ updated: 2026-10-09
 - **By content type:** MIDI, Samples, Loops, Presets, … each with a count, across every project, each file showing where it came from.
 - **Filters:** project, content type and format apply to both views.
 
-Owned products with no deliverable file yet are listed under **On the way**. Projects not in `data/projects.js` (Studio projects) are grouped as "Other". Markup is `js/library-view.js` (`GS.libraryView`); `js/library.js` also redeems a guest receipt key (`/library#key=...`).
+Owned products with no deliverable file yet are listed under **On the way**. Projects not in `data/projects.js` (Studio projects) take their name from the store (`projectName` on each `/api/library` item), and every item links to its product page (`path`: `/shop/<id>`, or `/product?p=<id>` for a Studio product). Markup is `js/library-view.js` (`GS.libraryView`); `js/library.js` also redeems a guest receipt key (`/library#key=...`).
 
 Both views are built from the same asset objects (`GS.stacc.tree`, `GS.stacc.byKind`); unit tests (`test/unit/stacc-model.test.js`) check that the same object is reached through both.
 

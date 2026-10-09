@@ -8,6 +8,7 @@ import { paymentProvider } from "../payments/index.js";
 import { syncPayoutAccount } from "../payments/connect.js";
 import { earningsOf } from "../revenue/earnings.js";
 import { requestPayout, payoutsOf, publicPayout } from "../revenue/payouts.js";
+import { alertAdmins } from "../email/alerts.js";
 
 const owner = async (app, creatorId) => {
   const user = await requireUser(app);
@@ -21,6 +22,9 @@ async function earnings(app, { creatorId }) {
   return json({ earnings: e, payouts: payouts.map((p) => publicPayout(p)) }, 200, { "Cache-Control": "no-store" });
 }
 
+const alertPayout = (app, creator, r) => alertAdmins(app, { key: `payout:${r.id}`, title: "a creator asked for a payout",
+  lines: [`${creator.name} (/${creator.slug}) asked for a payout of $${(r.amountCents / 100).toFixed(2)}.`, "Pay or decline it in the Control Center, Payouts."] });
+
 async function ask(app, { creatorId }) {
   const { user, creator, livemode } = await owner(app, creatorId);
   await limit(app, "studio-payout", 10, 3600);
@@ -31,10 +35,12 @@ async function ask(app, { creatorId }) {
     const acct = await syncPayoutAccount(app, creator);
     if (!acct.payoutsEnabled) fail(409, "payouts_not_ready", "Finish setting up your payout account first (Payout account, above), then ask again.");
     const r = await requestPayout(app.db, { creator, user, details: `Stripe account ${creator.stripe_account_id}`, livemode, stripeAccountId: creator.stripe_account_id });
+    await alertPayout(app, creator, r);
     return json({ payout: r }, 201);
   }
   const details = str(body.details, "details", { min: 5, max: 200 }).trim();
   const r = await requestPayout(app.db, { creator, user, details, livemode });
+  await alertPayout(app, creator, r);
   return json({ payout: r }, 201);
 }
 

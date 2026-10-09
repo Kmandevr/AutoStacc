@@ -2,7 +2,7 @@
 // refunded by the customer themselves, and everything else (downloaded, too old, someone else's, unpaid, twice) is refused.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { Client, sql, unique } from "../support/client.js";
+import { Client, sql, unique, outbox } from "../support/client.js";
 import { newBuyer, mockBuy, stripeCheckout, stripePay } from "../support/flows.js";
 
 export default (ctx) => describe("refunds", () => {
@@ -10,7 +10,7 @@ export default (ctx) => describe("refunds", () => {
   const refund = (c, orderId) => c.post(`/api/orders/${orderId}/refund`, {});
 
   test("an unused paid order is refunded by its buyer; the files leave their library; a second try is refused", async () => {
-    const { c } = await newBuyer(ctx.mock.url, "rf-ok");
+    const { c, user } = await newBuyer(ctx.mock.url, "rf-ok");
     const order = await mockBuy(c, [{ productId: "serum-presets" }]);
     const before = await c.get(`/api/orders/${order.orderId}`);
     assert.equal(before.data.order.refund.eligible, true);
@@ -22,6 +22,9 @@ export default (ctx) => describe("refunds", () => {
     const again = await refund(c, order.orderId);
     assert.equal(again.status, 409);
     assert.equal(again.data.error.code, "not_refundable");
+    const mails = (await outbox(ctx.mock.url, user.email)).filter((m) => m.kind === "refund-confirmation");
+    assert.equal(mails.length, 1, "one refund confirmation, however often it's asked");
+    assert.match(mails[0].body_text, new RegExp(order.orderId));
   });
 
   test("anything downloaded from the order can't be refunded here", async () => {

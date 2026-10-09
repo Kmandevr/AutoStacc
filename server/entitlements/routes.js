@@ -7,10 +7,11 @@ import { parseJson } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
-import { getProduct, getProducts, isFree, isVisible } from "../catalog/products.js";
+import { getProduct, getProducts, isFree, isVisible, productPath } from "../catalog/products.js";
 import { limit } from "../lib/ratelimit.js";
 import { deliverableFiles } from "../files/files.js";
 import { autoStacc, AUTO_NOTE } from "./autostacc.js";
+import { projectNames } from "../creators/creators.js";
 
 async function library(app) {
   const access = await requireAccess(app);
@@ -19,6 +20,8 @@ async function library(app) {
   const productIds = [...new Set(ents.map((e) => e.product_id))];
   const [rows, files] = await Promise.all([getProducts(app.db, productIds), deliverableFiles(app.db, productIds)]);
   const products = new Map(rows.map((p) => [p.id, p]));
+  // Studio projects aren't in data/projects.js, so the page gets their names from here.
+  const names = new Map((await projectNames(app.db, [...new Set(rows.map((p) => p.project_id).filter(Boolean))])).map((r) => [r.id, r.name]));
   const items = productIds.filter((pid) => products.has(pid)).map((pid) => {
     const p = products.get(pid);
     const mine = ents.filter((e) => e.product_id === pid);
@@ -27,6 +30,8 @@ async function library(app) {
       title: p.title,
       type: p.type,
       projectId: p.project_id || null,
+      projectName: names.get(p.project_id) || null,
+      path: productPath(p),
       pacs: parseJson(p.pacs, []),
       artwork: p.artwork,
       metadata: parseJson(p.metadata, {}),

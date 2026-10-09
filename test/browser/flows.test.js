@@ -147,7 +147,7 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(PHONE);
     await signUp(page, unique("stacc"));
     await page.goto("/library");
-    await page.waitForSelector("text=Nothing owned yet.");
+    await page.waitForSelector("text=Nothing Stacc'd yet.");
     await page.goto("/projects");
     await page.click("[data-follow='glitches-and-stitches']");
     await page.check("[data-auto='glitches-and-stitches']");
@@ -233,7 +233,7 @@ describe("store in the browser", () => {
     await page.waitForSelector("text=Email confirmed");
     await page.waitForSelector("text=Nothing in Your Stacc yet.");
     await page.goto("/library");
-    await page.waitForSelector("text=Nothing owned yet.");
+    await page.waitForSelector("text=Nothing Stacc'd yet.");
     await ctx.close();
   });
 
@@ -508,7 +508,7 @@ describe("store in the browser", () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, unique("app"));
     await page.waitForSelector("h1:has-text('Dashboard')");
-    await page.waitForSelector("[data-dashboard-stacc] >> text=Nothing in Your Stacc yet.");
+    await page.waitForSelector("[data-stacc-glance] >> text=Nothing in Your Stacc yet.");
     assert.ok(await page.locator(".side a[href='/dashboard'][aria-current=page]").isVisible(), "the app group in the sidebar");
     assert.ok(await page.locator(".side a[href='/library']").isVisible());
     assert.equal(await page.locator(".topbar a[href='/login']").isVisible(), false, "no Log in once signed in");
@@ -530,7 +530,7 @@ describe("store in the browser", () => {
     assert.ok(await page.locator("main a[href='/dashboard']").first().isVisible(), "the cover offers the dashboard");
     assert.equal(await page.locator("main a[href='/login#signup']").first().isVisible(), false);
     for (const [p, ready] of [["/settings/orders", "text=No orders yet."], ["/settings/security", "[data-form=password]"], ["/settings/email", ".switch"],
-      ["/settings/privacy", "[data-export-now]"], ["/library", "text=Nothing owned yet."]]) {
+      ["/settings/privacy", "[data-export-now]"], ["/library", "text=Nothing Stacc'd yet."]]) {
       await page.goto(p);
       await page.waitForSelector(ready);
       assert.equal(new URL(page.url()).pathname, p);

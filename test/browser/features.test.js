@@ -1,6 +1,6 @@
 // Browser tests for staff and creator features against its own local store: impersonation, sales and promo codes, the
 // Studio (pages and selling), the Control Center on a phone, the phone quick-links bar, Settings › Orders, the skinned
-// project card and guest refunds. Tests run in order: the Control Center test signs in as the admin the impersonation
+// project card, guest refunds and drop-in modules placed twice on one page. Tests run in order: the Control Center test signs in as the admin the impersonation
 // test created. Usage: npm run test:browser.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -321,6 +321,35 @@ describe("features in the browser", () => {
     await page.waitForSelector("text=Payment confirmed");
     await page.waitForTimeout(500);
     assert.equal(await page.locator("[data-refund]").count(), 0, "no refund once something was downloaded");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("drop-in modules: a second Listen player and newsletter sign-up on the same page each render and work on their own", async () => {
+    const { ctx, page } = await open(DESK);
+    // A copy of each module, placed by attributes alone (the newsletter one empty, so it draws the standard form).
+    const copies = `<section data-copies><div class="wrap"><div class="listen" data-listen data-links data-project="glitches-and-stitches"></div>
+      <div data-newsletter data-project="glitches-and-stitches"></div></div></section></main>`;
+    await page.route((url) => url.pathname === "/autostacc/glitches-and-stitches", async (route) => {
+      const res = await route.fetch();
+      route.fulfill({ response: res, body: (await res.text()).replace("</main>", copies) });
+    });
+    await page.goto("/autostacc/glitches-and-stitches");
+    assert.equal(await page.locator("[data-listen]").count(), 2);
+    assert.equal(await page.locator("[data-newsletter]").count(), 2);
+    for (const box of await page.locator("[data-listen]").all()) {
+      await box.locator(".listen-player > *").first().waitFor();
+      assert.ok(await box.locator(".platforms a[href='/autostacc/glitches-and-stitches/music/hail']").count(), "each player lists its release's links");
+    }
+    for (const box of await page.locator("[data-newsletter]").all()) assert.equal(await box.locator("form input[type=email]").count(), 1);
+    // Signing up in the copy answers in the copy only.
+    await page.fill("[data-copies] [data-newsletter] input[type=email]", unique("modules"));
+    await page.click("[data-copies] [data-newsletter] button[type=submit]");
+    await page.waitForFunction(() => {
+      const text = document.querySelector("[data-copies] [data-newsletter] .form-msg").textContent;
+      return text && text !== "Signing you up…";
+    });
+    assert.equal(await page.locator("#newsletter [data-newsletter] .form-msg").innerText(), "");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

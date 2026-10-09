@@ -1,6 +1,6 @@
 // Studio products (GS.studioProducts, for js/studio.js): a creator's products for one project. Make one (always starts
-// as a draft), change its name, description, kind, price (0 = free), what's inside and cover art, upload the files
-// buyers get, then put it on sale, pause sales or remove it. The server checks every field and limit
+// as a draft), change its name, description, kind, price (0 = free), what's inside, tags and cover art, upload the files
+// buyers get and a preview clip, then put it on sale, pause sales or remove it. The server checks every field and limit
 // (server/studio/products.js) and decides what is on sale; this only shows its answers. Needs js/util.js.
 (function () {
   "use strict";
@@ -26,6 +26,7 @@
         <div class="field"><label>Price in dollars (0 = free)<input name="price" type="number" inputmode="decimal" min="0" max="500" step="0.01" required value="${dollars(p.priceCents ?? 500)}"></label></div>
       </div>
       <div class="field"><label>What's inside (one line each)<textarea name="includes" rows="3">${e((p.includes || []).join("\n"))}</textarea></label></div>
+      <div class="field"><label>Tags (up to 8, separated by spaces or commas)<input name="tags" maxlength="220" value="${e((p.tags || []).join(", "))}" placeholder="drums, lo-fi, one-shots"></label></div>
       ${p.id ? `<div class="field"><label>Cover art ${artSelect(p.artwork)}</label><p class="small-print">Upload images in the site editor, then pick one here.</p></div>` : ""}`;
 
     const card = (p) => `
@@ -41,7 +42,10 @@
           <h4>Files buyers get</h4>
           <ul class="studio-files">${p.files.map((f) => `<li>${e(f.filename)} · ${size(f.sizeBytes)} <span class="tag">${f.status === "pending" ? "Waiting for AutoStacc to check it" : f.status === "published" ? "Ready" : e(f.status)}</span>
             <button class="link-btn" type="button" data-file="${e(f.id)}" aria-label="Remove ${e(f.filename)}">Remove</button></li>`).join("") || "<li>No files yet. A product needs at least one before it can go on sale.</li>"}</ul>
-          <label class="btn ghost small studio-upload">Add a file<input type="file" data-upload hidden></label>`}
+          <label class="btn ghost small studio-upload">Add a file<input type="file" data-upload hidden></label>
+          <h4>Preview clip</h4>
+          ${p.preview ? `<audio controls preload="none" src="${e(p.preview)}"></audio> <button class="link-btn" type="button" data-act-preview="remove">Remove preview</button>` : '<p class="small-print">A short MP3, M4A, OGG or WAV (under 20 MB) that anyone can play on the product page.</p>'}
+          <label class="btn ghost small studio-upload">${p.preview ? "Replace preview" : "Add a preview"}<input type="file" accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,.mp3,.m4a,.ogg,.wav" data-upload-preview hidden></label>`}
         <p class="msg" role="status" hidden></p>
       </li>`;
 
@@ -62,7 +66,8 @@
     }
 
     const read = (f) => ({ title: f.title.value, description: f.description.value, type: f.type.value, priceCents: toCents(f.price.value),
-      includes: f.includes.value.split("\n").map((s) => s.trim()).filter(Boolean), ...(f.artworkId ? { artworkId: f.artworkId.value || null } : {}) });
+      includes: f.includes.value.split("\n").map((s) => s.trim()).filter(Boolean),
+      tags: [...new Set(f.tags.value.toLowerCase().split(/[\s,]+/).map((s) => s.trim()).filter(Boolean))], ...(f.artworkId ? { artworkId: f.artworkId.value || null } : {}) });
 
     root.onsubmit = async (ev) => {
       const f = ev.target.closest("form[data-form]");
@@ -93,6 +98,11 @@
         if (!res.ok) { act.disabled = false; return say(card, res.error.message, true); }
         return reload();
       }
+      if (ev.target.closest("[data-act-preview]") && card) {
+        const res = await api(`/api/studio/products/${encodeURIComponent(card.dataset.id)}/preview`, { method: "DELETE" });
+        if (!res.ok) return say(card, res.error.message, true);
+        return reload();
+      }
       const file = ev.target.closest("[data-file]");
       if (file && card) {
         file.disabled = true;
@@ -103,14 +113,15 @@
     };
 
     root.onchange = async (ev) => {
-      const input = ev.target.closest("[data-upload]");
+      const input = ev.target.closest("[data-upload], [data-upload-preview]");
       const card = ev.target.closest(".studio-product");
       if (!input || !card || !input.files[0]) return;
       const file = input.files[0];
+      const what = input.hasAttribute("data-upload-preview") ? "preview" : "files";
       say(card, `Uploading ${file.name}…`);
       input.disabled = true;
       try {
-        const res = await fetch(`/api/studio/products/${encodeURIComponent(card.dataset.id)}/files?filename=${encodeURIComponent(file.name)}`,
+        const res = await fetch(`/api/studio/products/${encodeURIComponent(card.dataset.id)}/${what}?filename=${encodeURIComponent(file.name)}`,
           { method: "PUT", body: file, credentials: "same-origin", headers: { "Content-Type": file.type || "application/octet-stream" } });
         const out = await res.json().catch(() => ({}));
         if (!res.ok) { input.disabled = false; input.value = ""; return say(card, (out.error || {}).message || "Upload failed.", true); }

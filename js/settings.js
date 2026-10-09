@@ -13,9 +13,9 @@
   const root = $("#settings-app", layout);
 
   const SECTIONS = {
-    profile: ["Profile", "Your name, and the email your purchases are tied to."],
+    profile: ["Profile", "Your name, and the email your Stacc is tied to."],
     security: ["Security", "Your password, and every device signed in to your account."],
-    orders: ["Orders", "Every order and its status. What you own is in Your Stacc."],
+    orders: ["Orders", "Every order and its status. Everything you've Stacc'd is in Your Stacc."],
     email: ["Emails", "Receipts and security emails always come. Everything else is up to you."],
     privacy: ["Privacy and data", "Download everything AutoStacc holds about you, or delete your account."]
   };

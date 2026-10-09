@@ -161,7 +161,7 @@ export default (ctx) => describe("payouts", () => {
     fake().completeOnboarding(acct);
     const asked = await request(s);
     assert.equal(asked.status, 201, JSON.stringify(asked.data));
-    assert.equal(asked.data.payout.amountCents, 2000);
+    assert.equal(asked.data.payout.amountCents, 1600);
     assert.equal((await request(s)).status, 409, "one open request at a time");
     const id = asked.data.payout.id;
 
@@ -173,12 +173,12 @@ export default (ctx) => describe("payouts", () => {
     assert.equal(ok.status, 200, JSON.stringify(ok.data));
     assert.equal(fake().transfers.length, sent + 1);
     const t = fake().transfers.at(-1);
-    assert.deepEqual([t.amount, t.destination, t.key], [2000, acct, `Bearer ${MARKETPLACE_KEY}`]);
+    assert.deepEqual([t.amount, t.destination, t.key], [1600, acct, `Bearer ${MARKETPLACE_KEY}`]);
     assert.deepEqual(db(`SELECT status, transfer_id FROM payout_requests WHERE id = '${id}'`), [{ status: "paid", transfer_id: t.id }]);
     assert.equal((await settle(id, "paid")).status, 404, "settled once");
     assert.equal(fake().transfers.length, sent + 1, "a second Send sends nothing");
     const e = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;
-    assert.deepEqual([e.paidOutCents, e.availableCents, e.balanceCents], [2000, 0, 0]);
+    assert.deepEqual([e.paidOutCents, e.availableCents, e.balanceCents], [1600, 0, 0]);
     void o;
   });
 
@@ -231,7 +231,7 @@ export default (ctx) => describe("payouts", () => {
     const res = await sendWebhook(new Client(base()), refund, MARKETPLACE_WEBHOOK_SECRET, undefined, "/api/webhooks/stripe-marketplace");
     assert.equal(res.data.outcome, "refunded");
     let e = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;
-    assert.deepEqual([e.paidOutCents, e.availableCents, e.balanceCents], [2000, 0, -2000], "owes the refunded share");
+    assert.deepEqual([e.paidOutCents, e.availableCents, e.balanceCents], [1600, 0, -1600], "owes the refunded share");
     assert.equal((await request(s)).status, 409, "nothing to ask for");
 
     await sale(s);
@@ -239,6 +239,6 @@ export default (ctx) => describe("payouts", () => {
     assert.deepEqual([e.availableCents, e.balanceCents], [0, 0], "the new sale only covers the refund");
     await sale(s);
     e = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;
-    assert.deepEqual([e.availableCents, e.balanceCents], [2000, 2000], "after that, money is available again");
+    assert.deepEqual([e.availableCents, e.balanceCents], [1600, 1600], "after that, money is available again");
   });
 });

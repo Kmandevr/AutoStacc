@@ -37,6 +37,14 @@ export async function sendConfirmation(app, order, items, { resend = false } = {
     { dedupeKey: resend ? null : dedupeKey });
 }
 
+// After a full refund: tells the buyer once (dedupe key), with what was refunded and that the files are gone.
+export async function sendRefundNotice(app, orderId, amountCents) {
+  const order = await getOrder(app.db, orderId);
+  if (!order || order.status !== "refunded" || /@deleted\.invalid$/.test(order.email)) return;
+  return sendEmail(app, "refund-confirmation", order.email, { order, items: await orderItems(app.db, order.id), amountCents: amountCents ?? order.total_cents },
+    { dedupeKey: `refund-confirmation:${order.id}` });
+}
+
 export const unfulfil = (app, orderId, reason) => revokeBySource(app.db, "purchase", orderId, reason);
 // After a chargeback is won: the order's purchase grants come back.
 export const restore = (app, orderId) => restoreBySource(app.db, "purchase", orderId, "disputed");

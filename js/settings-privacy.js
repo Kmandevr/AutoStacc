@@ -22,7 +22,7 @@
       <section class="panel danger" data-delete aria-labelledby="delete-title">
         <h2 id="delete-title">Delete your account</h2><p class="msg" role="status"></p>
         <ul class="small-print">
-          <li>You're signed out everywhere, and nothing you own can be downloaded again.</li>
+          <li>You're signed out everywhere, and nothing you've Stacc'd can be downloaded again.</li>
           <li>Your follows, votes and email choices are deleted.</li>
           <li>Your orders are kept as anonymous sales records (for tax and refunds), no longer linked to you.</li>
           <li>This can't be undone. Download your data first if you want a copy.</li>
