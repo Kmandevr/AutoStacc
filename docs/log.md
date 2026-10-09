@@ -1,13 +1,14 @@
 ---
 title: Log
 summary: Dated history of changes, newest first.
-updated: 2026-10-08
+updated: 2026-10-09
 ---
 
 # Log
 
 Newest first.
 
+- 2026-10-09: Independent work runs at the same time. verify-site's `check.js` runs static checks, page tabs (a pool, `VERIFY_CONCURRENCY`, default CPU count 2 to 6) and the crawl together with the same output, 73 s to 19 s; its phone-menu check now uses the tab bar's Menu tab (`[data-tab-menu]`), which cleared 28 stale warnings. The seo-check, release-check, store-check and accessibility-review skills start their independent checks and reviewer agents together; the `change` workflow opens owner-question issues during Build, whatever verification finds. `scripts/deploy-check.js` checks 8 URLs at a time; `scripts/seo-test.js` runs the build check beside its own; `scripts/cloudflare.js` sets up D1, R2 and secrets side by side (migrations, catalog, email log stay in order). Polls and the admin promotions list load their requests together. Still to do once creator payouts merge: the API and browser suites in parallel, each group with its own store and ports.
 - 2026-10-09: A skinned project (Glitches & Stitches) sits in a card on light pages: its header, page and footer share a wrapper (`js/project-frame.js`) that is rounded, shadowed and edged (`css/project-frame.css`), and its black is a soft dark gray `#14151a` in light mode (`css/projects/glitches-and-stitches/look.css`). Dark mode is unchanged (full-bleed true black). The skin's rolling scanline band is pinned inside the card.
 - 2026-10-09: Guests (and signed-in customers) can refund an unused paid order from the confirmation page `/checkout?order=…` within 14 days (`js/checkout.js`); the store's eligibility rule is unchanged.
 - 2026-10-09: Stripe tax codes are per kind of product (`server/payments/tax-codes.js`): audio kinds use Digital Audio Works, visuals Digital Finished Artwork, VJ loops Audio Visual Works, presets and other the general code. Owner to confirm with a tax adviser.
