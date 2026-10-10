@@ -6,6 +6,27 @@ updated: 2026-10-10
 
 # Decisions
 
+## 2026-10-10: Engine Phase 0 measurements confirm Rust, zlib-rs, no SIMD
+
+Measured on a 1 GB synthetic pack (918 files; numbers in [engine](engine.md)): listing is instant (10 ms native, 0.7 s in Chromium), and decompression is what costs. Native and WebAssembly results are identical. zlib-rs replaced miniz_oxide (about 20% faster, same results). WebAssembly SIMD brought nothing measurable, so it's off and older browsers keep working. In Chromium, 4 Web Workers check a 1 GB pack in about 8 s, far less than the upload takes, so browser-side checking is kept. The engine's WebAssembly build is 389 KB (about 180 KB gzipped). With the `basic` Container's limits the engine checks a 1 GB pack in about 20 s using 7 MB of memory and is healthy 0.5 s after starting, so the Container now sleeps 15 s after its last job instead of 30 s (it is billed while awake). The engine Worker is a separate Worker because Pages Functions can't consume Queues or own Containers; the container has no internet except R2's S3 endpoint.
+
+## 2026-10-10: Pack Builder, asset engine and selective downloads (planned)
+
+Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLEMENTED).
+
+- **Packs are assets, not ZIPs.** A Pac holds folders and individually identified assets with versions and provenance; an uploaded ZIP is unpacked, every file stored byte for byte and checked by SHA-256, and the ZIP discarded. Originals are never converted, resampled or recompressed.
+- **Who:** the admin and Studio creators, in the first release. Moderation is **automated review**: clean versions publish; flagged ones wait for an admin with reasons.
+- **Buying stays per product.** Customers download any subset they own (file, folder, Pac, selection across products) as one store-only ZIP; checkout, entitlements and download authorization are unchanged.
+- **Revisions (decided after the vision, §6):** buyers keep whatever they downloaded. Files are stored once, git-style, so unchanged files cost nothing across versions. A file a revision removes or replaces stays downloadable to buyers for 30 days with an "Updated" notice and date, then only the latest version remains: keeping every version of every file is too much storage (owner). Deltas inside files only if measurements show they help.
+- **Library label:** "Samples" becomes "One-shots"; old values fold to it.
+- **Creator storage:** 500 MB free per creator; extra storage will be paid by the creator later (not built).
+- **Product pages** show the contents tree and stats before purchase; store filters come from the files, not hand-entered tags.
+- **Personal collections, tags and saved searches** in Your Stacc in the first release.
+- **Engine: Rust, run natively in a Cloudflare Container** (server-side from the start, so processing continues with the tab closed), driven by a Queue and a small engine Worker; the site and API stay JavaScript. Chosen over C++ (memory-unsafe parsing of hostile files; best audio-analysis libraries are GPL/AGPL), Python (large image, slow cold start) and Go (weak audio libraries).
+- **Replaceable:** the engine is reached only through a versioned JSON job contract with conformance fixtures, so another implementation can replace it; each feature (analysis, bundles, derived facets, contents tree) can be switched off without affecting uploads, purchases or single downloads.
+- **Browser side too (rev. 4):** the same Rust engine is compiled to WebAssembly for the Pack Builder: the pack's tree and problems show before uploading, files upload one by one, and revisions upload only changed files. The Container re-checks everything and stays the authority; old browsers upload the whole ZIP instead.
+- **Full-pack ZIP cache** exists behind a switch, off by default: streaming a store-only ZIP costs almost nothing, while a cached copy doubles the pack's storage; switched on only if measurements show it helps.
+- **Cost:** Workers Paid ($5/month), staying inside its included usage: a `basic` Container (¼ vCPU, 1 GiB), one job at a time, sleeping after 30 s; a budget guard alerts at 80% and pauses processing at 95% of any allowance; total R2 storage capped at 9 GB of the free 10 GB until the owner raises it.
 ## 2026-10-10: The vision document guides the build
 
 The owner supplied a vision and product-principles document and asked that it guide the build. It lives in [vision](vision.md), named apart from [identity](identity.md) (the Glitches & Stitches project). It labels each point as established direction, working proposal or open question; agents follow the first, may plan with the second, and ask about the third. Earlier dated decisions here (e.g. the 20% fee, per-kind licences) stand until the owner changes them.

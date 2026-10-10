@@ -23,6 +23,8 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Shop](shop.md): the catalogue (products, types, prices) and what is still placeholder
 - [Browsing projects and content](browse.md): the projects browser, /explore, the home hub, dashboard sections, Your Stacc search
 - [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
+- [Processing engine](engine.md): the Rust engine (engine/): safe ZIP reading, hashes, formats and header facts, natively and as WebAssembly; benchmarks
+- [Pack Builder and processing engine](packs.md): PLANNED / NOT IMPLEMENTED: packs as folders of verified assets, the Rust engine in a Cloudflare Container, selective downloads, contents-derived facets
 - [Creator pages](creator-pages.md): PLANNED / NOT IMPLEMENTED: blueprint for sandboxed creator HTML/CSS (later JavaScript) on project pages
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
 - [Control Center](admin.md): the owner's admin: statistics and their sources, sales and promo codes, customer preview, support impersonation, test purchases, audit log
