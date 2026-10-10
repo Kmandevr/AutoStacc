@@ -55,3 +55,11 @@ test("storage reads from the engine: allowed buckets only, GET or HEAD, one byte
   assert.equal(read("/autostacc-files/Kick%20%231.wav").status, 400);
   for (const r of ["bytes=5-1", "bytes=0-", "bytes=0-1,4-5", "items=0-1"]) assert.equal(read("/autostacc-files/p.zip", "GET", r).status, 416);
 });
+
+test("a vocabulary rides along to the engine, within a size limit", () => {
+  const vocabulary = { kinds: {}, words: { kind: {}, instrument: {}, midiRole: {} }, keys: [], bpm: { min: 40, max: 250 } };
+  const job = checkJob({ ...ok, vocabulary }, ["autostacc-files"]);
+  assert.deepEqual(engineRequest(job).vocabulary, vocabulary);
+  assert.equal(engineRequest(ok).vocabulary, undefined);
+  for (const bad of [[], "words", null, { big: "x".repeat(70 * 1024) }]) assert.throws(() => checkJob({ ...ok, vocabulary: bad }, ["autostacc-files"]));
+});

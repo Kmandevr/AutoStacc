@@ -1,5 +1,5 @@
 // Smoke test of the deployed engine (docs/engine.md), run by the Engine workflow after a deploy: asks the engine Worker
-// for its health (this starts the Container: cold-start time), queues an inspect job for a conformance case already
+// for its health (this starts the Container: cold-start time), queues an inspect job (with the vocabulary, so suggestions too) for a conformance case already
 // uploaded to R2, waits for the answer and checks it equals the expected one. Prints timings. Needs the Worker's address
 // and ENGINE_ADMIN_TOKEN. Usage: ENGINE_ADMIN_TOKEN=... node scripts/engine-smoke.js <worker-url> <bucket> <key> <case>
 const fs = require("fs");
@@ -32,7 +32,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   if (!health.ok) process.exit(1);
 
   t = Date.now();
-  const queued = await fetch(`${base}/v1/jobs`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ op: "inspect", bucket, key }) });
+  const vocabulary = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "engine/conformance/vocabulary.json"), "utf8"));
+  const queued = await fetch(`${base}/v1/jobs`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ op: "inspect", bucket, key, vocabulary }) });
   const { jobId } = await queued.json();
   if (queued.status !== 202 || !jobId) { console.error(`queueing failed: ${queued.status}`); process.exit(1); }
   fs.writeFileSync("/tmp/smoke-job", jobId); // so the workflow can delete the answer afterwards
@@ -45,7 +46,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const answer = await res.json();
   const totalMs = Date.now() - t;
   if (answer.status === "failed" || res.status !== 200) { console.error(`job ${jobId} ${answer.status || res.status}`); process.exit(1); }
-  const expected = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "engine/conformance/expected", `${name}.inspect.json`), "utf8"));
+  const expected = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "engine/conformance/expected", `${name}.suggest.json`), "utf8"));
   const same = JSON.stringify(normal(answer)) === JSON.stringify(expected);
   console.log(`job ${jobId}: queued to answer ${totalMs} ms; engine ${answer.elapsedMs} ms inside the Container; worker wall ${res.headers.get("x-engine-wall-ms")} ms; waited ${res.headers.get("x-engine-queue-ms")} ms in the queue; attempt ${res.headers.get("x-engine-attempts")}`);
   console.log(same ? `PASS the deployed engine's answer for ${name} equals the expected one` : `FAIL the deployed engine's answer for ${name} differs from the expected one`);

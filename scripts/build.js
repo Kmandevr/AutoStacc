@@ -128,6 +128,10 @@ outputs.set("data/vocabulary.js", `// The store's controlled vocabulary for the 
 window.VOCABULARY = ${JSON.stringify(V.browserVocabulary(), null, 1)};
 `);
 
+// The words the processing engine suggests values from, for its conformance suite (the server sends the same object with
+// each job): engine/conformance/vocabulary.json.
+outputs.set("engine/conformance/vocabulary.json", `${JSON.stringify(V.engineVocabulary(), null, 2)}\n`);
+
 // Kinds of content for the browser (Your Stacc, the admin's kind picker), from the same vocabulary as the engine and store.
 const kindsForBrowser = V.contentTypes();
 outputs.set("data/content-types.js", `// Kinds of content inside Pacs (One-shots, Loops, MIDI, Presets, ...): Your Stacc groups and filters files by them, and

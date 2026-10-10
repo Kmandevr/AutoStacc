@@ -3,6 +3,7 @@
 //   GET  /healthz           → {"ok": true, "engineVersion": …}
 //   POST /v1/jobs {op, source: {bucket, key}, path?}   op = list | inspect | file → the job contract's JSON
 // Local files ({source: {file}}) are accepted only with ENGINE_ALLOW_LOCAL=1 (development and tests).
+use crate::classify::{self, Vocabulary};
 use crate::job::{self, Discard};
 use crate::r2::{R2Config, R2Source};
 use crate::source::FileSource;
@@ -27,6 +28,9 @@ struct Job {
     source: SourceRef,
     #[serde(default)]
     path: Option<String>,
+    /// The words to suggest values from (classify.rs); no suggestions without it.
+    #[serde(default)]
+    vocabulary: Option<Vocabulary>,
 }
 
 fn reply(req: Request, status: u16, body: serde_json::Value) {
@@ -68,13 +72,28 @@ fn run(job: &Job, r2: Option<&R2Config>) -> (u16, serde_json::Value) {
     let limits = Limits::default();
     let result = match job.op.as_str() {
         "list" => job::list_archive(src.as_ref(), &limits)
-            .map(|r| serde_json::to_value(r).unwrap())
+            .map(|mut r| {
+                if let Some(v) = &job.vocabulary {
+                    classify::apply(&mut r, v)
+                }
+                serde_json::to_value(r).unwrap()
+            })
             .map_err(|e| e.code),
         "inspect" => job::inspect_archive(src.as_ref(), &limits, &mut Discard)
-            .map(|r| serde_json::to_value(r).unwrap())
+            .map(|mut r| {
+                if let Some(v) = &job.vocabulary {
+                    classify::apply(&mut r, v)
+                }
+                serde_json::to_value(r).unwrap()
+            })
             .map_err(|e| e.code),
         "file" => job::inspect_file(job.path.as_deref().unwrap_or(""), src.as_ref())
-            .map(|r| serde_json::to_value(r).unwrap())
+            .map(|mut r| {
+                if let Some(v) = &job.vocabulary {
+                    r.suggestions = classify::suggest(&r, v)
+                }
+                serde_json::to_value(r).unwrap()
+            })
             .map_err(|_| "io"),
         _ => return (400, error("unknown_op")),
     };

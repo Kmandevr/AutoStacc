@@ -1,0 +1,93 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "path_traversal",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "../escape.wav",
+   "size": 26504
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "unknown",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "absolute_path",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "/etc/passwd",
+   "size": 1
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "absolute_path",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "C:\\Windows\\evil.txt",
+   "size": 1
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "reserved_name",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "Pack/CON.txt",
+   "size": 1
+  },
+  {
+   "by": "extension",
+   "crc32": 3198768274,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/ok.txt",
+   "sha256": "d14a58bae804a2b80b5b76a010239c88ffca1fc7951a90f8e9131beda1e23c1b",
+   "size": 4,
+   "suggestions": [
+    {
+     "confidence": 0.95,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "format: text"
+     ],
+     "value": "documents"
+    }
+   ]
+  }
+ ],
+ "folders": [
+  "Pack"
+ ],
+ "totalSize": 4,
+ "zip64": false
+}

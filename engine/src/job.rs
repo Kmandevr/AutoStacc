@@ -23,6 +23,9 @@ pub struct FileResult {
     /// Problems found in the archive listing or while extracting; `refused` ones are not imported.
     pub issues: Vec<Issue>,
     pub ignored: bool,
+    /// Values suggested from names and headers (classify.rs), only when the job sent a vocabulary.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub suggestions: Vec<crate::classify::Suggestion>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -78,6 +81,7 @@ fn listing_only(e: &Entry) -> FileResult {
         facts: Facts::default(),
         issues: e.issues.clone(),
         ignored: e.ignored,
+        suggestions: Vec::new(),
     }
 }
 
@@ -229,6 +233,7 @@ pub fn inspect_file(path: &str, src: &dyn Source) -> std::io::Result<FileResult>
         facts,
         issues,
         ignored: false,
+        suggestions: Vec::new(),
     })
 }
 

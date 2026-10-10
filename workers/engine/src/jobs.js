@@ -4,23 +4,35 @@ const OPS = new Set(["list", "inspect", "file"]);
 const ID = /^[a-z0-9_-]{8,64}$/;
 const KEY = /^[A-Za-z0-9!_.*'()/ -]{1,1024}$/;
 
-/** A job as queued: { jobId, op, bucket, key, path? }. Returns the job or throws with a reason. */
+// A vocabulary rides in the queue message (Queues take up to 128 KB); the real one is a few KB.
+const VOCABULARY_MAX = 64 * 1024;
+
+/** A job as queued: { jobId, op, bucket, key, path?, vocabulary? }. Returns the job or throws with a reason. */
 export function checkJob(job, allowedBuckets) {
   if (!job || typeof job !== "object") throw new Error("not an object");
-  const { jobId, op, bucket, key, path } = job;
+  const { jobId, op, bucket, key, path, vocabulary } = job;
   if (!ID.test(String(jobId))) throw new Error("bad jobId");
   if (!OPS.has(op)) throw new Error("bad op");
   if (!allowedBuckets.includes(bucket)) throw new Error("bucket not allowed");
   if (!KEY.test(String(key)) || key.includes("..")) throw new Error("bad key");
   if (path !== undefined && (typeof path !== "string" || path.length > 1024)) throw new Error("bad path");
-  return { jobId, op, bucket, key, ...(path !== undefined ? { path } : {}) };
+  if (vocabulary !== undefined) {
+    if (!vocabulary || typeof vocabulary !== "object" || Array.isArray(vocabulary)) throw new Error("bad vocabulary");
+    if (JSON.stringify(vocabulary).length > VOCABULARY_MAX) throw new Error("vocabulary too large");
+  }
+  return { jobId, op, bucket, key, ...(path !== undefined ? { path } : {}), ...(vocabulary !== undefined ? { vocabulary } : {}) };
 }
 
 export const resultKey = (jobId) => `jobs/${jobId}/result.json`;
 export const failedKey = (jobId) => `jobs/${jobId}/failed.json`;
 
 /** What the engine's HTTP service gets for a job (engine/src/serve.rs). */
-export const engineRequest = (job) => ({ op: job.op, source: { bucket: job.bucket, key: job.key }, ...(job.path ? { path: job.path } : {}) });
+export const engineRequest = (job) => ({
+  op: job.op,
+  source: { bucket: job.bucket, key: job.key },
+  ...(job.path ? { path: job.path } : {}),
+  ...(job.vocabulary ? { vocabulary: job.vocabulary } : {})
+});
 
 /** Constant-time comparison of a presented bearer token with the configured one; false when none is configured. */
 export function tokenMatches(header, expected) {

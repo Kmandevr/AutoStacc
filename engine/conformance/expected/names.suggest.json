@@ -1,0 +1,115 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "signature",
+   "crc32": 1085199330,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 100,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Loops/Kick.wav",
+   "sha256": "f3f24b194e6839ad33f6b3908315818bc7f8a3d96c8eb07317c97332dfaa2d54",
+   "size": 26504,
+   "suggestions": [
+    {
+     "confidence": 0.8,
+     "field": "kind",
+     "origin": "folder-name",
+     "reasons": [
+      "folder: Loops"
+     ],
+     "value": "loops"
+    },
+    {
+     "confidence": 0.8,
+     "field": "instrument",
+     "origin": "filename",
+     "reasons": [
+      "name: Kick"
+     ],
+     "value": "kick"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 1623585916,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 100,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "case_collision",
+     "refused": false
+    }
+   ],
+   "mismatch": false,
+   "path": "loops/kick.WAV",
+   "sha256": "308fa5109637e3f2c562a2d576ecc1af5561abc0ba9204a89a99de68fb7815ca",
+   "size": 26504,
+   "suggestions": [
+    {
+     "confidence": 0.8,
+     "field": "kind",
+     "origin": "folder-name",
+     "reasons": [
+      "folder: loops"
+     ],
+     "value": "loops"
+    },
+    {
+     "confidence": 0.8,
+     "field": "instrument",
+     "origin": "filename",
+     "reasons": [
+      "name: kick"
+     ],
+     "value": "kick"
+    }
+   ]
+  },
+  {
+   "by": "extension",
+   "crc32": 473683823,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Café.txt",
+   "sha256": "a230ff302a8d0e25a0fc4a07490f01bfef3797f0cc65c11f04c1ac8d555b562b",
+   "size": 5,
+   "suggestions": [
+    {
+     "confidence": 0.95,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "format: text"
+     ],
+     "value": "documents"
+    }
+   ]
+  }
+ ],
+ "folders": [
+  "Loops",
+  "loops"
+ ],
+ "totalSize": 53013,
+ "zip64": false
+}

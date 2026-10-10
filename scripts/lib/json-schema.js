@@ -22,6 +22,8 @@ function check(schemaFile, value) {
       const ok = schema.type === t || (schema.type === "number" && t === "integer");
       if (!ok) return problems.push(`${at}: expected ${schema.type}, got ${t}`);
     }
+    if (typeof v === "number" && schema.minimum !== undefined && v < schema.minimum) problems.push(`${at}: below ${schema.minimum}`);
+    if (typeof v === "number" && schema.maximum !== undefined && v > schema.maximum) problems.push(`${at}: above ${schema.maximum}`);
     if (schema.pattern && typeof v === "string" && !new RegExp(schema.pattern).test(v)) problems.push(`${at}: doesn't match ${schema.pattern}`);
     if (typeOf(v) === "object") {
       for (const k of schema.required || []) if (!(k in v)) problems.push(`${at}: missing ${k}`);
