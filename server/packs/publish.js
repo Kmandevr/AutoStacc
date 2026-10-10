@@ -1,6 +1,6 @@
 // Publishing a ready version: its manifest becomes the files for this Pac in every product that sells the Pac (server/files/publish-rows.js keeps
 // unchanged files' ids and retires the rest), the previous live version is superseded and the Pac is free for its next
-// version, all in one D1 batch (all or nothing) that runs only while the version is still ready.
+// version, all in one D1 batch (all or nothing) that runs only while the version is still ready (or held for review).
 import { stmt, newId, now, guardStmt } from "../lib/db.js";
 import { loadManifest } from "./manifest.js";
 import { publishStmts } from "../files/publish-rows.js";
@@ -29,7 +29,8 @@ export async function publishedEntries(db, versionId) {
   });
 }
 
-export async function publishVersion(app, version) {
+/** reviewedBy: the admin who approved a held version (or published over its flags), else null. */
+export async function publishVersion(app, version, { reviewedBy = null } = {}) {
   const db = app.db;
   const t = now();
   const entries = await publishedEntries(db, version.id);
@@ -37,8 +38,9 @@ export async function publishVersion(app, version) {
   const products = await productsWithPac(db, version.pac_id);
   await db.batch([
     // Only while the version is still ready (not discarded or published meanwhile); otherwise all of it rolls back.
-    guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'ready')", version.id),
-    stmt(db, "UPDATE pac_versions SET status = 'published', published_at = ?, updated_at = ? WHERE id = ? AND status = 'ready'", t, t, version.id),
+    guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status IN ('ready', 'in_review'))", version.id),
+    stmt(db, "UPDATE pac_versions SET status = 'published', published_at = ?, reviewed_by = ?, updated_at = ? WHERE id = ? AND status IN ('ready', 'in_review')",
+      t, reviewedBy || null, t, version.id),
     ...products.flatMap((p) => publishStmts(db, { productId: p.id, pacId: version.pac_id, versionId: version.id, entries: entries.map((e) => ({ ...e, fileId: newId("pf") })), t })),
     stmt(db, `UPDATE pac_versions SET status = 'superseded', updated_at = ? WHERE status = 'published' AND pac_id = ? AND id <> ?`, t, version.pac_id, version.id),
     stmt(db, "UPDATE pacs SET live_version_id = ?, updated_at = ? WHERE id = ?", version.id, t, version.pac_id),

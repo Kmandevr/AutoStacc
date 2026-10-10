@@ -1,7 +1,7 @@
 ---
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
-covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/product-view.js, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/packs.js, server/creators/readiness.js, server/creators/events.js, db/migrations/0016_product_studio.sql]
+covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/product-view.js, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/creators/readiness.js, server/creators/events.js, db/migrations/0017_product_studio.sql]
 updated: 2026-10-10
 ---
 
@@ -66,21 +66,14 @@ All sections read and write the same D1 rows. No section keeps its own copy of p
 
 Cover art, name, status and the project it belongs to. A readiness checklist: blocking items first, then recommendations, each linking to the section that fixes it. Quick actions: Edit Pac, Edit store page, Set price, Preview, Publish. Recent activity (the last 10 product events), and a 30-day summary (orders, revenue, the creator's share, downloads, views) with a link to Insights.
 
-### Pac Builder (Built; opens the engine pipeline to creators)
+### Pac Builder (Built; uses Phase 5's creator Pack Builder)
 
 The product's files, in one of two ways:
 
-- **Pac (ZIP).** The same pipeline the Control Center uses ([packs](packs.md)): a resumable upload in 64 MiB parts, an in-browser preview of the ZIP (WebAssembly), the engine's findings, review (values, folder defaults, suggestions, moves, renames), versions, publish and discard. The first time, a Stacclet and a Pac are created for the product (`POST /api/studio/products/:id/pac`).
-- **Single files.** The existing per-file upload, unchanged.
+- **Pac (ZIP).** The creator Pack Builder from Phase 5 ([packs](packs.md)), shown inside the workspace (`js/studio-packs.js` through `js/studio-section-pacs.js`). It offers a resumable upload, an in-browser preview of the ZIP, the engine's findings and the automated review, review of values and folders, versions, publish and discard. The product gets its own Stacclet and Pac with its first upload. A clean version goes live at once. A flagged one waits in the Control Center's review queue, where an admin approves it or rejects it with a note the creator sees. Uploads count against the creator's file storage (500 MB free).
+- **Single files.** The existing per-file upload (held for approval unless the creator is trusted).
 
-Rules for creators:
-
-- Only the product's owners and editors can use it. Anyone else gets a 404, the same as admin routes.
-- Uploads count against the creator's paid-file quota (500 MB free). The ZIP's size must fit the space left when the version is made, and the stored bytes are checked again when it is published.
-- **Hold for review:** when a creator AutoStacc hasn't marked trusted presses Publish, the version moves to `in_review`, and buyers get nothing new until an admin approves it in the Control Center (Packs, "Waiting for review"). Approval publishes the version; refusal sends it back to `ready` with a note. A trusted creator's Publish goes straight through.
-- Feature switch `packs.studio`. When it is off, the section shows only single-file uploads.
-
-Not built yet: per-file uploads with browser hashes (Phase 6), revisions with a diff and carrying values over (Phase 6), automated review (Phase 5's scanner). Fields already adapt to the product's kind through the store-details schema.
+Only the product's owners and editors can use it; anyone else gets a 404. With the `packs.builder` switch off, the section shows only single files.
 
 ### Store Page (Built)
 
@@ -105,7 +98,7 @@ Not tracked: traffic sources. The section says "not tracked yet" instead of show
 
 ### Release (Built; shared)
 
-- **Readiness** in two lists. *Blocking:* no title; no file buyers can get yet; a Pac version waiting for review with no other deliverable file; a paid price outside the allowed range; the creator suspended. *Recommended:* a description shorter than 80 characters, no cover art, no preview clip, no tags, no store details, no "what's inside" lines.
+- **Readiness** in two lists. *Blocking:* no title; no file buyers can get yet; a Pac version waiting for review (`in_review`) with no other deliverable file; a paid price outside the allowed range; the creator suspended. *Recommended:* a description shorter than 80 characters, no cover art, no preview clip, no tags, no store details, no "what's inside" lines.
 - **Controls:** Publish (put on sale), Back to draft, Pause and resume sales, and Remove (buyers keep their files). Saved edits to a published product are live as soon as they are saved, and the history records them.
 - **Release history:** every publish, unpublish, pause, resume, removal, price change, sale start or end, Pac version submitted, approved, refused or published, and file added or removed, with who did it and when (`product_events`).
 - **Rollback:** not supported yet. A superseded Pac version can't be restored; upload it again. Removed or replaced files stay delivered to earlier buyers for 30 days ([packs](packs.md)).
@@ -124,7 +117,7 @@ All routes need a signed-in member of the product's creator (owner or editor; ea
 - `GET /api/studio/products/:id/pricing` returns `{ priceCents, currency, feeBps, estimate: { list, sale }, sales[], storeSale, limits }`.
 - `POST /api/studio/products/:id/sales` with `{ percentOff | amountOffCents, startsAt?, endsAt? }`; `DELETE /api/studio/products/:id/sales/:saleId` ends a sale now, or deletes one that hasn't started.
 - `GET /api/studio/products/:id/insights?days=30|90|365` returns `{ range, totals, previous, daily[], sales[], tracked }`; with `&format=csv` it returns `text/csv`.
-- Pac Builder for creators: `GET|POST /api/studio/products/:id/pac`, then the same version, upload, review and publish routes as the admin under `/api/studio/packs/…` (`server/studio/packs.js` reuses `server/packs/` with a creator access check). Admin review: `GET /api/admin/packs/review`, `POST /api/admin/packs/versions/:id/approve|reject`.
+- Pac Builder: Phase 5's `/api/studio/packs/…` routes (`server/packs/access.js`, [packs](packs.md)).
 
 ## Control Center version
 
@@ -134,7 +127,7 @@ The same shell with these groups: **Store** (Overview, Products, Packs, Promotio
 
 1. Shared data model and permissions: the product record, `product_events`, readiness, and creator sales on `promotions`. **This pass.**
 2. Overview and navigation. **This pass.**
-3. Pac Builder with uploads, organization and validation for creators. **This pass** (automated review comes later).
+3. Pac Builder with uploads, organization and validation for creators. **Built** (Phase 5, with automated review).
 4. Store Page and live preview. **This pass.**
 5. Pricing and validation. **This pass.**
 6. Shared release controls. **This pass.**

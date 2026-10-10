@@ -337,3 +337,21 @@ The security and backend reviews of Phase 3 found one trust gap and several corr
 ## 2026-10-10: How a file's values are decided (Phase 4)
 
 One resolver (`js/pack-resolve.js`), the same code in the Control Center and on the server, decides each file's kind, instrument, tempo, key and MIDI role: the creator's own value; else the nearest folder's default; else a suggestion the creator accepted, or one the engine is at least 85% sure of that nobody rejected; else nothing. An empty creator value means "none" and stops inheritance. Defaults are resolved when read, never copied onto files, so moving a file changes only what it inherits, and the review shows those changes before the move. 85% is a starting threshold, to be calibrated with the other confidences (Phase 8).
+
+## 2026-10-10: How the automated review decides (Phase 5)
+
+Following the owner's decision that only flagged versions wait for an admin, the review is a fixed set of flags computed by the server from the engine's answer and its own checks (`server/packs/review.js`), stored with the version. Hard flags (unsafe or damaged entries, files whose contents don't match their names, password-protected files, programs or scripts) always hold the version; soft flags (types AutoStacc doesn't deliver, archives inside the pack, over half the files in unknown formats, every file already stored by this creator, a revision removing over 25% of the live files or over half the bytes) hold it unless the creator is trusted. An admin can set a creator to "always hold". The thresholds are starting values, to be revisited with real uploads. What automation can't judge (rights to the sounds, their quality) stays with reports and spot checks. The admin's approval of a held version is an audited override; a rejection carries a note the creator sees and deletes the upload.
+
+Storage is reserved when an upload starts (the ZIP's size against the creator's quota, in the same statement that records it), so concurrent uploads can't pass the quota; what counts is the creator's live files plus, for unfinished versions, the archive or, once checked, the unpacked files if larger (a ZIP can compress a lot, so the unpacked size is checked again before anything is stored). A file's extension can't be renamed after the review (the review judged that type). Admin and Studio share every Pack Builder handler through two scopes (`server/packs/access.js`) rather than two copies, so a fix to one is a fix to both.
+
+## 2026-10-10: Product Studio, one workspace per product, in a shell shared with the Control Center
+
+The owner sent an architecture outline for a "Project Studio" and answered four questions. Built as [studio](studio.md) describes. Choices:
+- **The unit is a product, not a project.** In AutoStacc a project is a creative identity holding many products, while the outline's studio manages one sellable thing (one pack, one store page, one price). Project-level work stays on the Creator Dashboard (`/studio`).
+- **Names use the Stacc vocabulary:** Overview, Pac Builder, Store Page, Pricing, Insights, Release (Team later). They are working names, kept in `data/workspaces.js` so a rename is one edit.
+- **One shell, two versions.** `js/workspace.js` draws the sidebar, compact header and phone drawer for both the Product Studio and the Control Center, so the admin isn't a separate design.
+- **No copies of product data.** A creator's sale is an ordinary `promotions` sale scoped to one product (`creator_id` set), so the cart, checkout, search and order history already price it. The store page's "included content" is counted from the published files. One readiness check guards publishing on the server and feeds the Overview and Release sections.
+- **The Pac Builder section reuses Phase 5** (built in parallel and merged first): the same `/api/studio/packs` routes, automated review and the admin's review queue. The Product Studio only gives it a place in the workspace.
+- **Collaboration (Team) is not built.** Roles and revenue splits are open questions in the vision.
+- **Insights collects nothing new:** orders, refunds, downloads and the existing per-day view counters. Traffic sources are shown as not tracked.
+
