@@ -1,13 +1,13 @@
 ---
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
-covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/product-view.js, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/creators/readiness.js, server/creators/events.js, db/migrations/0017_product_studio.sql]
+covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
 updated: 2026-10-10
 ---
 
 # Product Studio and the workspace shell
 
-> **Status (2026-10-10): being built (issue #106).** This note is the owner's brief ("AutoStacc Project Studio, Architecture Outline") adapted to AutoStacc's model and names. Each section below is marked **Built**, **Planned**, or **Not in this pass**. The section names are working names and can change. They live in one data file (`data/workspaces.js`), so a rename is one edit.
+> **Status (2026-10-10): built (issue #106), except what is marked Not in this pass.** This note is the owner's brief ("AutoStacc Project Studio, Architecture Outline") adapted to AutoStacc's model and names. Each section below is marked **Built**, **Planned**, or **Not in this pass**. The section names are working names and can change. They live in one data file (`data/workspaces.js`), so a rename is one edit.
 
 ## Where things live
 
@@ -41,7 +41,8 @@ updated: 2026-10-10
 - **Phones (below about 900px):** the sidebar becomes a drawer opened from a "Sections" button in the header. Sections are not squeezed into tabs.
 - **Addresses:** the open section is kept in the address, so a reload or a shared link lands on it. Product Studio uses `#product=<id>&section=<key>`; the Control Center keeps `/admin#<key>`.
 - **Accessibility:** the sidebar is a `<nav>` of buttons, with `aria-current` on the open one. The drawer traps focus while open and closes on Escape. Focus moves to the section heading after navigation.
-- One shell, two versions: `GS.workspace.mount(root, config)` draws the shell. The Product Studio and the Control Center pass different sections, groups, header statuses and actions.
+- One shell, two versions: `GS.workspace.mount(root, { label, title, subtitle, status: {text, tone}, groups: [{label, items: [{key, label, badge}]}], current, actions, menu, onSelect, onAction })` draws it and returns `{ body, select, current, setTitle, setSubtitle, setStatus, setSave, setBadge, setActions, setMenu }`. Tones are `neutral`, `good`, `warn` and `danger`. Stable hooks for tests: `[data-ws-item=<key>]`, `[data-ws-open]` (the phone Sections button), `[data-ws-status]`, `[data-ws-save]`, `[data-ws-menu]`.
+- **Section modules** (`js/studio-section-<key>.js`) each register `GS.studioSections.<key> = { draw(el, ctx) }`. `ctx` is `{ product, workspace, reload(), go(key), setSave(state), note(text, error), release(act, btn) }`, where `product` is the latest `GET /api/studio/products/:id` payload. `draw` may return a function that runs when the section is left (Store Page saves pending edits that way). `[data-sw-go=<key>]` and `[data-sw-release=<act>]` work anywhere in the body. A missing or failing module shows "This section isn't available right now". Shared helpers: `js/studio-kit.js` (status words, history sentences, readiness lists, the checkout note) and `js/studio-preview.js` (the Studio record in the product page's shape, and the included-content summary).
 
 ## Data ownership (one product record, no copies)
 
@@ -103,6 +104,10 @@ Not tracked: traffic sources. The section says "not tracked yet" instead of show
 - **Release history:** every publish, unpublish, pause, resume, removal, price change, sale start or end, Pac version submitted, approved, refused or published, and file added or removed, with who did it and when (`product_events`).
 - **Rollback:** not supported yet. A superseded Pac version can't be restored; upload it again. Removed or replaced files stay delivered to earlier buyers for 30 days ([packs](packs.md)).
 
+### Creator purchases switch (Built)
+
+Until the marketplace Stripe key is set (`STRIPE_MARKETPLACE_KEY`, [payouts-setup](payouts-setup.md)), creators can still build, publish and list products, and buyers can add them to their cart. The cart marks them "Creator checkout isn't open yet" and keeps them outside the totals, checkout sends only the other items, and the store refuses a checkout that includes them (`503 creator_sales_closed`). The Product Studio's Overview and Release say so too. The owner can also pause creator purchases at any time, and allow them again, in the Control Center (Creators, "Creator purchases"; `GET|PUT /api/admin/creator-sales`, audited). Purchases are open only when both hold: the key is set and they aren't paused (`server/payments/creator-sales.js`, stored in `store_settings`). The mock payment provider used in development and tests needs no key.
+
 ### Team (Not in this pass)
 
 The plan from the brief, kept for later: invite and remove collaborators, roles and permissions (edit, publish, manage commercial settings), contribution credits, revenue-share agreements with authorization and clear confirmation, and agreement history. The `editor` role already exists but can't be granted yet ([creators](creators.md)). Roles and split options are open questions in [vision](vision.md), so nothing about them is decided here.
@@ -118,6 +123,9 @@ All routes need a signed-in member of the product's creator (owner or editor; ea
 - `POST /api/studio/products/:id/sales` with `{ percentOff | amountOffCents, startsAt?, endsAt? }`; `DELETE /api/studio/products/:id/sales/:saleId` ends a sale now, or deletes one that hasn't started.
 - `GET /api/studio/products/:id/insights?days=30|90|365` returns `{ range, totals, previous, daily[], sales[], tracked }`; with `&format=csv` it returns `text/csv`.
 - Pac Builder: Phase 5's `/api/studio/packs/…` routes (`server/packs/access.js`, [packs](packs.md)).
+- Readiness codes. Blocking: `no_title`, `needs_file`, `pac_in_review`, `price_out_of_range`, `creator_suspended`. Recommended: `short_description`, `no_artwork`, `no_preview`, `no_tags`, `no_store_details`, `no_includes`. Publishing with only the file missing answers `409 needs_file`; otherwise `409 not_ready`. Either way the error carries `blocking`.
+- History: the same person's plain edits within 15 minutes are merged into one "edited" event (`recordEdit`), so autosave doesn't flood it. A product taken off sale automatically when its last file goes isn't recorded yet.
+- The workspace payload also carries `checkout: { open, reason }` (see the creator purchases switch).
 
 ## Control Center version
 
