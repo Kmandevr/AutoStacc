@@ -33,3 +33,28 @@ export function tokenMatches(header, expected) {
 }
 
 export const buckets = (env) => String(env.R2_BUCKETS || "").split(",").map((s) => s.trim()).filter(Boolean);
+
+/** The host the engine reads storage from (engine/src/r2.rs). It never leaves Cloudflare: the engine Worker answers it. */
+export const STORAGE_HOST = "storage.engine";
+
+/**
+ * A storage read from the engine: GET or HEAD http://storage.engine/<bucket>/<key>, with an optional single
+ * "Range: bytes=a-b". Returns { bucket, key, head, range? } or { status } to refuse with.
+ */
+export function storageRequest(method, url, rangeHeader, allowedBuckets) {
+  if (method !== "GET" && method !== "HEAD") return { status: 405 };
+  const u = new URL(url);
+  const [bucket, ...rest] = u.pathname.slice(1).split("/");
+  let key;
+  try {
+    key = rest.map(decodeURIComponent).join("/");
+  } catch {
+    return { status: 400 };
+  }
+  if (!allowedBuckets.includes(bucket)) return { status: 403 };
+  if (!KEY.test(key) || key.includes("..")) return { status: 400 };
+  if (!rangeHeader) return { bucket, key, head: method === "HEAD" };
+  const m = /^bytes=(\d+)-(\d+)$/.exec(rangeHeader);
+  if (!m || Number(m[2]) < Number(m[1])) return { status: 416 };
+  return { bucket, key, head: method === "HEAD", range: { offset: Number(m[1]), length: Number(m[2]) - Number(m[1]) + 1 } };
+}
