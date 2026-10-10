@@ -7,7 +7,7 @@ updated: 2026-10-10
 
 # Pack Builder and processing engine
 
-> **PLANNED / NOT IMPLEMENTED.** This note is the approved plan (owner, 2026-10-10). None of it exists yet: no engine, Container, Queue, engine Worker, pack tables or Pack Builder UI. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
+> **PLANNED, Phase 0 partly built.** This note is the approved plan (owner, 2026-10-10). Built so far: the engine core, its WebAssembly build, the Container image, the engine Worker and CI ([engine](engine.md)); nothing on the site uses them yet. Not built: pack tables, the Pack Builder UI, bundles, derived facets. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
 
 
 > **Rev. 4 (2026-10-10).** The owner re-sent the brief and confirmed **Workers Paid**. The rev. 3 decisions all stand. Two points of the new brief change the design:
@@ -18,6 +18,21 @@ updated: 2026-10-10
 > Main branch unchanged since rev. 3 (f2e0ae3) [V].
 
 Labels: **[V]** verified in the repo or in Cloudflare's docs this session · **[R]** recommendation · **[A]** assumption, checked in Phase 0 · **[O]** open (section H).
+
+## How this plan follows the vision
+
+[Vision](vision.md) is the owner's product direction and outranks this plan where they differ (the plan is an engineering document under it, as vision §11 asks). Checked 2026-10-10:
+
+| Vision | This plan |
+| --- | --- |
+| §2.4, §4: one authoritative record for each product, shown in many places | One Pac/asset model and one vocabulary for the builder, store, product pages, library and recommendations; a product's contents are derived from its assets, never copied |
+| §4: products show contents, formats and compatibility | Contents tree, formats, BPM/key, sample rate and bit depth come from the files themselves (facts) or the creator (claims), never invented |
+| §6: buying gives lasting value; purchase records keep the product version and terms | Every file version is identified by its SHA-256 and every pack version is recorded, so a purchase can be tied to what was bought. **Conflict:** the earlier answer "latest version only" lets a revision remove files from people who already bought them. Flagged in H8; until the owner decides, nothing that removes a buyer's access gets built |
+| §7.2: no corrupted or misrepresented files, malicious-file checks, never claim manual inspection | Integrity checks, content-vs-name checks and archive guards are automated; wording to creators and buyers must say "checked automatically", never "reviewed" or "inspected" |
+| §9: free tier with understandable, transparent limits | 500 MB per creator (owner's decision), shown as used/total in the Studio, with a plain message when full |
+| §10: creators can download the originals they uploaded | Originals are stored byte for byte, so a creator export of their own files is cheap; added to Phase 9 |
+| §2.5: ownership, editing, publishing and money are different roles | The Pack Builder uses today's creator membership; separate roles (who may publish a pack, who may change it) wait for the permissions design and aren't invented here |
+| §11, §12: modular, no speculative complexity; automation expands creators' choices, never dictates | The engine sits behind one contract and can be replaced; every feature has a switch; suggestions never reorganize files or overwrite a creator's values |
 
 ## Context
 
@@ -39,7 +54,7 @@ AutoStacc sells Pacs through products. Today a Pac's contents are loose `product
 | Uploaded master ZIP | Kept only until the version is published or discarded, then deleted; the manifest is authoritative |
 | Purchase unit | Whole products (entitlements stay per product); customers download any subset they own |
 | Creator storage | **500 MB free per creator**; extra storage will be paid by the creator later (billing out of scope) |
-| Revisions for buyers | **Latest version only** |
+| Revisions for buyers | Owner answered **latest version only**; this conflicts with vision §6 (purchase permanence) and is reopened as H8 |
 | Product page before purchase | Contents tree + stats; per-file audio previews deferred |
 | Where heavy work runs | **A server Container from the start** (works with the tab closed; same result on every computer) |
 | Must be replaceable | **The engine itself**, and **individual features** (switch off or swap one without breaking uploads, purchases or downloads) |
@@ -389,7 +404,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 | **6b. Personal organization** (first release) | Collections, personal tags, saved searches in Your Stacc | server/collections/ (new module): `collections(id, user_id, name, created_at)`, `collection_items(collection_id, asset_id, added_at)`, `asset_tags(user_id, asset_id, tag)`, `saved_searches(user_id, name, query)`; items reference the stable `asset_id`, so they survive revisions (a removed asset shows as "no longer in the pack"); only owned assets are ever listed; `stacc-model.js` filter by collection/tag; included in the account data export and deleted with the account (`server/account/`); `/privacy` updated | Suite: another user's collection is 404; non-owned assets never listed; export and delete cover the new tables; creator metadata untouched |
 | **7. Store integration** | Contents-driven discovery | Derived facets at publish; `GET /api/products/:id/contents`; product page tree; new filters through `product_facets` | Product qualifies on ≥1 asset; drafts excluded; creator facets survive; search timing within ±20% |
 | **8. Analysis** | BPM/key/peaks suggestions | `analysis` (stage 2); labelled set; threshold calibration | Accuracy report; inferred values never shown as verified |
-| **9. Hardening, migration, docs** | Release | Legacy import job; deflate variants (flag); weekly fuzzing; perf suite; `/privacy` (`data/legal.js`) + creator wording ("checks files for type, not content" changes); `docs/packs.md`, docs/engine.md, updated `architecture.md`, `store.md`, `library.md`, `creators.md`, `discovery.md`, `development.md`, `decisions.md`; issues for deferred work | Section I |
+| **9. Hardening, migration, docs** | Release | Legacy import job; creators can download their own originals (vision §10); deflate variants (flag); weekly fuzzing; perf suite; `/privacy` (`data/legal.js`) + creator wording ("checks files for type, not content" changes); `docs/packs.md`, `docs/engine.md`, updated `architecture.md`, `store.md`, `library.md`, `creators.md`, `discovery.md`, `development.md`, `decisions.md`; issues for deferred work | Section I |
 | **10. Optional** | — | Per-file audio previews (ffmpeg in the Container), MIDI previews, audio fingerprinting for automated review | Each gated by need |
 
 Reviews: `architect` before Phase 3; `security-reviewer` + `backend-reviewer` after 3, 5, 6; `frontend-reviewer` after 3, 4, 6.
@@ -582,7 +597,7 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 ### What's too much work, or not worth it (kept out or deferred) [R]
 
 - Per-asset purchasing / Pac-level ownership: the owner chose whole products.
-- Keeping every old version for buyers: "latest only".
+- Keeping every old version for every buyer forever is not planned; what buyers keep is H8.
 - Running heavy analysis (decode, BPM/key) in the browser: it stays Container-only; the browser build carries only listing, hashing, facts and suggestions.
 - Stored, cached full-pack ZIPs: determinism makes them unnecessary.
 - At-rest compression; deflate for audio.
@@ -617,7 +632,7 @@ The vertical slice (0–3) is the first point of real value.
 | Malicious archives | Rust, guards, fuzzing, no secrets in the Container |
 | BPM/key accuracy | Suggestions only; measured thresholds; "no key" for atonal material |
 | D1 limits | `json_each`, paged imports |
-| "Latest only" removes files never downloaded | Creator warning; H3 |
+| A revision could remove files buyers paid for (vision §6) | Reopened as H8; nothing that removes a buyer's access is built until the owner decides |
 | Engine replacement | Conformance suite and contract versions |
 | Maintenance in two languages (JS + Rust) | Rust confined to `engine/`; contract docs; CI builds the image and runs conformance |
 
@@ -628,6 +643,12 @@ The vertical slice (0–3) is the first point of real value.
 Answered and folded into the plan: Container size and cap, notice to buyers on removed files, automated review, collections in the first release.
 
 These remain open. Each has a default the plan uses unless you say otherwise.
+
+**H8 · What buyers keep when a creator revises a pack (vision §6, purchase permanence)**
+
+- **Decision needed:** the earlier answer was "latest version only", so a file removed in a revision stops being downloadable even for people who bought it before. Vision §6 says buying should give lasting value and that purchase records keep the version bought.
+- **Recommended default:** buyers get every update, and keep access to every file that was in the version they bought (shown under "Earlier files" when a later version drops them). Unchanged files are shared between versions, so this only keeps the bytes of removed or changed files, counted against AutoStacc's storage, not the creator's quota.
+- **What changes:** with the default, a removed file's blob is kept while any purchase predates its removal, and entitlements record the pack version at purchase. With "latest only", removed files are deleted after the grace period and the badge only lists what was removed.
 
 **H5 · Kind labels for customers**
 
