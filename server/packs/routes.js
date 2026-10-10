@@ -7,6 +7,7 @@
 //   POST /api/admin/packs/uploads/:uploadId/complete   joins the parts and starts processing (or lists missing parts)
 //   GET  /api/admin/packs/versions/:versionId    state; imports the engine's answer once it is in
 //   POST /api/admin/packs/versions/:versionId/publish | /discard
+// Reviewing a ready version (values, suggestions, folder defaults, moves, renames): edit-routes.js.
 import { json, fail, readJson, str, id, int } from "../lib/http.js";
 import { first, all, parseJson, isGuardFailure } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
@@ -19,6 +20,8 @@ import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js
 import { startProcess, refresh, discard } from "./process.js";
 import { publishVersion } from "./publish.js";
 import { routes as engineStorage } from "./engine-storage.js";
+import { routes as editRoutes } from "./edit-routes.js";
+import { versionView } from "./view.js";
 
 const OWNER = /^[a-z0-9_]{1,48}$/;
 
@@ -87,24 +90,7 @@ async function finishUpload(app, { uploadId }) {
   return json({ complete: true, version: await view(app, version.id) });
 }
 
-/** A version as the builder shows it: state, totals, problems and (once ready) its files with suggestions. */
-async function view(app, versionId) {
-  const v = await getVersion(app.db, versionId);
-  const out = { id: v.id, pacId: v.pac_id, productId: v.product_id, number: v.number, status: v.status, note: v.review_note || null,
-    stats: parseJson(v.stats, {}), engineVersion: v.engine_version || null };
-  if (["ready", "published", "superseded"].includes(v.status)) {
-    const [files, values] = await Promise.all([
-      all(app.db, `SELECT e.asset_id, e.filename, e.original_path, b.size_bytes, b.format, b.sha256 FROM pac_entries e JOIN blobs b ON b.id = e.blob_id
-        WHERE e.version_id = ? ORDER BY e.sort LIMIT 5000`, v.id),
-      all(app.db, `SELECT v.asset_id, v.field, v.value, v.origin, v.confidence FROM asset_values v JOIN pac_entries e ON e.asset_id = v.asset_id
-        WHERE e.version_id = ?`, v.id)
-    ]);
-    const by = Object.groupBy(values, (x) => x.asset_id);
-    out.files = files.map((f) => ({ assetId: f.asset_id, path: f.original_path, filename: f.filename, sizeBytes: f.size_bytes, format: f.format,
-      sha256: f.sha256, suggestions: (by[f.asset_id] || []).map(({ field, value, origin, confidence }) => ({ field, value, origin, confidence })) }));
-  }
-  return out;
-}
+const view = (app, versionId) => versionView(app.db, versionId);
 
 async function getOne(app, { versionId }) {
   const v = await adminVersion(app, versionId);
@@ -158,5 +144,6 @@ export const routes = [
   ["GET", "/api/admin/packs/versions/:versionId", getOne],
   ["POST", "/api/admin/packs/versions/:versionId/publish", publish],
   ["POST", "/api/admin/packs/versions/:versionId/discard", drop],
+  ...editRoutes,
   ...engineStorage
 ];
