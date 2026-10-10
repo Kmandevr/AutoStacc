@@ -2,7 +2,7 @@
 title: Creators and the Studio
 summary: Creators own projects; addresses /<creator>/<project>; the Studio's free no-code sites (blocks, themes, images) and selling, how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
 covers: [data/creators.js, server/creators/, server/studio/, server/sites/, server/revenue/, server/files/, server/integrations/providers.js, server/lib/slugs.js, functions/[[path]].js, functions/media/sites/, functions/studio.js, studio.html, js/studio*.js, js/product-page.js, css/studio.css, css/creator-site.css, scripts/dist.js, scripts/lib/creator-page.js, db/migrations/0006_creators.sql, db/migrations/0009_creator_selling.sql, db/migrations/0011_marketplace_payouts.sql]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Creators and the Studio

@@ -2,6 +2,7 @@
 //   autostacc-engine list <archive.zip>              → archive listing and problems (JSON)
 //   autostacc-engine inspect <archive.zip> [--extract <dir>]  → full inspection; optionally writes the originals
 //   autostacc-engine file <path>                     → one loose file
+//   autostacc-engine serve [addr]                    → the Container's HTTP service (serve.rs), default 0.0.0.0:8080
 // Output is the JSON job contract on stdout; failures are {"error": code} with exit status 2.
 use autostacc_engine::job::{self, Discard, Sink};
 use autostacc_engine::source::FileSource;
@@ -65,11 +66,12 @@ fn main() {
             };
             serde_json::to_string(&r.unwrap_or_else(|e| fail(e.code)))
         }
+        (Some("serve"), addr) => autostacc_engine::serve::serve(addr.map(String::as_str).unwrap_or("0.0.0.0:8080")),
         (Some("file"), Some(p)) => {
             serde_json::to_string(&job::inspect_file(p, &open(p)).unwrap_or_else(|_| fail("io")))
         }
         _ => {
-            eprintln!("usage: autostacc-engine list|inspect|file <path> [--extract <dir>]");
+            eprintln!("usage: autostacc-engine list|inspect|file <path> [--extract <dir>] | serve [addr]");
             std::process::exit(64)
         }
     };

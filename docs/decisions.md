@@ -8,7 +8,7 @@ updated: 2026-10-10
 
 ## 2026-10-10: Engine Phase 0 measurements confirm Rust, zlib-rs, no SIMD
 
-Measured on a 1 GB synthetic pack (918 files; numbers in [engine](engine.md)): listing is instant (10 ms native, 0.7 s in Chromium), and decompression is what costs. Native and WebAssembly results are identical. zlib-rs replaced miniz_oxide (about 20% faster, same results). WebAssembly SIMD brought nothing measurable, so it's off and older browsers keep working. In Chromium, 4 Web Workers check a 1 GB pack in about 8 s, far less than the upload takes, so browser-side checking is kept. The engine's WebAssembly build is 389 KB (about 180 KB gzipped).
+Measured on a 1 GB synthetic pack (918 files; numbers in [engine](engine.md)): listing is instant (10 ms native, 0.7 s in Chromium), and decompression is what costs. Native and WebAssembly results are identical. zlib-rs replaced miniz_oxide (about 20% faster, same results). WebAssembly SIMD brought nothing measurable, so it's off and older browsers keep working. In Chromium, 4 Web Workers check a 1 GB pack in about 8 s, far less than the upload takes, so browser-side checking is kept. The engine's WebAssembly build is 389 KB (about 180 KB gzipped). With the `basic` Container's limits the engine checks a 1 GB pack in about 20 s using 7 MB of memory and is healthy 0.5 s after starting, so the Container now sleeps 15 s after its last job instead of 30 s (it is billed while awake). The engine Worker is a separate Worker because Pages Functions can't consume Queues or own Containers; the container has no internet except R2's S3 endpoint.
 
 ## 2026-10-10: Pack Builder, asset engine and selective downloads (planned)
 

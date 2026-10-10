@@ -1,0 +1,12 @@
+{
+  "name": "autostacc-engine-worker",
+  "private": true,
+  "description": "AutoStacc's engine Worker: runs the Rust processing engine (engine/) in a Cloudflare Container, one job at a time from a Queue (docs/engine.md).",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "0.3.7"
+  }
+}
