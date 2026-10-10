@@ -19,6 +19,8 @@ Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLE
 - **Personal collections, tags and saved searches** in Your Stacc in the first release.
 - **Engine: Rust, run natively in a Cloudflare Container** (server-side from the start, so processing continues with the tab closed), driven by a Queue and a small engine Worker; the site and API stay JavaScript. Chosen over C++ (memory-unsafe parsing of hostile files; best audio-analysis libraries are GPL/AGPL), Python (large image, slow cold start) and Go (weak audio libraries).
 - **Replaceable:** the engine is reached only through a versioned JSON job contract with conformance fixtures, so another implementation can replace it; each feature (analysis, bundles, derived facets, contents tree) can be switched off without affecting uploads, purchases or single downloads.
+- **Browser side too (rev. 4):** the same Rust engine is compiled to WebAssembly for the Pack Builder: the pack's tree and problems show before uploading, files upload one by one, and revisions upload only changed files. The Container re-checks everything and stays the authority; old browsers upload the whole ZIP instead.
+- **Full-pack ZIP cache** exists behind a switch, off by default: streaming a store-only ZIP costs almost nothing, while a cached copy doubles the pack's storage; switched on only if measurements show it helps.
 - **Cost:** Workers Paid ($5/month), staying inside its included usage: a `basic` Container (¼ vCPU, 1 GiB), one job at a time, sleeping after 30 s; a budget guard alerts at 80% and pauses processing at 95% of any allowance; total R2 storage capped at 9 GB of the free 10 GB until the owner raises it.
 
 ## 2026-10-09: A clean, glassy look with motion as feedback
