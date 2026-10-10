@@ -1,0 +1,39 @@
+# Fuzz targets for the engine (docs/engine.md): hostile bytes and names must never crash it, hang it or make it read
+# past what it was given. Needs nightly Rust and cargo-fuzz: cargo +nightly fuzz run <target> (from engine/).
+[package]
+name = "autostacc-engine-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+autostacc-engine = { path = ".." }
+serde_json = "1"
+
+[[bin]]
+name = "zip"
+path = "fuzz_targets/zip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "headers"
+path = "fuzz_targets/headers.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "names"
+path = "fuzz_targets/names.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]
