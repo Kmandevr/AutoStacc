@@ -1,8 +1,9 @@
 // The Studio (/studio): claim a creator name, see your creator's address and free storage, make, rename and delete
 // projects, open a project's site in the editor (js/studio-editor.js; #project=<id> reopens it), its products
-// (js/studio-products.js; #products=<id>) and see earnings (js/studio-earnings.js). All checks
+// (js/studio-products.js; #products=<id>), one product in the Product Studio (js/studio-workspace.js;
+// #product=<id>&section=<key>) and see earnings (js/studio-earnings.js). All checks
 // (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/studio-blocks.js,
-// js/studio-editor.js, js/studio-products.js and js/studio-earnings.js.
+// js/studio-editor.js, js/studio-products.js, js/studio-workspace.js and js/studio-earnings.js.
 (function () {
   "use strict";
 
@@ -71,6 +72,9 @@
 
   async function load() {
     const hash = new URLSearchParams(location.hash.slice(1));
+    const ws = window.GS.studioWorkspace;
+    if (ws) ws.leave(); // a Product Studio section saves what's pending before another view replaces it
+    if (hash.get("product") && ws) return ws.open(root, hash.get("product"), hash.get("section"));
     if (hash.get("project")) return window.GS.studioEditor.open(root, hash.get("project"), back);
     if (hash.get("products")) return window.GS.studioProducts.open(root, hash.get("products"), back);
     const res = await api("/api/studio");
@@ -133,5 +137,7 @@
     window.GS.studioEditor.open(root, edit.dataset.edit, back);
   });
 
+  // Links change the address (a product card's Open, the Product Studio's "Back to project"): draw what it names.
+  addEventListener("hashchange", load);
   load();
 })();
