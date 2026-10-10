@@ -1,10 +1,10 @@
-// Control Center shell and catalog tools: checks access (the API answers 404 to non-admins), draws the LIVE/TEST
-// badge, the tabs and the summary, and manages products: pause/resume sales, upload paid files (or a new version of
+// Control Center shell and catalog tools: checks access (the API answers 404 to non-admins), draws the workspace shell
+// (js/workspace.js, sections from data/workspaces.js) with LIVE/TEST in its header and the summary, and manages products: pause/resume sales, upload paid files (or a new version of
 // one) and preview clips, deactivate files. The other tabs start on the "gs:admin" event: statistics
 // (js/admin-stats.js), orders, customers and entitlements (js/admin-records.js), customer preview with impersonation
 // and test purchases (js/admin-customer.js), sales and promo codes (js/admin-promotions.js), creators
 // (js/admin-creators.js), payouts (js/admin-payouts.js), AutoStacc news (js/admin-news.js), the Pack Builder (js/admin-packs.js), test-purchase checks and the audit log (js/admin-audit.js).
-// Needs data/product-types.js, data/pacs.js, data/content-types.js and js/util.js.
+// Needs data/workspaces.js, data/product-types.js, data/pacs.js, data/content-types.js, js/util.js and js/workspace.js.
 (function () {
   "use strict";
 
@@ -15,52 +15,42 @@
   const PACS = window.PACS || [];
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
-  const TABS = [["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["customers", "Customers"], ["entitlements", "Entitlements"],
-    ["promotions", "Promotions"], ["creators", "Creators"], ["payouts", "Payouts"], ["news", "News"], ["packs", "Packs"], ["tests", "Test purchases"], ["audit", "Audit log"]]
-    // Optional features switched off (data/features.js) leave no tab behind.
-    .filter(([k]) => k !== "packs" || (window.FEATURES || {})["packs.builder"] !== false);
+  // Sections and their groups come from data/workspaces.js; optional features switched off (data/features.js) leave none behind.
+  const GROUPS = ((window.WORKSPACES || {}).control || { groups: [] }).groups
+    .map((g) => ({ ...g, items: g.items.filter((it) => it.key !== "packs" || (window.FEATURES || {})["packs.builder"] !== false) }))
+    .filter((g) => g.items.length);
+  const KEYS = GROUPS.flatMap((g) => g.items.map((it) => it.key));
+  const LABEL = Object.fromEntries(GROUPS.flatMap((g) => g.items.map((it) => [it.key, it.label])));
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
+  let ws = null;
 
+  // The workspace shell (js/workspace.js): LIVE or TEST in the header, the environment under the title, the figures and
+  // payment alerts above every section, and one panel per section (#admin-<key>, which each tab's own script fills).
   function shell(s) {
     const paid = (s.orders.find((o) => o.status === "paid") || { n: 0, cents: 0 });
-    root.innerHTML = `
-      <p class="admin-mode ${s.livePayments ? "live" : "test"}"><strong>${s.livePayments ? "LIVE" : "TEST"}</strong>
-        ${s.livePayments ? "Real payments. Test purchases are off here." : "Test payments only: nothing here is real revenue."}</p>
+    ws = window.GS.workspace.mount(root, {
+      label: "Control Center", title: "AutoStacc store",
+      subtitle: `${s.environment} · ${s.livePayments ? "Real payments. Test purchases are off here." : "Test payments only: nothing here is real revenue."}`,
+      status: { text: s.livePayments ? "LIVE" : "TEST", tone: s.livePayments ? "danger" : "good" },
+      groups: GROUPS, current: KEYS[0],
+      onSelect: (key) => show(key)
+    });
+    ws.body.innerHTML = `
       <ul class="admin-kpis" aria-label="Store at a glance">${[["Environment", s.environment], ["Payments", s.paymentProvider], ["Products", s.products], ["Customers", s.customers],
         ["Paid orders", `${paid.n} · ${cents(paid.cents || 0)}`], ["Active entitlements", s.activeEntitlements]]
         .map(([k, v]) => `<li><span>${k}</span><strong>${escapeHTML(String(v))}</strong></li>`).join("")}</ul>
       ${s.alerts.length ? `<div class="msg error" role="alert">Payment events that need a look (check them in Stripe too):<ul>${s.alerts.map((a) => `<li>${escapeHTML(a.received_at.slice(0, 16).replace("T", " "))} ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.order_id ? ` (${escapeHTML(a.order_id)})` : ""}</li>`).join("")}</ul></div>` : ""}
-      <label class="admin-section"><span>Section</span><select data-section aria-label="Section">${TABS.map(([k, l], i) => `<option value="${k}"${i === 0 ? " selected" : ""}>${l}</option>`).join("")}</select></label>
-      <div class="admin-tabs" role="tablist" aria-label="Control Center sections">${TABS.map(([k, l], i) => `<button type="button" role="tab" id="tab-${k}" aria-controls="admin-${k}" aria-selected="${i === 0}" tabindex="${i ? -1 : 0}">${l}</button>`).join("")}</div>
-      ${TABS.map(([k], i) => `<div class="admin-panel" role="tabpanel" id="admin-${k}" aria-labelledby="tab-${k}"${i ? " hidden" : ""}></div>`).join("")}`;
+      ${KEYS.map((k, i) => `<section class="admin-section" data-admin-section="${k}" aria-labelledby="admin-h-${k}"${i ? " hidden" : ""}>
+        <h2 class="admin-section-title" id="admin-h-${k}" tabindex="-1" data-ws-heading>${escapeHTML(LABEL[k])}</h2>
+        <div class="admin-panel" id="admin-${k}"></div></section>`).join("")}`;
   }
 
   // The open section lives in the address (/admin#orders), so a reload or a shared link lands on it.
-  function selectTab(key, focus) {
-    if (!TABS.some(([k]) => k === key)) key = TABS[0][0];
-    TABS.forEach(([k]) => {
-      const tab = $(`#tab-${k}`);
-      tab.setAttribute("aria-selected", String(k === key));
-      tab.tabIndex = k === key ? 0 : -1;
-      $(`#admin-${k}`).hidden = k !== key;
-    });
-    if (focus) $(`#tab-${key}`).focus();
-    const pick = $("[data-section]", root);
-    if (pick) pick.value = key;
-    if (location.hash.slice(1) !== key) history.replaceState(null, "", key === TABS[0][0] ? location.pathname : `#${key}`);
+  function show(key) {
+    root.querySelectorAll("[data-admin-section]").forEach((el) => { el.hidden = el.dataset.adminSection !== key; });
+    if (location.hash.slice(1) !== key) history.replaceState(null, "", key === KEYS[0] ? location.pathname : `#${key}`);
   }
-
-  // Tabs move with the arrow keys, Home and End (the WAI-ARIA tabs pattern).
-  root.addEventListener("keydown", (e) => {
-    const tab = e.target.closest("[role=tab]");
-    if (!tab) return;
-    const keys = TABS.map(([k]) => k);
-    const at = keys.indexOf(tab.id.slice(4));
-    const to = { ArrowRight: at + 1, ArrowLeft: at - 1, Home: 0, End: keys.length - 1 }[e.key];
-    if (to === undefined) return;
-    e.preventDefault();
-    selectTab(keys[(to + keys.length) % keys.length], true);
-  });
+  const selectTab = (key, focus) => ws.select(KEYS.includes(key) ? key : KEYS[0], { focus });
 
   // A product action that didn't go through says so beside the product instead of failing silently.
   const act = async (el, path, body) => {
@@ -181,14 +171,7 @@
     btn.disabled = false;
   });
 
-  root.addEventListener("change", (e) => {
-    const pick = e.target.closest("[data-section]");
-    if (pick) selectTab(pick.value);
-  });
-
   root.addEventListener("click", async (e) => {
-    const tab = e.target.closest("[role=tab]");
-    if (tab) return selectTab(tab.id.slice(4));
     const set = e.target.closest("[data-product-set]");
     if (set) {
       set.disabled = true;

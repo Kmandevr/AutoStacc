@@ -20,7 +20,7 @@ describe("features in the browser", () => {
     await signUp(page, "owner@browser.test");
     const id = sql(t.stateDir, `SELECT id FROM "user" WHERE email = '${customer}'`)[0].id;
     await page.goto("/admin");
-    await page.click("#tab-customers");
+    await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
     for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/autostacc/glitches-and-stitches"]) {
@@ -36,11 +36,11 @@ describe("features in the browser", () => {
     }
     await page.click("[data-imp-exit]");
     await page.waitForURL((u) => u.pathname === "/admin");
-    await page.waitForSelector("#tab-overview");
+    await page.waitForSelector('[data-ws-item="overview"][aria-current="page"]');
     assert.equal(await page.locator("#impersonation-bar").count(), 0);
 
     // Ended elsewhere (here: its time limit): the page says so instead of quietly turning back into the admin.
-    await page.click("#tab-customers");
+    await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
     sql(t.stateDir, `UPDATE impersonations SET expires_at = '2000-01-01T00:00:00.000Z' WHERE ended_at IS NULL AND customer_user_id = '${id}'`);
@@ -143,7 +143,7 @@ describe("features in the browser", () => {
     const held = new Promise((r) => (release = r));
     await ctx.route((url) => url.pathname === "/api/admin/products", async (route) => { await held; await route.continue(); });
     await page.goto("/admin");
-    await page.click("#tab-customers");
+    await page.click('[data-ws-item="customers"]');
     const id = sql(t.stateDir, `SELECT id FROM "user" WHERE email = 'owner@browser.test'`)[0].id;
     await page.click(`[data-preview="${id}"]`);
     release();
@@ -152,7 +152,7 @@ describe("features in the browser", () => {
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
-  test("the Control Center works on a phone: a section picker, tables as cards, nothing sideways, big enough buttons", async () => {
+  test("the Control Center works on a phone: a sections drawer, tables as cards, nothing sideways, big enough buttons", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/login");
     await page.fill("#email", "owner@browser.test");
@@ -160,27 +160,34 @@ describe("features in the browser", () => {
     await page.click("button[type=submit]");
     await page.waitForURL((u) => u.pathname === "/dashboard");
     await page.goto("/admin");
-    await page.waitForSelector("[data-section]");
-    assert.equal(await page.locator(".admin-tabs").isVisible(), false, "the tab strip is replaced by the picker on a phone");
-    await page.selectOption("[data-section]", "customers");
+    await page.waitForSelector("[data-ws-open]");
+    assert.equal(await page.locator("[data-ws-item=customers]").isVisible(), false, "the sidebar is a closed drawer on a phone, not squeezed into tabs");
+    await page.click("[data-ws-open]");
+    await page.waitForSelector(".ws-drawer-open [data-ws-item=customers]", { state: "visible" });
+    assert.equal(await page.getAttribute("[data-ws-open]", "aria-expanded"), "true");
+    assert.equal(await page.evaluate(() => document.activeElement.closest(".ws-nav") !== null), true, "focus moves into the drawer");
+    await page.click("[data-ws-item=customers]");
+    await page.waitForSelector("[data-ws-item=customers]", { state: "hidden" });
+    assert.equal(await page.evaluate(() => document.activeElement.id), "admin-h-customers", "focus lands on the section's heading");
+    assert.equal(new URL(page.url()).hash, "#customers");
     await page.waitForSelector("#admin-customers td[data-label]");
     assert.equal(await page.locator("#admin-customers").isVisible(), true);
     assert.equal(await page.locator("#admin-products").isVisible(), false);
     const facts = await page.evaluate(() => ({
       overflow: document.documentElement.scrollWidth - innerWidth,
       cellsLabelled: [...document.querySelectorAll("#admin-customers tbody td")].filter((td) => td.colSpan === 1 && document.querySelectorAll("#admin-customers thead th")[td.cellIndex].textContent.trim()).every((td) => td.dataset.label),
-      picker: document.querySelector("[data-section]").getBoundingClientRect().height,
+      picker: document.querySelector("[data-ws-open]").getBoundingClientRect().height,
       small: [...document.querySelectorAll("#admin-customers button, #admin-customers .link-btn")].filter((b) => b.offsetParent && b.getBoundingClientRect().height < 40).length
     }));
     assert.ok(facts.overflow <= 0, `the Control Center overflows by ${facts.overflow}px`);
     assert.ok(facts.cellsLabelled, "every table cell carries its column name");
-    assert.ok(facts.picker >= 44, "the picker is easy to tap");
+    assert.ok(facts.picker >= 44, "the Sections button is easy to tap");
     assert.equal(facts.small, 0, "buttons are big enough to tap");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
 
-  test("Studio selling on a phone: make a product, upload its file, put it on sale, and the product page sells it", async () => {
+  test("Studio selling on a phone: make a product, upload its file in the Product Studio, put it on sale, and the product page sells it", async () => {
     const { ctx, page } = await open();
     await signUp(page, unique("seller"));
     await page.goto("/studio");
@@ -193,23 +200,34 @@ describe("features in the browser", () => {
     await page.click("[data-products]");
     await page.waitForSelector("form[data-form=new]");
     await page.fill("form[data-form=new] [name=title]", "Glitch Kit");
-    await page.fill("form[data-form=new] [name=description]", "Drums and textures.");
     await page.selectOption("form[data-form=new] [name=type]", "sample-pack");
     await page.fill("form[data-form=new] [name=price]", "4.50");
-    await page.fill("form[data-form=new] [name=includes]", "20 drum hits\n5 textures");
     await page.click("form[data-form=new] button[type=submit]");
-    await page.waitForSelector(".studio-product h3:text('Glitch Kit')");
+    // A new product opens in the Product Studio at the Pac Builder.
+    await page.waitForSelector('[data-ws-item="pacs"][aria-current="page"]', { state: "attached" });
     const row = sql(t.stateDir, "SELECT id, price_cents, published FROM products WHERE title = 'Glitch Kit'")[0];
     assert.equal(row.price_cents, 450);
     assert.equal(row.published, 0, "a new product is a draft");
+    assert.match(page.url(), new RegExp(`#product=${row.id}&section=pacs$`));
+    // The store page's words: autosaved, then on the product page.
+    await page.click("[data-ws-open]");
+    await page.click('[data-ws-item="store"]');
+    await page.fill("#ss-desc", "Drums and textures.");
+    await page.fill("#ss-inc", "20 drum hits\n5 textures");
+    await page.waitForSelector("[data-ws-save]:text('All changes saved')", { timeout: 10000 });
     sql(t.stateDir, "UPDATE creators SET trusted = 1");
+    await page.click("[data-ws-open]");
+    await page.click('[data-ws-item="pacs"]');
     const zip = Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.alloc(60, 1)]);
-    await page.setInputFiles("[data-upload]", { name: "kit.zip", mimeType: "application/zip", buffer: zip });
+    await page.setInputFiles("[data-spc-upload]", { name: "kit.zip", mimeType: "application/zip", buffer: zip });
     await page.waitForSelector("text=Uploaded kit.zip");
-    await page.click("[data-act=publish]");
-    await page.waitForSelector(".studio-product .tag:text('On sale')");
+    await page.click("[data-ws-open]");
+    await page.click('[data-ws-item="release"]');
+    await page.click("[data-sw-release=publish]");
+    await page.waitForSelector("[data-ws-status]:text('On sale')");
+    assert.equal(sql(t.stateDir, `SELECT published FROM products WHERE id = '${row.id}'`)[0].published, 1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
-    assert.ok(overflow <= 0, `the products screen overflows by ${overflow}px`);
+    assert.ok(overflow <= 0, `the Product Studio overflows by ${overflow}px`);
     await page.goto(`/product?p=${row.id}`);
     await page.waitForSelector(".product-price");
     assert.match(await page.textContent(".product-price"), /\$4\.50/);

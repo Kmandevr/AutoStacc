@@ -18,7 +18,7 @@ Creators' products are sold on a **second Stripe account** (the "marketplace" ac
 5. In the Control Center → **Payouts** the owner presses **Send via Stripe**: one Stripe transfer keyed by the request, so a retry never pays twice. If Stripe refuses (for example not enough balance) nothing is marked paid and the reason is shown. The creator is emailed when a request is paid or declined.
 6. A sale refunded after it was paid out leaves a negative balance, taken from the creator's next sales before anything more is available.
 
-Until the keys below are set, creator products can't be bought with real payments (checkout answers 503 `creator_sales_closed`) and payouts stay manual (the creator types how they want to be paid, you pay and mark it paid).
+Until the keys below are set, creator products can be listed and added to carts but not checked out (the cart says creator checkout isn't open yet; checkout answers 503 `creator_sales_closed`) and payouts stay manual (the creator types how they want to be paid, you pay and mark it paid).
 
 ## What the owner does
 
@@ -34,3 +34,5 @@ Keep the marketplace account's balance funded: transfers come out of it, and cha
 ## Not covered
 
 Tax forms for creators (Stripe's connected-account onboarding handles identity; whether you must file forms for US creators is a question for your tax adviser), payouts to creators outside the regions above (Global Payouts), and a webhook for account changes (the Studio asks Stripe for the account's state whenever it opens the payout section).
+
+**After adding the keys:** creator purchases open on the next deploy. If you paused them in the Control Center (Creators, Creator purchases), press **Allow creator purchases** too; both must be in place.

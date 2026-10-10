@@ -1,0 +1,111 @@
+/* Product Studio (studio.html): a project's product list (js/studio-products.js), the section frame
+   (js/studio-workspace.js), the shared pieces (js/studio-kit.js, js/studio-preview.js) and each section
+   (js/studio-section-*.js). The shell itself is css/workspace.css. Role tokens only. */
+
+/* ---------- product list (Creator Dashboard) ---------- */
+.sp-list { list-style: none; margin: 16px 0 22px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.sp-card { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px 14px; align-items: start; padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.sp-card > .btn { grid-column: 1 / -1; justify-self: start; }
+.sp-cover { width: 72px; height: 72px; display: grid; place-items: center; overflow: hidden; border-radius: calc(var(--radius) - 4px); background: var(--bg); border: 1px solid var(--line); color: var(--muted); font-size: .7rem; text-align: center; }
+.sp-cover img { width: 100%; height: 100%; object-fit: cover; }
+.sp-info { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.sp-title { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+.sp-meta { margin: 0; color: var(--muted); font-size: .9rem; }
+.sp-new-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 0 14px; }
+
+/* ---------- section frame ---------- */
+.sw-section { display: grid; gap: 8px; min-width: 0; }
+.sw-heading { margin: 0; font-size: var(--section-size); }
+.sw-hint { margin: 0 0 8px; color: var(--muted); }
+.sw-content { display: grid; gap: 12px; min-width: 0; }
+.sw-content h3 { margin: 14px 0 4px; font-size: 1.05rem; }
+.sw-content .btn.small { min-height: 36px; padding: 6px 12px; font-size: .85rem; }
+.sw-content .btn.danger { color: var(--coral); border-color: var(--coral); background: transparent; }
+
+/* shared: readiness, activity, figure tiles, tables, counts */
+.sk-ready { display: grid; gap: 6px; }
+.sk-ready-h { display: flex; align-items: center; gap: 8px; }
+.sk-ready-h::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--amber); }
+.sk-ready-h[data-kind="blocking"]::before { background: var(--coral); }
+.sk-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.sk-list .link-btn { text-align: left; min-height: 32px; }
+.sk-ok { margin: 0; padding: 10px 14px; border-left: 3px solid var(--lime); background: color-mix(in srgb, var(--lime) 8%, transparent); }
+.sk-activity { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sk-activity li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.sk-activity time { color: var(--muted); font-size: .85rem; }
+.sk-tiles { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.sk-tiles li { display: grid; gap: 2px; padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.sk-tiles span, .sk-tiles small { color: var(--muted); font-size: .8rem; }
+.sk-tiles strong { font-size: 1.2rem; color: var(--heading); overflow-wrap: anywhere; }
+.sk-table { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+.sk-table table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.sk-table th, .sk-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.sk-table thead th { color: var(--muted); font-weight: 600; font-size: .8rem; }
+.sk-table tr[data-status="ended"] td { color: var(--muted); }
+.sk-counts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sk-counts li { padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: .85rem; }
+
+/* ---------- Overview ---------- */
+.so-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.so-cover { width: 120px; height: 120px; flex: none; display: grid; place-items: center; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: .8rem; }
+.so-cover img { width: 100%; height: 100%; object-fit: cover; }
+.so-facts { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.so-name { margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--heading); overflow-wrap: anywhere; }
+.so-facts .small-print { margin: 0; }
+.so-actions, .sr-controls, .si-range, .ss-media-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.so-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 8px 24px; }
+
+/* ---------- Store Page: the form beside its live preview ---------- */
+.ss-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 24px; align-items: start; }
+.ss-form .field { margin-top: 0; }
+.ss-side { display: grid; gap: 8px; min-width: 0; position: sticky; top: calc(var(--topbar, 64px) + 12px); }
+.ss-side h3:first-child { margin-top: 0; }
+.ss-side audio { width: 100%; }
+.sp-preview-frame { padding: 14px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--bg); max-height: 70vh; overflow: auto; }
+.sp-preview-title { margin: 0 0 10px; font-size: 1.3rem; font-weight: 750; color: var(--heading); overflow-wrap: anywhere; }
+.sp-preview-frame .product-page { gap: 14px; }
+.sp-preview-frame .product-art { max-width: 220px; }
+.sp-preview-frame .btn[disabled] { opacity: .7; cursor: not-allowed; }
+@media (max-width: 1100px) {
+  .ss-grid { grid-template-columns: minmax(0, 1fr); }
+  .ss-side { position: static; }
+}
+
+/* ---------- Pricing ---------- */
+.sr-choice { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); }
+.sr-choice legend { padding: 0 6px; color: var(--muted); }
+.sr-choice label { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin-right: 14px; }
+.sr-state { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.sr-state .small-print { margin: 0; }
+
+/* ---------- Insights: one-hue bars, the readout above the hovered day, a table for the numbers ---------- */
+.si-range .btn[aria-pressed="true"] { color: var(--on-accent); background: var(--btn-bg); border-color: var(--btn-bg); }
+.si-metric { max-width: 260px; }
+.si-chart { margin: 0; padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.si-chart figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-bottom: 10px; }
+.si-plot { position: relative; padding-top: 22px; }
+.si-max { position: absolute; top: 0; left: 0; }
+.si-bars { display: flex; align-items: flex-end; gap: 2px; height: 140px; border-bottom: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% 50%; background-position: 0 0; cursor: crosshair; }
+.si-plot[data-dense="true"] .si-bars { gap: 0; }
+.si-bar { flex: 1 1 0; min-width: 0; height: var(--h); background: var(--teal); border-radius: 4px 4px 0 0; }
+.si-plot[data-dense="true"] .si-bar { border-radius: 1px 1px 0 0; }
+.si-bar.on { background: var(--link-hover); }
+.si-tip { position: absolute; top: 0; padding: 2px 8px; font-size: .8rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; pointer-events: none; white-space: nowrap; }
+.si-axis { display: flex; justify-content: space-between; margin-top: 4px; }
+.si-chart details { margin-top: 8px; }
+.si-chart details .sk-table { max-height: 320px; overflow: auto; }
+
+/* ---------- Pac Builder: the Pack Builder drawn inside the section, without its own back bar ---------- */
+.spc-pack .studio-packs > .studio-bar { display: none; }
+.spc-files { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.spc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.spc-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.spc-name { overflow-wrap: anywhere; min-width: 0; }
+.spc-list .tag[data-status="pending"] { border-color: var(--amber); }
+.spc-list .tag[data-status="rejected"] { border-color: var(--coral); }
+
+@media (pointer: coarse), (max-width: 700px) {
+  .sw-content .btn.small, .sp-card .btn.small, .sk-list .link-btn, .sr-choice label { min-height: 44px; }
+}
+.sr-sale [data-pr-at][hidden] { display: none; }
+.spc-files .studio-upload { justify-self: start; }

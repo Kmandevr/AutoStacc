@@ -1,6 +1,7 @@
 // Cart page: prices this browser's cart through the store API (never trusting local prices), shows problems per line,
 // sale prices and a promo code's discount (the code is kept for this tab only and checked by the store), takes a guest
-// email when nobody is signed in, and starts checkout (one request per click, safe to retry).
+// email when nobody is signed in, and starts checkout (one request per click, safe to retry). While creator sales are
+// closed, creators' products stay in the cart marked as held and checkout sends only the rest.
 // Needs js/util.js.
 (function () {
   "use strict";
@@ -35,6 +36,13 @@
     quantity: "Too many of these in one order.",
     currency_mismatch: "Mixed currencies can't share one checkout."
   };
+
+  // Why a creator's product can't be checked out yet (the store decides; server/payments/creator-sales.js).
+  const HELD = {
+    no_key: "Creator checkout isn't open yet: AutoStacc is finishing its payment setup for creators. It stays in your cart.",
+    paused: "Creator checkout is paused for now. It stays in your cart."
+  };
+  const heldIds = () => new Set(((priced && priced.held) || []).map((h) => h.productId));
 
   const PROMO_PROBLEMS = {
     invalid: "That code doesn't exist.",
@@ -97,6 +105,7 @@
       <div class="cart-what">
         ${l.title ? `<a href="${escapeHTML(l.path || `/shop/${l.productId}`)}">${escapeHTML(l.title)}</a>` : `<span>${escapeHTML(l.productId)}</span>`}
         ${l.problem ? `<span class="cart-problem">${escapeHTML(PROBLEMS[l.problem] || "Can't be bought right now.")}</span>` : ""}
+        ${l.held ? `<span class="cart-held">${escapeHTML(HELD[l.held] || HELD.paused)}</span>` : ""}
       </div>
       <div class="cart-qty">${qty}</div>
       <div class="cart-price">${l.title ? linePrice(l) : ""}</div>
@@ -107,7 +116,8 @@
   function render(message = "") {
     const c = priced;
     // A code that can't be used blocks checkout too: paying without the discount someone expected is worse.
-    const blocked = c.problems.length > 0 || Boolean(c.promoProblem);
+    const held = (c.held || []).length;
+    const blocked = c.problems.length > 0 || Boolean(c.promoProblem) || held === c.lines.length;
     const who = account && account.user
       ? `<p class="small-print">Checking out as <strong>${escapeHTML(account.user.email)}</strong>. Your files will be in Your Stacc.</p>`
       : `<div class="field"><label for="cart-email">Email for your receipt and files</label>
@@ -119,6 +129,7 @@
         <dl class="cart-totals"><dt>Subtotal</dt><dd>${cents(c.subtotalCents, c.currency)}</dd>${c.discountCents ? `<dt>Discount (${escapeHTML(c.promoCode)})</dt><dd>−${cents(c.discountCents, c.currency)}</dd>` : ""}<dt>Total</dt><dd class="price">${cents(c.totalCents, c.currency)}</dd></dl>
         ${promoBox(c)}
         ${c.problems.length ? `<p class="msg error">Remove the lines marked above to check out.</p>` : c.promoProblem ? `<p class="msg error">Change or clear the promo code to check out.</p>` : ""}
+        ${held && !c.problems.length ? `<p class="msg" role="status">${held === c.lines.length ? "Creators' products can't be checked out yet. They stay in your cart." : "Checkout covers the other items; creators' products stay in your cart for later."}</p>` : ""}
         ${who}
         <div class="actions">
           <button class="btn" type="button" id="checkout-btn"${blocked ? " disabled" : ""}>Checkout</button>
@@ -164,7 +175,8 @@
 
   async function checkout(btn, account = null) {
     if (busy) return;
-    const items = cart.items();
+    const hold = heldIds();
+    const items = cart.items().filter((i) => !hold.has(i.productId));
     const emailInput = $("#cart-email");
     if (emailInput && !emailInput.checkValidity()) {
       emailInput.setAttribute("aria-invalid", "true");
@@ -190,7 +202,7 @@
     const err = res.error;
     if (err.code === "checkout_finished") { forgetKey(); return load(); }
     if (err.code === "split_checkout" && err.groups) return render(splitPanel(err.groups));
-    if ((err.code === "cart_changed" || err.code === "promo_invalid") && err.cart) { priced = err.cart; return render(`<p class="msg error">${escapeHTML(err.message)}</p>`); }
+    if ((err.code === "cart_changed" || err.code === "promo_invalid" || err.code === "creator_sales_closed") && err.cart) { priced = err.cart; return render(`<p class="msg error">${escapeHTML(err.message)}</p>`); }
     const text = res.status === 0 ? "We couldn't reach the store before checkout opened. Nothing was charged; please try again."
       : res.status === 401 || res.status === 403 ? `${escapeHTML(err.message)} <a href="/login?next=/cart">Log in</a>` : escapeHTML(err.message);
     render(`<p class="msg error">${text}</p>`);

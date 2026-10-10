@@ -26,7 +26,9 @@ export function parseItems(raw) {
 }
 
 // promoCode: what the buyer typed (optional); email and userId: who is buying, for usage limits (optional).
-export async function priceCart(db, items, { owned = [], promoCode = "", email = "", userId = null } = {}) {
+// creatorSales: { open, reason } from server/payments/creator-sales.js; while closed, creators' products that could
+// otherwise be bought are held (line.held = reason): kept in the cart and shown, but outside the totals and checkout.
+export async function priceCart(db, items, { owned = [], promoCode = "", email = "", userId = null, creatorSales = { open: true, reason: null } } = {}) {
   const [products, sales] = await Promise.all([getProducts(db, items.map((i) => i.productId)), runningSales(db)]);
   const rows = new Map(products.map((p) => [p.id, p]));
   const ownedSet = new Set(owned);
@@ -41,12 +43,13 @@ export async function priceCart(db, items, { owned = [], promoCode = "", email =
     if (!isPurchasable(p)) line.problem = p.price_cents === 0 && !p.sales_paused ? "free" : "unavailable";
     else if (ownedSet.has(productId)) line.problem = "owned";
     else if (quantity > p.max_quantity) line.problem = "quantity";
+    else if (p.source === "studio" && !creatorSales.open) line.held = creatorSales.reason;
     return line;
   });
   const currencies = new Set(lines.filter((l) => l.currency).map((l) => l.currency));
-  const ok = lines.filter((l) => !l.problem);
+  const ok = lines.filter((l) => !l.problem && !l.held);
   if (currencies.size > 1) ok.forEach((l) => (l.problem = "currency_mismatch"));
-  const subtotalCents = lines.filter((l) => !l.problem).reduce((s, l) => s + l.lineTotalCents, 0);
+  const subtotalCents = lines.filter((l) => !l.problem && !l.held).reduce((s, l) => s + l.lineTotalCents, 0);
   const code = await applyCode(db, promoCode, lines, rows, subtotalCents, { email, userId });
   return {
     lines,
@@ -58,7 +61,8 @@ export async function priceCart(db, items, { owned = [], promoCode = "", email =
     promotionId: code.promo ? code.promo.id : null,
     promoCode: code.promo ? code.promo.code : null,
     promoProblem: code.problem || null,
-    problems: lines.filter((l) => l.problem).map((l) => ({ productId: l.productId, problem: l.problem }))
+    problems: lines.filter((l) => l.problem).map((l) => ({ productId: l.productId, problem: l.problem })),
+    held: lines.filter((l) => l.held).map((l) => ({ productId: l.productId, reason: l.held }))
   };
 }
 

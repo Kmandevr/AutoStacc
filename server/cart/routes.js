@@ -5,6 +5,7 @@ import { parseItems, priceCart, publicCart } from "./pricing.js";
 import { resolveAccess } from "../entitlements/access.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { limit } from "../lib/ratelimit.js";
+import { creatorSalesState } from "../payments/creator-sales.js";
 
 async function price(app) {
   await limit(app, "cart", 60, 60);
@@ -16,8 +17,9 @@ async function price(app) {
   // Trying codes has its own, stricter limit, so codes can't be found by guessing.
   if (promoCode.trim()) await limit(app, "promo", 15, 60);
   const email = access.user ? String(access.user.email).toLowerCase() : "";
-  const cart = await priceCart(app.db, items, { owned, promoCode, email, userId: access.user ? access.user.id : null });
-  return json({ cart: publicCart(cart) });
+  const creatorSales = await creatorSalesState(app);
+  const cart = await priceCart(app.db, items, { owned, promoCode, email, userId: access.user ? access.user.id : null, creatorSales });
+  return json({ cart: publicCart(cart), creatorSales: { open: creatorSales.open, reason: creatorSales.reason } });
 }
 
 // Pricing changes nothing, so it also works while impersonating (server/impersonation/policy.js).

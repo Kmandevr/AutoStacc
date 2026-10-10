@@ -18,6 +18,7 @@ import { removeAllFollowsStmt } from "../projects/follows.js";
 import { removeWishlistStmt } from "../wishlist/wishlist.js";
 import { removeVotesStmt } from "../polls/polls.js";
 import { creatorsOfUser, leaveAllCreatorsStmt } from "../creators/creators.js";
+import { forgetActorStmt } from "../creators/events.js";
 import { randomToken } from "../lib/db.js";
 import { limit } from "../lib/ratelimit.js";
 
@@ -53,6 +54,7 @@ async function deleteAccount(app) {
     removeWishlistStmt(db, user.id),
     removeVotesStmt(db, user.id),
     leaveAllCreatorsStmt(db, user.id),
+    forgetActorStmt(db, user.id),
     ...eraseUserStmts(db, user.id)
   ]);
   if (wantedNews) syncNewsList(app, email, false);
