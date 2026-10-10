@@ -17,8 +17,10 @@
 
   function open(root, productId, onBack) {
     let poll;
+    // This view replaces the products list: its handlers on root must not see our events.
+    root.onclick = root.onchange = root.onsubmit = null;
     root.innerHTML = `<div class="studio-packs">
-        <div class="studio-bar"><button class="btn ghost" type="button" data-act="back">&larr; Products</button><h2>Pack Builder</h2></div>
+        <div class="studio-bar"><button class="btn ghost" type="button" data-pack-back>&larr; Products</button><h2>Pack Builder</h2></div>
         <div data-pack-body><p class="msg pending">Loading…</p></div></div>`;
     const el = $(".studio-packs", root);
     const url = `${BASE}/products/${encodeURIComponent(productId)}`;
@@ -107,7 +109,8 @@
     });
 
     el.addEventListener("click", async (ev) => {
-      if (ev.target.closest("[data-act=back]")) { clearTimeout(poll); return onBack(); }
+      // Stopped here: going back redraws the products list, whose own handler on root would see this click too.
+      if (ev.target.closest("[data-pack-back]")) { ev.stopPropagation(); clearTimeout(poll); return onBack(); }
       const openV = ev.target.closest("[data-pack-open]");
       if (openV) return showVersion(openV.dataset.packOpen);
       const act = ev.target.closest("[data-pack-publish], [data-pack-discard]");

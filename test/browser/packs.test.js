@@ -63,7 +63,7 @@ test("a Studio creator uploads their product's pack, and a clean pack publishes 
   page.once("dialog", (d) => d.accept());
   await page.click("[data-pack-publish]");
   await page.waitForSelector("[data-pack-version] >> text=Published");
-  await page.click("[data-act=back]");
+  await page.click("[data-pack-back]");
   await page.waitForSelector(".studio-product >> text=from your pack");
   assert.deepEqual(page.errors, []);
 });
