@@ -1,7 +1,7 @@
 ---
 title: Processing engine
 summary: The Rust processing engine (engine/): safe ZIP reading, SHA-256/CRC-32, format identification and header facts; built natively for a Cloudflare Container run by the engine Worker (workers/engine/) and as WebAssembly for the Pack Builder's Web Workers; its loader, CI and benchmarks. Phase 0 of the Pack Builder plan.
-covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, test/unit/engine-worker.test.js, test/unit/mock-engine.test.js, test/mock-engine/, scripts/engine-conformance.js, scripts/engine-fixtures.js, scripts/lib/json-schema.js]
+covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, test/unit/engine-worker.test.js, test/unit/mock-engine.test.js, test/mock-engine/, scripts/engine-conformance.js, scripts/engine-fixtures.js, scripts/engine-smoke.js, scripts/lib/json-schema.js]
 updated: 2026-10-10
 ---
 
@@ -47,7 +47,7 @@ Pages API (later: Queue producer)        workers/engine/ (JS)                   
 - **Why a separate Worker:** Pages Functions can't consume Queues or own Containers. The Worker is thin: it checks each job (`checkJob`: known operation, allowed bucket, safe key and id), runs it on the one engine instance and stores the answer at `jobs/<id>/result.json` in `FILES`. Failures are retried three times 30 s apart, then land in `autostacc-engine-jobs-failed`, which writes `jobs/<id>/failed.json`.
 - **Container:** `basic` instance (¼ vCPU, 1 GiB, 4 GB disk), `max_instances` 1, queue concurrency 1, asleep 15 s after its last job (billing stops when it sleeps). No internet except R2's S3 host (`enableInternet = false`, allowed host set on start). The image is a static musl build on an empty base (~4.5 MB), running as an unprivileged user.
 - **Secrets** (GitHub, copied by the deploy): `ENGINE_R2_ACCESS_KEY_ID`, `ENGINE_R2_SECRET_ACCESS_KEY` (an R2 token for `autostacc-files` only), optional `ENGINE_ADMIN_TOKEN` (32+ characters) for the smoke-test routes: `GET /v1/health`, `POST /v1/jobs`, `GET /v1/jobs/<id>` on the Worker's workers.dev address with `Authorization: Bearer <token>`. Without the token every route answers 404. The API token (`CLOUDFLARE_API_TOKEN`) also needs, under Account: Workers Scripts Edit, Queues Edit, Containers Edit and Account Settings Read; the deploy prints what the token can reach (`wrangler whoami`) and names the missing permission when Cloudflare refuses (code 10000, "No access to the specified resource").
-- **CI** (`.github/workflows/engine.yml`): format, lints (native and WebAssembly), tests, a native-vs-WebAssembly parity check on a generated pack, the image build with a health check; on main (or by hand) the deploy creates the queues if missing, deploys the Worker and Container and sets the secrets. The deploy step is skipped with a warning when the R2 secrets are missing.
+- **CI** (`.github/workflows/engine.yml`): format, lints (native and WebAssembly), tests, a native-vs-WebAssembly parity check on a generated pack, the image build with a health check; on main (or by hand) the deploy creates the queues if missing, deploys the Worker and Container and sets the secrets. The deploy step is skipped with a warning when the R2 secrets are missing. With `ENGINE_ADMIN_TOKEN` set, a smoke test follows (`scripts/engine-smoke.js`): it puts the `pack-basic` conformance case in R2, has the deployed engine inspect it, checks the answer equals the expected one, prints the Container's cold start and the job's times, and removes what it wrote.
 
 ## Building and testing
 
