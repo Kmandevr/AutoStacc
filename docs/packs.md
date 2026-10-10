@@ -220,8 +220,8 @@ The engine's I/O-free modules (`zipread`, `hash`, `formats`, `facts`, `naming`, 
 
 **1. The engine is replaceable by contract, not by code.**
 
-- `engine/contract/v1/` holds JSON Schemas for each job's input and `result.json`, plus an error code list.
-- `engine/conformance/` holds golden fixtures: input pack + expected `result.json`, including malicious and edge cases.
+- engine/contract/v1/ holds JSON Schemas for each job's input and `result.json`, plus an error code list.
+- engine/conformance/ holds golden fixtures: input pack + expected `result.json`, including malicious and edge cases.
 - Any replacement engine, in any language, must pass node scripts/engine-conformance.js <command> before it is deployed.
 - The app never reads engine internals, only contract fields.
 - Breaking changes create `v2`, served side by side; every result records `contractVersion` and `engineVersion`.
@@ -380,7 +380,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 | Phase | Objective | Changes / new | Acceptance |
 | --- | --- | --- | --- |
 | **0. Platform proof of concept** (~3–5 days) | Prove the Container path, its cost inside the $5 plan, and record the decision | server/usage/ budget meters; `workers/engine/` + Container DO + Queue (dev/preview/prod) via `scripts/cloudflare.js`; minimal Rust `zipread`+`hash`+`io`, built both natively and as `engine-web.wasm` (loaded in a browser Web Worker, `'wasm-unsafe-eval'` CSP check on `/studio` and `/admin`); R2 access from the Container (S3 token vs FUSE); bench harness test/bench/ (generated 2 GB / 1,500-file pack, 10k-entry ZIP, 1.5 GB RF64) | Cold start, throughput, cost per GB measured; `docs/decisions.md` + docs/engine.md record Rust and the infrastructure; Docker and local dev documented |
-| **1. Contract + vocabulary + schema** | The seams before the code | `engine/contract/v1/*.json`, `engine/conformance/` fixtures + scripts/engine-conformance.js; vocabulary extension; `data/content-types.js` generated; `0014_packs.sql`; Stacclet/Pac sync; `LIMITS` 500 MB; features file; **mock engine** (test/mock-engine/, JS, returns fixture results) so API tests run without Docker | Unit tests; `build.js --check`; existing suites green |
+| **1. Contract + vocabulary + schema** | The seams before the code | `engine/contract/v1/*.json`, engine/conformance/ fixtures + scripts/engine-conformance.js; vocabulary extension; `data/content-types.js` generated; `0014_packs.sql`; Stacclet/Pac sync; `LIMITS` 500 MB; features file; **mock engine** (test/mock-engine/, JS, returns fixture results) so API tests run without Docker | Unit tests; `build.js --check`; existing suites green |
 | **2. Engine core** | Trusted processing | `zipread` guards, `formats`, `facts`, `naming`, `classify`, `job process-version` stage 1 | `cargo test`, `cargo fuzz` targets, conformance passes |
 | **3. Upload → process → publish → bundle (vertical slice)** | First real value | server/packs/ (versions, uploads with R2 multipart via the binding, process, import results, edits, publish), server/packs/engine-client.js; `server/files/upload.js`/`buckets.js` (multipart); server/downloads/bundle.js + `zip.js`; `/api/library` `folderPath`; `stacc-model.js` folder level; minimal builder UI (js/pack-builder.js, `-upload.js`, `-tree.js`, js/engine/engine-client.js + `engine-worker.js`: list the ZIP in the browser, upload each file with its SHA-256, whole-ZIP fallback) in the admin | API suite `packs.suite.js` (404s, idempotency, failed job leaves live intact, publish atomicity); browser E2E byte-equality; refund rule after a bundle download |
 | **4. Review UI + inheritance** | Guided automation | js/pack-resolve.js, `-review.js` (exceptions first, "auto" with reasons, bulk edit, folder defaults, move preview), `asset_values`/folder-values routes | Inheritance matrix tests; E2E correction and move keep explicit values |
