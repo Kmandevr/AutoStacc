@@ -27,7 +27,7 @@
           </div>
         </div>
         <h3>Readiness</h3>
-        ${K.readiness(data.readiness)}
+        ${K.checkout(data.checkout)}${K.readiness(data.readiness)}
         <h3>Quick actions</h3>
         <div class="so-actions">
           <button class="btn ghost small" type="button" data-sw-go="pacs">Edit Pac</button>

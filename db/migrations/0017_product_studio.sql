@@ -19,3 +19,12 @@ CREATE INDEX product_events_actor ON product_events(actor_user_id);
 -- A sale a creator made for one of its own products (kind 'sale', scope 'products', one id). NULL: AutoStacc's own.
 ALTER TABLE promotions ADD COLUMN creator_id TEXT;
 CREATE INDEX promotions_creator ON promotions(creator_id) WHERE creator_id IS NOT NULL;
+
+-- Store-wide switches the owner flips in the Control Center (one row per key, e.g. 'creator_sales' = 'paused').
+-- Missing row: the default. updated_by is the admin's account id.
+CREATE TABLE store_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_by TEXT,
+  updated_at TEXT NOT NULL
+);
