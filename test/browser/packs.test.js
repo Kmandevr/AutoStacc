@@ -1,7 +1,7 @@
 // Browser group for the Pack Builder (Control Center → Packs), against its own store and the mock engine: choose a Pac,
 // pick a ZIP (previewed in the browser by the engine's WebAssembly build), upload, wait for the check, then review: set
 // a value on selected files and see where each value comes from. And a Studio creator doing the same for their own
-// product, whose clean pack publishes at once. No console errors throughout.
+// product in the Product Studio's Pac Builder section, whose clean pack publishes at once. No console errors throughout.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -50,11 +50,14 @@ test("a Studio creator uploads their product's pack, and a clean pack publishes 
   const post = (url, body) => page.evaluate(async ([u, b]) => (await fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) })).json(), [url, body]);
   const { creator } = await post("/api/studio/creators", { name: "Packer", slug: `packer-${Date.now().toString(36)}` });
   const { project } = await post(`/api/studio/creators/${creator.id}/projects`, { name: "Kits", slug: "kits" });
-  await post(`/api/studio/projects/${project.id}/products`, { title: "Drum Kit", type: "sample-pack", priceCents: 900, description: "Drums.", includes: ["kicks"] });
+  const { product } = await post(`/api/studio/projects/${project.id}/products`, { title: "Drum Kit", type: "sample-pack", priceCents: 900, description: "Drums.", includes: ["kicks"] });
   await page.goto("/studio");
   await page.click("[data-products]");
-  await page.click(".studio-product [data-act=packs]");
+  await page.click(`.sp-card[data-id="${product.id}"] a`);
+  await page.waitForSelector('[data-ws-item="overview"][aria-current="page"]');
+  await page.click('[data-ws-item="pacs"]');
   await page.waitForSelector("[data-pack-form]");
+  assert.equal(await page.locator("[data-pack-back]").isVisible(), false, "inside the Product Studio the sidebar replaces the Pack Builder's own back bar");
   assert.match(await page.locator(".studio-packs").innerText(), /0\.0 MB of 500 MB/);
   await page.setInputFiles("#spk-file", path.join(ROOT, "engine/conformance/cases/pack-basic.zip"));
   await page.click("[data-pack-form] button[type=submit]");
@@ -63,7 +66,9 @@ test("a Studio creator uploads their product's pack, and a clean pack publishes 
   page.once("dialog", (d) => d.accept());
   await page.click("[data-pack-publish]");
   await page.waitForSelector("[data-pack-version] >> text=Published");
-  await page.click("[data-pack-back]");
-  await page.waitForSelector(".studio-product >> text=from your pack");
+  // The section's file list counts the published pack, and Release no longer blocks for want of a file.
+  await page.waitForSelector(".spc-list >> text=from your Pac", { timeout: 15000 });
+  await page.click('[data-ws-item="release"]');
+  await page.waitForSelector(".sk-ok");
   assert.deepEqual(page.errors, []);
 });
