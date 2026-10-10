@@ -15,6 +15,7 @@ import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/fil
 import { putVerifiedFile } from "../files/upload.js";
 import { newFileKey, safeFilename, deleteFile, putPreview, peekPreview, deletePreview } from "../storage/buckets.js";
 import { alertAdmins } from "../email/alerts.js";
+import { recordEvent } from "../creators/events.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
 
@@ -48,6 +49,7 @@ async function upload(app, { productId }) {
   }
   if (status === "pending") await alertAdmins(app, { key: `file:${id}`, title: "a creator's file is waiting for approval",
     lines: [`${creator.name} (/${creator.slug}) uploaded ${filename} to "${product.title}".`, "Publish or reject it in the Control Center, Products."] });
+  await recordEvent(app.db, { productId: product.id, kind: "file_added", actorId: user.id, detail: { filename } });
   return json({ file: { id, filename, sizeBytes: object.size, status } }, 201);
 }
 
@@ -56,10 +58,11 @@ async function remove(app, { productId, fileId }) {
   const user = await requireUser(app);
   const { product } = await requireOwnProduct(app.db, productId, user);
   const fid = str(fileId, "fileId", { max: 40, pattern: FILE_ID });
-  const file = await first(app.db, "SELECT version_id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", fid, product.id);
+  const file = await first(app.db, "SELECT version_id, filename FROM product_files WHERE id = ? AND product_id = ? AND active = 1", fid, product.id);
   if (!file) fail(404, "not_found", "No such file.");
   if (file.version_id) fail(409, "in_pack", "This file is part of your pack. Upload a new version of the pack without it.");
   await setStatus(app.db, fid, "deleted");
+  await recordEvent(app.db, { productId: product.id, kind: "file_removed", actorId: user.id, detail: { filename: file.filename } });
   await unpublishEmptyStudioProducts(app.db);
   return json({ ok: true });
 }
@@ -87,6 +90,7 @@ async function uploadPreview(app, { productId }) {
   await run(app.db, "UPDATE products SET preview = ?, updated_at = ? WHERE id = ?", `/media/${key}`, now(), product.id);
   const old = product.preview && product.preview.startsWith(`/media/previews/${product.id}-`) ? product.preview.slice("/media/".length) : null;
   if (old) await deletePreview(app.env, old);
+  await recordEvent(app.db, { productId: product.id, kind: "preview_changed", actorId: user.id, detail: { added: true } });
   return json({ preview: `/media/${key}` }, 201);
 }
 
@@ -95,6 +99,7 @@ async function removePreview(app, { productId }) {
   const { product } = await requireOwnProduct(app.db, productId, user);
   await run(app.db, "UPDATE products SET preview = NULL, updated_at = ? WHERE id = ?", now(), product.id);
   if (product.preview && product.preview.startsWith(`/media/previews/${product.id}-`)) await deletePreview(app.env, product.preview.slice("/media/".length));
+  if (product.preview) await recordEvent(app.db, { productId: product.id, kind: "preview_changed", actorId: user.id, detail: { removed: true } });
   return json({ ok: true });
 }
 
