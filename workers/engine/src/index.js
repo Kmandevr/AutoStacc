@@ -37,13 +37,13 @@ EngineContainer.outboundByHost = {
 const engine = (env) => getContainer(env.ENGINE, "engine");
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-async function runJob(env, job) {
+async function runJob(env, job, msg) {
   const started = Date.now();
   const res = await engine(env).fetch(new Request("http://engine/v1/jobs", { method: "POST", body: JSON.stringify(engineRequest(job)) }));
   const body = await res.text();
   if (res.status === 503) throw new Error("engine busy");
   if (res.status >= 500) throw new Error(`engine ${res.status}`);
-  await env.FILES.put(resultKey(job.jobId), body, { httpMetadata: { contentType: "application/json" }, customMetadata: { status: String(res.status), wallMs: String(Date.now() - started) } });
+  await env.FILES.put(resultKey(job.jobId), body, { httpMetadata: { contentType: "application/json" }, customMetadata: { status: String(res.status), wallMs: String(Date.now() - started), queueMs: String(started - msg.timestamp.getTime()), attempts: String(msg.attempts) } });
 }
 
 export default {
@@ -64,7 +64,7 @@ export default {
         continue;
       }
       try {
-        await runJob(env, job);
+        await runJob(env, job, msg);
         msg.ack();
       } catch (e) {
         console.error(`job ${job.jobId} attempt ${msg.attempts}:`, e.message);
@@ -103,7 +103,7 @@ export default {
     const m = url.pathname.match(/^\/v1\/jobs\/([a-z0-9_-]{8,64})$/);
     if (request.method === "GET" && m) {
       const done = await env.FILES.get(resultKey(m[1]));
-      if (done) return new Response(done.body, { headers: { "Content-Type": "application/json", "X-Engine-Wall-Ms": done.customMetadata?.wallMs || "" } });
+      if (done) return new Response(done.body, { headers: { "Content-Type": "application/json", "X-Engine-Wall-Ms": done.customMetadata?.wallMs || "", "X-Engine-Queue-Ms": done.customMetadata?.queueMs || "", "X-Engine-Attempts": done.customMetadata?.attempts || "" } });
       return (await env.FILES.head(failedKey(m[1]))) ? json({ status: "failed" }, 200) : json({ status: "pending" }, 202);
     }
     return json({ error: "not_found" }, 404);

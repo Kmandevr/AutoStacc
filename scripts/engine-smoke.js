@@ -47,7 +47,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   if (answer.status === "failed" || res.status !== 200) { console.error(`job ${jobId} ${answer.status || res.status}`); process.exit(1); }
   const expected = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "engine/conformance/expected", `${name}.inspect.json`), "utf8"));
   const same = JSON.stringify(normal(answer)) === JSON.stringify(expected);
-  console.log(`job ${jobId}: queued to answer ${totalMs} ms; engine ${answer.elapsedMs} ms inside the Container; worker wall ${res.headers.get("x-engine-wall-ms")} ms`);
+  console.log(`job ${jobId}: queued to answer ${totalMs} ms; engine ${answer.elapsedMs} ms inside the Container; worker wall ${res.headers.get("x-engine-wall-ms")} ms; waited ${res.headers.get("x-engine-queue-ms")} ms in the queue; attempt ${res.headers.get("x-engine-attempts")}`);
   console.log(same ? `PASS the deployed engine's answer for ${name} equals the expected one` : `FAIL the deployed engine's answer for ${name} differs from the expected one`);
   process.exit(same ? 0 : 1);
 })().catch((e) => { console.error(e.message); process.exit(1); });
