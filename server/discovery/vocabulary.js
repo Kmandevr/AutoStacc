@@ -272,5 +272,20 @@ export function searchText({ title = "", description = "", tags = [], facets = {
 // What the browser needs to label and filter (data/vocabulary.js is generated from this by scripts/build.js).
 export const browserVocabulary = () => ({
   facets: Object.fromEntries(Object.entries(FACETS).map(([k, f]) => [k, { label: f.label, multi: f.multi, values: f.values }])),
-  schemas: SCHEMAS, specs: SPECS, bpm: BPM
+  schemas: SCHEMAS, specs: SPECS, bpm: BPM,
+  // What a file can be given in the Pack Builder's review (kinds come from data/content-types.js).
+  assets: { instruments: INSTRUMENTS, midiRoles: MIDI_ROLES }
 });
+
+// Whether `value` is something a creator may set for an asset's `field` (Pack Builder, server/packs/edits.js): a known
+// kind, instrument, key or MIDI role, or a tempo in range. "" (none) is always allowed.
+export function assetValueOk(field, value) {
+  if (value === "") return true;
+  if (typeof value !== "string" || value.length > 40) return false;
+  if (field === "kind") return Object.prototype.hasOwnProperty.call(KINDS, value);
+  if (field === "instrument") return Object.prototype.hasOwnProperty.call(INSTRUMENTS, value);
+  if (field === "key") return Object.prototype.hasOwnProperty.call(FACETS.key.values, value);
+  if (field === "midiRole") return Object.prototype.hasOwnProperty.call(MIDI_ROLES, value);
+  if (field === "bpm") return /^\d{2,3}(\.\d{1,2})?$/.test(value) && Number(value) >= BPM.min && Number(value) <= BPM.max;
+  return false;
+}

@@ -30,6 +30,9 @@ export function loadConfig(env) {
   const downloadSecret = env.DOWNLOAD_SIGNING_SECRET || "";
   if (downloadSecret.length < 32) problems.push("DOWNLOAD_SIGNING_SECRET must be at least 32 characters");
   if (authSecret && authSecret === downloadSecret) problems.push("DOWNLOAD_SIGNING_SECRET must differ from BETTER_AUTH_SECRET");
+  // Optional: lets the engine Worker's daily cron run the retention sweep (POST /api/internal/sweep); off without it.
+  const sweepToken = env.SWEEP_TOKEN || "";
+  if (sweepToken && sweepToken.length < 32) problems.push("SWEEP_TOKEN must be at least 32 characters");
 
   const paymentProvider = env.PAYMENT_PROVIDER || (devLike ? "mock" : "stripe");
   if (!["stripe", "mock"].includes(paymentProvider)) problems.push(`PAYMENT_PROVIDER "${paymentProvider}" is unknown`);
@@ -93,6 +96,7 @@ export function loadConfig(env) {
     secure: siteUrl.startsWith("https://"),
     authSecret,
     downloadSecret,
+    sweepToken,
     paymentProvider,
     stripeKey,
     stripeWebhookSecret,

@@ -52,3 +52,11 @@ export const unpublishEmptyStudioProducts = (db) =>
 // Where a file's bytes are: its stored original's key for files published from a pack version (their own r2_key is a
 // placeholder, db/migrations/0015_pack_publish.sql), else its own key. Every download goes through here.
 export const storageKeyOf = async (db, file) => (file.blob_id ? blobKey(db, file.blob_id) : file.r2_key);
+
+// Retention sweep: files retired longer than RETIRED_KEEP_DAYS ago reach nobody any more, so they stop being active
+// (their stored original is then unused and the blob sweep removes it). Returns how many.
+export async function deactivateExpiredRetired(db, nowMs = Date.now()) {
+  const cutoff = new Date(nowMs - RETIRED_KEEP_DAYS * 86400000).toISOString();
+  const res = await run(db, "UPDATE product_files SET active = 0, status_at = ? WHERE active = 1 AND retired_at IS NOT NULL AND retired_at < ?", now(), cutoff);
+  return res.meta.changes || 0;
+}

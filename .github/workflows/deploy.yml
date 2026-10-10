@@ -62,6 +62,7 @@ jobs:
           PLATFORM_COUNTRY: ${{ secrets.PLATFORM_COUNTRY }}
           BREVO_NEWSLETTER_LISTS: ${{ secrets.BREVO_NEWSLETTER_LISTS }}
           BREVO_NEWS_LIST: ${{ secrets.BREVO_NEWS_LIST }}
+          SWEEP_TOKEN: ${{ secrets.SWEEP_TOKEN }}
         run: node scripts/cloudflare.js store
       - name: Static site only (store not enabled)
         if: env.STORE_ENABLED != 'true'

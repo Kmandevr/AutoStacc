@@ -8,6 +8,7 @@ import { engineVocabulary } from "../discovery/vocabulary.js";
 import { checkJob, engineRequest, resultKey, failedKey, parseWriteRecord } from "../../workers/engine/src/jobs.js";
 import { putJson, getJson, headFile, listKeys } from "../storage/buckets.js";
 import { fail } from "../lib/http.js";
+import { isOn } from "../lib/features.js";
 
 export const FILES_BUCKET = "autostacc-files";
 
@@ -15,7 +16,9 @@ const direct = (app) => !app.config.production && app.env.ENGINE_URL;
 
 /** Queues a `process` job: check the archive at `key`, store each accepted file for `ownerScope`, suggest values. */
 export async function queueProcess(app, { jobId, key, ownerScope }) {
-  const job = checkJob({ jobId, op: "process", bucket: FILES_BUCKET, key, ownerScope, vocabulary: engineVocabulary() }, [FILES_BUCKET]);
+  // Without suggestions switched on, the engine gets no vocabulary and suggests nothing.
+  const vocabulary = isOn(app, "packs.suggestions") ? { vocabulary: engineVocabulary() } : {};
+  const job = checkJob({ jobId, op: "process", bucket: FILES_BUCKET, key, ownerScope, ...vocabulary }, [FILES_BUCKET]);
   if (!direct(app)) {
     if (!app.env.JOBS) fail(503, "engine_unavailable", "File processing isn't set up here yet.");
     await app.env.JOBS.send(job);

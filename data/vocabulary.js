@@ -331,5 +331,36 @@ window.VOCABULARY = {
  "bpm": {
   "min": 40,
   "max": 250
+ },
+ "assets": {
+  "instruments": {
+   "808": "808",
+   "drums": "Drums",
+   "kick": "Kick",
+   "snare": "Snare",
+   "clap": "Clap",
+   "hats": "Hats",
+   "cymbals": "Cymbals",
+   "percussion": "Percussion",
+   "bass": "Bass",
+   "synth": "Synth",
+   "lead": "Lead",
+   "pad": "Pad",
+   "pluck": "Pluck",
+   "arp": "Arp",
+   "keys": "Keys",
+   "piano": "Piano",
+   "guitar": "Guitar",
+   "strings": "Strings",
+   "brass": "Brass",
+   "vocals": "Vocals",
+   "fx": "FX",
+   "textures": "Textures",
+   "atmosphere": "Atmosphere"
+  },
+  "midiRoles": {
+   "pattern": "Pattern",
+   "arrangement": "Arrangement"
+  }
  }
 };
