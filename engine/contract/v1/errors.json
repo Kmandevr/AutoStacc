@@ -33,11 +33,12 @@
   "service": {
     "bad_request": "The job isn't valid JSON or misses fields.",
     "bad_source": "The source isn't an allowed bucket and key (or a local file in development).",
-    "unknown_op": "Not one of list, inspect, file.",
+    "unknown_op": "Not one of list, inspect, file, process.",
     "not_found": "No such object.",
     "bucket_not_allowed": "The bucket isn't on the engine's list.",
     "storage_unavailable": "Storage couldn't be reached.",
     "busy": "Another job is running; retry later.",
-    "serialize": "The answer couldn't be encoded."
+    "serialize": "The answer couldn't be encoded.",
+    "bad_target": "The process job's target isn't an allowed bucket and a plain prefix ending in /."
   }
 }

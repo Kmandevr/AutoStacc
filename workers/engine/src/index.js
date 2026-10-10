@@ -3,7 +3,8 @@
 // HTTP (only when ENGINE_ADMIN_TOKEN is set, with it as a bearer token): POST /v1/jobs queues a job, GET /v1/jobs/:id
 // reads its answer, GET /v1/health starts the Container and asks for its version. Used to smoke-test a deploy.
 import { Container, getContainer } from "@cloudflare/containers";
-import { checkJob, resultKey, failedKey, engineRequest, tokenMatches, buckets, STORAGE_HOST, storageRequest } from "./jobs.js";
+import { checkJob, resultKey, failedKey, engineRequest, tokenMatches, buckets, STORAGE_HOST, writePrefix } from "./jobs.js";
+import { relay } from "./storage.js";
 
 // Needed by the Containers library to route the engine's outbound requests through the handlers below.
 export { ContainerProxy } from "@cloudflare/containers";
@@ -19,18 +20,15 @@ export class EngineContainer extends Container {
   }
 }
 
-// The engine's only way out: reads of the allowed buckets, answered here from the R2 binding. The Container holds no
-// storage credentials and has no internet, so a compromised engine can read the job buckets and nothing else.
+// The engine's only way out: storage.engine, answered from the R2 binding (src/storage.js). Reads of the allowed buckets
+// at any time; during a process job, the runtime handler below also lets it write under that job's own prefix. The
+// Container holds no storage credentials and has no internet.
 EngineContainer.outboundByHost = {
-  [STORAGE_HOST]: async (request, env) => {
-    const r = storageRequest(request.method, request.url, request.headers.get("Range"), buckets(env));
-    if (r.status) return new Response(null, { status: r.status });
-    const obj = r.head && !r.range ? await env.FILES.head(r.key) : await env.FILES.get(r.key, r.range ? { range: r.range } : {});
-    if (!obj) return new Response(null, { status: 404 });
-    const length = r.range ? Math.min(r.range.length, Math.max(0, obj.size - r.range.offset)) : obj.size;
-    const headers = { "Content-Length": String(length), "X-Object-Size": String(obj.size) };
-    if (r.range) headers["Content-Range"] = `bytes ${r.range.offset}-${r.range.offset + length - 1}/${obj.size}`;
-    return new Response(r.head ? null : obj.body, { status: r.range ? 206 : 200, headers });
+  [STORAGE_HOST]: (request, env) => relay(request, env.FILES, buckets(env), null)
+};
+EngineContainer.outboundHandlers = {
+  async storageForJob(request, env, ctx) {
+    return relay(request, env.FILES, buckets(env), ctx.params && ctx.params.prefix ? ctx.params : null);
   }
 };
 
@@ -39,7 +37,20 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 
 async function runJob(env, job, msg) {
   const started = Date.now();
-  const res = await engine(env).fetch(new Request("http://engine/v1/jobs", { method: "POST", body: JSON.stringify(engineRequest(job)) }));
+  const container = engine(env);
+  const attempt = msg.attempts;
+  if (job.op === "process") {
+    await container.setOutboundByHost(STORAGE_HOST, "storageForJob", { jobId: job.jobId, attempt, prefix: writePrefix(job.ownerScope, job.jobId, attempt) });
+  }
+  try {
+    await runOn(container, env, job, msg, started, attempt);
+  } finally {
+    if (job.op === "process") await container.removeOutboundByHost(STORAGE_HOST);
+  }
+}
+
+async function runOn(container, env, job, msg, started, attempt) {
+  const res = await container.fetch(new Request("http://engine/v1/jobs", { method: "POST", body: JSON.stringify(engineRequest(job, attempt)) }));
   const body = await res.text();
   if (res.status === 503) throw new Error("engine busy");
   if (res.status >= 500) throw new Error(`engine ${res.status}`);

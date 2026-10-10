@@ -26,6 +26,9 @@ pub struct FileResult {
     /// Values suggested from names and headers (classify.rs), only when the job sent a vocabulary.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub suggestions: Vec<crate::classify::Suggestion>,
+    /// Where the original was written (the `process` job only): a key under the job's storage prefix.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stored: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -55,6 +58,10 @@ pub trait Sink {
     fn begin(&mut self, _path: &str, _size: u64) {}
     fn chunk(&mut self, _bytes: &[u8]) {}
     fn end(&mut self, _ok: bool) {}
+    /// Where the file just ended was stored, if this sink stores files (the `process` job).
+    fn stored(&mut self) -> Option<String> {
+        None
+    }
 }
 
 /// A sink that keeps nothing (inspection only).
@@ -82,6 +89,7 @@ fn listing_only(e: &Entry) -> FileResult {
         issues: e.issues.clone(),
         ignored: e.ignored,
         suggestions: Vec::new(),
+        stored: None,
     }
 }
 
@@ -175,6 +183,7 @@ pub fn inspect_archive_part(
                 r.sha256 = Some(d.sha256);
                 r.crc32 = Some(d.crc32);
                 sink.end(!r.identity.mismatch);
+                r.stored = sink.stored();
             }
             Err(err) => {
                 r.issues.push(Issue {
@@ -234,6 +243,7 @@ pub fn inspect_file(path: &str, src: &dyn Source) -> std::io::Result<FileResult>
         issues,
         ignored: false,
         suggestions: Vec::new(),
+        stored: None,
     })
 }
 

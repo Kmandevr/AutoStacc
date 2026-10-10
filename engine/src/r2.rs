@@ -1,11 +1,13 @@
 // Storage as an engine Source, for the server Container (native only): ranged GETs of
 // <R2_ENDPOINT>/<bucket>/<key>, read in 8 MiB blocks with a small cache so sequential extraction fetches each block
-// once. On Cloudflare, R2_ENDPOINT is http://storage.engine, a host the engine Worker answers from its R2 binding: the
+// once, and written with streaming PUTs (Upload) for the `process` job. On Cloudflare, R2_ENDPOINT is http://storage.engine, a host the engine Worker answers from its R2 binding: the
 // Container holds no storage credentials and has no internet (docs/engine.md). The bucket must be on R2_BUCKETS.
 use crate::Source;
 use std::io::{self, Read};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::Mutex;
+use std::thread::JoinHandle;
 use std::time::Duration;
 
 const BLOCK: u64 = 8 << 20;
@@ -85,6 +87,100 @@ impl R2Source {
         }
         self.bytes_fetched.fetch_add(data.len() as u64, Ordering::Relaxed);
         Ok(data)
+    }
+}
+
+enum Piece {
+    Bytes(Vec<u8>),
+    Abort,
+}
+
+/// The request body of an upload, fed from the job's thread; an abort makes the PUT fail instead of ending short.
+struct Pipe {
+    rx: Receiver<Piece>,
+    buf: Vec<u8>,
+    at: usize,
+}
+
+impl Read for Pipe {
+    fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
+        while self.at == self.buf.len() {
+            match self.rx.recv() {
+                Ok(Piece::Bytes(b)) => {
+                    self.buf = b;
+                    self.at = 0;
+                }
+                Ok(Piece::Abort) => return Err(io::Error::other("aborted")),
+                Err(_) => return Ok(0),
+            }
+        }
+        let n = out.len().min(self.buf.len() - self.at);
+        out[..n].copy_from_slice(&self.buf[self.at..self.at + n]);
+        self.at += n;
+        Ok(n)
+    }
+}
+
+/// One object written by a streaming PUT to <endpoint>/<bucket>/<key> with its length declared up front, fed chunk by
+/// chunk while the file is being checked (one pass over the archive). The Worker behind storage.engine decides whether
+/// the key may be written (only under the running job's prefix, never over an existing object) and hashes the bytes.
+pub struct Upload {
+    tx: Option<SyncSender<Piece>>,
+    thread: Option<JoinHandle<io::Result<()>>>,
+}
+
+impl Upload {
+    pub fn start(cfg: &R2Config, bucket: &str, key: &str, len: u64) -> io::Result<Self> {
+        if !cfg.buckets.iter().any(|b| b == bucket) {
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "bucket not allowed"));
+        }
+        let url = format!("{}/{}/{}", cfg.endpoint, bucket, encode_key(key));
+        let (tx, rx) = sync_channel::<Piece>(4);
+        let thread = std::thread::spawn(move || {
+            let agent = ureq::AgentBuilder::new()
+                .timeout_connect(Duration::from_secs(10))
+                .timeout_read(Duration::from_secs(120))
+                .build();
+            let body = Pipe {
+                rx,
+                buf: Vec::new(),
+                at: 0,
+            };
+            agent
+                .put(&url)
+                .set("Content-Length", &len.to_string())
+                .set("Content-Type", "application/octet-stream")
+                .send(body)
+                .map(|_| ())
+                .map_err(err)
+        });
+        Ok(Self {
+            tx: Some(tx),
+            thread: Some(thread),
+        })
+    }
+
+    /// False once the upload has failed (the rest of the file is then just read and checked).
+    pub fn write(&mut self, bytes: &[u8]) -> bool {
+        self.tx
+            .as_ref()
+            .is_some_and(|tx| tx.send(Piece::Bytes(bytes.to_vec())).is_ok())
+    }
+
+    pub fn finish(mut self) -> io::Result<()> {
+        drop(self.tx.take());
+        self.thread
+            .take()
+            .map_or(Ok(()), |t| t.join().unwrap_or_else(|_| Err(err("upload thread"))))
+    }
+
+    pub fn abort(mut self) {
+        if let Some(tx) = self.tx.take() {
+            let _ = tx.send(Piece::Abort);
+        }
+        if let Some(t) = self.thread.take() {
+            let _ = t.join();
+        }
     }
 }
 
