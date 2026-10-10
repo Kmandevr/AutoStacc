@@ -128,6 +128,12 @@ async function redeem(app, { token }) {
   });
 }
 
+// Retention sweep: bundle links last minutes; their rows are kept a day for support, then removed.
+export async function deleteExpiredBundles(db, nowMs = Date.now()) {
+  const res = await run(db, "DELETE FROM download_bundles WHERE expires_at < ?", new Date(nowMs - 86400000).toISOString());
+  return res.meta.changes || 0;
+}
+
 export const routes = [
   ["POST", "/api/downloads/bundle", issue, { impersonation: "allow" }],
   ["GET", "/api/downloads/bundle/:token", redeem, { auditReads: true }]

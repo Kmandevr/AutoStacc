@@ -37,6 +37,8 @@ Optional, for a project's newsletter sign-up: `BREVO_NEWSLETTER_LISTS` = `glitch
 
 Optional, for creators' sales and payouts on a second Stripe account: `STRIPE_MARKETPLACE_KEY`, `STRIPE_MARKETPLACE_WEBHOOK_SECRET`, `PLATFORM_COUNTRY` ([payouts-setup](payouts-setup.md)). `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are already there for the static deploy.
 
+Optional: `SWEEP_TOKEN` (any random string of 32+ characters, for example from `openssl rand -hex 32`) turns on the daily clean-up of Pack Builder storage (retired files after 30 days, unused originals, abandoned drafts); both deploys copy it where it's needed.
+
 Then **Variables** tab: add `STORE_ENABLED` = `true`. The next deploy (push to `main`, or Actions → Deploy → Run workflow) provisions D1 and R2, applies migrations, syncs the catalog, sets the secrets in Cloudflare, checks them against the store's production rules, and after publishing checks that `https://autostacc.com/api/account` and `/api/products` answer and the webhook address exists (`scripts/deploy-check.js`). If a secret is missing, the deploy warns and the store stays "offline"; a secret that breaks a rule is printed (by name, never its value) as an error. The site is unaffected either way. Deleting a GitHub secret doesn't remove the copy already in Cloudflare.
 
 Production refuses test keys: `sk_test_` keys only work in development and previews (`server/lib/config.js`).

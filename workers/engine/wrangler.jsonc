@@ -4,7 +4,7 @@
 // ("basic") instance, one instance, one job at a time, asleep 15 s after the last job (docs/packs.md).
 // The Container has no internet and no storage credentials: it reads job inputs through the Worker (storage.engine,
 // src/index.js), which answers from FILES for the buckets in R2_BUCKETS only. Secret (wrangler secret put):
-// ENGINE_ADMIN_TOKEN (optional: enables the smoke-test routes).
+// ENGINE_ADMIN_TOKEN (optional: enables the smoke-test routes), SWEEP_TOKEN (optional: the daily sweep below).
 {
   "name": "autostacc-engine",
   "main": "src/index.js",
@@ -26,5 +26,7 @@
     ]
   },
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "autostacc-files" }],
-  "vars": { "R2_BUCKETS": "autostacc-files" }
+  "vars": { "R2_BUCKETS": "autostacc-files", "SITE_URL": "https://autostacc.com" },
+  // Daily, off the hour: asks the store to run its retention sweep (needs the SWEEP_TOKEN secret on both sides).
+  "triggers": { "crons": ["23 4 * * *"] }
 }
