@@ -27,7 +27,7 @@ Labels: **[V]** verified in the repo or in Cloudflare's docs this session · **[
 | --- | --- |
 | §2.4, §4: one authoritative record for each product, shown in many places | One Pac/asset model and one vocabulary for the builder, store, product pages, library and recommendations; a product's contents are derived from its assets, never copied |
 | §4: products show contents, formats and compatibility | Contents tree, formats, BPM/key, sample rate and bit depth come from the files themselves (facts) or the creator (claims), never invented |
-| §6: buying gives lasting value; purchase records keep the product version and terms | Every file version is identified by its SHA-256 and every pack version is recorded, so a purchase can be tied to what was bought. **Conflict:** the earlier answer "latest version only" lets a revision remove files from people who already bought them. Flagged in H8; until the owner decides, nothing that removes a buyer's access gets built |
+| §6: buying gives lasting value; purchase records keep the product version and terms | Every file is identified by its SHA-256 and every pack version is recorded, so a purchase can be tied to what was bought. Owner's decision (H8): buyers keep what they downloaded; a revision's removed or replaced files stay downloadable for 30 days with a notice, then only the latest version is kept, because keeping every version of every file costs too much storage. Unchanged files are stored once |
 | §7.2: no corrupted or misrepresented files, malicious-file checks, never claim manual inspection | Integrity checks, content-vs-name checks and archive guards are automated; wording to creators and buyers must say "checked automatically", never "reviewed" or "inspected" |
 | §9: free tier with understandable, transparent limits | 500 MB per creator (owner's decision), shown as used/total in the Studio, with a plain message when full |
 | §10: creators can download the originals they uploaded | Originals are stored byte for byte, so a creator export of their own files is cheap; added to Phase 9 |
@@ -54,7 +54,8 @@ AutoStacc sells Pacs through products. Today a Pac's contents are loose `product
 | Uploaded master ZIP | Kept only until the version is published or discarded, then deleted; the manifest is authoritative |
 | Purchase unit | Whole products (entitlements stay per product); customers download any subset they own |
 | Creator storage | **500 MB free per creator**; extra storage will be paid by the creator later (billing out of scope) |
-| Revisions for buyers | Owner answered **latest version only**; this conflicts with vision §6 (purchase permanence) and is reopened as H8 |
+| Revisions for buyers (H8, decided after the vision) | **Buyers keep what they downloaded; files are stored once, git-style.** Unchanged files are shared between versions. A file a revision removes or replaces stays downloadable for 30 days with an "Updated" notice saying what goes and when, then only the latest version remains. Deltas inside a file only if Phase 6 measurements show real savings |
+| Library label | "Samples" becomes **"One-shots"** (old values fold to it) |
 | Product page before purchase | Contents tree + stats; per-file audio previews deferred |
 | Where heavy work runs | **A server Container from the start** (works with the tab closed; same result on every computer) |
 | Must be replaceable | **The engine itself**, and **individual features** (switch off or swap one without breaking uploads, purchases or downloads) |
@@ -62,7 +63,7 @@ AutoStacc sells Pacs through products. Today a Pac's contents are loose `product
 | Workers plan | Containers require **Workers Paid**, so choosing a Container settles it: Paid ($5/month + usage) |
 | Workers plan (confirmed) | **Workers Paid, $5/month; stay inside the included usage, no overage charges** |
 | Container size | Owner first picked standard-2 / 3 jobs. Under the "no extra charges" rule this becomes **`basic` (¼ vCPU, 1 GiB, 4 GB disk), one job at a time, `sleepAfter` 30 s**: about 25 instance-hours per month inside the allowance instead of about 4. Raised only if Phase 0 shows packs process too slowly |
-| Removed files in a revision | Library "Updated" badge + list of removed file names for 30 days; no email |
+| Removed files in a revision | Library "Updated" badge + list of removed or replaced files, still downloadable for 30 days; no email |
 | Moderation | **Automated review**: the engine's checks decide; only flagged versions wait for an admin (below) |
 | Personal collections and tags | **In the first release** (with saved searches) |
 
@@ -400,7 +401,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 | **3. Upload → process → publish → bundle (vertical slice)** | First real value | server/packs/ (versions, uploads with R2 multipart via the binding, process, import results, edits, publish), server/packs/engine-client.js; `server/files/upload.js`/`buckets.js` (multipart); server/downloads/bundle.js + `zip.js`; `/api/library` `folderPath`; `stacc-model.js` folder level; minimal builder UI (js/pack-builder.js, `-upload.js`, `-tree.js`, js/engine/engine-client.js + `engine-worker.js`: list the ZIP in the browser, upload each file with its SHA-256, whole-ZIP fallback) in the admin | API suite `packs.suite.js` (404s, idempotency, failed job leaves live intact, publish atomicity); browser E2E byte-equality; refund rule after a bundle download |
 | **4. Review UI + inheritance** | Guided automation | js/pack-resolve.js, `-review.js` (exceptions first, "auto" with reasons, bulk edit, folder defaults, move preview), `asset_values`/folder-values routes | Inheritance matrix tests; E2E correction and move keep explicit values |
 | **5. Studio creators + automated review** | Open to creators | Studio entry in `js/studio-products.js`; Pac/Stacclet auto-create; quotas (reservation at version create, race-proof); **automated review** replaces the per-file pending flow, as the documented "scanner between pending and published" | Quota race; auto-pass publishes; each red flag holds with its reason; admin override audited; impersonation refused |
-| **6. Revisions** | Safe replacement | `diff` in the engine; `-versions.js` review; blob dedup; carry-over; 7-day grace sweep (engine Worker cron, allowed in a Worker); buyers' "Updated" badge + removed-files list for 30 days (`pac_versions.stats.removed`, shown by `js/library-view.js`) | Diff matrix; unchanged files keep ids; failed revision leaves live intact |
+| **6. Revisions** | Safe replacement | `diff` in the engine; `-versions.js` review; blob dedup (git-style, by SHA-256); carry-over; removed or replaced files kept 30 days for buyers then swept (engine Worker cron, allowed in a Worker); measure whether deltas inside files would save space; buyers' "Updated" badge + removed-files list for 30 days (`pac_versions.stats.removed`, shown by `js/library-view.js`) | Diff matrix; unchanged files keep ids; failed revision leaves live intact |
 | **6b. Personal organization** (first release) | Collections, personal tags, saved searches in Your Stacc | server/collections/ (new module): `collections(id, user_id, name, created_at)`, `collection_items(collection_id, asset_id, added_at)`, `asset_tags(user_id, asset_id, tag)`, `saved_searches(user_id, name, query)`; items reference the stable `asset_id`, so they survive revisions (a removed asset shows as "no longer in the pack"); only owned assets are ever listed; `stacc-model.js` filter by collection/tag; included in the account data export and deleted with the account (`server/account/`); `/privacy` updated | Suite: another user's collection is 404; non-owned assets never listed; export and delete cover the new tables; creator metadata untouched |
 | **7. Store integration** | Contents-driven discovery | Derived facets at publish; `GET /api/products/:id/contents`; product page tree; new filters through `product_facets` | Product qualifies on ≥1 asset; drafts excluded; creator facets survive; search timing within ±20% |
 | **8. Analysis** | BPM/key/peaks suggestions | `analysis` (stage 2); labelled set; threshold calibration | Accuracy report; inferred values never shown as verified |
@@ -597,7 +598,7 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 ### What's too much work, or not worth it (kept out or deferred) [R]
 
 - Per-asset purchasing / Pac-level ownership: the owner chose whole products.
-- Keeping every old version for every buyer forever is not planned; what buyers keep is H8.
+- Keeping every old version of every file for buyers: too much storage (owner, H8); a removed or replaced file stays 30 days, then goes.
 - Running heavy analysis (decode, BPM/key) in the browser: it stays Container-only; the browser build carries only listing, hashing, facts and suggestions.
 - Stored, cached full-pack ZIPs: determinism makes them unnecessary.
 - At-rest compression; deflate for audio.
@@ -632,7 +633,7 @@ The vertical slice (0–3) is the first point of real value.
 | Malicious archives | Rust, guards, fuzzing, no secrets in the Container |
 | BPM/key accuracy | Suggestions only; measured thresholds; "no key" for atonal material |
 | D1 limits | `json_each`, paged imports |
-| A revision could remove files buyers paid for (vision §6) | Reopened as H8; nothing that removes a buyer's access is built until the owner decides |
+| A revision removes files buyers paid for but haven't downloaded (vision §6) | 30 days' notice in Your Stacc with the date, then removal (owner's decision H8) |
 | Engine replacement | Conformance suite and contract versions |
 | Maintenance in two languages (JS + Rust) | Rust confined to `engine/`; contract docs; CI builds the image and runs conformance |
 
@@ -640,20 +641,9 @@ The vertical slice (0–3) is the first point of real value.
 
 ## H. Clarifying questions (open)
 
-Answered and folded into the plan: Container size and cap, notice to buyers on removed files, automated review, collections in the first release.
+Answered and folded into the plan: Container size and cap, notice to buyers on removed files, automated review, collections in the first release, what buyers keep after a revision (H8), and "One-shots" as the label (H5).
 
 These remain open. Each has a default the plan uses unless you say otherwise.
-
-**H8 · What buyers keep when a creator revises a pack (vision §6, purchase permanence)**
-
-- **Decision needed:** the earlier answer was "latest version only", so a file removed in a revision stops being downloadable even for people who bought it before. Vision §6 says buying should give lasting value and that purchase records keep the version bought.
-- **Recommended default:** buyers get every update, and keep access to every file that was in the version they bought (shown under "Earlier files" when a later version drops them). Unchanged files are shared between versions, so this only keeps the bytes of removed or changed files, counted against AutoStacc's storage, not the creator's quota.
-- **What changes:** with the default, a removed file's blob is kept while any purchase predates its removal, and entitlements record the pack version at purchase. With "latest only", removed files are deleted after the grace period and the badge only lists what was removed.
-
-**H5 · Kind labels for customers**
-
-- **Recommended default:** the "Samples" label becomes "One-shots" (old values fold to it).
-- **What changes:** keeping "Samples" as the umbrella label adds a role field instead.
 
 **H6 · Extra formats**
 

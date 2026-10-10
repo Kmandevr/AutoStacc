@@ -17,7 +17,8 @@ Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLE
 - **Packs are assets, not ZIPs.** A Pac holds folders and individually identified assets with versions and provenance; an uploaded ZIP is unpacked, every file stored byte for byte and checked by SHA-256, and the ZIP discarded. Originals are never converted, resampled or recompressed.
 - **Who:** the admin and Studio creators, in the first release. Moderation is **automated review**: clean versions publish; flagged ones wait for an admin with reasons.
 - **Buying stays per product.** Customers download any subset they own (file, folder, Pac, selection across products) as one store-only ZIP; checkout, entitlements and download authorization are unchanged.
-- **Revisions:** the owner answered "buyers get the latest version only" (files a revision removes listed in Your Stacc with an "Updated" badge for 30 days). Reopened after the vision was added: it conflicts with purchase permanence (vision §6); see [packs](packs.md) H8. Not built until decided.
+- **Revisions (decided after the vision, §6):** buyers keep whatever they downloaded. Files are stored once, git-style, so unchanged files cost nothing across versions. A file a revision removes or replaces stays downloadable to buyers for 30 days with an "Updated" notice and date, then only the latest version remains: keeping every version of every file is too much storage (owner). Deltas inside files only if measurements show they help.
+- **Library label:** "Samples" becomes "One-shots"; old values fold to it.
 - **Creator storage:** 500 MB free per creator; extra storage will be paid by the creator later (not built).
 - **Product pages** show the contents tree and stats before purchase; store filters come from the files, not hand-entered tags.
 - **Personal collections, tags and saved searches** in Your Stacc in the first release.
