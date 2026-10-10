@@ -3,7 +3,7 @@
 # results on a generated pack, and a build of the Container image with a health check. On main (or by hand) it then
 # deploys the engine Worker and its Container, which runs nothing until a job is queued.
 #
-# Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit and Containers: Edit),
+# Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit, Containers: Edit, Account Settings: Read),
 # CLOUDFLARE_ACCOUNT_ID, ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (an R2 API token limited to the
 # autostacc-files bucket), optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes).
 # Without the R2 secrets the deploy step is skipped.
@@ -102,15 +102,26 @@ jobs:
       - name: Install (the Containers library and Wrangler)
         if: steps.ready.outputs.go == 'true'
         run: npm ci && npm i --no-save wrangler@4.148.0
+      - name: What the API token can reach (for permission errors below)
+        if: steps.ready.outputs.go == 'true'
+        run: npx wrangler whoami 2>&1 | grep -viE "email|@" || true
       - name: Queues (created once; existing ones are kept)
         if: steps.ready.outputs.go == 'true'
         run: |
           for q in autostacc-engine-jobs autostacc-engine-jobs-failed; do
-            npx wrangler queues create "$q" 2>&1 | tee /tmp/q.log || grep -qi "already" /tmp/q.log
+            out=$(npx wrangler queues create "$q" 2>&1) && { echo "created $q"; continue; }
+            if echo "$out" | grep -qiE "already (exists|taken)"; then echo "$q exists"; continue; fi
+            echo "$out"
+            if echo "$out" | grep -q "code: 10000"; then echo "::error::The Cloudflare API token can't manage Queues: give it Account → Queues → Edit (docs/engine.md)."; fi
+            exit 1
           done
       - name: Deploy the Worker and its Container
         if: steps.ready.outputs.go == 'true'
-        run: npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        run: |
+          npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" 2>&1 | tee /tmp/deploy.log || {
+            grep -q "No access to the specified resource\|code: 10000" /tmp/deploy.log && echo "::error::The Cloudflare API token can't deploy Workers or Containers: give it Account → Workers Scripts → Edit and Containers → Edit (docs/engine.md)."
+            exit 1
+          }
       - name: Secrets
         if: steps.ready.outputs.go == 'true'
         run: |
