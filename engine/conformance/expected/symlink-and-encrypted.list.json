@@ -1,0 +1,38 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "unknown",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "symlink",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "link",
+   "size": 11
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "encrypted",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "secret.wav",
+   "size": 1
+  }
+ ],
+ "folders": [],
+ "totalSize": 0,
+ "zip64": false
+}

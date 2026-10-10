@@ -62,10 +62,12 @@
         sources.delete(id);
       },
       version: () => call({ op: "version" }),
-      list: (src) => call({ op: "list", src }),
+      // vocabulary (optional): the words to suggest values from (server/discovery/vocabulary.js engineVocabulary()).
+      list: (src, vocabulary) => call({ op: "list", src, vocabulary: vocabulary || null }),
       // part [i, n]: only this worker's share of the files (every n-th, from the i-th).
-      inspect: (src, sinkCallbacks, part) => call({ op: "inspect", src, emit: Boolean(sinkCallbacks), part: part || null }, sinkCallbacks),
-      file: (src, path) => call({ op: "file", src, path }),
+      inspect: (src, sinkCallbacks, part, vocabulary) =>
+        call({ op: "inspect", src, emit: Boolean(sinkCallbacks), part: part || null, vocabulary: vocabulary || null }, sinkCallbacks),
+      file: (src, path, vocabulary) => call({ op: "file", src, path, vocabulary: vocabulary || null }),
       hash: (src) => call({ op: "hash", src })
     };
   }

@@ -3,9 +3,9 @@
 import { before, after } from "node:test";
 import { startStores } from "../support/servers.js";
 
-export function runGroup({ name, ports, mock = true, stripe = true }, suites) {
+export function runGroup({ name, ports, mock = true, stripe = true, vars }, suites) {
   const ctx = {};
-  before(async () => Object.assign(ctx, await startStores({ name, ports, mock, stripe })), { timeout: 240000 });
+  before(async () => Object.assign(ctx, await startStores({ name, ports, mock, stripe, vars })), { timeout: 240000 });
   after(() => ctx.stop && ctx.stop());
   for (const suite of suites) suite(ctx);
 }

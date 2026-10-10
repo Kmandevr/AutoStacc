@@ -1,13 +1,40 @@
 ---
 title: Pack Builder and processing engine
-summary: PLANNED / NOT IMPLEMENTED. Approved plan for the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
-covers: [server/files/, server/storage/, server/downloads/, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
+summary: PARTLY BUILT. Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
+covers: [server/packs/, server/blobs/, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
 updated: 2026-10-10
 ---
 
 # Pack Builder and processing engine
 
-> **PLANNED, Phase 0 partly built.** This note is the approved plan (owner, 2026-10-10). Built so far: the engine core, its WebAssembly build, the Container image, the engine Worker and CI ([engine](engine.md)); nothing on the site uses them yet. Not built: pack tables, the Pack Builder UI, bundles, derived facets. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
+> **Partly built (2026-10-10).** This note is the approved plan (owner, 2026-10-10); the status of each phase is below and in section F. Today's older file handling is in [store](store.md) and [library](library.md); decisions: [decisions](decisions.md). Work is tracked in issue #101.
+
+## What's built
+
+| Phase | State |
+| --- | --- |
+| 0. Platform | The engine runs on Cloudflare (`autostacc-engine` Worker, one `basic` Container, the job queues), smoke-tested on every deploy; first measurements in [engine](engine.md). Still to measure: storage throughput on a large pack and billed usage per job |
+| 1. Contract, vocabulary, schema | Built: contract v1, conformance suite and mock engine; one asset vocabulary; `db/migrations/0014_packs.sql` with Stacclets and Pacs in the database; 500 MB free storage per creator |
+| 2. Engine core | Built: archive guards, formats, header facts, suggestions from names and headers (`naming`, `classify`), fuzz targets |
+| 3. Vertical slice | **Built for admins**: the API below, the Control Center's Packs tab (`js/admin-packs.js`, `-upload.js`: resumable upload, the engine's findings, publish or discard) and Your Stacc's folders with "Download folder (ZIP)" (`js/library-bundle.js`). Still to do: the retention sweep, feature switches, listing the ZIP in the browser before upload |
+
+**How the slice works** (`server/packs/`, admin only, 404 to everyone else; `db/migrations/0015_pack_publish.sql`):
+
+1. `POST /api/admin/packs/:pacId/versions` makes a version of a Pac for a product that includes it (one in progress per Pac; an idempotency key returns the same one) and plans the ZIP's upload: parts of 64 MiB, each `PUT /api/admin/packs/uploads/:id/parts/:n` streamed straight to R2 multipart and recorded as it lands, so parts can arrive in any order or again. `GET /api/admin/packs/:pacId` shows the Pac's versions.
+2. `POST …/uploads/:id/complete` joins the parts and queues one `process` job (`server/packs/engine-client.js`, the only file that knows how the engine is reached: the queue in production, `ENGINE_URL` in development and tests).
+3. The engine checks the archive and streams each accepted file once to `blobs/<owner>/<job>/<attempt>/<n>` through the storage relay (`workers/engine/src/storage.js`), which allows writes only under the running job's prefix, never over an object, and records its own SHA-256 of each.
+4. `GET /api/admin/packs/versions/:id` (the builder polls it) imports the answer once it is in (`import.js`): only files on which the engine's answer and the relay's record agree are kept; one stored original per owner and hash (`server/blobs/`; a duplicate copy is deleted); folders (a single wrapper folder dropped), assets, the manifest and the engine's suggestions; refused files with their reasons in the version's stats. Then the uploaded ZIP is deleted (owner's decision). A version with an engine error fails and frees the Pac.
+5. `POST …/versions/:id/publish` (audited; only a ready version with at least one file) writes the product's files in one batch (`server/files/publish-rows.js`): unchanged files keep their id, removed or replaced ones are retired, new ones added; the previous live version is superseded. `…/discard` drops an unfinished version and its upload.
+6. Customers see the files in Your Stacc with their folder (`folderPath`) and download them one by one as before (`storageKeyOf` finds the stored original), or several at once: `POST /api/downloads/bundle {fileIds}` (up to 2,000 files and 20 GB, each checked against its product's entitlement when the link is made and again when used) streams a ZIP of the original bytes (`server/downloads/bundle.js`, `zip.js`: stored entries, CRC-32 and sizes from the engine's check, length known in advance, ZIP64 when needed). Files from before Pack Builder download one at a time. Each served file is logged like a single download (the refund rule counts it). Checked with `unzip -t` and the engine's own reader, including the ZIP64 end record; a single file over 4 GB is not yet tested end to end.
+
+**Hardened after review** (security and backend reviewers, 2026-10-10):
+- The import builds each stored key from the job's own prefix and keeps a file only if the engine's key is exactly that and the relay recorded the same hash and size (`acceptStored`, unit-tested with forged keys), so an engine can't point a version at another owner's or another job's object.
+- The engine Worker destroys the Container before and after every `process` job, so nothing one archive leaves running can reach the next job's write scope.
+- A retired file (removed or replaced by a newer version) is delivered only to people whose access began before it was retired, and only for 30 days (`stillDelivered` in `server/files/files.js`, H8): library, single and bundle downloads all check it.
+- Publishing writes the Pac's files into every product that sells the Pac. A version never stays "processing": a job that can't be queued, a failed import or a job silent for two hours fails it, frees the Pac and removes what it left in storage. Conditional batches use `batch_guard` (`guardStmt`). Bundle links check each entitlement once (D1's query limit).
+- Still to build: the retention sweep (engine Worker cron → an internal store route) that deletes retired files after 30 days, stored originals nothing uses, abandoned drafts and expired bundle rows; until then they stay in storage, never reachable by customers.
+
+`test/api/packs.suite.js` covers the path end to end against the mock engine, which writes through the store's stand-in relay (`server/packs/engine-storage.js`, development and tests only) exactly as the real engine writes through its Worker.
 
 
 > **Rev. 4 (2026-10-10).** The owner re-sent the brief and confirmed **Workers Paid**. The rev. 3 decisions all stand. Two points of the new brief change the design:
@@ -95,7 +122,7 @@ AutoStacc sells Pacs through products. Today a Pac's contents are loose `product
 | `server/files/upload.js` `putVerifiedFile` | Streams body → R2, peeks 16 bytes, deletes on mismatch |
 | `server/storage/buckets.js` | `newFileKey`, get/put/peek/delete, range `getPreview`. **No multipart** |
 | Admin upload (`server/admin/files.js`) | `pac`, `kind`, `status`, `replaces` (the replacement link is only in the audit log) |
-| Studio upload (`server/studio/product-files.js`) | `pac_id=NULL`, `kind=''` hard-coded. Untrusted → `pending` + `alertAdmins`. Quota 250 MB, 20 files per product, enforced in the INSERT |
+| Studio upload (`server/studio/product-files.js`) | `pac_id=NULL`, `kind=''` hard-coded. Untrusted → `pending` + `alertAdmins`. Quota 250 MB at planning (500 MB since Phase 1c), 20 files per product, enforced in the INSERT |
 | ZIP | Accepted as an opaque file, never unpacked. **No archive, hashing or audio/MIDI code anywhere** |
 
 **Hierarchy**
@@ -158,7 +185,7 @@ ENGINE WORKER: workers/engine/ (JS, ~200 lines: queue consumer + Container DO)
   │ retries / dead-letter queue / max concurrency · DO per job · alarm = timeout/stale guard
   ▼
 CONTAINER: engine/ (Rust, native binary, basic: ¼ vCPU, 1 GiB; one job at a time; sleeps after 30 s)
-  reads incoming/<version>/… from R2 (S3 API, scoped token)  ─┐
+  reads incoming/<version>/… via the engine Worker (no keys)  ─┐
   zip.list → stream inflate each entry → sha256+crc32 →        │ originals written to R2 FILES
   identify → facts → naming/classify → bpm/key/peaks →         │ (blobs, byte-exact)
   writes result.json (contract v1) to R2 jobs/<jobId>/          ┘
@@ -288,7 +315,7 @@ The engine's I/O-free modules (`zipread`, `hash`, `formats`, `facts`, `naming`, 
 ### Proof-of-concept uncertainties (Phase 0)
 
 - Container cold start and image size (target: image <50 MB, cold start <5 s).
-- R2 throughput from the Container via the S3 API (or a FUSE mount).
+- R2 throughput from the Container (built: reads relayed by the engine Worker from its R2 binding; measured on deploy).
 - Native SHA-256 ≥1 GB/s and inflate ≥300 MB/s per vCPU.
 - symphonia covers the needed codecs.
 - Queue → DO → Container wiring from a Pages producer.
@@ -397,8 +424,8 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 | --- | --- | --- | --- |
 | **0. Platform proof of concept** (~3–5 days) | Prove the Container path, its cost inside the $5 plan, and record the decision | server/usage/ budget meters; `workers/engine/` + Container DO + Queue (dev/preview/prod) via `scripts/cloudflare.js`; minimal Rust `zipread`+`hash`+`io`, built both natively and as `engine-web.wasm` (loaded in a browser Web Worker, `'wasm-unsafe-eval'` CSP check on `/studio` and `/admin`); R2 access from the Container (S3 token vs FUSE); bench harness test/bench/ (generated 2 GB / 1,500-file pack, 10k-entry ZIP, 1.5 GB RF64) | Cold start, throughput, cost per GB measured; `docs/decisions.md` + docs/engine.md record Rust and the infrastructure; Docker and local dev documented |
 | **1. Contract + vocabulary + schema** | The seams before the code | `engine/contract/v1/*.json`, engine/conformance/ fixtures + scripts/engine-conformance.js; vocabulary extension; `data/content-types.js` generated; `0014_packs.sql`; Stacclet/Pac sync; `LIMITS` 500 MB; features file; **mock engine** (test/mock-engine/, JS, returns fixture results) so API tests run without Docker | Unit tests; `build.js --check`; existing suites green |
-| **2. Engine core** | Trusted processing | `zipread` guards, `formats`, `facts`, `naming`, `classify`, `job process-version` stage 1 | `cargo test`, `cargo fuzz` targets, conformance passes |
-| **3. Upload → process → publish → bundle (vertical slice)** | First real value | server/packs/ (versions, uploads with R2 multipart via the binding, process, import results, edits, publish), server/packs/engine-client.js; `server/files/upload.js`/`buckets.js` (multipart); server/downloads/bundle.js + `zip.js`; `/api/library` `folderPath`; `stacc-model.js` folder level; minimal builder UI (js/pack-builder.js, `-upload.js`, `-tree.js`, js/engine/engine-client.js + `engine-worker.js`: list the ZIP in the browser, upload each file with its SHA-256, whole-ZIP fallback) in the admin | API suite `packs.suite.js` (404s, idempotency, failed job leaves live intact, publish atomicity); browser E2E byte-equality; refund rule after a bundle download |
+| **2. Engine core** | Trusted processing | `zipread` guards, `formats`, `facts`, `naming`, `classify`, `job process-version` stage 1 | `cargo test`, `cargo fuzz` targets, conformance passes. **Built (2026-10-10):** guards, formats, facts, `naming` and `classify` (suggestions with origin, confidence and reasons, from the vocabulary sent with each job), conformance (27 checks, CLI = WebAssembly). Fuzz targets (archives, headers, names; weekly in CI). `process-version` arrives with Phase 3's pack tables |
+| **3. Upload → process → publish → bundle (vertical slice)** | First real value. **API built (2026-10-10), see "What's built"; ZIP upload only (per-file upload with hashes moves to Phase 6)** | server/packs/ (versions, uploads with R2 multipart via the binding, process, import results, edits, publish), server/packs/engine-client.js; `server/files/upload.js`/`buckets.js` (multipart); server/downloads/bundle.js + `zip.js`; `/api/library` `folderPath`; `stacc-model.js` folder level; minimal builder UI (js/pack-builder.js, `-upload.js`, `-tree.js`, js/engine/engine-client.js + `engine-worker.js`: list the ZIP in the browser, upload each file with its SHA-256, whole-ZIP fallback) in the admin | API suite `packs.suite.js` (404s, idempotency, failed job leaves live intact, publish atomicity); browser E2E byte-equality; refund rule after a bundle download |
 | **4. Review UI + inheritance** | Guided automation | js/pack-resolve.js, `-review.js` (exceptions first, "auto" with reasons, bulk edit, folder defaults, move preview), `asset_values`/folder-values routes | Inheritance matrix tests; E2E correction and move keep explicit values |
 | **5. Studio creators + automated review** | Open to creators | Studio entry in `js/studio-products.js`; Pac/Stacclet auto-create; quotas (reservation at version create, race-proof); **automated review** replaces the per-file pending flow, as the documented "scanner between pending and published" | Quota race; auto-pass publishes; each red flag holds with its reason; admin override audited; impersonation refused |
 | **6. Revisions** | Safe replacement | `diff` in the engine; `-versions.js` review; blob dedup (git-style, by SHA-256); carry-over; removed or replaced files kept 30 days for buyers then swept (engine Worker cron, allowed in a Worker); measure whether deltas inside files would save space; buyers' "Updated" badge + removed-files list for 30 days (`pac_versions.stats.removed`, shown by `js/library-view.js`) | Diff matrix; unchanged files keep ids; failed revision leaves live intact |
@@ -493,7 +520,7 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 - Duplicate or case-colliding names are reported.
 - Nested ZIPs are kept as files, with their listing inspected.
 - Deceptive files are refused.
-- The Container runs with no secrets beyond a scoped R2 token (read `incoming/`, write blob keys) and no D1 access. Per-job time and memory budgets apply.
+- The Container holds no secrets and has no internet or D1 access: storage reads (and, from Phase 3, writes of blob keys) go through the engine Worker, which answers from its R2 binding for allowed buckets and keys only. Per-job time and memory budgets apply.
 
 **Server**
 

@@ -22,23 +22,27 @@
   }
 
   // A labelled group of assets with a "select all" box for exactly those assets.
-  function group(title, list, ctx, { showSource = false, level = 3 } = {}) {
+  // bundle: offer the group's files as one ZIP (js/library-bundle.js), for the files that can be bundled.
+  function group(title, list, ctx, { showSource = false, level = 3, bundle = false } = {}) {
     const ids = list.map((a) => a.id);
     const all = ids.every((id) => ctx.selected.has(id));
+    const zip = bundle ? list.filter((a) => a.bundleable).map((a) => a.id) : [];
     return `<div class="stacc-group">
       <div class="stacc-group-head"><h${level}>${e(title)} <span class="stacc-count">${list.length}</span></h${level}>
-        <label class="stacc-all"><input type="checkbox" data-select-group="${e(ids.join(" "))}"${all ? " checked" : ""}> Select all</label></div>
+        <label class="stacc-all"><input type="checkbox" data-select-group="${e(ids.join(" "))}"${all ? " checked" : ""}> Select all</label>
+        ${zip.length > 1 ? `<button class="btn ghost" type="button" data-bundle="${e(zip.join(" "))}">Download folder (ZIP)</button>` : ""}</div>
       <ul class="stacc-assets">${list.map((a) => asset(a, ctx, showSource)).join("")}</ul>
     </div>`;
   }
 
   const kinds = (list, ctx) => list.map((k) => group(k.label, k.assets, ctx, { level: 4 })).join("");
+  const folders = (list, ctx) => list.map((f) => group(f.label.split("/").join(" › "), f.assets, ctx, { level: 4, bundle: true })).join("");
 
   function treeView(tree, ctx) {
     return tree.map((p) => `<section class="stacc-project">
       <h2>${e(p.name)} <span class="stacc-count">${items(p.count)}</span></h2>
       ${p.stacclets.map((s) => `<details class="stacc-stacclet" open><summary><span class="stacc-kind">Stacclet</span> ${e(s.title)} <span class="stacc-count">${items(s.count)}</span></summary>
-        ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span></summary>${kinds(pac.kinds, ctx)}</details>`).join("")}
+        ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span></summary>${pac.folders ? folders(pac.folders, ctx) : kinds(pac.kinds, ctx)}</details>`).join("")}
       </details>`).join("")}
       ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span></summary>${kinds(x.kinds, ctx)}</details>`).join("")}
     </section>`).join("");

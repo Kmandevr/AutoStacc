@@ -8,7 +8,7 @@
   const { escapeHTML: e, api, loginPath, wear } = window.GS;
   const boxes = [...document.querySelectorAll("[data-stacc-glance]")];
   if (!boxes.length) return;
-  const catalog = { projects: window.PROJECTS || [], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
+  const catalog = { projects: window.PROJECTS || [], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
   const projectName = (id, item) => (catalog.projects.find((p) => p.id === id) || {}).name || item.projectName || "";
 
   function draw(box, all) {

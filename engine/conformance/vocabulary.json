@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "kinds": {
+    "one-shots": {
+      "formats": [
+        "wav",
+        "aiff",
+        "flac",
+        "mp3",
+        "ogg"
+      ]
+    },
+    "loops": {
+      "formats": []
+    },
+    "stems": {
+      "formats": []
+    },
+    "midi": {
+      "formats": [
+        "midi"
+      ]
+    },
+    "presets": {
+      "formats": [
+        "fxp",
+        "vital",
+        "serum",
+        "h2p",
+        "nmsv",
+        "adg",
+        "adv",
+        "bitwig-preset"
+      ]
+    },
+    "sample-libraries": {
+      "formats": [
+        "sfz",
+        "sf2",
+        "exs",
+        "kontakt"
+      ]
+    },
+    "project-files": {
+      "formats": [
+        "als",
+        "alp",
+        "flp",
+        "logicx",
+        "rpp",
+        "ptx",
+        "cpr",
+        "song",
+        "bitwig-project",
+        "bitwig-clip",
+        "zip"
+      ]
+    },
+    "images": {
+      "formats": [
+        "png",
+        "jpg",
+        "webp",
+        "gif"
+      ]
+    },
+    "video": {
+      "formats": [
+        "mp4",
+        "webm"
+      ]
+    },
+    "documents": {
+      "formats": [
+        "pdf",
+        "text"
+      ]
+    },
+    "other": {
+      "formats": []
+    }
+  },
+  "words": {
+    "kind": {
+      "artwork": "images",
+      "doc": "documents",
+      "docs": "documents",
+      "documentation": "documents",
+      "documents": "documents",
+      "hits": "one-shots",
+      "image": "images",
+      "images": "images",
+      "instruments": "sample-libraries",
+      "loop": "loops",
+      "loops": "loops",
+      "midi": "midi",
+      "midi-files": "midi",
+      "midi-patterns": "midi",
+      "one-shot": "one-shots",
+      "one-shots": "one-shots",
+      "oneshot": "one-shots",
+      "oneshots": "one-shots",
+      "other": "other",
+      "patches": "presets",
+      "preset": "presets",
+      "presets": "presets",
+      "project": "project-files",
+      "project-files": "project-files",
+      "projects": "project-files",
+      "sample": "one-shots",
+      "sample-libraries": "sample-libraries",
+      "sample-library": "sample-libraries",
+      "samples": "one-shots",
+      "stem": "stems",
+      "stems": "stems",
+      "video": "video",
+      "videos": "video"
+    },
+    "instrument": {
+      "808": "808",
+      "808s": "808",
+      "ambience": "atmosphere",
+      "arp": "arp",
+      "arpeggio": "arp",
+      "arps": "arp",
+      "atmos": "atmosphere",
+      "atmosphere": "atmosphere",
+      "atmospheres": "atmosphere",
+      "bass": "bass",
+      "basses": "bass",
+      "bassline": "bass",
+      "bd": "kick",
+      "brass": "brass",
+      "chops": "vocals",
+      "clap": "clap",
+      "claps": "clap",
+      "closed-hat": "hats",
+      "crash": "cymbals",
+      "cymbal": "cymbals",
+      "cymbals": "cymbals",
+      "drum": "drums",
+      "drums": "drums",
+      "epiano": "keys",
+      "fx": "fx",
+      "fxs": "fx",
+      "gtr": "guitar",
+      "guitar": "guitar",
+      "guitars": "guitar",
+      "hat": "hats",
+      "hats": "hats",
+      "hh": "hats",
+      "hi-hat": "hats",
+      "hihat": "hats",
+      "horns": "brass",
+      "impact": "fx",
+      "impacts": "fx",
+      "keys": "keys",
+      "kick": "kick",
+      "kickdrum": "kick",
+      "kicks": "kick",
+      "lead": "lead",
+      "leads": "lead",
+      "open-hat": "hats",
+      "pad": "pad",
+      "pads": "pad",
+      "perc": "percussion",
+      "percs": "percussion",
+      "percussion": "percussion",
+      "percussions": "percussion",
+      "piano": "piano",
+      "pianos": "piano",
+      "pluck": "pluck",
+      "plucks": "pluck",
+      "rhodes": "keys",
+      "ride": "cymbals",
+      "riser": "fx",
+      "risers": "fx",
+      "sd": "snare",
+      "sfx": "fx",
+      "snare": "snare",
+      "snares": "snare",
+      "snr": "snare",
+      "string": "strings",
+      "strings": "strings",
+      "sub": "bass",
+      "sweep": "fx",
+      "synth": "synth",
+      "synths": "synth",
+      "texture": "textures",
+      "textures": "textures",
+      "vocal": "vocals",
+      "vocals": "vocals",
+      "voice": "vocals",
+      "vox": "vocals"
+    },
+    "midiRole": {
+      "arrangement": "arrangement",
+      "arrangements": "arrangement",
+      "pattern": "pattern",
+      "patterns": "pattern",
+      "song": "arrangement"
+    }
+  },
+  "keys": [
+    "c-major",
+    "c-minor",
+    "cs-major",
+    "cs-minor",
+    "d-major",
+    "d-minor",
+    "ds-major",
+    "ds-minor",
+    "e-major",
+    "e-minor",
+    "f-major",
+    "f-minor",
+    "fs-major",
+    "fs-minor",
+    "g-major",
+    "g-minor",
+    "gs-major",
+    "gs-minor",
+    "a-major",
+    "a-minor",
+    "as-major",
+    "as-minor",
+    "b-major",
+    "b-minor"
+  ],
+  "bpm": {
+    "min": 40,
+    "max": 250
+  }
+}

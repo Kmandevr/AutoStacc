@@ -1,0 +1,35 @@
+# Weekly fuzzing of the processing engine (engine/fuzz/, docs/engine.md): random archives, file headers and names must
+# never crash or hang it. Five minutes per target on Mondays, or by hand; a crash fails the run and its input is kept as
+# an artifact (reproduce with: cargo +nightly fuzz run <target> <file>, from engine/).
+name: Engine fuzzing
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [zip, headers, names]
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nightly Rust and cargo-fuzz
+        run: rustup toolchain install nightly --profile minimal && cargo install cargo-fuzz --locked
+      - name: Seed the archive fuzzer with the conformance cases
+        run: mkdir -p fuzz/corpus/zip && cp conformance/cases/*.zip fuzz/corpus/zip/
+      - name: Fuzz ${{ matrix.target }} for five minutes
+        run: cargo +nightly fuzz run ${{ matrix.target }} -- -max_total_time=300 -rss_limit_mb=2048 -max_len=262144
+      - name: Keep the crashing input
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-${{ matrix.target }}
+          path: engine/fuzz/artifacts/

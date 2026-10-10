@@ -1,0 +1,168 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "signature",
+   "crc32": 4190487208,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 300,
+    "embedded": {
+     "oneShot": true,
+     "rootNote": 60,
+     "timeSignature": "4/4"
+    },
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Drums/Kicks/Kick 01.wav",
+   "sha256": "50d7f0d3fa8d2cf14c522694e48acb6cdc6998388a6844f98a8c826a30f219ec",
+   "size": 79456
+  },
+  {
+   "by": "signature",
+   "crc32": 1055398318,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 3750,
+    "embedded": {
+     "bpm": 128,
+     "oneShot": false,
+     "rootNote": 60,
+     "timeSignature": "4/4"
+    },
+    "encoding": "pcm",
+    "sampleRate": 48000
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Loops/128 BPM/Groove 128 Am.wav",
+   "sha256": "539adba143d4127bf8efc6d1d61826393e1bb0a211dc09c62f6ac339e9e57ed9",
+   "size": 1080076
+  },
+  {
+   "by": "signature",
+   "crc32": 1453837006,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 500,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "aiff",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Textures/Air.aif",
+   "sha256": "ed8d349a8671e840c8436359398d0d5a22c12782958577e9882811493c2cbebf",
+   "size": 44154
+  },
+  {
+   "by": "signature",
+   "crc32": 2329527148,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 2000,
+    "encoding": "flac",
+    "sampleRate": 48000
+   },
+   "format": "flac",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Textures/Room.flac",
+   "sha256": "a06947dfdd72733032888bc4c87bf5eba394c25db93458c2959e74fdec3594e3",
+   "size": 42
+  },
+  {
+   "by": "signature",
+   "crc32": 868343724,
+   "facts": {
+    "durationMs": 16000,
+    "embedded": {
+     "bpm": 120,
+     "key": "d-minor",
+     "timeSignature": "4/4"
+    },
+    "lengthBeats": 32,
+    "midiFormat": 0,
+    "midiNotes": 8,
+    "midiTracks": 1,
+    "ppq": 96
+   },
+   "format": "midi",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/MIDI/Chords Am.mid",
+   "sha256": "4efac7d7df5ba0824b61645efdb2902914a3e576b56aa27985ce82f70f2b4412",
+   "size": 119
+  },
+  {
+   "by": "extension",
+   "crc32": 3010054477,
+   "facts": {},
+   "format": "vital",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Presets/Wobble.vital",
+   "sha256": "e59120e378575417c7cdaba5dd1dc314beadd22d02527ced731a79285e6ad6c4",
+   "size": 24
+  },
+  {
+   "by": "extension",
+   "crc32": 2189920659,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Read me.txt",
+   "sha256": "8c2738d94ffcc67635352d165515970d981c6dc4c12c8c2efee4d7a0ad9f029a",
+   "size": 24
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": true,
+   "issues": [],
+   "mismatch": false,
+   "path": "__MACOSX/Pack/._Read me.txt",
+   "size": 1
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "unknown",
+   "ignored": true,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/.DS_Store",
+   "size": 1
+  }
+ ],
+ "folders": [
+  "Pack",
+  "Pack/Drums",
+  "Pack/Drums/Kicks",
+  "Pack/Loops",
+  "Pack/Loops/128 BPM",
+  "Pack/MIDI",
+  "Pack/Presets",
+  "Pack/Textures"
+ ],
+ "totalSize": 1203895,
+ "zip64": false
+}

@@ -2,7 +2,7 @@
 title: Store setup
 summary: The owner's checklist to switch the store on: Cloudflare token permissions, secrets, Stripe and Brevo setup, first admin, uploading files, going live.
 covers: [.github/workflows/deploy.yml, scripts/cloudflare.js, scripts/deploy-check.js, server/lib/config.js, wrangler.toml, server/payments/stripe.js, server/payments/tax-codes.js, server/email/providers.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Store setup (owner)
@@ -16,6 +16,7 @@ The existing `CLOUDFLARE_API_TOKEN` secret can only edit Pages. Edit the token (
 - **D1: Edit** (the deploy creates the `autostacc` database and applies migrations)
 - **Workers R2 Storage: Edit** (the deploy creates the `autostacc-files` and `autostacc-previews` buckets)
 - **Cloudflare Pages: Edit** (already there)
+- **Queues: Edit**, **Workers Scripts: Edit**, **Containers: Edit**, **Account Settings: Read** (the processing engine's deploy, [engine](engine.md); the site's production config binds the engine's queue `autostacc-engine-jobs` as `JOBS`, so the engine deploy, which creates the queue, must have run once before the site's)
 
 R2 must be enabled once in the dashboard (Cloudflare → R2 → Purchase/enable; the free tier covers a small store).
 

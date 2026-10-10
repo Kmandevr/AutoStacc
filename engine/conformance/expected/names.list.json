@@ -1,0 +1,46 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Loops/Kick.wav",
+   "size": 26504
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "case_collision",
+     "refused": false
+    }
+   ],
+   "mismatch": false,
+   "path": "loops/kick.WAV",
+   "size": 26504
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Café.txt",
+   "size": 5
+  }
+ ],
+ "folders": [
+  "Loops",
+  "loops"
+ ],
+ "totalSize": 53013,
+ "zip64": false
+}

@@ -1,0 +1,197 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "signature",
+   "crc32": 3191752396,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 100,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/One Shots/Hi Hats/HH Closed 03.wav",
+   "sha256": "7fab6cf31eb2311c3bcb3c7756493600b789d48cac066da4da1fd535e8cc8d84",
+   "size": 26504
+  },
+  {
+   "by": "signature",
+   "crc32": 229313877,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 1000,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/One Shots/808s/808 Sub C.wav",
+   "sha256": "0a8d13b584c8ae7cb68a20dc3177270f1bbd176a054a3a1d6c3fbf57b443800c",
+   "size": 264644
+  },
+  {
+   "by": "signature",
+   "crc32": 3531841918,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 3428,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Loops/Bass/Bassline_140bpm_F#min.wav",
+   "sha256": "e1bee9fcf35e745d4cd9f6af1209daa3fca21d79910f8512b45eabd9c19f5537",
+   "size": 907244
+  },
+  {
+   "by": "signature",
+   "crc32": 2786466454,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 1133,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Loops/Drums/Break 174 BPM.wav",
+   "sha256": "a5bf6da474c613967dee09d8a1b9ad9fb1630d5194ac0ec75782705d75a0eb61",
+   "size": 300044
+  },
+  {
+   "by": "signature",
+   "crc32": 196573152,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 1875,
+    "embedded": {
+     "oneShot": true,
+     "rootNote": 60,
+     "timeSignature": "4/4"
+    },
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Loops/Vox/VoxChop 128 Gm.wav",
+   "sha256": "de9ab743b273a865e62e77d81a25571926067498fd9ffd465dcd324bd8623799",
+   "size": 496204
+  },
+  {
+   "by": "signature",
+   "crc32": 868343724,
+   "facts": {
+    "durationMs": 16000,
+    "embedded": {
+     "bpm": 120,
+     "key": "d-minor",
+     "timeSignature": "4/4"
+    },
+    "lengthBeats": 32,
+    "midiFormat": 0,
+    "midiNotes": 8,
+    "midiTracks": 1,
+    "ppq": 96
+   },
+   "format": "midi",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/MIDI/Patterns/Arp Pattern Dbmaj.mid",
+   "sha256": "4efac7d7df5ba0824b61645efdb2902914a3e576b56aa27985ce82f70f2b4412",
+   "size": 119
+  },
+  {
+   "by": "signature",
+   "crc32": 1151603398,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 2000,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Stems/Track 1/Lead Stem.wav",
+   "sha256": "dbf93da595f7b8c5ebb3ac9687ad7d6b81e66855ea4ee3cf3a5325080b47191d",
+   "size": 529244
+  },
+  {
+   "by": "signature",
+   "crc32": 260499172,
+   "facts": {},
+   "format": "fxp",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Presets/Serum/LD Glitch Lead.fxp",
+   "sha256": "3da1128111b8ba1b55ed2cb7dd1cc100fd1e28e9b9b8afcf7901a26de3c3e557",
+   "size": 64
+  },
+  {
+   "by": "signature",
+   "crc32": 28249789,
+   "facts": {},
+   "format": "png",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Artwork/Cover.png",
+   "sha256": "02a3e298f1533f62558c58e4c70edcab9af5a50d62d925fd5390942020fb0fb8",
+   "size": 16
+  },
+  {
+   "by": "signature",
+   "crc32": 62359282,
+   "facts": {},
+   "format": "pdf",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Licence.pdf",
+   "sha256": "14bcd090baf31edba64e9cbd8cdfc15f943344aa72cb3675ad8e91bfcbce03ad",
+   "size": 15
+  }
+ ],
+ "folders": [
+  "Glitch Kit",
+  "Glitch Kit/Artwork",
+  "Glitch Kit/Loops",
+  "Glitch Kit/Loops/Bass",
+  "Glitch Kit/Loops/Drums",
+  "Glitch Kit/Loops/Vox",
+  "Glitch Kit/MIDI",
+  "Glitch Kit/MIDI/Patterns",
+  "Glitch Kit/One Shots",
+  "Glitch Kit/One Shots/808s",
+  "Glitch Kit/One Shots/Hi Hats",
+  "Glitch Kit/Presets",
+  "Glitch Kit/Presets/Serum",
+  "Glitch Kit/Stems",
+  "Glitch Kit/Stems/Track 1"
+ ],
+ "totalSize": 2524098,
+ "zip64": false
+}

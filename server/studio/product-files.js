@@ -7,7 +7,7 @@ import { json, fail, str } from "../lib/http.js";
 import { first, run, newId, now, randomToken } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
-import { LIMITS } from "../creators/policy.js";
+import { LIMITS, filesQuotaOf } from "../creators/policy.js";
 import { requireOwnProduct } from "../creators/products.js";
 import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
@@ -28,7 +28,9 @@ async function upload(app, { productId }) {
   const [existing, used] = await Promise.all([countKept(app.db, product.id), usedBytes(app.db, creator.id)]);
   if (existing >= LIMITS.filesPerProduct) fail(409, "limit_reached", `A product can have up to ${LIMITS.filesPerProduct} files.`);
   checkUpload({ filename, sizeBytes: size, existing });
-  if (used + size > LIMITS.productFilesQuotaBytes) fail(409, "quota_exceeded", `That would go over your ${LIMITS.productFilesQuotaBytes / 1048576} MB of file storage. Remove a file first.`);
+  const quota = filesQuotaOf(creator);
+  const full = () => fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota / 1048576)} MB of file storage. Remove a file first.`);
+  if (used + size > quota) full();
   const key = newFileKey(product.id, filename);
   const { object, contentType } = await putVerifiedFile(app, key, filename, app.request.body);
   const status = creator.trusted ? "published" : "pending";
@@ -40,10 +42,10 @@ async function upload(app, { productId }) {
      SELECT ?, ?, ?, ?, '', ?, ?, 0, 1, ?, NULL, '', ?, ?
      WHERE (SELECT COALESCE(SUM(f.size_bytes), 0) FROM product_files f JOIN products p ON p.id = f.product_id JOIN projects j ON j.id = p.project_id
        WHERE j.creator_id = ? AND f.active = 1 AND f.status IN ('pending', 'published')) + ? <= ?`,
-    id, product.id, key, filename, contentType, object.size, t, status, t, creator.id, object.size, LIMITS.productFilesQuotaBytes);
+    id, product.id, key, filename, contentType, object.size, t, status, t, creator.id, object.size, quota);
   if (!res.meta.changes) {
     await deleteFile(app.env, key);
-    fail(409, "quota_exceeded", `That would go over your ${LIMITS.productFilesQuotaBytes / 1048576} MB of file storage. Remove a file first.`);
+    full();
   }
   if (status === "pending") await alertAdmins(app, { key: `file:${id}`, title: "a creator's file is waiting for approval",
     lines: [`${creator.name} (/${creator.slug}) uploaded ${filename} to "${product.title}".`, "Publish or reject it in the Control Center, Products."] });

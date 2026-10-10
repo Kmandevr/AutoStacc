@@ -100,7 +100,7 @@
 /* Track colours tag kinds of content wherever they appear (library, dashboard, shop). */
 [data-track] { --track: var(--teal); }
 [data-track="midi"] { --track: var(--amber); }
-[data-track="samples"] { --track: var(--coral); }
+[data-track="samples"], [data-track="one-shots"] { --track: var(--coral); }
 [data-track="loops"] { --track: var(--lime); }
 [data-track="presets"] { --track: var(--violet); }
 

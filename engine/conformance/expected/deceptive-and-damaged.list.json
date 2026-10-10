@@ -1,0 +1,28 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Not audio.wav",
+   "size": 33
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Bad crc.txt",
+   "size": 14
+  }
+ ],
+ "folders": [],
+ "totalSize": 47,
+ "zip64": false
+}
