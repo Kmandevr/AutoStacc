@@ -337,3 +337,15 @@ The security and backend reviews of Phase 3 found one trust gap and several corr
 ## 2026-10-10: How a file's values are decided (Phase 4)
 
 One resolver (`js/pack-resolve.js`), the same code in the Control Center and on the server, decides each file's kind, instrument, tempo, key and MIDI role: the creator's own value; else the nearest folder's default; else a suggestion the creator accepted, or one the engine is at least 85% sure of that nobody rejected; else nothing. An empty creator value means "none" and stops inheritance. Defaults are resolved when read, never copied onto files, so moving a file changes only what it inherits, and the review shows those changes before the move. 85% is a starting threshold, to be calibrated with the other confidences (Phase 8).
+
+## 2026-10-10: Product Studio, one workspace per product, in a shell shared with the Control Center
+
+The owner sent an architecture outline for a "Project Studio" and answered four questions. Built as [studio](studio.md) describes. Choices:
+- **The unit is a product, not a project.** In AutoStacc a project is a creative identity holding many products, while the outline's studio manages one sellable thing (one pack, one store page, one price). Project-level work stays on the Creator Dashboard (`/studio`).
+- **Names use the Stacc vocabulary:** Overview, Pac Builder, Store Page, Pricing, Insights, Release (Team later). They are working names, kept in `data/workspaces.js` so a rename is one edit.
+- **One shell, two versions.** `js/workspace.js` draws the sidebar, compact header and phone drawer for both the Product Studio and the Control Center, so the admin isn't a separate design.
+- **No copies of product data.** A creator's sale is an ordinary `promotions` sale scoped to one product (`creator_id` set), so the cart, checkout, search and order history already price it. The store page's "included content" is counted from the published files. One readiness check guards publishing on the server and feeds the Overview and Release sections.
+- **Pac Builder opens to creators in this pass** (owner's choice), with quota checks and hold-for-review for creators AutoStacc hasn't trusted (version status `in_review`, approved or refused in the Control Center). Automated review (Phase 5's scanner) is still to come.
+- **Collaboration (Team) is not built.** Roles and revenue splits are open questions in the vision.
+- **Insights collects nothing new:** orders, refunds, downloads and the existing per-day view counters. Traffic sources are shown as not tracked.
+
