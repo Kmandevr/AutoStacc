@@ -7,6 +7,7 @@ const DAMAGED = new Set(["crc_mismatch", "size_mismatch", "corrupt"]);
 // Never sold, and a sign the archive isn't what it claims: programs and scripts.
 export const EXECUTABLE = new Set(["exe", "dll", "msi", "bat", "cmd", "com", "scr", "ps1", "vbs", "js", "jar", "sh", "app", "apk", "dmg", "pkg", "deb", "rpm"]);
 
+const ARCHIVE = new Set(["zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz"]);
 const ext = (path) => (String(path).match(/\.([a-z0-9]{1,12})$/i) || [])[1]?.toLowerCase() || "";
 
 /**
@@ -24,6 +25,9 @@ export function review({ result, kept, refused, existingHashes = 0, previous = n
   flag("encrypted_files", true, refusedWith(new Set(["encrypted"])));
   flag("executables", true, (result.files || []).filter((f) => !f.ignored && EXECUTABLE.has(ext(f.path))).map((f) => f.path));
   flag("unsupported_files", false, refusedWith(new Set(["unsupported_type"])));
+  // Archives inside the pack aren't opened by the checks, so what they hold is unreviewed (a single upload of one waits
+  // for approval too).
+  flag("nested_archives", false, kept.filter((f) => ARCHIVE.has(ext(f.path))).map((f) => f.path));
   const unknown = kept.filter((f) => !f.format || f.format === "unknown").map((f) => f.path);
   if (kept.length && unknown.length / kept.length > 0.5) flag("mostly_unknown_formats", false, unknown);
   if (kept.length && existingHashes === kept.length) flag("all_duplicates", false, kept.map((f) => f.path));
@@ -40,6 +44,7 @@ export function review({ result, kept, refused, existingHashes = 0, previous = n
   return { verdict: flags.length ? "hold" : "pass", flags };
 }
 
-/** Whether a version may go live without an admin: no flags, or only soft ones for a trusted creator. */
+/** Whether a version may go live without an admin: no flags, or only soft ones for a trusted creator. No review at all
+ * (a version checked before reviews existed) holds. */
 export const clearToPublish = (rv, { trusted = false, alwaysHold = false } = {}) =>
-  !alwaysHold && (!rv || rv.verdict === "pass" || (trusted && rv.flags.every((f) => !f.hard)));
+  !alwaysHold && Boolean(rv) && (rv.verdict === "pass" || (trusted && rv.flags.every((f) => !f.hard)));

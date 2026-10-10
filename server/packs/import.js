@@ -3,11 +3,12 @@
 // on which both agree are kept. Each becomes an asset in the version's manifest, its bytes one stored original per owner
 // and hash (a duplicate copy is deleted), its suggestions rows in asset_values. Then the uploaded archive and anything
 // the job left over are deleted: the manifest is the record from here on (owner's decision, docs/decisions.md).
-import { all, stmt, newId, now, guardStmt } from "../lib/db.js";
+import { first, all, stmt, newId, now, guardStmt } from "../lib/db.js";
 import { writePrefix } from "../../workers/engine/src/jobs.js";
 import { ALLOWED_EXTENSIONS, extensionOf } from "../files/policy.js";
 import { review } from "./review.js";
-import { LIMITS } from "../creators/policy.js";
+import { LIMITS, filesQuotaOf } from "../creators/policy.js";
+import { storageUsed } from "../creators/storage.js";
 import { claimStmts, blobsByHash } from "../blobs/blobs.js";
 import { jobWrites, jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
@@ -51,8 +52,6 @@ export async function importResult(app, version, job, state) {
   const writes = await jobWrites(app, job.id, attempt);
   const owner = version.owner_scope;
   const accepted = acceptStored(result.files, writes, writePrefix(owner, job.id, attempt));
-  // The agreed limit per version (docs/packs.md H7): a bigger Pac goes in as more than one Pac.
-  if (accepted.kept.length > LIMITS.filesPerPacVersion) throw Object.assign(new Error("too many files"), { code: "too_many_files" });
   const refused = accepted.refused;
   // Only kinds of files the store sells (server/files/policy.js, the same list as single uploads): nothing else reaches customers.
   const kept = accepted.kept.filter((f) => ALLOWED_EXTENSIONS.has(extensionOf(f.path)) || (refused.push({ path: f.path, codes: ["unsupported_type"] }), false));
@@ -68,6 +67,16 @@ export async function importResult(app, version, job, state) {
   });
   kept.length = 0;
   kept.push(...named);
+  // The agreed limit per version (docs/packs.md H7): a bigger Pac goes in as more than one Pac.
+  if (kept.length > LIMITS.filesPerPacVersion) throw Object.assign(new Error("too many files"), { code: "too_many_files" });
+  // A creator's storage counts the files as unpacked, not the archive they came in (an archive can compress a lot):
+  // refused before anything is claimed if they don't fit beside what the creator already stores.
+  const creator = await first(app.db, "SELECT * FROM creators WHERE id = ?", owner);
+  if (creator) {
+    const bytes = kept.reduce((n, f) => n + f.size, 0);
+    const archive = (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ?", version.id)).n;
+    if ((await storageUsed(app.db, owner)) - archive + bytes > filesQuotaOf(creator)) throw Object.assign(new Error("over quota"), { code: "quota_exceeded" });
+  }
 
   // For the automated review: how many of these the owner already had, and what the live version holds.
   const already = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);

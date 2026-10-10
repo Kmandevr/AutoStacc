@@ -3,7 +3,7 @@
 // (js/pack-resolve.js decides what each file ends up with), and moving or renaming files and folders. Only while the
 // version is ready (each change is one batch that rolls back otherwise); a published version changes only through a
 // new version. Values are checked against the vocabulary; names stay unique per folder, ignoring case.
-import { all, stmt, now, guardStmt, isGuardFailure } from "../lib/db.js";
+import { first, all, stmt, now, guardStmt, isGuardFailure } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { assetValueOk } from "../discovery/vocabulary.js";
 import resolver from "../../js/pack-resolve.js";
@@ -93,9 +93,15 @@ const cleanName = (s) => {
   return n;
 };
 
+const extOf = (n) => (n.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || "";
+
+// A file keeps its extension: what the checks and the review saw is what buyers get (a renamed type is a new upload).
 export async function renameEntry(app, version, { assetId, filename }) {
   const ids = await ownAssets(app, version, [assetId]);
-  await run(app, version, [stmt(app.db, "UPDATE pac_entries SET filename = ? WHERE version_id = ? AND asset_id IN (SELECT value FROM json_each(?))", cleanName(filename), version.id, ids)]);
+  const name = cleanName(filename);
+  const was = await first(app.db, "SELECT filename FROM pac_entries WHERE version_id = ? AND asset_id = ?", version.id, assetId);
+  if (!was || extOf(was.filename) !== extOf(name)) fail(400, "extension_changed", "Keep the file's extension (its type was checked as it is).");
+  await run(app, version, [stmt(app.db, "UPDATE pac_entries SET filename = ? WHERE version_id = ? AND asset_id IN (SELECT value FROM json_each(?))", name, version.id, ids)]);
 }
 
 export async function renameFolder(app, version, { folderId, name }) {

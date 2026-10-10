@@ -32,10 +32,19 @@ test("soft flags hold unless the creator is trusted; always-hold holds everythin
   assert.equal(clearToPublish(rv), false);
   assert.equal(clearToPublish(rv, { trusted: true }), true);
   assert.equal(clearToPublish({ verdict: "pass", flags: [] }, { alwaysHold: true }), false);
+  assert.equal(clearToPublish(null, { trusted: true }), false, "no review at all holds");
 });
 
 test("a revision that drops over a quarter of the files or half the bytes is flagged", () => {
   const before = Object.fromEntries(kept(4).map((f) => [f.sha256, f.size]));
   assert.deepEqual(codes(review({ result: { files: kept(3) }, kept: kept(3), refused: [], previous: before })), []);
   assert.deepEqual(codes(review({ result: { files: kept(2) }, kept: kept(2), refused: [], previous: before })), ["big_revision"]);
+});
+
+test("an archive inside the pack is a soft flag: its contents weren't checked", () => {
+  const files = [...kept(1), { path: "P/tools.zip", format: "zip", sha256: "f".repeat(64), size: 10 }];
+  const rv = review({ result: { files }, kept: files, refused: [] });
+  assert.deepEqual(codes(rv), ["nested_archives"]);
+  assert.equal(clearToPublish(rv), false);
+  assert.equal(clearToPublish(rv, { trusted: true }), true);
 });

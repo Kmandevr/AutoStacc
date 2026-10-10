@@ -4,8 +4,7 @@
 // are audited.
 //   admin:  GET  /api/admin/packs/:pacId                      the Pac, its versions, the products that include it
 //           POST /api/admin/packs/:pacId/versions             {productId, filename, size, idempotencyKey}
-//           GET  /api/admin/packs/review                      versions held by the automated review
-//           POST /api/admin/packs/versions/:versionId/reject  {note} (a held or ready version; the creator sees why)
+//           the review queue and rejecting: review-routes.js
 //   studio: GET  /api/studio/packs/products/:productId        the product's own Pac (made on first use), versions, storage
 //           POST /api/studio/packs/products/:productId/versions {filename, size, idempotencyKey}
 //   both, under each prefix:
@@ -14,20 +13,23 @@
 // Publishing in the Studio follows the automated review: a clean version (or only soft flags for a trusted creator) goes
 // live, anything else waits for an admin, who is alerted. An admin may publish any ready or held version.
 import { json, fail, readJson, str, id, int } from "../lib/http.js";
-import { first, all, run, now, parseJson, isGuardFailure } from "../lib/db.js";
+import { first, all, parseJson, isGuardFailure } from "../lib/db.js";
 import { productsWithPac } from "../catalog/products.js";
 import { safeFilename } from "../storage/buckets.js";
 import { audit } from "../audit/log.js";
 import { alertAdmins } from "../email/alerts.js";
 import { filesQuotaOf } from "../creators/policy.js";
-import { createVersion, move, releaseDraftStmt } from "./versions.js";
-import { startZip, storageUsed, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
+import { storageUsed } from "../creators/storage.js";
+import { createVersion, move } from "./versions.js";
+import { limit } from "../lib/ratelimit.js";
+import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
 import { publishVersion } from "./publish.js";
 import { clearToPublish } from "./review.js";
-import { ADMIN, STUDIO, ownerOf, uploadFor, ensureStudioPac } from "./access.js";
+import { ADMIN, STUDIO, ownerOf, uploadFor, studioPacOf, ensureStudioPac } from "./access.js";
 import { routes as engineStorage } from "./engine-storage.js";
 import { editRoutes } from "./edit-routes.js";
+import { routes as reviewRoutes } from "./review-routes.js";
 import { versionView } from "./view.js";
 
 const view = (app, versionId) => versionView(app.db, versionId);
@@ -44,13 +46,14 @@ async function pacSummary(app, pac) {
 }
 
 // A new version and its upload plan (or the same ones again for the same idempotency key).
-async function createFor(app, actor, { pac, product, creator }) {
-  const body = await readJson(app.request);
+async function createFor(app, actor, { pac, product, creator, body }) {
   const filename = safeFilename(str(body.filename, "filename", { max: 160, pattern: /\.zip$/i }));
   const size = int(body.size, "size", { min: 22 });
   const key = str(body.idempotencyKey, "idempotencyKey", { min: 16, max: 64, pattern: /^[A-Za-z0-9_-]+$/ });
   const version = await createVersion(app.db, { pacId: pac.id, productId: product.id, ownerScope: await ownerOf(app.db, product), origin: "zip",
     idempotencyKey: key, createdBy: actor.user.id });
+  // The same key after the version ended (refused for room, discarded, failed): a new upload needs a new key.
+  if (!["draft", "uploading"].includes(version.status)) fail(409, "version_closed", "That upload was stopped. Choose the file again to start over.");
   let upload = await first(app.db, "SELECT id FROM uploads WHERE version_id = ? AND kind = 'zip'", version.id);
   const quota = creator ? { creatorId: creator.id, bytes: filesQuotaOf(creator) } : null;
   let plan = null;
@@ -133,14 +136,6 @@ function shared(scope) {
 }
 
 const adminRoutes = [
-  ["GET", "/api/admin/packs/review", async (app) => {
-    await ADMIN.actor(app);
-    const held = await all(app.db, `SELECT v.id, v.number, v.stats, v.updated_at, v.product_id, p.title AS pac_title, c.name AS creator_name, c.slug AS creator_slug
-      FROM pac_versions v JOIN pacs p ON p.id = v.pac_id LEFT JOIN projects j ON j.id = p.project_id LEFT JOIN creators c ON c.id = j.creator_id
-      WHERE v.status = 'in_review' ORDER BY v.updated_at LIMIT 200`);
-    return json({ versions: held.map((v) => ({ id: v.id, number: v.number, pac: v.pac_title, productId: v.product_id, creator: v.creator_name ? { name: v.creator_name, slug: v.creator_slug } : null,
-      flags: (parseJson(v.stats, {}).review || { flags: [] }).flags, files: parseJson(v.stats, {}).files || 0, since: v.updated_at })) });
-  }],
   ["GET", "/api/admin/packs/:pacId", async (app, { pacId }) => {
     await ADMIN.actor(app);
     const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
@@ -151,44 +146,30 @@ const adminRoutes = [
     const actor = await ADMIN.actor(app);
     const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
     if (!pac) fail(404, "not_found", "No such Pac.");
-    const body = await app.request.clone().json().catch(() => ({}));
-    const { product } = await ADMIN.product(app, actor, body.productId, pac.id);
-    return createFor(app, actor, { pac, product, creator: null });
-  }],
-  ["POST", "/api/admin/packs/versions/:versionId/reject", async (app, { versionId }) => {
-    const actor = await ADMIN.actor(app);
-    const v = await ADMIN.version(app, actor, versionId);
     const body = await readJson(app.request);
-    const note = typeof body.note === "string" && body.note.trim() ? body.note.trim().slice(0, 300) : "Not accepted by AutoStacc's review.";
-    if (!(await move(app.db, v.id, ["in_review", "ready"], "failed", { review_note: note, reviewed_by: actor.user.id }))) fail(409, "cannot_reject", "Only a version waiting for review (or ready) can be rejected.");
-    await app.db.batch([releaseDraftStmt(app.db, v.pac_id, v.id)]);
-    await discardUploads(app, v);
-    await audit(app, "pack.version_rejected", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
-    return json({ version: await view(app, v.id) });
+    const { product } = await ADMIN.product(app, actor, body.productId, pac.id);
+    return createFor(app, actor, { pac, product, creator: null, body });
   }]
 ];
-
-// The archive of a rejected version is never needed again.
-async function discardUploads(app, v) {
-  const ups = await all(app.db, "SELECT r2_key FROM uploads WHERE version_id = ?", v.id);
-  await Promise.all(ups.map((u) => app.env.FILES.delete(u.r2_key)));
-  await run(app.db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE version_id = ?", now(), v.id);
-}
 
 const studioRoutes = [
   ["GET", "/api/studio/packs/products/:productId", async (app, { productId }) => {
     const actor = await STUDIO.actor(app);
     const { product, creator } = await STUDIO.product(app, actor, productId);
-    const pac = await ensureStudioPac(app.db, product);
-    return json({ ...(await pacSummary(app, pac)), product: { id: product.id, title: product.title },
+    // Looking never changes anything: the Pac is made by the first upload.
+    const pac = await studioPacOf(app.db, product);
+    return json({ ...(pac ? await pacSummary(app, pac) : { pac: null, versions: [] }), product: { id: product.id, title: product.title },
       storage: { usedBytes: await storageUsed(app.db, creator.id), quotaBytes: filesQuotaOf(creator) } });
   }],
   ["POST", "/api/studio/packs/products/:productId/versions", async (app, { productId }) => {
     const actor = await STUDIO.actor(app);
+    // Each version costs an engine run: a creator's uploads are rate-limited like single files.
+    await limit(app, "studio-pack", 20, 3600);
     const { product, creator } = await STUDIO.product(app, actor, productId);
+    const body = await readJson(app.request);
     const pac = await ensureStudioPac(app.db, product);
-    return createFor(app, actor, { pac, product, creator });
+    return createFor(app, actor, { pac, product, creator, body });
   }]
 ];
 
-export const routes = [...adminRoutes, ...shared(ADMIN), ...studioRoutes, ...shared(STUDIO), ...engineStorage];
+export const routes = [...reviewRoutes, ...adminRoutes, ...shared(ADMIN), ...studioRoutes, ...shared(STUDIO), ...engineStorage];

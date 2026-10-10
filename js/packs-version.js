@@ -16,6 +16,7 @@
     encrypted_files: "Password-protected files",
     executables: "Programs or scripts",
     unsupported_files: "File types AutoStacc doesn't deliver",
+    nested_archives: "Archives inside the pack (their contents aren't checked)",
     mostly_unknown_formats: "Most files are in formats AutoStacc can't identify",
     all_duplicates: "Every file is already in another of your packs",
     big_revision: "This version removes a large part of the one that's live"

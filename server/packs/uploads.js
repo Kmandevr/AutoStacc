@@ -2,9 +2,10 @@
 // (the last may be shorter), each streamed with its declared length and never buffered. Parts may arrive in any order
 // and be sent again; R2 can't list them, so each is recorded here as it lands. Deleted once the version is published
 // or discarded (R2 itself aborts unfinished uploads after 7 days).
-import { first, run, newId, now, parseJson } from "../lib/db.js";
+import { first, all, run, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { startMultipart, uploadPart, completeMultipart, abortMultipart, headFile } from "../storage/buckets.js";
+import { inUseSql } from "../creators/storage.js";
+import { startMultipart, uploadPart, completeMultipart, abortMultipart, headFile, deleteKeys } from "../storage/buckets.js";
 
 export const PART_BYTES = 64 * 1024 * 1024;
 export const ZIP_MAX_BYTES = 50 * 1024 ** 3;
@@ -14,17 +15,6 @@ const partLength = (size, n) => (n < partsOf(size) ? PART_BYTES : size - (partsO
 
 export const getUpload = (db, id) => first(db, "SELECT * FROM uploads WHERE id = ?", id);
 
-// A creator's storage in use: their delivered files, plus every archive on its way (uploaded or uploading for a
-// version not yet published, discarded or failed). Checked inside the insert that reserves room for a new archive, so
-// two uploads at the same moment can't both squeeze under the limit.
-const IN_USE = `(SELECT COALESCE(SUM(f.size_bytes), 0) FROM product_files f JOIN products p ON p.id = f.product_id JOIN projects j ON j.id = p.project_id
-    WHERE j.creator_id = ?1 AND f.active = 1 AND f.status IN ('pending', 'published') AND f.retired_at IS NULL)
-  + (SELECT COALESCE(SUM(u.size_bytes), 0) FROM uploads u JOIN pac_versions v ON v.id = u.version_id JOIN products p ON p.id = v.product_id
-    JOIN projects j ON j.id = p.project_id WHERE j.creator_id = ?1 AND v.status IN ('draft', 'uploading', 'processing', 'ready', 'in_review'))`;
-
-/** The creator's file storage in use: live files plus the archives of unfinished versions (what the quota counts). */
-export const storageUsed = async (db, creatorId) => (await first(db, `SELECT ${IN_USE} AS n`, creatorId)).n;
-
 /** quota: { creatorId, bytes } for a creator's upload (null for AutoStacc's own). */
 export async function startZip(app, version, { filename, size, quota = null }) {
   if (!Number.isSafeInteger(size) || size < 22 || size > ZIP_MAX_BYTES) fail(400, "invalid_size", "That isn't a ZIP size AutoStacc accepts.");
@@ -33,7 +23,7 @@ export async function startZip(app, version, { filename, size, quota = null }) {
   const mp = await startMultipart(app.env, key);
   const t = now();
   const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at)
-    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8 WHERE ?9 IS NULL OR ${IN_USE} + ?7 <= ?9`,
+    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8 WHERE ?9 IS NULL OR ${inUseSql("?1")} + ?7 <= ?9`,
     quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null);
   if (!res.meta.changes) {
     await abortMultipart(app.env, key, mp.uploadId).catch(() => {});
@@ -73,4 +63,12 @@ export async function complete(app, upload) {
   }
   await run(app.db, "UPDATE uploads SET status = 'complete', updated_at = ? WHERE id = ? AND status = 'open'", now(), upload.id);
   return { complete: true };
+}
+
+/** Ends a version's archives: open multipart uploads aborted, stored archives deleted, rows marked aborted. */
+export async function dropArchives(app, versionId) {
+  const ups = await all(app.db, "SELECT r2_key, upload_id, status FROM uploads WHERE version_id = ?", versionId);
+  for (const u of ups.filter((x) => x.status === "open")) await abortMultipart(app.env, u.r2_key, u.upload_id).catch(() => {});
+  await deleteKeys(app.env, ups.map((u) => u.r2_key));
+  await run(app.db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE version_id = ? AND status <> 'aborted'", now(), versionId);
 }
