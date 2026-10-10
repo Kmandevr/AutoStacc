@@ -55,8 +55,9 @@
     body.innerHTML = `
       ${products.length ? `<form class="panel wide" data-pack-form>
         <div class="field"><label for="pack-product">Product</label><select id="pack-product" name="product">${products.map((p) => `<option value="${e(p.id)}">${e(p.title)}</option>`).join("")}</select></div>
-        <div class="field"><label for="pack-file">The Pac's contents as one ZIP</label><input id="pack-file" name="file" type="file" accept=".zip,application/zip" required></div>
-        <div class="actions"><button class="btn" type="submit"${pac.draftVersionId ? " disabled" : ""}>Upload and check</button></div>
+        <div class="field"><label for="pack-file">The Pac's contents as one ZIP</label><input id="pack-file" name="file" type="file" accept=".zip,application/zip" required data-pack-file></div>
+        <div data-pack-preview aria-live="polite"></div>
+        <div class="actions"><button class="btn" type="submit"${pac.draftVersionId ? " disabled data-locked" : ""}>Upload and check</button></div>
         <progress max="1" value="0" hidden></progress><p class="msg" role="status">${pac.draftVersionId ? "A version is in progress below: publish or discard it first." : ""}</p>
       </form>` : `<p class="msg">No product includes this Pac yet (a product's <code>pacs</code> in data/products.js).</p>`}
       <div data-pack-version></div>
@@ -64,6 +65,31 @@
         · ${e(v.status)}${v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}</li>`).join("")}</ul>` : ""}`;
     const current = pac.draftVersionId || pac.liveVersionId;
     if (current) showVersion(current);
+  }
+
+  // What the engine would find, listed in the browser as soon as a file is chosen (nothing uploads yet).
+  async function onPick(ev) {
+    const input = ev.target.closest("[data-pack-file]");
+    if (!input) return;
+    const box = $("[data-pack-preview]", el);
+    const file = input.files[0];
+    if (!file) { box.innerHTML = ""; return; }
+    box.innerHTML = `<p class="small-print">Looking inside ${e(file.name)}…</p>`;
+    const { result, error } = await window.GS.packPreview.list(file);
+    if (error || !result) { box.innerHTML = `<p class="small-print">No preview (${e(error || "unknown")}); the upload is checked in full anyway.</p>`; return; }
+    const submit = $("[data-pack-form] button[type=submit]", el);
+    if (result.error) {
+      box.innerHTML = `<p class="msg error">This isn't a ZIP AutoStacc can read (${e(result.error)}). Choose another file.</p>`;
+      if (submit) submit.disabled = true;
+      return;
+    }
+    if (submit && !submit.dataset.locked) submit.disabled = false;
+    const files = result.files.filter((f) => !f.ignored);
+    const refused = files.filter((f) => f.issues.some((i) => i.refused));
+    const bytes = files.reduce((n, f) => n + f.size, 0);
+    box.innerHTML = `<p>${files.length} file${files.length === 1 ? "" : "s"} in ${result.folders.length} folder${result.folders.length === 1 ? "" : "s"}, ${mb(bytes)} unpacked.</p>
+      ${refused.length ? `<details open><summary>${refused.length} would be refused</summary><ul>${refused.slice(0, 50).map((f) =>
+        `<li><code>${e(f.path)}</code>: ${e(f.issues.filter((i) => i.refused).map((i) => i.code).join(", "))}</li>`).join("")}</ul></details>` : ""}`;
   }
 
   async function onSubmit(ev) {
@@ -113,6 +139,7 @@
       <div data-pack-body></div>`;
     $("[data-pack-pac]", el).addEventListener("change", (ev) => { pacId = ev.target.value; showPac(); });
     el.addEventListener("submit", onSubmit);
+    el.addEventListener("change", onPick);
     el.addEventListener("click", onClick);
   });
 })();

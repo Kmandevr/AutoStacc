@@ -10,6 +10,7 @@ import { activeEntitlements, grant } from "./grants.js";
 import { getProduct, getProducts, isFree, isVisible, productPath } from "../catalog/products.js";
 import { limit } from "../lib/ratelimit.js";
 import { deliverableFiles, stillDelivered } from "../files/files.js";
+import { isOn } from "../lib/features.js";
 import { autoStacc, AUTO_NOTE } from "./autostacc.js";
 import { projectNames } from "../creators/creators.js";
 
@@ -18,6 +19,7 @@ async function library(app) {
   if (access.user) await autoStacc(app.db, access.user);
   const ents = await activeEntitlements(app.db, access);
   const productIds = [...new Set(ents.map((e) => e.product_id))];
+  const bundles = isOn(app, "downloads.bundles");
   const [rows, files] = await Promise.all([getProducts(app.db, productIds), deliverableFiles(app.db, productIds)]);
   const products = new Map(rows.map((p) => [p.id, p]));
   // Studio projects aren't in data/projects.js, so the page gets their names from here.
@@ -42,7 +44,7 @@ async function library(app) {
       files: files.filter((f) => f.product_id === pid && stillDelivered(f, mine[0].granted_at)).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "",
         folderPath: f.folder_path || "", ...(f.retired_at ? { retiredAt: f.retired_at } : {}),
         // Files with a stored original can go into a ZIP with others (POST /api/downloads/bundle).
-        ...(f.blob_id ? { bundleable: true } : {}) }))
+        ...(f.blob_id && bundles ? { bundleable: true } : {}) }))
     };
   });
   return json({ signedIn: Boolean(access.user), guestOrders: access.guestOrderIds, items });

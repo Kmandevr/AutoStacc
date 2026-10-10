@@ -37,7 +37,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `payments/` | providers (Stripe, mock), which Stripe account takes a product's money (`accounts.js`), Connect payout accounts and transfers (`connect.js`), tax codes per product type (`tax-codes.js`), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/webhooks/stripe-marketplace`, `POST /api/dev/mock-payment` |
 | `orders/` | orders, status machine, fulfilment, guest keys, customer refunds (`refunds.js`) | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/orders/:id/refund`, `POST /api/guest/key` |
 | `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
-| `downloads/` | signed links, streaming private files | `POST /api/downloads`, `GET /api/downloads/:token` |
+| `downloads/` | signed links, streaming private files; several owned files as one ZIP (`bundle.js`, `zip.js`) | `POST /api/downloads`, `GET /api/downloads/:token`, `POST /api/downloads/bundle`, `GET /api/downloads/bundle/:token` |
 | `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits; the allowed file types match the vocabulary's `FORMATS` ([discovery](discovery.md)) | (used by downloads, library, admin) |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
@@ -54,6 +54,9 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `sites/` | creator sites: the document, blocks, embeds, themes, rendering, publishing, images, public pages | `/<creator>[/<project>[/<page>]]` (`functions/[[path]].js`), `/media/sites/:id` |
 | `revenue/` | who sold each order line and how its money splits (`split.js`), creators' earnings and the 14-day hold (`earnings.js`), payout requests (`payouts.js`) | (used by checkout, studio, admin) |
 | `integrations/` | connected accounts: the provider registry (none switched on) | |
+| `packs/` | the Pack Builder: Pac versions, resumable ZIP uploads, processing by the engine, import, publish ([packs](packs.md)) | `/api/admin/packs/*` (admin only) |
+| `blobs/` | stored originals, one per owner and SHA-256, and their retention | (used by packs, files, downloads) |
+| `maintenance/` | the daily retention sweep, asked for by the engine Worker's cron with `SWEEP_TOKEN` | `POST /api/internal/sweep` |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 
@@ -127,6 +130,8 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 ## Downloads
 
 `POST /api/downloads {fileId}` checks the requester (account or guest key), finds an active entitlement for the file's product, and returns `/api/downloads/<token>`: an HMAC-SHA256-signed statement (file, entitlement, requester, expiry in 5 minutes, signed with `DOWNLOAD_SIGNING_SECRET`). Redeeming it re-checks everything: signature, expiry, that the person holding the link is the one it was issued to, that the entitlement is still active (refunds revoke even issued links), and that the file belongs to that product. Then the Worker streams the object from the private bucket with `Content-Disposition: attachment` and `Cache-Control: private, no-store`. Storage keys never reach the browser, the bucket has no public URL, and every issue, serve and denial is logged in `download_events` (no IPs).
+
+**Several files at once** (`server/downloads/bundle.js`): `POST /api/downloads/bundle {fileIds}` (up to 2,000 files and 20 GB, files published from Pack Builder only) checks each file against its own product's entitlement and returns a 5-minute link of its own kind (`db1.`, bound to the requester); redeeming re-checks every file and entitlement, logs each file as served and streams a ZIP of the original bytes (stored entries, so nothing is recompressed; `zip.js`). A file a newer Pac version retired reaches only people who had it before, for 30 days (`stillDelivered`, [packs](packs.md)). Feature switch `downloads.bundles` (`server/lib/features.js`).
 
 ## Email
 

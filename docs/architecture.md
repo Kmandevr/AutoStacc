@@ -90,7 +90,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 
 ## Not built yet (on purpose)
 
-- **ZIP of a selection:** "Download selected" fetches each file's own signed link in turn. A server-side ZIP (`POST /api/downloads/bundle {fileIds}` → one signed link, streamed store-only ZIP) is the next step if customers want it.
+- (Built 2026-10-10: ZIPs of several owned files, `POST /api/downloads/bundle`, for files published from the Pack Builder; server areas `packs/`, `blobs/`, `maintenance/` and feature switches in `server/lib/features.js`: [packs](packs.md). "Download selected" still fetches each file's own link in turn.)
 - **Pac-level ownership:** access is per product. Bundles that share Pacs across products need a `product_pacs` table and a Pac-aware access check; the entitlement `bundle` source is reserved.
 - **Notifications:** new-release mail is sent by hand from the Control Center (Products → **Email followers**) to followers who switched new-release emails on, once per person per product (`server/admin/news.js`). Nothing sends it automatically when a product is published.
 - **Licences:** one licence per kind of product (`data/licenses.js`, picked by `license` in `data/product-types.js`), shown on `/license` and each product page; no per-purchase licence records.

@@ -1,7 +1,7 @@
 ---
 title: Pack Builder and processing engine
 summary: PARTLY BUILT. Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
-covers: [server/packs/, server/blobs/, server/maintenance/, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
+covers: [server/packs/, server/blobs/, server/maintenance/, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
 updated: 2026-10-10
 ---
 
@@ -16,7 +16,7 @@ updated: 2026-10-10
 | 0. Platform | The engine runs on Cloudflare (`autostacc-engine` Worker, one `basic` Container, the job queues), smoke-tested on every deploy; first measurements in [engine](engine.md). Still to measure: storage throughput on a large pack and billed usage per job |
 | 1. Contract, vocabulary, schema | Built: contract v1, conformance suite and mock engine; one asset vocabulary; `db/migrations/0014_packs.sql` with Stacclets and Pacs in the database; 500 MB free storage per creator |
 | 2. Engine core | Built: archive guards, formats, header facts, suggestions from names and headers (`naming`, `classify`), fuzz targets |
-| 3. Vertical slice | **Built for admins**: the API below, the Control Center's Packs tab (`js/admin-packs.js`, `-upload.js`: resumable upload, the engine's findings, publish or discard), Your Stacc's folders with "Download folder (ZIP)" (`js/library-bundle.js`) and the daily retention sweep. Still to do: feature switches, listing the ZIP in the browser before upload |
+| 3. Vertical slice | **Built for admins**: the API below, the Control Center's Packs tab (`js/admin-packs.js`, `-upload.js`: resumable upload, the engine's findings, publish or discard), Your Stacc's folders with "Download folder (ZIP)" (`js/library-bundle.js`) the daily retention sweep, feature switches, and a preview of the chosen ZIP before it uploads (`js/admin-packs-preview.js` runs the engine's WebAssembly build in a Web Worker: files, folders, size and anything that would be refused, in well under a second). Phase 3 is complete for admins |
 
 **How the slice works** (`server/packs/`, admin only, 404 to everyone else; `db/migrations/0015_pack_publish.sql`):
 
@@ -32,6 +32,7 @@ updated: 2026-10-10
 - The engine Worker destroys the Container before and after every `process` job, so nothing one archive leaves running can reach the next job's write scope.
 - A retired file (removed or replaced by a newer version) is delivered only to people whose access began before it was retired, and only for 30 days (`stillDelivered` in `server/files/files.js`, H8): library, single and bundle downloads all check it.
 - Publishing writes the Pac's files into every product that sells the Pac. A version never stays "processing": a job that can't be queued, a failed import or a job silent for two hours fails it, frees the Pac and removes what it left in storage. Conditional batches use `batch_guard` (`guardStmt`). Bundle links check each entitlement once (D1's query limit).
+- **Feature switches** (`server/lib/features.js`, owner's "replace individual features" requirement): `packs.builder` (the Packs tab and its routes), `packs.suggestions` (the vocabulary sent with jobs), `downloads.bundles` (ZIP downloads). On by default; each guards its own routes (404 when off) and the browser reads the generated `data/features.js` to hide its buttons; `FEATURES_OFF` switches any off per deployment. Uploading single files, checkout, the library and single-file downloads never depend on a switch.
 - **Retention sweep** (daily, 04:23 UTC): the engine Worker's cron calls `POST /api/internal/sweep` with `SWEEP_TOKEN` (404 otherwise; the Worker has no database). `server/maintenance/sweep.js` asks each area to clean up what it owns: retired files past 30 days stop being active (`server/files/`); processing versions are brought up to date, versions unfinished for 30 days discarded and leftover archives deleted (`server/packs/sweep.js`); stored originals nothing active uses get a day's grace and are then deleted, rows before objects (`server/blobs/sweep.js`); expired bundle rows go (`server/downloads/bundle.js`). Each run is bounded and audited (`maintenance.sweep`). Off until `SWEEP_TOKEN` is set in GitHub.
 
 `test/api/packs.suite.js` covers the path end to end against the mock engine, which writes through the store's stand-in relay (`server/packs/engine-storage.js`, development and tests only) exactly as the real engine writes through its Worker.
