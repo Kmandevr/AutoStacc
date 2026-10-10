@@ -13,6 +13,7 @@ import { requireAdmin } from "../auth/session.js";
 import { getProduct, productsWithPac } from "../catalog/products.js";
 import { safeFilename } from "../storage/buckets.js";
 import { audit } from "../audit/log.js";
+import { requireFeature } from "../lib/features.js";
 import { createVersion, getVersion, move } from "./versions.js";
 import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
@@ -31,6 +32,7 @@ async function ownerOf(db, product) {
 }
 
 async function adminVersion(app, versionId) {
+  requireFeature(app, "packs.builder");
   await requireAdmin(app);
   const v = await getVersion(app.db, id(versionId, "versionId"));
   if (!v) fail(404, "not_found", "No such version.");
@@ -38,6 +40,7 @@ async function adminVersion(app, versionId) {
 }
 
 async function newVersion(app, { pacId }) {
+  requireFeature(app, "packs.builder");
   const user = await requireAdmin(app);
   const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
   if (!pac) fail(404, "not_found", "No such Pac.");
@@ -63,6 +66,7 @@ async function newVersion(app, { pacId }) {
 const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes: PART_BYTES, status: u.status, partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
 
 async function adminUpload(app, uploadId) {
+  requireFeature(app, "packs.builder");
   await requireAdmin(app);
   const u = await getUpload(app.db, id(uploadId, "uploadId"));
   if (!u) fail(404, "not_found", "No such upload.");
@@ -131,6 +135,7 @@ async function drop(app, { versionId }) {
 }
 
 async function pacOverview(app, { pacId }) {
+  requireFeature(app, "packs.builder");
   await requireAdmin(app);
   const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
   if (!pac) fail(404, "not_found", "No such Pac.");

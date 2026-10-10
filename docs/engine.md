@@ -1,7 +1,7 @@
 ---
 title: Processing engine
 summary: The Rust processing engine (engine/): safe ZIP reading, SHA-256/CRC-32, format identification and header facts; built natively for a Cloudflare Container run by the engine Worker (workers/engine/) and as WebAssembly for the Pack Builder's Web Workers; its loader, CI and benchmarks. Phase 0 of the Pack Builder plan.
-covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, .github/workflows/engine-fuzz.yml, test/unit/engine-worker.test.js, test/unit/mock-engine.test.js, test/mock-engine/, scripts/engine-conformance.js, scripts/engine-fixtures.js, scripts/engine-smoke.js, scripts/lib/json-schema.js]
+covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, .github/workflows/engine-fuzz.yml, test/unit/engine-worker.test.js, test/unit/mock-engine.test.js, test/mock-engine/, scripts/engine-conformance.js, scripts/engine-fixtures.js, scripts/engine-smoke.js, scripts/engine-wasm.js, scripts/lib/json-schema.js]
 updated: 2026-10-10
 ---
 
@@ -27,7 +27,7 @@ The engine does the CPU-heavy work on creators' files. Plan and the system aroun
 
 **Refused archive entries** (never extracted): path traversal, absolute or drive paths, control characters, Windows reserved names, depth over 32 or path over 1,024 bytes, symlinks, encryption, unsupported compression, compression ratio over 200:1 for files over 1 MB, entries whose data overlaps another's or runs into the central directory, damaged entries, and files whose content doesn't match their name. **Warnings:** duplicate names and names that differ only in case. **Ignored:** `__MACOSX/`, `.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`. Archive-wide limits: 10,000 entries, 64 MB central directory, 50 GB total.
 
-`js/engine/engine-wasm.js` loads the WebAssembly build in a browser Web Worker (sources are Blobs read with `FileReaderSync`) or in Node (`fs.readSync`), with no generated bindings. `inspect` takes a share `[i, n]` so n Web Workers split one archive; `list`, `inspect` and `file` take an optional vocabulary for suggestions, so the Pack Builder can show them before anything uploads.
+The site serves the WebAssembly build as `js/engine/autostacc_engine.wasm` (rebuilt and copied by `node scripts/engine-wasm.js` after engine changes; CI checks the committed copy passes conformance and carries the engine's version). `js/engine/engine-worker.js` runs it for the Pack Builder's preview, so the admin page itself never needs `'wasm-unsafe-eval'`. `js/engine/engine-wasm.js` loads the WebAssembly build in a browser Web Worker (sources are Blobs read with `FileReaderSync`) or in Node (`fs.readSync`), with no generated bindings. `inspect` takes a share `[i, n]` so n Web Workers split one archive; `list`, `inspect` and `file` take an optional vocabulary for suggestions, so the Pack Builder can show them before anything uploads.
 
 **The vocabulary** comes from the store's own (`engineVocabulary()` in `server/discovery/vocabulary.js`: kinds with their formats, the words that mean a kind, an instrument or a MIDI role, the key values and the tempo range); the server sends it with each job and the engine compiles none of it in. `scripts/build.js` writes a copy for the conformance suite, `engine/conformance/vocabulary.json` (`--check` keeps it current).
 

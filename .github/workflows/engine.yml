@@ -53,6 +53,18 @@ jobs:
       - name: Contract conformance (native and WebAssembly builds)
         working-directory: .
         run: node scripts/engine-conformance.js && node scripts/engine-conformance.js --wasm engine/target/wasm32-unknown-unknown/release/autostacc_engine.wasm
+      - name: The site's copy of the WebAssembly build (js/engine/, run node scripts/engine-wasm.js after engine changes)
+        working-directory: .
+        run: |
+          node scripts/engine-conformance.js --wasm js/engine/autostacc_engine.wasm
+          node -e '
+            const fs = require("fs");
+            const want = /^version = "([^"]+)"/m.exec(fs.readFileSync("engine/Cargo.toml", "utf8"))[1];
+            require("./js/engine/engine-wasm.js").create(fs.readFileSync("js/engine/autostacc_engine.wasm")).then((e) => {
+              const v = e.version().engineVersion;
+              if (v !== want) { console.error(`js/engine/autostacc_engine.wasm is engine ${v}, not ${want}: run node scripts/engine-wasm.js`); process.exit(1); }
+              console.log(`js/engine/autostacc_engine.wasm is engine ${v}`);
+            });'
       - name: Engine Worker and mock engine unit tests
         working-directory: .
         run: node --test test/unit/engine-worker.test.js test/unit/mock-engine.test.js

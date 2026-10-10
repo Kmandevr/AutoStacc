@@ -14,6 +14,7 @@ import { limit } from "../lib/ratelimit.js";
 import { signBundle, readBundle } from "./tokens.js";
 import { logEvent, logServedMany, subjectFor } from "./events.js";
 import { zipStream } from "./zip.js";
+import { requireFeature } from "../lib/features.js";
 
 export const BUNDLE_MAX_FILES = 2000;
 export const BUNDLE_MAX_BYTES = 20 * 1024 ** 3;
@@ -57,6 +58,7 @@ export function layout(files) {
 }
 
 async function issue(app) {
+  requireFeature(app, "downloads.bundles");
   await limit(app, "bundle", 10, 60);
   const access = await requireAccess(app);
   const body = await readJson(app.request, 128 * 1024);
@@ -87,6 +89,7 @@ async function issue(app) {
 const back = (reason) => new Response(null, { status: 303, headers: { Location: `/library?download=${reason}`, "Cache-Control": "no-store" } });
 
 async function redeem(app, { token }) {
+  requireFeature(app, "downloads.bundles");
   await limit(app, "bundle-get", 30, 60);
   const { payload, error } = await readBundle(app.config.downloadSecret, token);
   if (error) return back(error === "expired" ? "expired" : "denied");

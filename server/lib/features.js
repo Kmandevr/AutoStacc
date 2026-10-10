@@ -1,0 +1,27 @@
+// Feature switches (docs/packs.md, "Replaceability": a feature can be switched off or replaced without breaking
+// uploads, purchases or downloads). Each switch guards its own routes (404 when off) and the browser hides its buttons
+// (data/features.js, generated from FEATURES by scripts/build.js). A deployment can also switch any of them off without
+// a code change: FEATURES_OFF, comma-separated names, in the environment. Uploads of single files, checkout, the
+// library and single-file downloads never depend on a switch.
+import { fail } from "./http.js";
+
+export const FEATURES = {
+  // The Pack Builder: the Control Center's Packs tab and /api/admin/packs/* (existing files stay delivered when off).
+  "packs.builder": { on: true, label: "Pack Builder" },
+  // Suggested kinds, instruments, tempos and keys from names and headers (the vocabulary sent with engine jobs).
+  "packs.suggestions": { on: true, label: "Suggestions from names and headers" },
+  // Several files as one ZIP: "Download folder (ZIP)" and /api/downloads/bundle (single downloads always work).
+  "downloads.bundles": { on: true, label: "ZIP downloads" }
+};
+
+const offIn = (env) => new Set(String((env && env.FEATURES_OFF) || "").split(",").map((s) => s.trim()).filter(Boolean));
+
+export const isOn = (app, name) => Boolean(FEATURES[name] && FEATURES[name].on) && !offIn(app.env).has(name);
+
+/** Ends the request with 404 (like a route that doesn't exist) when the feature is off. */
+export function requireFeature(app, name) {
+  if (!isOn(app, name)) fail(404, "not_found", "Not found.");
+}
+
+/** What the browser needs: { name: true|false } (data/features.js). */
+export const browserFeatures = () => Object.fromEntries(Object.entries(FEATURES).map(([k, f]) => [k, f.on]));
