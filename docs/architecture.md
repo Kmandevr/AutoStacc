@@ -56,7 +56,7 @@ The build (`scripts/lib/platform.js`) refuses: unknown projects, Stacclets or Pa
 
 ### Sync to the database
 
-`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), first-party creators, projects and polls (`scripts/lib/platform-catalog.js`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). Stacclets and Pacs stay in `data/` (the library joins them in the browser) until a server feature needs them. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql` (forward-only).
+`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), first-party creators, projects, Stacclets, Pacs and polls (`scripts/lib/platform-catalog.js`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). Stacclets and Pacs are written in `data/` and synced to the `stacclets` and `pacs` tables (with each Pac's project) for the Pack Builder; the library still joins them in the browser. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql`, Pacs, versions, stored originals, folders, assets and their values in `0014_packs.sql` ([packs](packs.md); forward-only).
 
 ## Your Stacc
 

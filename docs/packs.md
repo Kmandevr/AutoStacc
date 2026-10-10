@@ -7,7 +7,7 @@ updated: 2026-10-10
 
 # Pack Builder and processing engine
 
-> **PLANNED, Phase 0 partly built.** This note is the approved plan (owner, 2026-10-10). Built so far: the engine core, its WebAssembly build, the Container image, the engine Worker and CI ([engine](engine.md)), and the asset vocabulary (Phase 1a: `FORMATS`, `KINDS`, `INSTRUMENTS` in `server/discovery/vocabulary.js`); nothing on the site uses the engine yet. Not built: pack tables, the Pack Builder UI, bundles, derived facets. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
+> **PLANNED, Phase 0 partly built.** This note is the approved plan (owner, 2026-10-10). Built so far: the engine core, its WebAssembly build, the Container image, the engine Worker and CI ([engine](engine.md)), the asset vocabulary (Phase 1a), the engine contract, conformance suite and mock engine (Phase 1b) and the schema with Stacclets and Pacs in the database and the 500 MB quota (Phase 1c, `db/migrations/0014_packs.sql`); nothing on the site uses the engine yet. Feature switches arrive with the first features they control (Phase 3). Not built: pack tables, the Pack Builder UI, bundles, derived facets. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
 
 
 > **Rev. 4 (2026-10-10).** The owner re-sent the brief and confirmed **Workers Paid**. The rev. 3 decisions all stand. Two points of the new brief change the design:
@@ -95,7 +95,7 @@ AutoStacc sells Pacs through products. Today a Pac's contents are loose `product
 | `server/files/upload.js` `putVerifiedFile` | Streams body → R2, peeks 16 bytes, deletes on mismatch |
 | `server/storage/buckets.js` | `newFileKey`, get/put/peek/delete, range `getPreview`. **No multipart** |
 | Admin upload (`server/admin/files.js`) | `pac`, `kind`, `status`, `replaces` (the replacement link is only in the audit log) |
-| Studio upload (`server/studio/product-files.js`) | `pac_id=NULL`, `kind=''` hard-coded. Untrusted → `pending` + `alertAdmins`. Quota 250 MB, 20 files per product, enforced in the INSERT |
+| Studio upload (`server/studio/product-files.js`) | `pac_id=NULL`, `kind=''` hard-coded. Untrusted → `pending` + `alertAdmins`. Quota 250 MB at planning (500 MB since Phase 1c), 20 files per product, enforced in the INSERT |
 | ZIP | Accepted as an opaque file, never unpacked. **No archive, hashing or audio/MIDI code anywhere** |
 
 **Hierarchy**
