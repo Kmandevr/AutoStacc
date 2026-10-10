@@ -77,8 +77,18 @@ export default {
     if (!tokenMatches(request.headers.get("Authorization"), env.ENGINE_ADMIN_TOKEN)) return json({ error: "not_found" }, 404);
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/v1/health") {
-      const res = await engine(env).fetch(new Request("http://engine/healthz"));
-      return json(await res.json(), res.status);
+      // Behind the admin token, so the reason for a failure is shown rather than Cloudflare's error page.
+      try {
+        const res = await engine(env).fetch(new Request("http://engine/healthz"));
+        const text = await res.text();
+        try {
+          return json(JSON.parse(text), res.status);
+        } catch {
+          return json({ error: "engine_not_json", status: res.status, body: text.slice(0, 500) }, 502);
+        }
+      } catch (e) {
+        return json({ error: "engine_unreachable", reason: String(e && e.stack || e).slice(0, 1000) }, 502);
+      }
     }
     if (request.method === "POST" && url.pathname === "/v1/jobs") {
       let job;
