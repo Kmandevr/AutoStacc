@@ -39,7 +39,8 @@ async function library(app) {
       entitlementId: mine[0].id,
       sources: [...new Set(mine.map((e) => (e.source_type === "free" && e.note === AUTO_NOTE ? "auto" : e.source_type)))],
       grantedAt: mine[0].granted_at,
-      files: files.filter((f) => f.product_id === pid).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "" }))
+      files: files.filter((f) => f.product_id === pid).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "",
+        folderPath: f.folder_path || "", ...(f.retired_at ? { retiredAt: f.retired_at } : {}) }))
     };
   });
   return json({ signedIn: Boolean(access.user), guestOrders: access.guestOrderIds, items });

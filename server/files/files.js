@@ -3,6 +3,7 @@
 // active file ever reaches a customer: downloads, the library and test-purchase checks all read DELIVERABLE.
 // This is the "upload → check → publish" path creator uploads will use; a scanner would sit between pending and published.
 import { all, first, run, now } from "../lib/db.js";
+import { blobKey } from "../blobs/blobs.js";
 
 export const DELIVERABLE = "active = 1 AND status = 'published'";
 export const STATUSES = ["pending", "published", "rejected", "deleted"];
@@ -10,7 +11,7 @@ export const STATUSES = ["pending", "published", "rejected", "deleted"];
 export const getDeliverableFile = (db, fileId) => first(db, `SELECT * FROM product_files WHERE id = ? AND ${DELIVERABLE}`, fileId);
 
 export const deliverableFiles = (db, productIds) => (productIds.length
-  ? all(db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind FROM product_files
+  ? all(db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind, folder_path, retired_at FROM product_files
       WHERE ${DELIVERABLE} AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
   : Promise.resolve([]));
 
@@ -37,3 +38,7 @@ export const setStatus = (db, fileId, status, note = null) =>
 export const unpublishEmptyStudioProducts = (db) =>
   run(db, `UPDATE products SET published = 0, updated_at = ? WHERE source = 'studio' AND published = 1
     AND NOT EXISTS (SELECT 1 FROM product_files f WHERE f.product_id = products.id AND f.active = 1 AND f.status = 'published')`, now());
+
+// Where a file's bytes are: its stored original's key for files published from a pack version (their own r2_key is a
+// placeholder, db/migrations/0015_pack_publish.sql), else its own key. Every download goes through here.
+export const storageKeyOf = async (db, file) => (file.blob_id ? blobKey(db, file.blob_id) : file.r2_key);
