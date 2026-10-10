@@ -2,7 +2,7 @@
 // it, watch the engine check it, review what it found (files kept, files refused and why, the values it suggests from
 // names and headers) and publish it, or discard it. Publishing replaces this Pac's files in the product; files whose
 // bytes didn't change keep their id. Talks to /api/admin/packs; uploads through js/admin-packs-upload.js.
-// Starts on "gs:admin". Needs js/util.js and data/pacs.js.
+// Reviewing a ready version: js/admin-packs-review.js. Starts on "gs:admin". Needs js/util.js and data/pacs.js.
 (function () {
   "use strict";
 
@@ -13,25 +13,19 @@
 
   const pacOptions = () => (window.PACS || []).map((p) => `<option value="${e(p.id)}"${p.id === pacId ? " selected" : ""}>${e(p.title)} (${e(p.id)})</option>`).join("");
 
-  function suggestionChips(list) {
-    return list.map((s) => `<span class="chip" title="${e(s.origin)}">${e(s.field)}: ${e(s.value)} <small>${pct(s.confidence)}</small></span>`).join(" ");
-  }
-
   function versionView(v) {
     const s = v.stats || {};
     const head = `<p><strong>Version ${v.number}</strong> · ${e(v.status)}${v.note ? ` (${e(v.note)})` : ""}</p>`;
     if (v.status === "processing") return `${head}<p class="small-print">Checking every file… this page updates by itself.</p>`;
     if (!["ready", "published", "superseded"].includes(v.status)) return head;
     const refused = (s.refused || []).map((r) => `<li><code>${e(r.path)}</code>: ${e(r.codes.join(", "))}</li>`).join("");
-    const rows = (v.files || []).map((f) => `<tr><td><code>${e(f.path)}</code></td><td>${e(f.format)}</td><td>${mb(f.sizeBytes)}</td>
-      <td>${suggestionChips(f.suggestions || [])}</td></tr>`).join("");
     return `${head}
       <p>${s.files} file${s.files === 1 ? "" : "s"} kept (${mb(s.bytes || 0)}) in ${s.folders} folder${s.folders === 1 ? "" : "s"}${s.ignored ? `; ${s.ignored} system file${s.ignored === 1 ? "" : "s"} ignored` : ""}.</p>
       ${refused ? `<details open><summary>${s.refused.length} file${s.refused.length === 1 ? "" : "s"} refused (never reach customers)</summary><ul>${refused}</ul></details>` : ""}
       ${v.status === "ready" ? `<div class="actions"><button class="btn" type="button" data-pack-publish${s.files ? "" : " disabled"}>Publish ${s.files} files</button>
         <button class="btn ghost" type="button" data-pack-discard>Discard</button></div>` : ""}
-      <p class="small-print">Suggestions come from names and the files' own headers; a percentage is how sure the engine is. Nothing suggested is shown to customers as fact.</p>
-      <div class="table-wrap"><table><thead><tr><th>File</th><th>Format</th><th>Size</th><th>Suggested</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      <p class="small-print">Suggestions come from names and the files' own headers; a percentage is how sure the engine is. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>
+      ${window.GS.packReview.render(v)}`;
   }
 
   async function showVersion(id) {
@@ -39,10 +33,16 @@
     const res = await api(`/api/admin/packs/versions/${encodeURIComponent(id)}`);
     const box = $("[data-pack-version]", el);
     if (!res.ok) { box.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
-    const v = res.data.version;
+    draw(res.data.version);
+    if (res.data.version.status === "processing") poll = setTimeout(() => showVersion(id), 2500);
+  }
+
+  // Draws a version (also after each review edit, which answers the updated version).
+  function draw(v) {
+    const box = $("[data-pack-version]", el);
     box.dataset.id = v.id;
+    box.__version = v;
     box.innerHTML = versionView(v);
-    if (v.status === "processing") poll = setTimeout(() => showVersion(id), 2500);
   }
 
   async function showPac() {
@@ -140,6 +140,7 @@
     $("[data-pack-pac]", el).addEventListener("change", (ev) => { pacId = ev.target.value; showPac(); });
     el.addEventListener("submit", onSubmit);
     el.addEventListener("change", onPick);
+    window.GS.packReview.bind(el, draw);
     el.addEventListener("click", onClick);
   });
 })();
