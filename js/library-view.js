@@ -44,7 +44,7 @@
       ${p.stacclets.map((s) => `<details class="stacc-stacclet" open><summary><span class="stacc-kind">Stacclet</span> ${e(s.title)} <span class="stacc-count">${items(s.count)}</span></summary>
         ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span></summary>${pac.folders ? folders(pac.folders, ctx) : kinds(pac.kinds, ctx)}</details>`).join("")}
       </details>`).join("")}
-      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span></summary>${kinds(x.kinds, ctx)}</details>`).join("")}
+      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span></summary>${x.folders ? folders(x.folders, ctx) : kinds(x.kinds, ctx)}</details>`).join("")}
     </section>`).join("");
   }
 
