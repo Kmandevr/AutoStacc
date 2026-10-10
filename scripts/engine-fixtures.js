@@ -109,6 +109,20 @@ const CASES = {
     { name: "__MACOSX/Pack/._Read me.txt", data: "x", store: true },
     { name: "Pack/.DS_Store", data: "x", store: true }
   ]),
+  // How creators name things, for suggestions: kinds, instruments, tempos and keys in folder and file names, a tempo
+  // that fits the length and one that doesn't, a name and a header that disagree, MIDI patterns and arrangements.
+  "pack-names": () => zip([
+    { name: "Glitch Kit/One Shots/Hi Hats/HH Closed 03.wav", data: wav({ frames: 4410, seed: 4 }) },
+    { name: "Glitch Kit/One Shots/808s/808 Sub C.wav", data: wav({ frames: 44100, seed: 5 }) },
+    { name: "Glitch Kit/Loops/Bass/Bassline_140bpm_F#min.wav", data: wav({ frames: 151200, seed: 6 }) },
+    { name: "Glitch Kit/Loops/Drums/Break 174 BPM.wav", data: wav({ frames: 50000, seed: 7 }) },
+    { name: "Glitch Kit/Loops/Vox/VoxChop 128 Gm.wav", data: wav({ frames: 82688, acid: { oneShot: true }, seed: 8 }) },
+    { name: "Glitch Kit/MIDI/Patterns/Arp Pattern Dbmaj.mid", data: midi() },
+    { name: "Glitch Kit/Stems/Track 1/Lead Stem.wav", data: wav({ frames: 88200, seed: 9 }) },
+    { name: "Glitch Kit/Presets/Serum/LD Glitch Lead.fxp", data: "CcnK" + "\0".repeat(60) },
+    { name: "Glitch Kit/Artwork/Cover.png", data: Buffer.from("89504e470d0a1a0a0000000d49484452", "hex") },
+    { name: "Glitch Kit/Licence.pdf", data: "%PDF-1.4\n%%EOF\n" }
+  ]),
   // Unsafe names: traversal, absolute, Windows drive and reserved names; nothing here may be extracted.
   "unsafe-paths": () => zip([
     { name: "../escape.wav", data: wav({}) },

@@ -120,6 +120,37 @@ export const MIDI_ROLES = { pattern: "Pattern", arrangement: "Arrangement" };
 export const INSTRUMENTS = v(["Drums", "Kick", "Snare", "Clap", "Hats", "Cymbals", "Percussion", "Bass", "808", "Synth", "Lead", "Pad",
   "Pluck", "Arp", "Keys", "Piano", "Guitar", "Strings", "Brass", "Vocals", "FX", "Textures", "Atmosphere"]);
 
+// Other words for an instrument in file and folder names (plurals of the values are added automatically).
+export const INSTRUMENT_SYNONYMS = {
+  kickdrum: "kick", bd: "kick", sd: "snare", snr: "snare", claps: "clap", hat: "hats", hihat: "hats", "hi-hat": "hats", hh: "hats",
+  "open-hat": "hats", "closed-hat": "hats", cymbal: "cymbals", crash: "cymbals", ride: "cymbals", perc: "percussion", percs: "percussion",
+  drum: "drums", sub: "bass", bassline: "bass", basses: "bass", "808s": "808", synths: "synth", leads: "lead", pads: "pad", plucks: "pluck",
+  arps: "arp", arpeggio: "arp", rhodes: "keys", epiano: "keys", gtr: "guitar", guitars: "guitar", string: "strings",
+  horns: "brass", vox: "vocals", vocal: "vocals", voice: "vocals", chops: "vocals", sfx: "fx", fxs: "fx", riser: "fx", risers: "fx",
+  impact: "fx", impacts: "fx", sweep: "fx", texture: "textures", atmos: "atmosphere", atmospheres: "atmosphere", ambience: "atmosphere"
+};
+// Words in names that tell a MIDI file's role.
+export const MIDI_ROLE_WORDS = { pattern: "pattern", patterns: "pattern", arrangement: "arrangement", arrangements: "arrangement", song: "arrangement" };
+
+// What the processing engine needs to suggest values from names and headers (engine/src/classify.rs; docs/engine.md):
+// the kinds with the formats filed under them, and the words that mean a kind, an instrument or a MIDI role. The engine
+// compiles none of this in; the server sends it with each job. engine/conformance/vocabulary.json is generated from it.
+export function engineVocabulary() {
+  const words = (pairs) => Object.fromEntries(pairs.filter(([w]) => w).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+  const kind = [...Object.entries(KINDS).flatMap(([k, x]) => [[k, k], [fold(x.label), k]]), ...Object.entries(KIND_SYNONYMS)];
+  const instrument = [
+    ...Object.entries(INSTRUMENTS).flatMap(([k, label]) => [[k, k], [fold(label), k], [/s$/.test(k) ? "" : `${k}s`, k]]),
+    ...Object.entries(INSTRUMENT_SYNONYMS)
+  ];
+  return {
+    version: 1,
+    kinds: Object.fromEntries(Object.entries(KINDS).map(([k, x]) => [k, { formats: x.formats }])),
+    words: { kind: words(kind), instrument: words(instrument), midiRole: words(Object.entries(MIDI_ROLE_WORDS)) },
+    keys: Object.keys(FACETS.key.values),
+    bpm: BPM
+  };
+}
+
 // The canonical kind for a word, or null.
 export function kindOf(word) {
   const w = fold(word);

@@ -1,43 +1,120 @@
 {
-  "$comment": "AutoStacc engine contract v1: one file. format/by/mismatch: what the bytes are (by = signature) or what the name says (by = extension, bytes unread). facts come only from the file's own headers; facts.embedded are values someone wrote into the file (claims, not facts). sha256/crc32 only when the bytes were read in full.",
+  "$comment": "AutoStacc engine contract v1: one file. format/by/mismatch: what the bytes are (by = signature) or what the name says (by = extension, bytes unread). facts come only from the file's own headers; facts.embedded are values someone wrote into the file (claims, not facts). sha256/crc32 only when the bytes were read in full. suggestions: only when the job sent a vocabulary (suggestion.schema.json).",
   "type": "object",
-  "required": ["path", "size", "format", "by", "mismatch", "facts", "issues", "ignored"],
+  "required": [
+    "path",
+    "size",
+    "format",
+    "by",
+    "mismatch",
+    "facts",
+    "issues",
+    "ignored"
+  ],
   "properties": {
-    "path": { "type": "string" },
-    "size": { "type": "integer" },
-    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-    "crc32": { "type": "integer" },
-    "format": { "type": "string" },
-    "by": { "enum": ["signature", "extension"] },
-    "mismatch": { "type": "boolean" },
+    "path": {
+      "type": "string"
+    },
+    "size": {
+      "type": "integer"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "crc32": {
+      "type": "integer"
+    },
+    "format": {
+      "type": "string"
+    },
+    "by": {
+      "enum": [
+        "signature",
+        "extension"
+      ]
+    },
+    "mismatch": {
+      "type": "boolean"
+    },
     "facts": {
       "type": "object",
       "properties": {
-        "durationMs": { "type": "integer" },
-        "sampleRate": { "type": "integer" },
-        "bitDepth": { "type": "integer" },
-        "channels": { "type": "integer" },
-        "encoding": { "type": "string" },
-        "midiFormat": { "type": "integer" },
-        "midiTracks": { "type": "integer" },
-        "ppq": { "type": "integer" },
-        "midiNotes": { "type": "integer" },
-        "lengthBeats": { "type": "number" },
+        "durationMs": {
+          "type": "integer"
+        },
+        "sampleRate": {
+          "type": "integer"
+        },
+        "bitDepth": {
+          "type": "integer"
+        },
+        "channels": {
+          "type": "integer"
+        },
+        "encoding": {
+          "type": "string"
+        },
+        "midiFormat": {
+          "type": "integer"
+        },
+        "midiTracks": {
+          "type": "integer"
+        },
+        "ppq": {
+          "type": "integer"
+        },
+        "midiNotes": {
+          "type": "integer"
+        },
+        "lengthBeats": {
+          "type": "number"
+        },
         "embedded": {
           "type": "object",
           "properties": {
-            "bpm": { "type": "number" },
-            "key": { "type": "string" },
-            "timeSignature": { "type": "string" },
-            "oneShot": { "type": "boolean" },
-            "loopPoints": { "type": "boolean" },
-            "rootNote": { "type": "integer" }
+            "bpm": {
+              "type": "number"
+            },
+            "key": {
+              "type": "string"
+            },
+            "timeSignature": {
+              "type": "string"
+            },
+            "oneShot": {
+              "type": "boolean"
+            },
+            "loopPoints": {
+              "type": "boolean"
+            },
+            "rootNote": {
+              "type": "integer"
+            }
           }
         },
-        "problems": { "type": "array", "items": { "type": "string" } }
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
-    "issues": { "type": "array", "items": { "$ref": "issue.schema.json" } },
-    "ignored": { "type": "boolean" }
+    "issues": {
+      "type": "array",
+      "items": {
+        "$ref": "issue.schema.json"
+      }
+    },
+    "ignored": {
+      "type": "boolean"
+    },
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "$ref": "suggestion.schema.json"
+      }
+    }
   }
 }

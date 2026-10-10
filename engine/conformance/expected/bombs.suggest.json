@@ -1,0 +1,38 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "suspicious_compression_ratio",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "zeros.wav",
+   "size": 67108864
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "size_mismatch",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "liar.wav",
+   "size": 1000
+  }
+ ],
+ "folders": [],
+ "totalSize": 1000,
+ "zip64": false
+}

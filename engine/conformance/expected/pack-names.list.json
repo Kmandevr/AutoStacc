@@ -1,0 +1,124 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/One Shots/Hi Hats/HH Closed 03.wav",
+   "size": 26504
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/One Shots/808s/808 Sub C.wav",
+   "size": 264644
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Loops/Bass/Bassline_140bpm_F#min.wav",
+   "size": 907244
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Loops/Drums/Break 174 BPM.wav",
+   "size": 300044
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Loops/Vox/VoxChop 128 Gm.wav",
+   "size": 496204
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "midi",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/MIDI/Patterns/Arp Pattern Dbmaj.mid",
+   "size": 119
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Stems/Track 1/Lead Stem.wav",
+   "size": 529244
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "fxp",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Presets/Serum/LD Glitch Lead.fxp",
+   "size": 64
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "png",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Artwork/Cover.png",
+   "size": 16
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "pdf",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Glitch Kit/Licence.pdf",
+   "size": 15
+  }
+ ],
+ "folders": [
+  "Glitch Kit",
+  "Glitch Kit/Artwork",
+  "Glitch Kit/Loops",
+  "Glitch Kit/Loops/Bass",
+  "Glitch Kit/Loops/Drums",
+  "Glitch Kit/Loops/Vox",
+  "Glitch Kit/MIDI",
+  "Glitch Kit/MIDI/Patterns",
+  "Glitch Kit/One Shots",
+  "Glitch Kit/One Shots/808s",
+  "Glitch Kit/One Shots/Hi Hats",
+  "Glitch Kit/Presets",
+  "Glitch Kit/Presets/Serum",
+  "Glitch Kit/Stems",
+  "Glitch Kit/Stems/Track 1"
+ ],
+ "totalSize": 2524098,
+ "zip64": false
+}

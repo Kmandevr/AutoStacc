@@ -1,6 +1,7 @@
 // A stand-in engine for tests that don't need the real one (no Rust, no Docker): the same HTTP contract as the Container's
 // service (engine/src/serve.rs), answering each job with the expected answer of the conformance case it names
-// (engine/conformance/expected/<case>.<op>.json, matched by the source file's or key's name). Unknown sources are 404.
+// (engine/conformance/expected/<case>.<op>.json, or <case>.suggest.json for an inspect sent with a vocabulary, matched by
+// the source file's or key's name). Unknown sources are 404.
 // It passes `node scripts/engine-conformance.js --http` like the real engine (test/unit/mock-engine.test.js), so tests
 // built on it test the contract, not a guess. startMockEngine() → { url, close() }; or run it: node test/mock-engine/server.js [port]
 import http from "node:http";
@@ -22,7 +23,8 @@ export function startMockEngine(port = 0) {
       if (!["list", "inspect", "file"].includes(job.op)) return json(res, 400, { error: "unknown_op" });
       const ref = (job.source && (job.source.file || job.source.key)) || "";
       const name = path.basename(ref).replace(/\.zip$/, "");
-      const file = path.join(EXPECTED, `${name}.${job.op}.json`);
+      const check = job.op === "inspect" && job.vocabulary ? "suggest" : job.op;
+      const file = path.join(EXPECTED, `${name}.${check}.json`);
       if (!/^[a-z0-9-]+$/.test(name) || !fs.existsSync(file)) return json(res, 404, { error: "not_found" });
       const answer = JSON.parse(fs.readFileSync(file, "utf8"));
       json(res, answer.error ? 422 : 200, { ...answer, engineVersion: "mock" });
