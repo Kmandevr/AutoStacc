@@ -1,0 +1,17 @@
+{
+  "$comment": "AutoStacc engine contract v1: a job sent to the engine (POST /v1/jobs on the Container's service, or the same fields to the CLI and WebAssembly builds). docs/engine.md.",
+  "type": "object",
+  "required": ["op", "source"],
+  "properties": {
+    "op": { "enum": ["list", "inspect", "file"] },
+    "source": {
+      "type": "object",
+      "properties": {
+        "bucket": { "type": "string" },
+        "key": { "type": "string" },
+        "file": { "type": "string" }
+      }
+    },
+    "path": { "type": "string" }
+  }
+}

@@ -10,9 +10,9 @@
 name: Engine
 on:
   push:
-    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/unit/engine-worker.test.js", ".github/workflows/engine.yml"]
+    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/mock-engine/**", "test/unit/engine-worker.test.js", "test/unit/mock-engine.test.js", "scripts/engine-*.js", "scripts/lib/json-schema.js", ".github/workflows/engine.yml"]
   pull_request:
-    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/unit/engine-worker.test.js", ".github/workflows/engine.yml"]
+    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/mock-engine/**", "test/unit/engine-worker.test.js", "test/unit/mock-engine.test.js", "scripts/engine-*.js", "scripts/lib/json-schema.js", ".github/workflows/engine.yml"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -50,9 +50,12 @@ jobs:
       - name: Native and WebAssembly give identical results on a generated pack
         working-directory: .
         run: node test/bench/make-pack.js --mb 48 && node test/bench/engine-bench.js test/bench/out/pack-48mb.zip
-      - name: Engine Worker unit tests
+      - name: Contract conformance (native and WebAssembly builds)
         working-directory: .
-        run: node --test test/unit/engine-worker.test.js
+        run: node scripts/engine-conformance.js && node scripts/engine-conformance.js --wasm engine/target/wasm32-unknown-unknown/release/autostacc_engine.wasm
+      - name: Engine Worker and mock engine unit tests
+        working-directory: .
+        run: node --test test/unit/engine-worker.test.js test/unit/mock-engine.test.js
 
   image:
     runs-on: ubuntu-latest

@@ -148,6 +148,23 @@ fn has_signature(format: &str) -> bool {
     )
 }
 
+/// What the name alone says, for files whose bytes weren't read (refused or listing only): never a mismatch, since
+/// nothing was checked.
+pub fn from_name(name: &str) -> Identity {
+    match by_extension(&extension(name)) {
+        Some(f) => Identity {
+            format: f.into(),
+            by: "extension",
+            mismatch: false,
+        },
+        None => Identity {
+            format: "unknown".into(),
+            by: "extension",
+            mismatch: false,
+        },
+    }
+}
+
 pub fn identify(name: &str, head: &[u8]) -> Identity {
     let ext = extension(name);
     let claimed = by_extension(&ext);
@@ -205,6 +222,14 @@ mod tests {
         let id = identify("Bass/Wobble.vital", b"{\"preset_name\":1}");
         assert_eq!((id.format.as_str(), id.by, id.mismatch), ("vital", "extension", false));
         assert_eq!(identify("x.unknownext", b"\0\0\0\0").format, "unknown");
+        assert_eq!(
+            from_name("Kick.wav"),
+            Identity {
+                format: "wav".into(),
+                by: "extension",
+                mismatch: false
+            }
+        );
     }
 
     #[test]

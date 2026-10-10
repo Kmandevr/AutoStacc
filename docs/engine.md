@@ -1,7 +1,7 @@
 ---
 title: Processing engine
 summary: The Rust processing engine (engine/): safe ZIP reading, SHA-256/CRC-32, format identification and header facts; built natively for a Cloudflare Container run by the engine Worker (workers/engine/) and as WebAssembly for the Pack Builder's Web Workers; its loader, CI and benchmarks. Phase 0 of the Pack Builder plan.
-covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, test/unit/engine-worker.test.js]
+covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, test/unit/engine-worker.test.js, test/unit/mock-engine.test.js, test/mock-engine/, scripts/engine-conformance.js, scripts/engine-fixtures.js, scripts/lib/json-schema.js]
 updated: 2026-10-10
 ---
 
@@ -26,6 +26,14 @@ The engine does the CPU-heavy work on creators' files. Plan and the system aroun
 **Refused archive entries** (never extracted): path traversal, absolute or drive paths, control characters, Windows reserved names, depth over 32 or path over 1,024 bytes, symlinks, encryption, unsupported compression, compression ratio over 200:1 for files over 1 MB, entries whose data overlaps another's or runs into the central directory, damaged entries, and files whose content doesn't match their name. **Warnings:** duplicate names and names that differ only in case. **Ignored:** `__MACOSX/`, `.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`. Archive-wide limits: 10,000 entries, 64 MB central directory, 50 GB total.
 
 `js/engine/engine-wasm.js` loads the WebAssembly build in a browser Web Worker (sources are Blobs read with `FileReaderSync`) or in Node (`fs.readSync`), with no generated bindings. `inspect` takes a share `[i, n]` so n Web Workers split one archive.
+
+## The contract, and replacing the engine
+
+The site only ever reads the engine's JSON, never its code, so the engine can be replaced by anything that keeps the contract (owner's requirement; [packs](packs.md#replaceability-owner-requirement-r)).
+
+- **Contract v1** (`engine/contract/v1/`): JSON schemas for a job (`job.schema.json`), an archive answer (`archive-result.schema.json`: `list` and `inspect`), one file (`file-result.schema.json`, `issue.schema.json`) and a failed job (`error.schema.json`), plus every code an engine may answer (`errors.json`: archive, file and service codes). A breaking change becomes v2, served beside v1.
+- **Conformance** (`engine/conformance/`): `cases/` are small fixed archives (a normal pack, unsafe paths, a symlink and encrypted entry, bombs, deceptive and damaged files, colliding and code-page-437 names, overlapping entries, not a ZIP), written by `node scripts/engine-fixtures.js`; `expected/` holds the answer each must get. `node scripts/engine-conformance.js` checks the command-line build (`--wasm <file>` the WebAssembly build, `--http <url>` an engine service) against the schemas and the expected answers; `--update` rewrites them from the current engine for review. All three builds pass; CI runs the CLI and WebAssembly checks.
+- **Mock engine** (`test/mock-engine/server.js`): the same HTTP contract, answering from `expected/`, for tests that shouldn't need Rust or Docker. A unit test runs the conformance suite against it, so it can't drift from the real one.
 
 ## Server side: Container and engine Worker
 

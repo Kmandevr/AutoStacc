@@ -1,0 +1,107 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Drums/Kicks/Kick 01.wav",
+   "size": 79456
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Loops/128 BPM/Groove 128 Am.wav",
+   "size": 1080076
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "aiff",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Textures/Air.aif",
+   "size": 44154
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "flac",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Textures/Room.flac",
+   "size": 42
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "midi",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/MIDI/Chords Am.mid",
+   "size": 119
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "vital",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Presets/Wobble.vital",
+   "size": 24
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Read me.txt",
+   "size": 24
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": true,
+   "issues": [],
+   "mismatch": false,
+   "path": "__MACOSX/Pack/._Read me.txt",
+   "size": 1
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "unknown",
+   "ignored": true,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/.DS_Store",
+   "size": 1
+  }
+ ],
+ "folders": [
+  "Pack",
+  "Pack/Drums",
+  "Pack/Drums/Kicks",
+  "Pack/Loops",
+  "Pack/Loops/128 BPM",
+  "Pack/MIDI",
+  "Pack/Presets",
+  "Pack/Textures"
+ ],
+ "totalSize": 1203895,
+ "zip64": false
+}
