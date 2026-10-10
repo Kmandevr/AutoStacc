@@ -1,9 +1,10 @@
 // The engine Worker (docs/engine.md): a Queue consumer that hands each job to the processing engine running in a
 // Cloudflare Container (engine/Dockerfile) and stores the answer in R2. Separate from the Pages project because Pages
 // Functions can't consume Queues or own Containers. Sized to stay inside the Workers Paid allowance: the smallest
-// ("basic") instance, one instance, one job at a time, asleep 30 s after the last job (docs/packs.md).
-// Secrets (wrangler secret put): R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (a token for the FILES bucket only),
-// ENGINE_ADMIN_TOKEN (optional: enables the smoke-test routes). R2_ENDPOINT is set by the deploy from the account id.
+// ("basic") instance, one instance, one job at a time, asleep 15 s after the last job (docs/packs.md).
+// The Container has no internet and no storage credentials: it reads job inputs through the Worker (storage.engine,
+// src/index.js), which answers from FILES for the buckets in R2_BUCKETS only. Secret (wrangler secret put):
+// ENGINE_ADMIN_TOKEN (optional: enables the smoke-test routes).
 {
   "name": "autostacc-engine",
   "main": "src/index.js",
@@ -25,5 +26,5 @@
     ]
   },
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "autostacc-files" }],
-  "vars": { "R2_BUCKETS": "autostacc-files", "R2_ENDPOINT": "" }
+  "vars": { "R2_BUCKETS": "autostacc-files" }
 }

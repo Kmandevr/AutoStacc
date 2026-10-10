@@ -4,9 +4,8 @@
 # deploys the engine Worker and its Container, which runs nothing until a job is queued.
 #
 # Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit, Containers: Edit, Account Settings: Read),
-# CLOUDFLARE_ACCOUNT_ID, ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (an R2 API token limited to the
-# autostacc-files bucket), optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes).
-# Without the R2 secrets the deploy step is skipped.
+# CLOUDFLARE_ACCOUNT_ID, optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes). The engine
+# needs no storage credentials: its Worker answers its reads from the R2 binding. Without the API token the deploy is skipped.
 name: Engine
 on:
   push:
@@ -79,8 +78,6 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      R2_KEY: ${{ secrets.ENGINE_R2_ACCESS_KEY_ID }}
-      R2_SECRET: ${{ secrets.ENGINE_R2_SECRET_ACCESS_KEY }}
       ADMIN_TOKEN: ${{ secrets.ENGINE_ADMIN_TOKEN }}
     defaults:
       run:
@@ -90,11 +87,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Skip without the engine's R2 secrets
+      - name: Skip without the Cloudflare API token
         id: ready
         run: |
-          if [ -z "$R2_KEY" ] || [ -z "$R2_SECRET" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::Engine not deployed: set ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (docs/engine.md)."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Engine not deployed: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (docs/engine.md)."
             echo "go=false" >> "$GITHUB_OUTPUT"
           else
             echo "go=true" >> "$GITHUB_OUTPUT"
@@ -142,7 +139,7 @@ jobs:
         if: steps.ready.outputs.go == 'true'
         run: |
           set -o pipefail
-          WRANGLER_LOG=debug npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" 2>&1 | tee /tmp/deploy.log | grep -vE "^\[debug\]|^-- |^[A-Za-z-]+: " || {
+          WRANGLER_LOG=debug npx wrangler deploy 2>&1 | tee /tmp/deploy.log | grep -vE "^\[debug\]|^-- |^[A-Za-z-]+: " || {
             # Cloudflare's answer to the failing request (status and body; the debug log never prints the token).
             grep -iE "containers/|cloudchamber|status: [45][0-9][0-9]|\"(code|message)\"" /tmp/deploy.log | grep -viE "authorization|bearer" | tail -25
             grep -q "No access to the specified resource\|code: 10000" /tmp/deploy.log && echo "::error::The Cloudflare API token can't deploy Workers or Containers: give it Account → Workers Scripts → Edit and Containers → Edit (docs/engine.md)."
@@ -152,8 +149,8 @@ jobs:
       - name: Secrets
         if: steps.ready.outputs.go == 'true'
         run: |
-          printf '%s' "$R2_KEY" | npx wrangler secret put R2_ACCESS_KEY_ID
-          printf '%s' "$R2_SECRET" | npx wrangler secret put R2_SECRET_ACCESS_KEY
+          # Storage keys from the earlier design: the engine no longer has any.
+          for old in R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do npx wrangler secret delete "$old" >/dev/null 2>&1 || true; done
           if [ -n "$ADMIN_TOKEN" ]; then printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ENGINE_ADMIN_TOKEN; fi
       - name: Smoke test the deployed engine (needs ENGINE_ADMIN_TOKEN)
         if: steps.ready.outputs.go == 'true' && env.ADMIN_TOKEN != ''

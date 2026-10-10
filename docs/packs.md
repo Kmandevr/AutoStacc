@@ -158,7 +158,7 @@ ENGINE WORKER: workers/engine/ (JS, ~200 lines: queue consumer + Container DO)
   │ retries / dead-letter queue / max concurrency · DO per job · alarm = timeout/stale guard
   ▼
 CONTAINER: engine/ (Rust, native binary, basic: ¼ vCPU, 1 GiB; one job at a time; sleeps after 30 s)
-  reads incoming/<version>/… from R2 (S3 API, scoped token)  ─┐
+  reads incoming/<version>/… via the engine Worker (no keys)  ─┐
   zip.list → stream inflate each entry → sha256+crc32 →        │ originals written to R2 FILES
   identify → facts → naming/classify → bpm/key/peaks →         │ (blobs, byte-exact)
   writes result.json (contract v1) to R2 jobs/<jobId>/          ┘
@@ -288,7 +288,7 @@ The engine's I/O-free modules (`zipread`, `hash`, `formats`, `facts`, `naming`, 
 ### Proof-of-concept uncertainties (Phase 0)
 
 - Container cold start and image size (target: image <50 MB, cold start <5 s).
-- R2 throughput from the Container via the S3 API (or a FUSE mount).
+- R2 throughput from the Container (built: reads relayed by the engine Worker from its R2 binding; measured on deploy).
 - Native SHA-256 ≥1 GB/s and inflate ≥300 MB/s per vCPU.
 - symphonia covers the needed codecs.
 - Queue → DO → Container wiring from a Pages producer.
@@ -493,7 +493,7 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 - Duplicate or case-colliding names are reported.
 - Nested ZIPs are kept as files, with their listing inspected.
 - Deceptive files are refused.
-- The Container runs with no secrets beyond a scoped R2 token (read `incoming/`, write blob keys) and no D1 access. Per-job time and memory budgets apply.
+- The Container holds no secrets and has no internet or D1 access: storage reads (and, from Phase 3, writes of blob keys) go through the engine Worker, which answers from its R2 binding for allowed buckets and keys only. Per-job time and memory budgets apply.
 
 **Server**
 

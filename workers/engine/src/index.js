@@ -3,7 +3,10 @@
 // HTTP (only when ENGINE_ADMIN_TOKEN is set, with it as a bearer token): POST /v1/jobs queues a job, GET /v1/jobs/:id
 // reads its answer, GET /v1/health starts the Container and asks for its version. Used to smoke-test a deploy.
 import { Container, getContainer } from "@cloudflare/containers";
-import { checkJob, resultKey, failedKey, engineRequest, tokenMatches, buckets } from "./jobs.js";
+import { checkJob, resultKey, failedKey, engineRequest, tokenMatches, buckets, STORAGE_HOST, storageRequest } from "./jobs.js";
+
+// Needed by the Containers library to route the engine's outbound requests through the handlers below.
+export { ContainerProxy } from "@cloudflare/containers";
 
 export class EngineContainer extends Container {
   defaultPort = 8080;
@@ -12,14 +15,24 @@ export class EngineContainer extends Container {
 
   constructor(ctx, env) {
     super(ctx, env);
-    this.envVars = { R2_ENDPOINT: env.R2_ENDPOINT, R2_ACCESS_KEY_ID: env.R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY: env.R2_SECRET_ACCESS_KEY, R2_BUCKETS: env.R2_BUCKETS };
-  }
-
-  // No internet for the engine except R2's S3 endpoint.
-  async onStart() {
-    if (this.env.R2_ENDPOINT) await this.setAllowedHosts([new URL(this.env.R2_ENDPOINT).hostname]);
+    this.envVars = { R2_ENDPOINT: `http://${STORAGE_HOST}`, R2_BUCKETS: env.R2_BUCKETS };
   }
 }
+
+// The engine's only way out: reads of the allowed buckets, answered here from the R2 binding. The Container holds no
+// storage credentials and has no internet, so a compromised engine can read the job buckets and nothing else.
+EngineContainer.outboundByHost = {
+  [STORAGE_HOST]: async (request, env) => {
+    const r = storageRequest(request.method, request.url, request.headers.get("Range"), buckets(env));
+    if (r.status) return new Response(null, { status: r.status });
+    const obj = r.head && !r.range ? await env.FILES.head(r.key) : await env.FILES.get(r.key, r.range ? { range: r.range } : {});
+    if (!obj) return new Response(null, { status: 404 });
+    const length = r.range ? Math.min(r.range.length, Math.max(0, obj.size - r.range.offset)) : obj.size;
+    const headers = { "Content-Length": String(length), "X-Object-Size": String(obj.size) };
+    if (r.range) headers["Content-Range"] = `bytes ${r.range.offset}-${r.range.offset + length - 1}/${obj.size}`;
+    return new Response(r.head ? null : obj.body, { status: r.range ? 206 : 200, headers });
+  }
+};
 
 const engine = (env) => getContainer(env.ENGINE, "engine");
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });

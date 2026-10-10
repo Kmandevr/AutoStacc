@@ -1,21 +1,17 @@
-// R2 as an engine Source, for the server Container (native only): ranged GETs over R2's S3 API with presigned URLs,
-// read in 8 MiB blocks with a small cache so sequential extraction fetches each block once. Credentials are the scoped
-// R2 token the engine Worker passes in (R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY); the bucket must be on R2_BUCKETS.
+// Storage as an engine Source, for the server Container (native only): ranged GETs of
+// <R2_ENDPOINT>/<bucket>/<key>, read in 8 MiB blocks with a small cache so sequential extraction fetches each block
+// once. On Cloudflare, R2_ENDPOINT is http://storage.engine, a host the engine Worker answers from its R2 binding: the
+// Container holds no storage credentials and has no internet (docs/engine.md). The bucket must be on R2_BUCKETS.
 use crate::Source;
-use rusty_s3::actions::{GetObject, HeadObject};
-use rusty_s3::{Bucket, Credentials, S3Action, UrlStyle};
 use std::io::{self, Read};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
 const BLOCK: u64 = 8 << 20;
-const SIGN_FOR: Duration = Duration::from_secs(600);
 
 pub struct R2Config {
     pub endpoint: String,
-    pub key_id: String,
-    pub secret: String,
     pub buckets: Vec<String>,
 }
 
@@ -24,9 +20,7 @@ impl R2Config {
     pub fn from_env() -> Option<Self> {
         let get = |k: &str| std::env::var(k).ok().filter(|v| !v.is_empty());
         Some(Self {
-            endpoint: get("R2_ENDPOINT")?,
-            key_id: get("R2_ACCESS_KEY_ID")?,
-            secret: get("R2_SECRET_ACCESS_KEY")?,
+            endpoint: get("R2_ENDPOINT")?.trim_end_matches('/').to_string(),
             buckets: get("R2_BUCKETS")?
                 .split(',')
                 .map(|s| s.trim().to_string())
@@ -37,9 +31,7 @@ impl R2Config {
 }
 
 pub struct R2Source {
-    bucket: Bucket,
-    creds: Credentials,
-    key: String,
+    url: String,
     len: u64,
     agent: ureq::Agent,
     cache: Mutex<Vec<(u64, Vec<u8>)>>,
@@ -55,26 +47,21 @@ impl R2Source {
         if !cfg.buckets.iter().any(|b| b == bucket) {
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, "bucket not allowed"));
         }
-        let url = cfg.endpoint.parse().map_err(err)?;
-        let bucket = Bucket::new(url, UrlStyle::Path, bucket.to_string(), "auto").map_err(err)?;
-        let creds = Credentials::new(cfg.key_id.clone(), cfg.secret.clone());
+        let url = format!("{}/{}/{}", cfg.endpoint, bucket, encode_key(key));
         let agent = ureq::AgentBuilder::new()
             .timeout_connect(Duration::from_secs(10))
             .timeout_read(Duration::from_secs(60))
             .build();
-        let head = HeadObject::new(&bucket, Some(&creds), key).sign(SIGN_FOR);
-        let resp = agent.head(head.as_str()).call().map_err(|e| match e {
+        let resp = agent.head(&url).call().map_err(|e| match e {
             ureq::Error::Status(404, _) => io::Error::new(io::ErrorKind::NotFound, "no such object"),
             e => err(e),
         })?;
-        let len = resp
-            .header("content-length")
-            .and_then(|v| v.parse().ok())
+        let len = ["x-object-size", "content-length"]
+            .iter()
+            .find_map(|h| resp.header(h).and_then(|v| v.parse().ok()))
             .ok_or_else(|| err("no length"))?;
         Ok(Self {
-            bucket,
-            creds,
-            key: key.to_string(),
+            url,
             len,
             agent,
             cache: Mutex::new(Vec::new()),
@@ -85,10 +72,9 @@ impl R2Source {
     fn block(&self, index: u64) -> io::Result<Vec<u8>> {
         let start = index * BLOCK;
         let end = (start + BLOCK).min(self.len) - 1;
-        let url = GetObject::new(&self.bucket, Some(&self.creds), &self.key).sign(SIGN_FOR);
         let resp = self
             .agent
-            .get(url.as_str())
+            .get(&self.url)
             .set("Range", &format!("bytes={start}-{end}"))
             .call()
             .map_err(err)?;
@@ -100,6 +86,19 @@ impl R2Source {
         self.bytes_fetched.fetch_add(data.len() as u64, Ordering::Relaxed);
         Ok(data)
     }
+}
+
+/// Percent-encodes a key for a URL path, keeping its slashes.
+fn encode_key(key: &str) -> String {
+    let mut out = String::with_capacity(key.len());
+    for b in key.bytes() {
+        if b.is_ascii_alphanumeric() || b"-_.~/".contains(&b) {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
 }
 
 impl Source for R2Source {
@@ -125,5 +124,16 @@ impl Source for R2Source {
         let n = buf.len().min(data.len() - at);
         buf[..n].copy_from_slice(&data[at..at + n]);
         Ok(n)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn keys_keep_slashes_and_escape_the_rest() {
+        assert_eq!(
+            super::encode_key("incoming/v 1/Kick #1.wav"),
+            "incoming/v%201/Kick%20%231.wav"
+        );
     }
 }
