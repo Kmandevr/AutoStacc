@@ -80,7 +80,8 @@ pub fn sniff(b: &[u8]) -> Option<&'static str> {
     None
 }
 
-/// Extension → canonical format for files whose bytes don't prove anything by themselves.
+/// Extension → canonical format for files whose bytes don't prove anything by themselves. Slugs and extensions match
+/// FORMATS in server/discovery/vocabulary.js (test/unit/asset-vocabulary.test.js checks it).
 fn by_extension(ext: &str) -> Option<&'static str> {
     Some(match ext {
         "wav" | "wave" => "wav",
@@ -111,12 +112,14 @@ fn by_extension(ext: &str) -> Option<&'static str> {
         "sfz" => "sfz",
         "sf2" => "sf2",
         "exs" => "exs",
-        "nki" => "nki",
+        "nki" | "nkm" | "nkx" | "nkc" | "ncw" => "kontakt",
         "logicx" => "logicx",
         "ptx" => "ptx",
         "cpr" => "cpr",
         "song" => "song",
-        "bwproject" => "bwproject",
+        "bwproject" => "bitwig-project",
+        "bwpreset" => "bitwig-preset",
+        "bwclip" => "bitwig-clip",
         "txt" | "md" => "text",
         _ => return None,
     })

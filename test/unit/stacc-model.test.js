@@ -51,6 +51,16 @@ test("kinds: the admin's choice wins, then the extension, then other", () => {
   assert.equal(stacc.kindOf({ filename: "x.wav", kind: "made-up" }, catalog.contentTypes), "samples");
 });
 
+test("kinds: an old kind name stored on a file still files it under its new kind", () => {
+  const types = { "one-shots": { label: "One-shots", formats: ["wav"] }, loops: { label: "Loops", formats: [] }, other: { label: "Other", formats: [] } };
+  const aliases = { samples: "one-shots", loop: "loops" };
+  assert.equal(stacc.kindOf({ filename: "Kick.wav", kind: "samples" }, types, aliases), "one-shots");
+  assert.equal(stacc.kindOf({ filename: "Groove.wav", kind: "loop" }, types, aliases), "loops");
+  assert.equal(stacc.kindOf({ filename: "notes.txt", kind: "samples" }, types, {}), "other");
+  const [asset] = stacc.assetsFrom([{ productId: "p", title: "P", files: [{ id: "pf_1", filename: "a.wav", kind: "samples" }] }], { contentTypes: types, kindAliases: aliases });
+  assert.equal(asset.kind, "one-shots");
+});
+
 test("the project view nests Project → Stacclet → Pac → content type", () => {
   const tree = stacc.tree(assets, catalog);
   assert.deepEqual(tree.map((p) => [p.name, p.count]), [["Glitches & Stitches", 5], ["Second Project", 3]]);

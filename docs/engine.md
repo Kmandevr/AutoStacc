@@ -16,7 +16,7 @@ The engine does the CPU-heavy work on creators' files. Plan and the system aroun
 | `source.rs` | Random-access bytes (`Source`): a file natively, a host callback in WebAssembly, a byte vector in tests. The engine never opens files or sockets itself |
 | `hash.rs` | SHA-256 (identity of the bytes, compared end to end) and CRC-32 (ZIP), fed in chunks |
 | `zipread.rs` | Lists a ZIP from its central directory (ZIP64, UTF-8 or code page 437 names) and checks every entry before anything is extracted; streams each file out through zlib-rs, stopping the moment output passes the declared size, and checks the CRC |
-| `formats.rs` | What a file really is from its bytes; the extension is only a hint, and a file whose bytes contradict its name is flagged |
+| `formats.rs` | What a file really is from its bytes; the extension is only a hint, and a file whose bytes contradict its name is flagged. Format slugs and extensions are the store vocabulary's `FORMATS` (`server/discovery/vocabulary.js`), also the upload allow-list's; `test/unit/asset-vocabulary.test.js` keeps all three in step |
 | `facts.rs` | Facts from headers: WAV (incl. RF64, float, extensible), AIFF/AIFC, FLAC, MIDI (format, tracks, PPQ, notes, length). Things written into files by people (ACID tempo and one-shot flag, smpl loops, MIDI tempo, time and key signatures) are kept apart as `embedded` claims |
 | `job.rs` | Entry points in the JSON job contract (version 1): `list_archive` (instant tree and problems), `inspect_archive[_part]` (every file read once: hashes, format, facts; originals handed to a sink), `inspect_file` |
 | `main.rs` | Command line: `list`, `inspect [--extract <dir>]`, `file`, and `serve` (the Container's HTTP service) |

@@ -1,6 +1,7 @@
 // Limits for paid files (D1 product_files, private R2 FILES): what can be uploaded to a product. The admin and
-// creators (Studio) upload through the same checks; creators also have their storage quota. Extensions come from
-// data/content-types.js's formats plus a few common ones; the content is never run or shown, only downloaded.
+// creators (Studio) upload through the same checks; creators also have their storage quota. Every extension here is a
+// format in server/discovery/vocabulary.js FORMATS and vice versa (test/unit/asset-vocabulary.test.js); the content
+// is never run or shown, only downloaded.
 import { fail } from "../lib/http.js";
 
 export const FILE_LIMITS = {
@@ -33,14 +34,14 @@ const SIG = {
 };
 const FILE_TYPES = {
   mid: ["audio/midi", "midi"], midi: ["audio/midi", "midi"],
-  wav: ["audio/wav", "wav"], aif: ["audio/aiff", "aiff"], aiff: ["audio/aiff", "aiff"], flac: ["audio/flac", "flac"],
-  mp3: ["audio/mpeg", "mp3"], ogg: ["audio/ogg", "ogg"], m4a: ["audio/mp4", "mp4"],
+  wav: ["audio/wav", "wav"], wave: ["audio/wav", "wav"], aif: ["audio/aiff", "aiff"], aiff: ["audio/aiff", "aiff"], aifc: ["audio/aiff", "aiff"], flac: ["audio/flac", "flac"],
+  mp3: ["audio/mpeg", "mp3"], ogg: ["audio/ogg", "ogg"], oga: ["audio/ogg", "ogg"], m4a: ["audio/mp4", "mp4"],
   zip: ["application/zip", "zip"], png: ["image/png", "png"], jpg: ["image/jpeg", "jpg"], jpeg: ["image/jpeg", "jpg"],
   webp: ["image/webp", "webp"], gif: ["image/gif", "gif"], mp4: ["video/mp4", "mp4"], mov: ["video/quicktime", "mp4"],
   webm: ["video/webm", "webm"], pdf: ["application/pdf", "pdf"], txt: ["text/plain", "text"], md: ["text/plain", "text"],
   // presets, sampler instruments and DAW projects: no fixed signature
   fxp: [], fxb: [], vital: [], vitalbank: [], vitalpreset: [], h2p: [], nmsv: [], adv: [], adg: [], serumpreset: [], serumpack: [],
-  sfz: [], sf2: [], exs: [], nki: [],
+  sfz: [], sf2: [], exs: [], nki: [], nkm: [], nkx: [], nkc: [], ncw: [], bwpreset: [], bwclip: [],
   als: [], alp: [], flp: [], logicx: [], rpp: [], ptx: [], cpr: [], song: [], bwproject: []
 };
 export const ALLOWED_EXTENSIONS = new Set(Object.keys(FILE_TYPES));

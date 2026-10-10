@@ -7,7 +7,7 @@ updated: 2026-10-10
 
 # Pack Builder and processing engine
 
-> **PLANNED, Phase 0 partly built.** This note is the approved plan (owner, 2026-10-10). Built so far: the engine core, its WebAssembly build, the Container image, the engine Worker and CI ([engine](engine.md)); nothing on the site uses them yet. Not built: pack tables, the Pack Builder UI, bundles, derived facets. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
+> **PLANNED, Phase 0 partly built.** This note is the approved plan (owner, 2026-10-10). Built so far: the engine core, its WebAssembly build, the Container image, the engine Worker and CI ([engine](engine.md)), and the asset vocabulary (Phase 1a: `FORMATS`, `KINDS`, `INSTRUMENTS` in `server/discovery/vocabulary.js`); nothing on the site uses the engine yet. Not built: pack tables, the Pack Builder UI, bundles, derived facets. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
 
 
 > **Rev. 4 (2026-10-10).** The owner re-sent the brief and confirmed **Workers Paid**. The rev. 3 decisions all stand. Two points of the new brief change the design:

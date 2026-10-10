@@ -8,6 +8,7 @@ updated: 2026-10-10
 
 Newest first.
 
+- 2026-10-10: Pack Builder Phase 1a, one asset vocabulary: `FORMATS`, `KINDS` ("Samples" became "One-shots"; old names kept as aliases), `MIDI_ROLES` and `INSTRUMENTS` in `server/discovery/vocabulary.js`; `data/content-types.js` is now generated from it; the upload allow-list and the engine's format table are tested against it; Kontakt and Bitwig preset/clip formats added. Notes: architecture, library, engine.
 - 2026-10-10: Pack Builder Phase 0, server side: the engine's `serve` mode (R2 over the S3 API), its Container image (`engine/Dockerfile`), the engine Worker (`workers/engine/`: Queue consumer, one `basic` instance, results in R2) and CI (`.github/workflows/engine.yml`: Rust checks, parity check, image build, deploy from main). Measured with the Container's limits. Notes: engine, decisions.
 - 2026-10-10: Pack Builder Phase 0, engine core: Rust crate `engine/` (safe ZIP reading, SHA-256/CRC-32, format identification, WAV/AIFF/FLAC/MIDI header facts), its WebAssembly build and loader (`js/engine/engine-wasm.js`), and benchmarks (`test/bench/`) native, in Node and in Chromium. Not used by the site yet. Notes: [engine](engine.md) (new), development, decisions.
 - 2026-10-10: Planned the Pack Builder, asset model, Rust processing engine (Cloudflare Container), selective downloads and contents-derived store facets with the owner; nothing built yet. Notes: [packs](packs.md) (new, PLANNED), decisions.

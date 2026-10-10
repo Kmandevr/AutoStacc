@@ -24,13 +24,14 @@
     const uid = ++mounted;
     const addressed = !root.dataset.project && uid === 1;
     const model = window.GS.staccClient();
-    const catalog = { projects: [...(window.PROJECTS || [])], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {} };
+    const catalog = { projects: [...(window.PROJECTS || [])], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
     const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
     const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
     const state = { view: root.dataset.staccView === "kinds" ? "kinds" : "projects", filter: { q: "", project: root.dataset.project || "", kind: "", format: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [] };
     let asked = 0, shown = null; // the newest model request, and the last answer drawn
     if (addressed) {
       for (const k of FILTERS) state.filter[k] = (params.get(k) || "").slice(0, 80);
+      state.filter.kind = (window.CONTENT_TYPE_ALIASES || {})[state.filter.kind] || state.filter.kind; // old links (?kind=samples)
       if (params.get("view") === "kinds") state.view = "kinds";
     }
     wear(root, state.filter.project);

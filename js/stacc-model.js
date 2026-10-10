@@ -1,5 +1,5 @@
 // Your Stacc's model (docs/library.md): turns the library API's owned products and files plus the static hierarchy
-// (data/projects.js, stacclets.js, pacs.js, content-types.js) into one list of assets, then builds the views from that
+// (data/projects.js, stacclets.js, pacs.js, content-types.js with its old-name aliases) into one list of assets, then builds the views from that
 // list. Pure functions, no DOM or window-only APIs: every view holds the same asset objects, never copies. Sets GS.stacc
 // in pages and in js/stacc-worker.js (Your Stacc's background thread); also loads in Node for the unit tests
 // (test/unit/stacc-model.test.js).
@@ -12,9 +12,11 @@
     return m ? m[1].toLowerCase() : "";
   };
 
-  // The admin's chosen kind, else the first content type listing the file's extension, else "other".
-  function kindOf(file, contentTypes) {
-    if (file.kind && contentTypes[file.kind]) return file.kind;
+  // The chosen kind (an old name like "samples" counts as its new one through aliases), else the first content type listing
+  // the file's extension, else "other".
+  function kindOf(file, contentTypes, aliases = {}) {
+    const chosen = file.kind && (contentTypes[file.kind] ? file.kind : aliases[file.kind]);
+    if (chosen && contentTypes[chosen]) return chosen;
     const format = formatOf(file.filename);
     const hit = Object.keys(contentTypes).find((k) => (contentTypes[k].formats || []).includes(format));
     return hit || "other";
@@ -24,6 +26,7 @@
   function assetsFrom(items, catalog) {
     const pacs = byId(catalog.pacs), stacclets = byId(catalog.stacclets);
     const types = catalog.contentTypes || {};
+    const aliases = catalog.kindAliases || {};
     const out = [];
     for (const item of items || []) {
       for (const f of item.files || []) {
@@ -34,7 +37,7 @@
           name: f.label || f.filename,
           filename: f.filename,
           format: formatOf(f.filename),
-          kind: kindOf(f, types),
+          kind: kindOf(f, types, aliases),
           sizeBytes: f.sizeBytes || 0,
           productId: item.productId,
           productTitle: item.title,
@@ -74,7 +77,7 @@
     return groupBy(assets, (a) => a.kind, Object.keys(types)).map(([kind, list]) => ({ kind, label: (types[kind] || {}).label || kind, assets: list }));
   };
 
-  // Content types across everything: MIDI (n), Samples (n), ...
+  // Content types across everything: MIDI (n), One-shots (n), ...
   const byKind = (assets, catalog, f) => kindGroups(filter(assets, f), catalog);
 
   // Project → Stacclet → Pac → content type → assets; files without a Pac sit under their product.
