@@ -1,0 +1,2 @@
+# Formatting for the engine crate (cargo fmt): long lines like the rest of the repository.
+max_width = 120

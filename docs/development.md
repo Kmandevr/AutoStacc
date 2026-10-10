@@ -2,7 +2,7 @@
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
 covers: [package.json, scripts/dev.js, scripts/dist.js, scripts/serve.js, wrangler.toml, server/lib/config.js, db/migrations/, test/, .github/workflows/store.yml, server/payments/index.js, server/email/, server/app.js, server/dev/, scripts/docs-test.js, .github/workflows/clear-status-on-close.yml]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Development
@@ -64,6 +64,7 @@ Schema changes are new files in `db/migrations/` with the next number after the 
 | `npm run test:store` | The API and browser suites at once (up to 5 files side by side), building `dist/` once (never run `test:api` and `test:browser` side by side: each rebuilds `dist/`) | ~2.5 min |
 | `verify-site` skill | Every page in a browser with the store offline | ~1 min |
 | `node scripts/docs-test.js` | The notes match the repo (below) | seconds |
+| `cargo test` in `engine/` | The processing engine's tests; its benchmarks (`test/bench/`, run by hand) are in [engine](engine.md) | seconds |
 
 The API suites attack: the account pages' server gate (anonymous, forged, expired and signed-out sessions, open redirects, unknown Settings sections, nothing private in any page's HTML), account settings (another account's devices, tokens in answers, unknown or non-boolean email switches, the export leaking another customer, deletion without the right email or password, from another site, by an admin or creator owner, or while impersonating; what deletion keeps and removes), anonymous and forged/expired sessions, cross-account access, enumeration, reset abuse, rate limits, role escalation; price, id, quantity tampering, duplicate and racing checkouts; unsigned, mis-signed, replayed, duplicated, racing and mismatched webhooks; cancel, fail, refund, reconciliation; downloads without login or entitlement, someone else's file or link, edited, forged and expired links, guessed paths, unpublished files, revoked access; guest keys, adoption by verified email, account hijack by unverified email; follows and Auto-Stacc (free only, once, never paid), Pac/kind tags on files with downloads still per product, poll votes (one per verified account, closed polls, projects without polls); promo codes and sales, impersonation and test purchases, creators selling from the Studio, customer refunds, payout requests and Stripe transfers; malformed input, cross-site requests, admin access. The browser suite walks the public cover, the gate (log in and land back where you were going) and the signed-in app's navigation and sign-out, and breaks the purchase flow with double clicks, the back button, refresh, offline, slow and failing API, store down, declined and abandoned payments, expired sessions and links, keyboard-only use, and checks overflow, tap targets and CSP errors at 320–1280px. CI: `.github/workflows/store.yml` (unit and API tests in one job, browser tests in another; skipped on pull requests that change only `docs/`, `.claude/` or `*.md`); the deploy runs only the unit tests.
 

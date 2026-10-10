@@ -6,6 +6,10 @@ updated: 2026-10-10
 
 # Decisions
 
+## 2026-10-10: Engine Phase 0 measurements confirm Rust, zlib-rs, no SIMD
+
+Measured on a 1 GB synthetic pack (918 files; numbers in [engine](engine.md)): listing is instant (10 ms native, 0.7 s in Chromium), and decompression is what costs. Native and WebAssembly results are identical. zlib-rs replaced miniz_oxide (about 20% faster, same results). WebAssembly SIMD brought nothing measurable, so it's off and older browsers keep working. In Chromium, 4 Web Workers check a 1 GB pack in about 8 s, far less than the upload takes, so browser-side checking is kept. The engine's WebAssembly build is 389 KB (about 180 KB gzipped).
+
 ## 2026-10-10: Pack Builder, asset engine and selective downloads (planned)
 
 Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLEMENTED).
