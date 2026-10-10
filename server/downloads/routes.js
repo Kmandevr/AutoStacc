@@ -2,31 +2,19 @@
 // /api/downloads/<token> checks the link, the requester and the entitlement again, then streams the private file.
 // Unknown, unowned, unpublished-and-unowned and revoked all fail the same way.
 import { json, fail, readJson, str } from "../lib/http.js";
-import { run, stmt, newId, now } from "../lib/db.js";
+import { stmt } from "../lib/db.js";
 import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access.js";
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
 import { signDownload, readDownload } from "./tokens.js";
-import { impersonationIdOf } from "../auth/session.js";
+import { logEvent, subjectFor } from "./events.js";
+import { routes as bundles } from "./bundle.js";
 import { getFile, safeFilename } from "../storage/buckets.js";
 import { limit } from "../lib/ratelimit.js";
-import { getDeliverableFile as getActiveFile } from "../files/files.js";
-
-// impersonation_id marks downloads an admin made while impersonating, so they never count as the customer's.
-const logEvent = (app, event, f) =>
-  run(app.db, `INSERT INTO download_events (id, event, product_id, file_id, entitlement_id, subject, reason, created_at, impersonation_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    newId("dl"), event, f.productId || null, f.fileId || null, f.entitlementId || null, f.subject || null, f.reason || null, now(), impersonationIdOf(app));
+import { getDeliverableFile as getActiveFile, storageKeyOf } from "../files/files.js";
 
 // Account deletion: the download history stays (statistics, refund checks) but no longer names the account.
 export const anonymiseDownloadsStmt = (db, userId, anonId) =>
   stmt(db, "UPDATE download_events SET subject = ? WHERE subject = ?", `d:${anonId}`, `u:${userId}`);
-
-// Which of the requester's identities an entitlement belongs to (accounts first).
-function subjectFor(access, ent) {
-  if (access.user && (ent.user_id === access.user.id || (!ent.user_id && ent.email === String(access.user.email).toLowerCase()))) return `u:${access.user.id}`;
-  if (ent.source_type === "purchase" && access.guestOrderIds.includes(ent.source_id)) return `g:${ent.source_id}`;
-  return null;
-}
 
 async function issue(app) {
   await limit(app, "download", 40, 60);
@@ -67,7 +55,8 @@ async function redeem(app, { token }) {
   const [ent, file] = await Promise.all([usableEntitlement(app.db, access, payload.e), getActiveFile(app.db, payload.f)]);
   if (!ent) return deny("entitlement inactive");
   if (!file || file.product_id !== ent.product_id) return deny("file mismatch");
-  const object = await getFile(app.env, file.r2_key);
+  const key = await storageKeyOf(app.db, file);
+  const object = key && (await getFile(app.env, key));
   if (!object) return deny("file missing from storage");
   await logEvent(app, "served", { fileId: file.id, productId: file.product_id, entitlementId: ent.id, subject: payload.s });
   const name = safeFilename(file.filename);
@@ -85,6 +74,7 @@ async function redeem(app, { token }) {
 }
 
 export const routes = [
+  ...bundles,
   // Allowed while impersonating (to check what a customer can download), and audited, including the file being served.
   ["POST", "/api/downloads", issue, { impersonation: "allow" }],
   ["GET", "/api/downloads/:token", redeem, { auditReads: true }]

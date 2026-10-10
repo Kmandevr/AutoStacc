@@ -1,6 +1,7 @@
 # Cloudflare Pages project "autostacc": the static site (dist/, built by scripts/dist.js) plus the store API in
 # functions/ (code in server/). Bindings: D1 database DB, private R2 bucket FILES (paid downloads), R2 bucket PREVIEWS
-# (public audio previews). Secrets never go here: they are Pages secrets (production) or .dev.vars (local, gitignored).
+# (public audio previews), and in production the queue JOBS that hands Pack Builder jobs to the processing engine
+# (workers/engine/, docs/engine.md; locally and in tests ENGINE_URL points at an engine service instead). Secrets never go here: they are Pages secrets (production) or .dev.vars (local, gitignored).
 # The top level is local development; [env.preview] is branch previews and [env.production] is autostacc.com.
 # The deploy (scripts/cloudflare.js) swaps the placeholder database ids for the real ones; they are not secret.
 name = "autostacc"
@@ -75,3 +76,7 @@ bucket_name = "autostacc-files"
 [[env.production.r2_buckets]]
 binding = "PREVIEWS"
 bucket_name = "autostacc-previews"
+
+[[env.production.queues.producers]]
+binding = "JOBS"
+queue = "autostacc-engine-jobs"
