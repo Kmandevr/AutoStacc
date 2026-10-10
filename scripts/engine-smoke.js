@@ -1,5 +1,5 @@
 // Smoke test of the deployed engine (docs/engine.md), run by the Engine workflow after a deploy: asks the engine Worker
-// for its health (this starts the Container: cold-start time), queues an inspect job (with the vocabulary, so suggestions too) for a conformance case already
+// for its health (this starts the Container: cold-start time), waits until the new engine version has rolled out, queues an inspect job (with the vocabulary, so suggestions too) for a conformance case already
 // uploaded to R2, waits for the answer and checks it equals the expected one. Prints timings. Needs the Worker's address
 // and ENGINE_ADMIN_TOKEN. Usage: ENGINE_ADMIN_TOKEN=... node scripts/engine-smoke.js <worker-url> <bucket> <key> <case>
 const fs = require("fs");
@@ -30,6 +30,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const coldMs = Date.now() - t;
   console.log(`health ${health.status} in ${coldMs} ms (includes the Container's cold start): ${healthBody}`);
   if (!health.ok) process.exit(1);
+
+  // A new Container image rolls out over a minute or two; until then the old engine answers. Wait for this version.
+  const want = /^version = "([^"]+)"/m.exec(fs.readFileSync(path.join(__dirname, "..", "engine/Cargo.toml"), "utf8"))[1];
+  const rollout = Date.now();
+  for (let v = JSON.parse(healthBody).engineVersion; v !== want; ) {
+    if (Date.now() - rollout > 240000) {
+      console.log(`FAIL the deployed engine still reports ${v}, not ${want}, after 4 minutes`);
+      process.exit(1);
+    }
+    await sleep(10000);
+    const h = await fetch(`${base}/v1/health`, { headers: auth });
+    v = h.ok ? (await h.json()).engineVersion : v;
+  }
+  if (Date.now() - rollout > 1000) console.log(`engine ${want} answered after a ${Math.round((Date.now() - rollout) / 1000)} s rollout`);
 
   t = Date.now();
   const vocabulary = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "engine/conformance/vocabulary.json"), "utf8"));
