@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # AutoStacc vault
@@ -10,6 +10,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 
 ## Notes
 
+- [Vision](vision.md): owner-written vision and product principles for AutoStacc (identity hierarchy, builder, store, collaboration, purchase permanence, licences, trust and safety, programs) and the open-questions register; read before planning a feature
 - [Modules](modules.md): drop-in features configured by attributes, project looks, and what still needs converting
 - [Architecture](architecture.md): AutoStacc as a platform: projects, Stacclets, Pacs, assets, Your Stacc, Auto-Stacc, polls, relationships
 - [AutoStacc](autostacc.md): the platform's identity, Stacc vocabulary, site structure and look (themes, colour tokens, type)
