@@ -117,6 +117,18 @@ jobs:
             curl -s -H "$auth" "$api/$id" | jq -r '.result.policies[]? | "\(.effect): \([.permission_groups[].name] | join(", "))"' || true
             curl -s -H "$auth" "$api/$id" | jq -r '.errors[0].message // empty'
           fi
+      - name: Containers access (what Cloudflare answers before the image is built)
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          acct=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          code=$(curl -s -o /tmp/cme.json -w '%{http_code}' -H "$auth" "$acct/containers/me")
+          echo "containers/me: HTTP $code"; jq -c '{success, errors, messages}' /tmp/cme.json 2>/dev/null || head -c 600 /tmp/cme.json; echo
+          echo "plan: $(curl -s -H "$auth" "$acct/workers/subscription" | jq -c '.result // .errors' 2>/dev/null | head -c 600)"
+          if [ "$code" != 200 ]; then
+            echo "::error::Cloudflare refuses Containers for this token or account (HTTP $code above). Check the token has Containers → Edit and that Containers is enabled for the account (dashboard → Workers & Pages → Containers)."
+            exit 1
+          fi
       - name: Queues (created once; existing ones are kept)
         if: steps.ready.outputs.go == 'true'
         run: |
