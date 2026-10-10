@@ -1,13 +1,14 @@
 ---
 title: Log
 summary: Dated history of changes, newest first.
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Log
 
 Newest first.
 
+- 2026-10-10: Planned the Pack Builder, asset model, Rust processing engine (Cloudflare Container), selective downloads and contents-derived store facets with the owner; nothing built yet. Notes: [packs](packs.md) (new, PLANNED), decisions.
 - 2026-10-09: Glass and motion pass on platform pages (owner's request). Ambient track-coloured light behind every page; translucent panels and cards; frosted sidebar, top bar, phone bar, account menu, filter drawers and scrims; page-change animation (old page dims, new one rises); button and chip press, results settling in, smooth folding filter groups, status lines that slide in (errors nudge), cart count bump. Off for reduced motion. Files: css/platform.css, layout.css, core.css, forms.css, store.css, home.css, js/util.js. Notes: autostacc, decisions.
 - 2026-10-09: Home page banner (owner's request). The hero now fills about 85% of the first screen over a DAW arrange view drawn in code (`js/daw-stage.js`, `css/daw-stage.css`), fixed behind the page; the sections after it are frosted and slide over it. Decorative, dark in both themes, still once scrolled past and for reduced motion. The old track-block stack in the hero is gone. Test: features browser group. Notes: [browse](browse.md), decisions.
 - 2026-10-09: Projects browser and discovery across the site (owner's request and answers in decisions.md). `/projects` is a browser of every visible project, Studio ones marked "Unverified creator", with search, genre/style, what they make, recently active and followed filters (`GET /api/projects/browse`, `server/projects/browse.js`; migration 0013 adds `projects.tagline`, `image`, `genres`, `activity`, synced for first-party projects). Follows and Auto-Stacc now cover Studio projects too. New `/explore` (releases, news, upcoming shows from data/, drafts never), home page hub (store search and ways in, two store sections, projects to follow ranked from on-device history, latest), dashboard sections (projects you follow, latest, projects to try, Your Stacc search) and Your Stacc search with filters in the address. Shared modules: `js/follow.js`, `js/project-card.js`, `js/project-picks.js`, `js/latest.js`, `js/explore-items.js`. Privacy page updated. Notes: [browse](browse.md).
