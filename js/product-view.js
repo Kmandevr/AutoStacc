@@ -1,0 +1,53 @@
+// Product view template (GS.productView, for js/product-page.js and the Product Studio's live preview in
+// js/studio-section-store.js and js/studio-section-release.js): the buyer-facing markup of a creator's product, from the
+// store API's product shape. Pure: returns HTML, touches nothing. With { preview: true } the buttons are disabled and
+// say "Preview", and nothing carries the hooks that add to the cart, save to a wishlist or count plays.
+// Needs js/util.js and data/product-types.js.
+(function () {
+  "use strict";
+
+  const { escapeHTML: e, cents } = window.GS;
+
+  // Store details the creator stated (labels from the API), as a list of facts.
+  const FIELDS = [["Contents", "contents"], ["File formats", "format"], ["Genre", "genre"], ["Style", "style"], ["Mood", "mood"], ["Energy", "energy"],
+    ["Made for", "use"], ["DAW", "daw"], ["Plugin", "plugin"], ["System", "os"], ["Key", "key"], ["Level", "skill"]];
+  function details(p) {
+    const f = p.facets || {}, sp = p.specs || {};
+    const rows = [...FIELDS.filter(([, k]) => (f[k] || []).length).map(([t, k]) => [t, f[k].map((x) => x.label).join(", ")]),
+      p.bpm ? ["BPM", p.bpm[0] === p.bpm[1] ? p.bpm[0] : `${p.bpm[0]}–${p.bpm[1]}`] : null,
+      sp.sampleRate ? ["Sample rate", `${sp.sampleRate / 1000} kHz`] : null, sp.bitDepth ? ["Bit depth", `${sp.bitDepth}-bit`] : null].filter(Boolean);
+    return rows.length ? `<h2>Details</h2><dl class="facts">${rows.map(([t, v]) => `<dt>${e(t)}</dt><dd>${e(v)}</dd>`).join("")}</dl>` : "";
+  }
+
+  // p: the API's product; opts: { owned, preview }.
+  function render(p, { owned = false, preview = false } = {}) {
+    const types = window.PRODUCT_TYPES || {};
+    const off = preview ? ' disabled aria-disabled="true"' : "";
+    const action = preview ? `<button class="btn" type="button"${off}>${p.priceCents ? "Add to cart" : "Get it free"} · Preview</button>`
+      : owned ? `<p><span class="owned-badge">STACC'D</span> <a class="btn ghost" href="/library">Open Your Stacc</a></p>`
+      : p.available === false ? '<p class="msg">Not on sale right now.</p>'
+      : p.free ? '<button class="btn" type="button" data-claim>Get it free</button>'
+      : '<button class="btn" type="button" data-buy>Add to cart</button>';
+    const type = (types[p.type] || {}).label || p.type || "";
+    const includes = (p.metadata && p.metadata.includes) || [];
+    return `
+      ${p.artwork ? `<img class="product-art" src="${e(p.artwork)}" alt="" width="480" height="480">` : ""}
+      <div class="product-info">
+        <p class="small-print">${e(type)}${p.creator ? ` · by <a href="${e(p.projectPath || p.creator.path)}">${e(p.projectName || p.creator.name)}</a>` : ""}${p.verified === false ? ' <span class="tag unverified">Unverified creator</span>' : ""}</p>
+        ${p.verified === false ? `<p class="msg unverified-note" role="note">AutoStacc hasn't verified this creator. Their files are checked for type, not for what's in them, so buy only from creators you trust. <a href="/refunds">Refunds</a> work as usual.</p>` : ""}
+        ${p.preview ? `<figure class="preview"><figcaption>Preview</figcaption><audio controls preload="none" src="${e(p.preview)}"${preview ? "" : ` data-preview="${e(p.id)}"`}></audio></figure>` : ""}
+        <p class="product-price">${p.priceCents ? e(cents(p.priceCents, p.currency)) : "Free"}${p.sale ? ` <s class="small-print">${e(cents(p.listPriceCents, p.currency))}</s>` : ""}</p>
+        ${p.description ? `<p class="product-desc">${e(p.description)}</p>` : ""}
+        ${includes.length ? `<h2>What's inside</h2><ul>${includes.map((x) => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        ${p.tags && p.tags.length ? `<p class="small-print">${p.tags.map((t) => `<span class="tag">${e(t)}</span>`).join(" ")}</p>` : ""}
+        ${details(p)}
+        ${action}
+        ${preview ? `<button class="btn ghost wish-btn" type="button"${off}>Save to wishlist</button>`
+          : p.available !== false && !owned ? `<button class="btn ghost wish-btn" type="button" data-wish="${e(p.id)}" aria-pressed="false">Save to wishlist</button>` : ""}
+        ${preview ? "" : '<p class="msg" role="status" hidden></p>'}
+        <p class="small-print">By buying you accept the <a href="/terms">terms</a> and the <a href="/license">licence</a> for this kind of product. <a href="/refunds">Refunds</a>.</p>
+      </div>`;
+  }
+
+  window.GS.productView = { render };
+})();

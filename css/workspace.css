@@ -1,0 +1,71 @@
+/* Workspace shell (js/workspace.js): sidebar of sections, compact header, drawer below 900px. Used by studio.html (Product
+   Studio) and admin.html (Control Center). Role tokens only, so it works in both themes. */
+.ws { display: grid; gap: 16px; min-width: 0; }
+
+/* ---------- compact header ---------- */
+.ws-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 16px; background: var(--panel); border: 1px solid var(--glass-edge, var(--line)); border-radius: var(--radius); min-width: 0; }
+.ws-titles { flex: 1 1 200px; min-width: 0; }
+.ws-label { margin: 0; color: var(--muted); font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+.ws-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--heading); overflow-wrap: anywhere; }
+.ws-sub { margin: 0; color: var(--muted); font-size: .85rem; overflow-wrap: anywhere; }
+.ws-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--mono); font-size: .75rem; font-weight: 600; letter-spacing: .04em; color: var(--text); white-space: nowrap; }
+.ws-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.ws-status[data-tone="good"] { border-color: var(--lime); }
+.ws-status[data-tone="good"]::before { background: var(--lime); }
+.ws-status[data-tone="warn"] { border-color: var(--amber); }
+.ws-status[data-tone="warn"]::before { background: var(--amber); }
+.ws-status[data-tone="danger"] { border-color: var(--coral); }
+.ws-status[data-tone="danger"]::before { background: var(--coral); }
+.ws-save { margin: 0; min-width: 0; color: var(--muted); font-size: .85rem; }
+.ws-save:empty { display: none; }
+.ws-save[data-state="error"] { color: var(--coral); font-weight: 600; }
+.ws-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ws-actions:empty { display: none; }
+.ws .btn.small { min-height: 36px; padding: 6px 12px; font-size: .85rem; }
+.ws-open { display: none; }
+
+/* the settings menu: a small popover under its button */
+.ws-menu { position: relative; }
+.ws-popover { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 200px; margin: 0; padding: 6px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.ws-menuitem { display: block; width: 100%; min-height: 40px; padding: 8px 12px; text-align: left; font: inherit; font-size: .9rem; color: var(--text); background: transparent; border: 0; border-radius: calc(var(--radius) - 4px); cursor: pointer; }
+.ws-menuitem:hover, .ws-menuitem:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ws-menuitem.danger { color: var(--coral); }
+
+/* ---------- sidebar and body ---------- */
+.ws-frame { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+.ws-nav { position: sticky; top: calc(var(--topbar, 64px) + 12px); display: grid; gap: 4px; padding: 10px; background: var(--panel); border: 1px solid var(--glass-edge, var(--line)); border-radius: var(--radius); }
+.ws-drawer-head { display: none; }
+.ws-group { margin: 10px 8px 2px; color: var(--muted); font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+.ws-group:first-of-type { margin-top: 2px; }
+.ws-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ws-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 40px; padding: 8px 10px; text-align: left; font: inherit; font-size: .95rem; color: var(--muted); background: transparent; border: 0; border-left: 3px solid transparent; border-radius: calc(var(--radius) - 4px); cursor: pointer; transition: background-color .12s, color .12s; }
+.ws-item:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.ws-item[aria-current] { color: var(--text); font-weight: 600; border-left-color: var(--link); background: color-mix(in srgb, var(--link) 10%, transparent); }
+.ws-badge { min-width: 22px; padding: 0 7px; border-radius: 999px; font-family: var(--mono); font-size: .75rem; font-weight: 700; text-align: center; color: var(--on-accent); background: var(--coral); }
+.ws-body { min-width: 0; }
+.ws-scrim[hidden] { display: none; }
+
+/* ---------- phones and small tablets: the sidebar is a drawer from the left ---------- */
+@media (max-width: 900px) {
+  .ws-frame { grid-template-columns: minmax(0, 1fr); }
+  .ws-open { display: inline-flex; order: -1; }
+  .ws-head { padding: 10px 12px; }
+  .ws-nav { position: fixed; top: 0; bottom: 0; left: 0; z-index: 81; width: min(300px, 86vw); align-content: start; overflow-y: auto; border-radius: 0 var(--radius) var(--radius) 0; box-shadow: var(--shadow); visibility: hidden; transform: translateX(-104%); }
+  .ws-drawer-open .ws-nav { visibility: visible; transform: none; }
+  .ws-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; padding: 0 0 8px; border-bottom: 1px solid var(--line); }
+  .ws-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .32); }
+  .ws-item, .ws-menuitem { min-height: 44px; }
+  .ws .btn.small { min-height: 44px; }
+}
+@media (max-width: 520px) {
+  .ws-titles { flex-basis: 100%; order: -2; }
+  .ws-popover { right: auto; left: 0; }
+}
+@media (max-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .ws-nav { transition: transform .22s var(--snap, ease-out), visibility 0s linear .22s; }
+  .ws-drawer-open .ws-nav { transition: transform .22s var(--snap, ease-out), visibility 0s; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-body > * { animation: ws-in .18s ease-out; }
+}
+@keyframes ws-in { from { opacity: 0; transform: translateY(4px); } }
