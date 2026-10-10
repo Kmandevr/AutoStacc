@@ -1,0 +1,6 @@
+{
+  "$comment": "AutoStacc engine contract v1: a problem with one file. refused = never extracted or imported; otherwise a warning for the review screen. Codes: errors.json.",
+  "type": "object",
+  "required": ["code", "refused"],
+  "properties": { "code": { "type": "string" }, "refused": { "type": "boolean" } }
+}

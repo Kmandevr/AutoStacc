@@ -74,7 +74,7 @@ fn listing_only(e: &Entry) -> FileResult {
         size: e.size,
         sha256: None,
         crc32: None,
-        identity: formats::identify(&e.path, &[]),
+        identity: formats::from_name(&e.path),
         facts: Facts::default(),
         issues: e.issues.clone(),
         ignored: e.ignored,
@@ -139,7 +139,7 @@ pub fn inspect_archive_part(
             files.push(r);
             continue;
         }
-        let hint = formats::identify(&e.path, &[]).format;
+        let hint = formats::from_name(&e.path).format;
         let want = head_limit(&hint, e.size);
         let mut head = Vec::with_capacity(want);
         sink.begin(&e.path, e.size);
@@ -195,7 +195,7 @@ pub fn inspect_archive_part(
 /// One loose file (uploaded on its own, or re-checked from storage).
 pub fn inspect_file(path: &str, src: &dyn Source) -> std::io::Result<FileResult> {
     let size = src.len();
-    let hint = formats::identify(path, &[]).format;
+    let hint = formats::from_name(path).format;
     let want = head_limit(&hint, size);
     let mut head = vec![0u8; want];
     src.read_exact_at(0, &mut head)?;
