@@ -17,11 +17,11 @@ export const ADMIN_EMAIL = "owner@browser.test";
 
 // Registers the file's before/after hooks and returns its helpers; `base`, `stateDir` and `browser` are getters, set
 // once the store is up.
-export function browserStore({ name, port }) {
+export function browserStore({ name, port, vars = {} }) {
   let server, browser, base;
   const stateDir = path.join(ROOT, ".wrangler", `test-browser-${name}`);
   before(async () => {
-    server = startDevServer({ port, stateDir, fresh: true, quiet: true, build: false, inspectorPort: port + 1000, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL } });
+    server = startDevServer({ port, stateDir, fresh: true, quiet: true, build: false, inspectorPort: port + 1000, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, ...vars } });
     base = await server.ready;
     browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
   }, { timeout: 240000 });

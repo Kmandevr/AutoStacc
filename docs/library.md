@@ -31,7 +31,9 @@ The model runs on a background thread: `js/stacc-client.js` sends `{ type: "buil
 
 ## Downloads
 
-Every file has its own Download button (a fresh 5-minute signed link per click, as before). Checkboxes, with "select all" per Pac and per content type, feed **Download selected**: the page asks for each file's link in turn and saves them one after another. No ZIP yet (see [architecture](architecture.md#not-built-yet-on-purpose)).
+Every file has its own Download button (a fresh 5-minute signed link per click, as before). Checkboxes, with "select all" per Pac and per content type, feed **Download selected**: the page asks for each file's link in turn and saves them one after another.
+
+A Pac published from the Pack Builder keeps its creator's folders: inside it, Your Stacc groups files by folder ("Drums › Kicks") instead of by content type, and search matches folder names (`folderPath` from `/api/library`; `js/stacc-model.js`). Each folder has **Download folder (ZIP)** (`js/library-bundle.js`, `POST /api/downloads/bundle`): one ZIP of the original bytes, for files the API marks `bundleable`. A file a newer version replaced or removed (`retiredAt`) stays listed and downloadable for people who had it before, for 30 days ([packs](packs.md)).
 
 ## Follows and Auto-Stacc
 

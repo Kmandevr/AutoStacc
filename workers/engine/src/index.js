@@ -64,6 +64,16 @@ async function runOn(container, env, job, msg, started, attempt) {
 }
 
 export default {
+  // The store's daily retention sweep (server/maintenance/), asked for from here because Pages Functions have no cron.
+  // The engine Worker holds no database: it only knocks, with a token the store checks.
+  async scheduled(controller, env, ctx) {
+    if (!env.SWEEP_TOKEN || !env.SITE_URL) return;
+    ctx.waitUntil((async () => {
+      const res = await fetch(`${env.SITE_URL}/api/internal/sweep`, { method: "POST", headers: { Authorization: `Bearer ${env.SWEEP_TOKEN}` } });
+      console.log(`sweep: ${res.status} ${(await res.text()).slice(0, 300)}`);
+    })());
+  },
+
   async queue(batch, env) {
     for (const msg of batch.messages) {
       if (batch.queue.endsWith("-failed")) {

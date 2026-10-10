@@ -1,47 +1,29 @@
 // Publishing a ready version: its manifest becomes the files for this Pac in every product that sells the Pac (server/files/publish-rows.js keeps
 // unchanged files' ids and retires the rest), the previous live version is superseded and the Pac is free for its next
 // version, all in one D1 batch (all or nothing) that runs only while the version is still ready.
-import { all, stmt, newId, now, parseJson, guardStmt } from "../lib/db.js";
+import { stmt, newId, now, guardStmt } from "../lib/db.js";
+import { loadManifest } from "./manifest.js";
 import { publishStmts } from "../files/publish-rows.js";
 import { releaseDraftStmt } from "./versions.js";
 import { productsWithPac } from "../catalog/products.js";
 
-// A suggested kind becomes the file's kind (how Your Stacc groups it) from this confidence; below it, the file's format
-// decides as before. Creators' own values (Phase 4) will always win.
+// The file's kind (how Your Stacc groups it): its resolved kind (the creator's, a folder's, or an accepted or sure
+// suggestion); failing that, the engine's best guess from this confidence, only for grouping, never shown as a fact.
 const KIND_FROM = 0.5;
 
-function folderPaths(folders) {
-  const byId = new Map(folders.map((f) => [f.id, f]));
-  const path = (id) => {
-    const f = byId.get(id);
-    return f ? (f.parent_id ? `${path(f.parent_id)}/${f.name}` : f.name) : "";
-  };
-  return (id) => (id ? path(id) : "");
-}
-
-/** What customers get for each entry of a version: names, folders, kind and a snapshot of the details. */
+/** What customers get for each file of a version: name, folder, kind, and a snapshot of its resolved details. */
 export async function publishedEntries(db, versionId) {
-  const [entries, folders, values] = await Promise.all([
-    all(db, `SELECT e.asset_id, e.blob_id, e.filename, e.folder_id, e.sort, b.size_bytes, b.format, b.sha256, b.facts
-      FROM pac_entries e JOIN blobs b ON b.id = e.blob_id WHERE e.version_id = ? AND e.state = 'verified' ORDER BY e.sort`, versionId),
-    all(db, "SELECT id, parent_id, name FROM pac_folders WHERE version_id = ?", versionId),
-    all(db, `SELECT v.asset_id, v.field, v.value, v.confidence FROM asset_values v JOIN pac_entries e ON e.asset_id = v.asset_id
-      WHERE e.version_id = ? AND v.status <> 'rejected'`, versionId)
-  ]);
-  const pathOf = folderPaths(folders);
-  const byAsset = new Map();
-  for (const v of values) (byAsset.get(v.asset_id) || byAsset.set(v.asset_id, []).get(v.asset_id)).push(v);
-  return entries.map((e) => {
-    const vals = byAsset.get(e.asset_id) || [];
-    const kind = vals.filter((v) => v.field === "kind" && v.confidence >= KIND_FROM).sort((a, b) => b.confidence - a.confidence)[0];
-    const facts = parseJson(e.facts, {});
+  const { files } = await loadManifest(db, versionId);
+  return files.map((f) => {
+    const guess = f.values.filter((v) => v.field === "kind" && v.origin !== "creator" && v.status !== "rejected" && v.confidence >= KIND_FROM)
+      .sort((a, b) => b.confidence - a.confidence)[0];
     return {
-      fileId: newId("pf"), assetId: e.asset_id, blobId: e.blob_id, filename: e.filename, folderPath: pathOf(e.folder_id), sort: e.sort,
-      size: e.size_bytes, kind: kind ? kind.value : "",
+      fileId: newId("pf"), assetId: f.assetId, blobId: f.blobId, filename: f.filename, folderPath: f.folderPath, sort: f.sort, size: f.sizeBytes,
+      kind: f.resolved.kind ? f.resolved.kind.value : guess ? guess.value : "",
       meta: {
-        format: e.format, sha256: e.sha256,
-        facts: { durationMs: facts.durationMs, sampleRate: facts.sampleRate, bitDepth: facts.bitDepth, channels: facts.channels },
-        suggested: vals.map((v) => ({ field: v.field, value: v.value, confidence: v.confidence }))
+        format: f.format, sha256: f.sha256,
+        facts: { durationMs: f.facts.durationMs, sampleRate: f.facts.sampleRate, bitDepth: f.facts.bitDepth, channels: f.facts.channels },
+        values: Object.fromEntries(Object.entries(f.resolved).map(([k, r]) => [k, { value: r.value, source: r.source }]))
       }
     };
   });
