@@ -1,36 +1,25 @@
 // Control Center, Packs tab (docs/packs.md, Phase 3): pick a Pac, upload its ZIP for one of the products that include
 // it, watch the engine check it, review what it found (files kept, files refused and why, the values it suggests from
 // names and headers) and publish it, or discard it. Publishing replaces this Pac's files in the product; files whose
-// bytes didn't change keep their id. Talks to /api/admin/packs; uploads through js/admin-packs-upload.js.
-// Reviewing a ready version: js/admin-packs-review.js. Starts on "gs:admin". Needs js/util.js and data/pacs.js.
+// bytes didn't change keep their id. Also the queue of creators' versions held by the automated review, to approve or
+// reject. Talks to /api/admin/packs; uploads through js/packs-upload.js, draws a version with js/packs-version.js and
+// its review with js/packs-review.js. Starts on "gs:admin". Needs js/util.js and data/pacs.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML: e, api } = window.GS;
   const mb = (n) => `${(n / 1048576).toFixed(n < 10485760 ? 1 : 0)} MB`;
+  const BASE = "/api/admin/packs";
   const pct = (x) => `${Math.round(x * 100)}%`;
   let el, pacId, poll;
 
   const pacOptions = () => (window.PACS || []).map((p) => `<option value="${e(p.id)}"${p.id === pacId ? " selected" : ""}>${e(p.title)} (${e(p.id)})</option>`).join("");
 
-  function versionView(v) {
-    const s = v.stats || {};
-    const head = `<p><strong>Version ${v.number}</strong> · ${e(v.status)}${v.note ? ` (${e(v.note)})` : ""}</p>`;
-    if (v.status === "processing") return `${head}<p class="small-print">Checking every file… this page updates by itself.</p>`;
-    if (!["ready", "published", "superseded"].includes(v.status)) return head;
-    const refused = (s.refused || []).map((r) => `<li><code>${e(r.path)}</code>: ${e(r.codes.join(", "))}</li>`).join("");
-    return `${head}
-      <p>${s.files} file${s.files === 1 ? "" : "s"} kept (${mb(s.bytes || 0)}) in ${s.folders} folder${s.folders === 1 ? "" : "s"}${s.ignored ? `; ${s.ignored} system file${s.ignored === 1 ? "" : "s"} ignored` : ""}.</p>
-      ${refused ? `<details open><summary>${s.refused.length} file${s.refused.length === 1 ? "" : "s"} refused (never reach customers)</summary><ul>${refused}</ul></details>` : ""}
-      ${v.status === "ready" ? `<div class="actions"><button class="btn" type="button" data-pack-publish${s.files ? "" : " disabled"}>Publish ${s.files} files</button>
-        <button class="btn ghost" type="button" data-pack-discard>Discard</button></div>` : ""}
-      <p class="small-print">Suggestions come from names and the files' own headers; a percentage is how sure the engine is. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>
-      ${window.GS.packReview.render(v)}`;
-  }
-
   async function showVersion(id) {
     clearTimeout(poll);
-    const res = await api(`/api/admin/packs/versions/${encodeURIComponent(id)}`);
+    const res = await api(`${BASE}/versions/${encodeURIComponent(id)}`);
+    // Opened from the review queue with no Pac chosen: show it on its own.
+    if (!$("[data-pack-version]", el)) $("[data-pack-body]", el).innerHTML = "<div data-pack-version></div>";
     const box = $("[data-pack-version]", el);
     if (!res.ok) { box.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     draw(res.data.version);
@@ -42,14 +31,14 @@
     const box = $("[data-pack-version]", el);
     box.dataset.id = v.id;
     box.__version = v;
-    box.innerHTML = versionView(v);
+    box.innerHTML = window.GS.packVersion.render(v, { admin: true });
   }
 
   async function showPac() {
     clearTimeout(poll);
     const body = $("[data-pack-body]", el);
     if (!pacId) { body.innerHTML = ""; return; }
-    const res = await api(`/api/admin/packs/${encodeURIComponent(pacId)}`);
+    const res = await api(`${BASE}/${encodeURIComponent(pacId)}`);
     if (!res.ok) { body.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     const { pac, versions, products } = res.data;
     body.innerHTML = `
@@ -103,7 +92,7 @@
     bar.hidden = false;
     msg.textContent = "Uploading…";
     try {
-      const v = await window.GS.packUpload.upload(pacId, form.elements.product.value, file, (x) => { bar.value = x; msg.textContent = `Uploading… ${pct(x)}`; });
+      const v = await window.GS.packUpload.upload({ base: BASE, create: `${BASE}/${encodeURIComponent(pacId)}/versions`, body: { productId: form.elements.product.value } }, file, (x) => { bar.value = x; msg.textContent = `Uploading… ${pct(x)}`; });
       msg.textContent = "Uploaded. Checking every file…";
       await showPac();
       showVersion(v.id);
@@ -116,31 +105,40 @@
   async function onClick(ev) {
     const open = ev.target.closest("[data-pack-open]");
     if (open) return showVersion(open.dataset.packOpen);
-    const act = ev.target.closest("[data-pack-publish], [data-pack-discard]");
+    const act = ev.target.closest("[data-pack-publish], [data-pack-discard], [data-pack-reject]");
     if (!act) return;
     const id = $("[data-pack-version]", el).dataset.id;
-    const publishing = act.hasAttribute("data-pack-publish");
-    if (publishing && !confirm("Publish this version? Customers get its files right away; files that changed or were removed are replaced.")) return;
+    const verb = act.hasAttribute("data-pack-publish") ? "publish" : act.hasAttribute("data-pack-reject") ? "reject" : "discard";
+    let body = {};
+    if (verb === "publish" && !confirm("Publish this version? Customers get its files right away; files that changed or were removed are replaced.")) return;
+    if (verb === "reject") {
+      const note = prompt("Why isn't it accepted? The creator sees this.", "");
+      if (note === null) return;
+      body = { note };
+    }
     act.disabled = true;
-    const res = await api(`/api/admin/packs/versions/${encodeURIComponent(id)}/${publishing ? "publish" : "discard"}`, { method: "POST", body: {} });
+    const res = await api(`${BASE}/versions/${encodeURIComponent(id)}/${verb}`, { method: "POST", body });
     if (!res.ok) {
       act.disabled = false;
       act.closest(".actions").insertAdjacentHTML("afterend", `<p class="msg error" role="alert">${e(res.error.message)}</p>`);
       return;
     }
-    showPac();
+    dispatchEvent(new CustomEvent("gs:packs-changed"));
+    if (pacId) showPac();
+    else showVersion(id);
   }
 
   addEventListener("gs:admin", () => {
     el = $("#admin-packs");
     if (!el) return;
-    el.innerHTML = `<p class="small-print">Upload a Pac's files as one ZIP. AutoStacc checks every file (type, damage, unsafe names), stores the originals byte for byte and suggests kinds, instruments, tempos and keys; you publish when it looks right.</p>
+    el.innerHTML = `<div data-pack-queue></div>
+      <p class="small-print">Upload a Pac's files as one ZIP. AutoStacc checks every file (type, damage, unsafe names), stores the originals byte for byte and suggests kinds, instruments, tempos and keys; you publish when it looks right.</p>
       <div class="field"><label for="pack-pac">Pac</label><select id="pack-pac" data-pack-pac><option value="">Choose a Pac…</option>${pacOptions()}</select></div>
       <div data-pack-body></div>`;
     $("[data-pack-pac]", el).addEventListener("change", (ev) => { pacId = ev.target.value; showPac(); });
     el.addEventListener("submit", onSubmit);
     el.addEventListener("change", onPick);
-    window.GS.packReview.bind(el, draw);
+    window.GS.packReview.bind(el, draw, BASE);
     el.addEventListener("click", onClick);
   });
 })();

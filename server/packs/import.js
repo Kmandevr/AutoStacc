@@ -3,8 +3,12 @@
 // on which both agree are kept. Each becomes an asset in the version's manifest, its bytes one stored original per owner
 // and hash (a duplicate copy is deleted), its suggestions rows in asset_values. Then the uploaded archive and anything
 // the job left over are deleted: the manifest is the record from here on (owner's decision, docs/decisions.md).
-import { all, stmt, newId, now, guardStmt } from "../lib/db.js";
+import { first, all, stmt, newId, now, guardStmt } from "../lib/db.js";
 import { writePrefix } from "../../workers/engine/src/jobs.js";
+import { ALLOWED_EXTENSIONS, extensionOf } from "../files/policy.js";
+import { review } from "./review.js";
+import { LIMITS, filesQuotaOf } from "../creators/policy.js";
+import { storageUsed } from "../creators/storage.js";
 import { claimStmts, blobsByHash } from "../blobs/blobs.js";
 import { jobWrites, jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
@@ -47,7 +51,10 @@ export async function importResult(app, version, job, state) {
   const { result, attempt } = state;
   const writes = await jobWrites(app, job.id, attempt);
   const owner = version.owner_scope;
-  const { kept, refused } = acceptStored(result.files, writes, writePrefix(owner, job.id, attempt));
+  const accepted = acceptStored(result.files, writes, writePrefix(owner, job.id, attempt));
+  const refused = accepted.refused;
+  // Only kinds of files the store sells (server/files/policy.js, the same list as single uploads): nothing else reaches customers.
+  const kept = accepted.kept.filter((f) => ALLOWED_EXTENSIONS.has(extensionOf(f.path)) || (refused.push({ path: f.path, codes: ["unsupported_type"] }), false));
 
   // One name per folder ignoring case (Windows and macOS would merge them); the engine already warned about these.
   const allPaths = logicalPaths(kept.map((f) => f.path));
@@ -60,6 +67,21 @@ export async function importResult(app, version, job, state) {
   });
   kept.length = 0;
   kept.push(...named);
+  // The agreed limit per version (docs/packs.md H7): a bigger Pac goes in as more than one Pac.
+  if (kept.length > LIMITS.filesPerPacVersion) throw Object.assign(new Error("too many files"), { code: "too_many_files" });
+  // A creator's storage counts the files as unpacked, not the archive they came in (an archive can compress a lot):
+  // refused before anything is claimed if they don't fit beside what the creator already stores.
+  const creator = await first(app.db, "SELECT * FROM creators WHERE id = ?", owner);
+  if (creator) {
+    const bytes = kept.reduce((n, f) => n + f.size, 0);
+    const archive = (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ?", version.id)).n;
+    if ((await storageUsed(app.db, owner)) - archive + bytes > filesQuotaOf(creator)) throw Object.assign(new Error("over quota"), { code: "quota_exceeded" });
+  }
+
+  // For the automated review: how many of these the owner already had, and what the live version holds.
+  const already = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
+  const live = await all(app.db, `SELECT b.sha256, b.size_bytes FROM pacs p JOIN pac_entries e ON e.version_id = p.live_version_id
+    JOIN blobs b ON b.id = e.blob_id WHERE p.id = ?`, version.pac_id);
 
   // 1. One stored original per owner and hash: claim, then learn which key each hash ended up with.
   if (kept.length) {
@@ -97,7 +119,9 @@ export async function importResult(app, version, job, state) {
     }
   });
   const bytes = kept.reduce((n, f) => n + f.size, 0);
-  const stats = { files: entries.length, bytes, folders: folders.size, refused, ignored: (result.files || []).filter((f) => f.ignored).length };
+  const stats = { files: entries.length, bytes, folders: folders.size, refused, ignored: (result.files || []).filter((f) => f.ignored).length,
+    review: review({ result, kept, refused, existingHashes: kept.filter((f) => already[f.sha256]).length,
+      previous: live.length ? Object.fromEntries(live.map((b) => [b.sha256, b.size_bytes])) : null }) };
   const db = app.db;
   const batch = [
     // Only while the version is still processing: if another request imported this answer first, all of this rolls back.

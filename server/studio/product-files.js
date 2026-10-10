@@ -9,6 +9,7 @@ import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
 import { LIMITS, filesQuotaOf } from "../creators/policy.js";
 import { requireOwnProduct } from "../creators/products.js";
+import { storageUsed, inUseSql } from "../creators/storage.js";
 import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
 import { putVerifiedFile } from "../files/upload.js";
@@ -16,8 +17,6 @@ import { newFileKey, safeFilename, deleteFile, putPreview, peekPreview, deletePr
 import { alertAdmins } from "../email/alerts.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
-const usedBytes = async (db, creatorId) => (await first(db, `SELECT COALESCE(SUM(f.size_bytes), 0) AS n FROM product_files f JOIN products p ON p.id = f.product_id
-  JOIN projects j ON j.id = p.project_id WHERE j.creator_id = ? AND f.active = 1 AND f.status IN ('pending', 'published')`, creatorId)).n;
 
 async function upload(app, { productId }) {
   const user = await requireUser(app);
@@ -25,7 +24,7 @@ async function upload(app, { productId }) {
   const { product, creator } = await requireOwnProduct(app.db, productId, user);
   const filename = safeFilename(str(new URL(app.request.url).searchParams.get("filename") || "", "filename", { max: 160 }));
   const size = Number(app.request.headers.get("content-length") || 0);
-  const [existing, used] = await Promise.all([countKept(app.db, product.id), usedBytes(app.db, creator.id)]);
+  const [existing, used] = await Promise.all([countKept(app.db, product.id), storageUsed(app.db, creator.id)]);
   if (existing >= LIMITS.filesPerProduct) fail(409, "limit_reached", `A product can have up to ${LIMITS.filesPerProduct} files.`);
   checkUpload({ filename, sizeBytes: size, existing });
   const quota = filesQuotaOf(creator);
@@ -36,13 +35,13 @@ async function upload(app, { productId }) {
   const status = creator.trusted ? "published" : "pending";
   const id = newId("pf");
   const t = now();
-  // The storage limit is checked in the insert itself, so two uploads at once can't both squeeze under it.
+  // The storage limit (the same measure as pack uploads, creators/storage.js) is checked in the insert itself, so two
+  // uploads at once can't both squeeze under it.
   const res = await run(app.db,
     `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind, status, status_at)
-     SELECT ?, ?, ?, ?, '', ?, ?, 0, 1, ?, NULL, '', ?, ?
-     WHERE (SELECT COALESCE(SUM(f.size_bytes), 0) FROM product_files f JOIN products p ON p.id = f.product_id JOIN projects j ON j.id = p.project_id
-       WHERE j.creator_id = ? AND f.active = 1 AND f.status IN ('pending', 'published')) + ? <= ?`,
-    id, product.id, key, filename, contentType, object.size, t, status, t, creator.id, object.size, quota);
+     SELECT ?2, ?3, ?4, ?5, '', ?6, ?7, 0, 1, ?8, NULL, '', ?9, ?8
+     WHERE ${inUseSql("?1")} + ?7 <= ?10`,
+    creator.id, id, product.id, key, filename, contentType, object.size, t, status, quota);
   if (!res.meta.changes) {
     await deleteFile(app.env, key);
     full();
@@ -57,7 +56,9 @@ async function remove(app, { productId, fileId }) {
   const user = await requireUser(app);
   const { product } = await requireOwnProduct(app.db, productId, user);
   const fid = str(fileId, "fileId", { max: 40, pattern: FILE_ID });
-  if (!(await first(app.db, "SELECT 1 FROM product_files WHERE id = ? AND product_id = ? AND active = 1", fid, product.id))) fail(404, "not_found", "No such file.");
+  const file = await first(app.db, "SELECT version_id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", fid, product.id);
+  if (!file) fail(404, "not_found", "No such file.");
+  if (file.version_id) fail(409, "in_pack", "This file is part of your pack. Upload a new version of the pack without it.");
   await setStatus(app.db, fid, "deleted");
   await unpublishEmptyStudioProducts(app.db);
   return json({ ok: true });

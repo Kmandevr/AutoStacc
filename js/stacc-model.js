@@ -99,18 +99,22 @@
           title: (pacs.get(pid) || {}).title || pid,
           count: inPac.length,
           kinds: kindGroups(inPac, catalog),
-          // A Pac published from Pack Builder keeps its creator's folders: shown instead of content types when present.
-          folders: inPac.some((a) => a.folder) ? groupBy(inPac, (a) => a.folder, []).map(([path, inFolder]) => ({ path, label: path || "Top level", assets: inFolder })) : null
+          folders: foldersOf(inPac)
         }))
       })),
       products: groupBy(inProject.filter((a) => !a.staccletId), (a) => a.productId, []).map(([productId, inProduct]) => ({
         id: productId,
         title: inProduct[0].productTitle,
         count: inProduct.length,
-        kinds: kindGroups(inProduct, catalog)
+        kinds: kindGroups(inProduct, catalog),
+        folders: foldersOf(inProduct)
       }))
     }));
   }
+
+  // Files published from the Pack Builder keep their creator's folders: shown instead of content types when present
+  // (a Studio product's Pac isn't in the catalog, so its files sit under the product, folders and all).
+  const foldersOf = (list) => (list.some((a) => a.folder) ? groupBy(list, (a) => a.folder, []).map(([path, inFolder]) => ({ path, label: path || "Top level", assets: inFolder })) : null);
 
   // Values present in the assets, for the filter menus: [[value, count]].
   function facets(assets) {

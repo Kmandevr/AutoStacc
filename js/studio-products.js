@@ -1,7 +1,8 @@
 // Studio products (GS.studioProducts, for js/studio.js): a creator's products for one project. Make one (always starts
 // as a draft), change its name, description, kind, price (0 = free), what's inside, tags and cover art, upload the files
 // buyers get and a preview clip, then put it on sale, pause sales or remove it. The server checks every field and limit
-// (server/studio/products.js) and decides what is on sale; this only shows its answers. Needs js/util.js.
+// (server/studio/products.js) and decides what is on sale; this only shows its answers. A whole pack (ZIP, in folders)
+// goes through the Pack Builder (js/studio-packs.js) when it's on. Needs js/util.js.
 (function () {
   "use strict";
 
@@ -12,6 +13,8 @@
   const toCents = (v) => Math.round(Number(v) * 100);
 
   const D = window.GS.studioDetails;
+  // The Pack Builder (js/studio-packs.js), when it's switched on and loaded.
+  const PACKS = () => window.GS.studioPacks && window.GS.studioPacks.enabled();
   function open(root, projectId, onBack) {
     let data = null;
     const base = `/api/studio/projects/${encodeURIComponent(projectId)}/products`;
@@ -43,8 +46,9 @@
             <button class="btn ghost small" type="button" data-act="remove">Remove</button></div></form>
           <h4>Files buyers get</h4>
           <ul class="studio-files">${p.files.map((f) => `<li>${e(f.filename)} · ${size(f.sizeBytes)} <span class="tag">${f.status === "pending" ? "Waiting for AutoStacc to check it" : f.status === "published" ? "Ready" : e(f.status)}</span>
-            <button class="link-btn" type="button" data-file="${e(f.id)}" aria-label="Remove ${e(f.filename)}">Remove</button></li>`).join("") || "<li>No files yet. A product needs at least one before it can go on sale.</li>"}</ul>
+            <button class="link-btn" type="button" data-file="${e(f.id)}" aria-label="Remove ${e(f.filename)}">Remove</button></li>`).join("")}${p.packFiles ? `<li>${p.packFiles} file${p.packFiles === 1 ? "" : "s"} from your pack (change them in the Pack Builder)</li>` : ""}${p.files.length || p.packFiles ? "" : "<li>No files yet. A product needs at least one before it can go on sale.</li>"}</ul>
           <label class="btn ghost small studio-upload">Add a file<input type="file" data-upload hidden></label>
+          ${PACKS() ? `<button class="btn ghost small" type="button" data-act="packs">Upload a whole pack (ZIP)…</button>` : ""}
           <h4>Preview clip</h4>
           ${p.preview ? `<audio controls preload="none" src="${e(p.preview)}"></audio> <button class="link-btn" type="button" data-act-preview="remove">Remove preview</button>` : '<p class="small-print">A short MP3, M4A, OGG or WAV (under 20 MB) that anyone can play on the product page.</p>'}
           <label class="btn ghost small studio-upload">${p.preview ? "Replace preview" : "Add a preview"}<input type="file" accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,.mp3,.m4a,.ogg,.wav" data-upload-preview hidden></label>`}
@@ -94,6 +98,7 @@
       const act = ev.target.closest("[data-act]");
       const card = ev.target.closest(".studio-product");
       if (act && act.dataset.act === "back") return onBack();
+      if (act && act.dataset.act === "packs" && card) return window.GS.studioPacks.open(root, card.dataset.id, () => open(root, projectId, onBack));
       if (act && ACTS[act.dataset.act] && card) {
         if (act.dataset.act === "remove" && !confirm("Remove this product? People who bought it keep their files.")) return;
         act.disabled = true;

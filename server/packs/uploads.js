@@ -2,9 +2,10 @@
 // (the last may be shorter), each streamed with its declared length and never buffered. Parts may arrive in any order
 // and be sent again; R2 can't list them, so each is recorded here as it lands. Deleted once the version is published
 // or discarded (R2 itself aborts unfinished uploads after 7 days).
-import { first, run, newId, now, parseJson } from "../lib/db.js";
+import { first, all, run, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { startMultipart, uploadPart, completeMultipart, headFile } from "../storage/buckets.js";
+import { inUseSql } from "../creators/storage.js";
+import { startMultipart, uploadPart, completeMultipart, abortMultipart, headFile, deleteKeys } from "../storage/buckets.js";
 
 export const PART_BYTES = 64 * 1024 * 1024;
 export const ZIP_MAX_BYTES = 50 * 1024 ** 3;
@@ -14,14 +15,20 @@ const partLength = (size, n) => (n < partsOf(size) ? PART_BYTES : size - (partsO
 
 export const getUpload = (db, id) => first(db, "SELECT * FROM uploads WHERE id = ?", id);
 
-export async function startZip(app, version, { filename, size }) {
+/** quota: { creatorId, bytes } for a creator's upload (null for AutoStacc's own). */
+export async function startZip(app, version, { filename, size, quota = null }) {
   if (!Number.isSafeInteger(size) || size < 22 || size > ZIP_MAX_BYTES) fail(400, "invalid_size", "That isn't a ZIP size AutoStacc accepts.");
   const id = newId("up");
   const key = `uploads/${version.id}/${id}.zip`;
   const mp = await startMultipart(app.env, key);
   const t = now();
-  await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at)
-    VALUES (?, ?, 'zip', ?, ?, ?, ?, '[]', 'open', ?, ?)`, id, version.id, filename, key, mp.uploadId, size, t, t);
+  const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at)
+    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8 WHERE ?9 IS NULL OR ${inUseSql("?1")} + ?7 <= ?9`,
+    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null);
+  if (!res.meta.changes) {
+    await abortMultipart(app.env, key, mp.uploadId).catch(() => {});
+    fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota.bytes / 1048576)} MB of file storage. Remove files or a draft first.`);
+  }
   return { uploadId: id, partBytes: PART_BYTES, parts: partsOf(size) };
 }
 
@@ -56,4 +63,12 @@ export async function complete(app, upload) {
   }
   await run(app.db, "UPDATE uploads SET status = 'complete', updated_at = ? WHERE id = ? AND status = 'open'", now(), upload.id);
   return { complete: true };
+}
+
+/** Ends a version's archives: open multipart uploads aborted, stored archives deleted, rows marked aborted. */
+export async function dropArchives(app, versionId) {
+  const ups = await all(app.db, "SELECT r2_key, upload_id, status FROM uploads WHERE version_id = ?", versionId);
+  for (const u of ups.filter((x) => x.status === "open")) await abortMultipart(app.env, u.r2_key, u.upload_id).catch(() => {});
+  await deleteKeys(app.env, ups.map((u) => u.r2_key));
+  await run(app.db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE version_id = ? AND status <> 'aborted'", now(), versionId);
 }
