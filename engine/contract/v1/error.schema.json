@@ -1,0 +1,6 @@
+{
+  "$comment": "AutoStacc engine contract v1: a job that couldn't run as a whole. Codes: errors.json (archive and service codes).",
+  "type": "object",
+  "required": ["error"],
+  "properties": { "error": { "type": "string" }, "engineVersion": { "type": "string" } }
+}

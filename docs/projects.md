@@ -2,7 +2,7 @@
 title: Projects
 summary: Projects on AutoStacc: the data contract, which features a project uses, Glitches & Stitches as the first project, and how to add another.
 covers: [data/projects.js, data/creators.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/creator-page.js, js/project-frame.js, js/util.js, css/projects/, autostacc/, autostacc.html, data/news.js, data/shows.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Projects
@@ -31,7 +31,7 @@ A project is creative work owned by a creator ([creators](creators.md)), at `/<c
 
 This contract is for first-party projects in `data/`. Projects made in the Studio exist only in the database and have no such entry ([creators](creators.md)); they are listed on `/projects` and can be followed, marked unverified until their creator is trusted ([browse](browse.md)).
 
-Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it). The build fails if any of these point at a project that doesn't exist. Shows carry `project` too (`[data-shows]` lists only its project's dates).
+Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it); both are synced to the store database by `db/catalog.sql` like projects. The build fails if any of these point at a project that doesn't exist. Shows carry `project` too (`[data-shows]` lists only its project's dates).
 
 ## Glitches & Stitches
 

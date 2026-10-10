@@ -2,7 +2,7 @@
 title: Your Stacc
 summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, follows and Auto-Stacc.
 covers: [library.html, js/library.js, js/library-view.js, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Your Stacc
@@ -12,13 +12,13 @@ updated: 2026-10-09
 ## Where the data comes from
 
 1. `GET /api/library` (server, from `entitlements`; it runs the Auto-Stacc grant first for a signed-in account): owned products, each with its `projectId`, `pacs`, `sources` and deliverable files, and each file's `pacId`, `kind`, size and name. Unchanged rules: only active entitlements, only active, published files ([store](store.md)), storage keys never sent.
-2. `data/projects.js`, `data/stacclets.js`, `data/pacs.js`, `data/content-types.js` (static): names and structure.
-3. `js/stacc-model.js` joins them into one list of **assets**, one object per file, each knowing its project, Stacclet, Pac, product, kind and format. A file's kind is what the admin chose at upload, else guessed from its extension (`content-types.js` `formats`).
+2. `data/projects.js`, `data/stacclets.js`, `data/pacs.js` (static) and `data/content-types.js` (generated from the vocabulary's `KINDS`, with `CONTENT_TYPE_ALIASES` for old kind names): names and structure.
+3. `js/stacc-model.js` joins them into one list of **assets**, one object per file, each knowing its project, Stacclet, Pac, product, kind and format. A file's kind is what the admin chose at upload (an old name such as `samples` counts as its new kind, `one-shots`; old `?kind=samples` links still work), else guessed from its extension (`content-types.js` `formats`).
 
 ## Views (same assets, no copies)
 
 - **By project:** Project → Stacclet → Pac → content type → files; files uploaded without a Pac sit under their product.
-- **By content type:** MIDI, Samples, Loops, Presets, … each with a count, across every project, each file showing where it came from.
+- **By content type:** MIDI, One-shots, Loops, Presets, … each with a count, across every project, each file showing where it came from.
 - **Filters:** project, content type and format apply to both views.
 
 Search narrows files as you type (every word in the file's name, file name or product title); on `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&view=kinds`) ([browse](browse.md)).

@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Control Center

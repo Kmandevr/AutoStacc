@@ -1,5 +1,6 @@
-// The platform part of db/catalog.sql: upserts first-party creators (data/creators.js), projects (data/projects.js) and
-// polls (data/polls.js) into the store database, so the API can check ownership, follows and votes against them. Same
+// The platform part of db/catalog.sql: upserts first-party creators (data/creators.js), projects (data/projects.js),
+// Stacclets and Pacs (data/stacclets.js, data/pacs.js) and polls (data/polls.js) into the store database, so the API can
+// check ownership, follows, votes and Pac contents against them. Same
 // rules as the product sync (lib/catalog.js): deterministic, drafts unpublished, removed entries marked deleted and
 // never dropped (follows and votes point at them), and rows the Studio made (source 'studio') never touched.
 const crypto = require("crypto");
@@ -54,10 +55,17 @@ function platformSql(data) {
     closes_at: p.closes ? `${p.closes}T23:59:59.999Z` : null,
     published: p.draft ? 0 : 1
   }));
+  const stacclets = (data.stacclets || []).map((s) => ({ id: s.id, project_id: s.project, title: s.title, description: s.description || null, source: "catalog", published: s.draft ? 0 : 1 }));
+  const projectOf = new Map(stacclets.map((s) => [s.id, s.project_id]));
+  const pacs = (data.pacs || []).map((p) => ({
+    id: p.id, stacclet_id: p.stacclet, project_id: projectOf.get(p.stacclet) || "", title: p.title, description: p.description || null, source: "catalog", published: p.draft ? 0 : 1
+  }));
   return [
-    "-- Platform sync: creators, projects and polls (data/creators.js, data/projects.js, data/polls.js).",
+    "-- Platform sync: creators, projects, Stacclets, Pacs and polls (data/creators.js, projects.js, stacclets.js, pacs.js, polls.js).",
     ...upserts("creators", ["id", "slug", "name", "source", "published"], creators, true),
     ...upserts("projects", ["id", "name", "features", "published", "creator_id", "slug", "source", "tagline", "image", "genres", "activity"], projects, true),
+    ...upserts("stacclets", ["id", "project_id", "title", "description", "source", "published"], stacclets, true),
+    ...upserts("pacs", ["id", "stacclet_id", "project_id", "title", "description", "source", "published"], pacs, true),
     ...upserts("polls", ["id", "project_id", "question", "options", "opens_at", "closes_at", "published"], polls)
   ].join("\n") + "\n";
 }

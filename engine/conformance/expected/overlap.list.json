@@ -1,0 +1,33 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "a.txt",
+   "size": 4
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "overlapping_entries",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "b.txt",
+   "size": 4
+  }
+ ],
+ "folders": [],
+ "totalSize": 8,
+ "zip64": false
+}

@@ -9,7 +9,7 @@ import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
 import { getProduct, getProducts, isFree, isVisible, productPath } from "../catalog/products.js";
 import { limit } from "../lib/ratelimit.js";
-import { deliverableFiles } from "../files/files.js";
+import { deliverableFiles, stillDelivered } from "../files/files.js";
 import { autoStacc, AUTO_NOTE } from "./autostacc.js";
 import { projectNames } from "../creators/creators.js";
 
@@ -39,7 +39,10 @@ async function library(app) {
       entitlementId: mine[0].id,
       sources: [...new Set(mine.map((e) => (e.source_type === "free" && e.note === AUTO_NOTE ? "auto" : e.source_type)))],
       grantedAt: mine[0].granted_at,
-      files: files.filter((f) => f.product_id === pid).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "" }))
+      files: files.filter((f) => f.product_id === pid && stillDelivered(f, mine[0].granted_at)).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "",
+        folderPath: f.folder_path || "", ...(f.retired_at ? { retiredAt: f.retired_at } : {}),
+        // Files with a stored original can go into a ZIP with others (POST /api/downloads/bundle).
+        ...(f.blob_id ? { bundleable: true } : {}) }))
     };
   });
   return json({ signedIn: Boolean(access.user), guestOrders: access.guestOrderIds, items });

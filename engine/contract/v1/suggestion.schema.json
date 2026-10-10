@@ -1,0 +1,45 @@
+{
+  "$comment": "AutoStacc engine contract v1: one suggested value for a file, only when the job sent a vocabulary. field: kind, instrument, bpm, key or midiRole; value: a vocabulary value (bpm as a number in text). origin: where the strongest evidence came from (the asset_values origins: filename, folder-name, embedded, rule; analysis later). confidence: 0 to 1, a starting value to be calibrated. reasons: the evidence, for the review screen. A suggestion is never a fact.",
+  "type": "object",
+  "required": [
+    "field",
+    "value",
+    "origin",
+    "confidence",
+    "reasons"
+  ],
+  "properties": {
+    "field": {
+      "enum": [
+        "kind",
+        "instrument",
+        "bpm",
+        "key",
+        "midiRole"
+      ]
+    },
+    "value": {
+      "type": "string"
+    },
+    "origin": {
+      "enum": [
+        "filename",
+        "folder-name",
+        "embedded",
+        "rule",
+        "analysis"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

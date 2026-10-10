@@ -1,0 +1,14 @@
+{
+  "$comment": "AutoStacc engine contract v1: the answer to list (no hashes or facts: the instant tree) and inspect (every importable file read once). folders: every folder of importable files, parents first.",
+  "type": "object",
+  "required": ["contractVersion", "engineVersion", "zip64", "totalSize", "folders", "files"],
+  "properties": {
+    "contractVersion": { "enum": [1] },
+    "engineVersion": { "type": "string" },
+    "zip64": { "type": "boolean" },
+    "totalSize": { "type": "integer" },
+    "folders": { "type": "array", "items": { "type": "string" } },
+    "files": { "type": "array", "items": { "$ref": "file-result.schema.json" } },
+    "elapsedMs": { "type": "integer" }
+  }
+}

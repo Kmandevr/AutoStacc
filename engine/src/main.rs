@@ -3,7 +3,9 @@
 //   autostacc-engine inspect <archive.zip> [--extract <dir>]  → full inspection; optionally writes the originals
 //   autostacc-engine file <path>                     → one loose file
 //   autostacc-engine serve [addr]                    → the Container's HTTP service (serve.rs), default 0.0.0.0:8080
+// With --vocabulary <file.json> (list, inspect, file), each accepted file also gets suggestions (classify.rs).
 // Output is the JSON job contract on stdout; failures are {"error": code} with exit status 2.
+use autostacc_engine::classify::{self, Vocabulary};
 use autostacc_engine::job::{self, Discard, Sink};
 use autostacc_engine::source::FileSource;
 use autostacc_engine::zipread::Limits;
@@ -43,10 +45,21 @@ impl Sink for ExtractTo {
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let open = |p: &str| FileSource::open(Path::new(p)).unwrap_or_else(|_| fail("io"));
-    let out = match (args.first().map(String::as_str), args.get(1)) {
-        (Some("list"), Some(p)) => {
-            serde_json::to_string(&job::list_archive(&open(p), &Limits::default()).unwrap_or_else(|e| fail(e.code)))
+    let vocab: Option<Vocabulary> = args.iter().position(|a| a == "--vocabulary").map(|i| {
+        let text =
+            std::fs::read(args.get(i + 1).unwrap_or_else(|| fail("bad_vocabulary"))).unwrap_or_else(|_| fail("io"));
+        serde_json::from_slice(&text).unwrap_or_else(|_| fail("bad_vocabulary"))
+    });
+    let with = |mut r: job::InspectResult| {
+        if let Some(v) = &vocab {
+            classify::apply(&mut r, v);
         }
+        r
+    };
+    let out = match (args.first().map(String::as_str), args.get(1)) {
+        (Some("list"), Some(p)) => serde_json::to_string(&with(
+            job::list_archive(&open(p), &Limits::default()).unwrap_or_else(|e| fail(e.code)),
+        )),
         (Some("inspect"), Some(p)) => {
             let src = open(p);
             let r = match args.iter().position(|a| a == "--extract").and_then(|i| args.get(i + 1)) {
@@ -64,14 +77,18 @@ fn main() {
                 }
                 None => job::inspect_archive(&src, &Limits::default(), &mut Discard),
             };
-            serde_json::to_string(&r.unwrap_or_else(|e| fail(e.code)))
+            serde_json::to_string(&with(r.unwrap_or_else(|e| fail(e.code))))
         }
         (Some("serve"), addr) => autostacc_engine::serve::serve(addr.map(String::as_str).unwrap_or("0.0.0.0:8080")),
         (Some("file"), Some(p)) => {
-            serde_json::to_string(&job::inspect_file(p, &open(p)).unwrap_or_else(|_| fail("io")))
+            let mut r = job::inspect_file(p, &open(p)).unwrap_or_else(|_| fail("io"));
+            if let Some(v) = &vocab {
+                r.suggestions = classify::suggest(&r, v);
+            }
+            serde_json::to_string(&r)
         }
         _ => {
-            eprintln!("usage: autostacc-engine list|inspect|file <path> [--extract <dir>] | serve [addr]");
+            eprintln!("usage: autostacc-engine list|inspect|file <path> [--extract <dir>] [--vocabulary <file>] | serve [addr]");
             std::process::exit(64)
         }
     };

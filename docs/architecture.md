@@ -2,7 +2,7 @@
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
 covers: [data/site.js, data/creators.js, data/projects.js, data/stacclets.js, data/pacs.js, data/content-types.js, data/product-types.js, data/polls.js, data/relationships.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/relations.js, db/migrations/0003_platform.sql, server/projects/, server/polls/, server/entitlements/autostacc.js, server/app.js, js/stacc-model.js, js/projects.js, js/polls.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Architecture
@@ -44,7 +44,7 @@ Every link is stored once, on the child, as an id. Everything else is derived: a
 | Project | creative work of a creator | `data/projects.js` (or the Studio) → D1 `projects` | `creator`; `features` lists which platform features it uses |
 | Stacclet | a collection of related Pacs | `data/stacclets.js` | not a folder; never holds files directly |
 | Pac | a container of content | `data/pacs.js` | sold through products; its files are assets |
-| Asset | one file (MIDI, WAV, preset, …) | D1 `product_files` (uploaded in `/admin`) | `pac_id`, `kind` (`data/content-types.js`), format from the filename |
+| Asset | one file (MIDI, WAV, preset, …) | D1 `product_files` (uploaded in `/admin`) | `pac_id`, `kind` (One-shots, Loops, MIDI, … from `server/discovery/vocabulary.js` `KINDS`, shown via the generated `data/content-types.js`), format from the filename |
 | Product | what a customer buys | `data/products.js` → D1 `products` | `project`, `pacs`; price and availability as before |
 | Entitlement | who owns which product | D1 `entitlements` | unchanged; owning a product unlocks the assets uploaded to it |
 
@@ -56,7 +56,7 @@ The build (`scripts/lib/platform.js`) refuses: unknown projects, Stacclets or Pa
 
 ### Sync to the database
 
-`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), first-party creators, projects and polls (`scripts/lib/platform-catalog.js`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). Stacclets and Pacs stay in `data/` (the library joins them in the browser) until a server feature needs them. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql` (forward-only).
+`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), first-party creators, projects, Stacclets, Pacs and polls (`scripts/lib/platform-catalog.js`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). Stacclets and Pacs are written in `data/` and synced to the `stacclets` and `pacs` tables (with each Pac's project) for the Pack Builder; the library still joins them in the browser. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql`, Pacs, versions, stored originals, folders, assets and their values in `0014_packs.sql` ([packs](packs.md); forward-only).
 
 ## Your Stacc
 
@@ -82,7 +82,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | --- | --- |
 | a project | one entry in `data/projects.js`; its content names it with `project:` ([projects](projects.md)) |
 | a Stacclet / Pac | entries in `data/stacclets.js` / `data/pacs.js`; list the Pac on a product |
-| a kind of content | one entry in `data/content-types.js` |
+| a kind of content, or a file format | one entry in `KINDS` or `FORMATS` in `server/discovery/vocabulary.js` (then `node scripts/build.js`; `data/content-types.js` is generated) |
 | a kind of product | one entry in `data/product-types.js` |
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |

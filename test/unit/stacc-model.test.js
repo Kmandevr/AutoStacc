@@ -37,7 +37,7 @@ test("each owned file becomes one asset that keeps every relationship", () => {
   assert.equal(assets.length, 8);
   assert.equal(new Set(ids(assets)).size, 8);
   assert.deepEqual(assets.find((a) => a.id === "pf_bass2"), {
-    id: "pf_bass2", name: "Bass 02.MID", filename: "Bass 02.MID", format: "mid", kind: "midi", sizeBytes: 10,
+    id: "pf_bass2", name: "Bass 02.MID", filename: "Bass 02.MID", format: "mid", kind: "midi", sizeBytes: 10, folder: "", bundleable: false,
     productId: "fs-pack", productTitle: "Frayed Signals Pack", projectId: "gs", staccletId: "frayed", pacId: "fs-midi", sources: ["purchase"]
   });
   const stray = assets.find((a) => a.id === "pf_stray");
@@ -49,6 +49,16 @@ test("kinds: the admin's choice wins, then the extension, then other", () => {
   assert.equal(assets.find((a) => a.id === "pf_kick").kind, "samples");
   assert.equal(assets.find((a) => a.id === "pf_readme").kind, "other");
   assert.equal(stacc.kindOf({ filename: "x.wav", kind: "made-up" }, catalog.contentTypes), "samples");
+});
+
+test("kinds: an old kind name stored on a file still files it under its new kind", () => {
+  const types = { "one-shots": { label: "One-shots", formats: ["wav"] }, loops: { label: "Loops", formats: [] }, other: { label: "Other", formats: [] } };
+  const aliases = { samples: "one-shots", loop: "loops" };
+  assert.equal(stacc.kindOf({ filename: "Kick.wav", kind: "samples" }, types, aliases), "one-shots");
+  assert.equal(stacc.kindOf({ filename: "Groove.wav", kind: "loop" }, types, aliases), "loops");
+  assert.equal(stacc.kindOf({ filename: "notes.txt", kind: "samples" }, types, {}), "other");
+  const [asset] = stacc.assetsFrom([{ productId: "p", title: "P", files: [{ id: "pf_1", filename: "a.wav", kind: "samples" }] }], { contentTypes: types, kindAliases: aliases });
+  assert.equal(asset.kind, "one-shots");
 });
 
 test("the project view nests Project → Stacclet → Pac → content type", () => {
@@ -115,4 +125,19 @@ test("search: every word must appear in a file's name, file name or product titl
   const view = stacc.answer({ assets, catalog }, { type: "view", view: "kinds", filter: { q: "bass" } });
   assert.equal(view.count, 2);
   assert.equal(view.total, 8);
+});
+
+test("a Pac published from Pack Builder shows its own folders; others keep content types", () => {
+  const withFolders = [{ productId: "fs-pack", title: "Frayed Signals Pack", projectId: "gs", pacs: ["fs-samples", "fs-midi"], files: [
+    file("pf_k1", "Kick 01.wav", { pacId: "fs-samples", folderPath: "Drums/Kicks" }),
+    file("pf_k2", "Kick 02.wav", { pacId: "fs-samples", folderPath: "Drums/Kicks" }),
+    file("pf_r", "Read me.txt", { pacId: "fs-samples", folderPath: "" }),
+    file("pf_m", "Bass.mid", { pacId: "fs-midi" })
+  ] }];
+  const list = stacc.assetsFrom(withFolders, catalog);
+  const pacs = stacc.tree(list, catalog)[0].stacclets[0].pacs;
+  const samples = pacs.find((p) => p.id === "fs-samples");
+  assert.deepEqual(samples.folders.map((f) => [f.path, f.label, ids(f.assets)]), [["", "Top level", ["pf_r"]], ["Drums/Kicks", "Drums/Kicks", ["pf_k1", "pf_k2"]]]);
+  assert.equal(pacs.find((p) => p.id === "fs-midi").folders, null);
+  assert.deepEqual(ids(stacc.filter(list, { q: "kicks" })), ["pf_k1", "pf_k2"], "search finds folder names");
 });

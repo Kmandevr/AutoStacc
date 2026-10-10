@@ -77,6 +77,9 @@ struct Request {
     /// [i, n]: inspect only this worker's share of the files.
     #[serde(default)]
     part: Option<(usize, usize)>,
+    /// The words to suggest values from (classify.rs); no suggestions without it.
+    #[serde(default)]
+    vocabulary: Option<crate::classify::Vocabulary>,
 }
 
 fn run(req: &[u8]) -> Vec<u8> {
@@ -92,7 +95,12 @@ fn run(req: &[u8]) -> Vec<u8> {
             &serde_json::json!({ "engineVersion": crate::ENGINE_VERSION, "contractVersion": crate::CONTRACT_VERSION }),
         )),
         "list" => job::list_archive(&src, &limits)
-            .map(|v| serde_json::to_vec(&v))
+            .map(|mut v| {
+                if let Some(voc) = &r.vocabulary {
+                    crate::classify::apply(&mut v, voc)
+                }
+                serde_json::to_vec(&v)
+            })
             .map_err(|e| e.code),
         "inspect" => {
             let res = if r.emit {
@@ -100,10 +108,21 @@ fn run(req: &[u8]) -> Vec<u8> {
             } else {
                 job::inspect_archive_part(&src, &limits, &mut Discard, r.part)
             };
-            res.map(|v| serde_json::to_vec(&v)).map_err(|e| e.code)
+            res.map(|mut v| {
+                if let Some(voc) = &r.vocabulary {
+                    crate::classify::apply(&mut v, voc)
+                }
+                serde_json::to_vec(&v)
+            })
+            .map_err(|e| e.code)
         }
         "file" => job::inspect_file(&r.path, &src)
-            .map(|v| serde_json::to_vec(&v))
+            .map(|mut v| {
+                if let Some(voc) = &r.vocabulary {
+                    v.suggestions = crate::classify::suggest(&v, voc)
+                }
+                serde_json::to_vec(&v)
+            })
             .map_err(|_| "io"),
         "hash" => crate::hash::digest_source(&src)
             .map(|d| serde_json::to_vec(&serde_json::json!({ "sha256": d.sha256, "crc32": d.crc32, "size": d.len })))

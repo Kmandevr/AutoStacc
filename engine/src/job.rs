@@ -23,6 +23,12 @@ pub struct FileResult {
     /// Problems found in the archive listing or while extracting; `refused` ones are not imported.
     pub issues: Vec<Issue>,
     pub ignored: bool,
+    /// Values suggested from names and headers (classify.rs), only when the job sent a vocabulary.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub suggestions: Vec<crate::classify::Suggestion>,
+    /// Where the original was written (the `process` job only): a key under the job's storage prefix.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stored: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -52,6 +58,10 @@ pub trait Sink {
     fn begin(&mut self, _path: &str, _size: u64) {}
     fn chunk(&mut self, _bytes: &[u8]) {}
     fn end(&mut self, _ok: bool) {}
+    /// Where the file just ended was stored, if this sink stores files (the `process` job).
+    fn stored(&mut self) -> Option<String> {
+        None
+    }
 }
 
 /// A sink that keeps nothing (inspection only).
@@ -74,10 +84,12 @@ fn listing_only(e: &Entry) -> FileResult {
         size: e.size,
         sha256: None,
         crc32: None,
-        identity: formats::identify(&e.path, &[]),
+        identity: formats::from_name(&e.path),
         facts: Facts::default(),
         issues: e.issues.clone(),
         ignored: e.ignored,
+        suggestions: Vec::new(),
+        stored: None,
     }
 }
 
@@ -139,7 +151,7 @@ pub fn inspect_archive_part(
             files.push(r);
             continue;
         }
-        let hint = formats::identify(&e.path, &[]).format;
+        let hint = formats::from_name(&e.path).format;
         let want = head_limit(&hint, e.size);
         let mut head = Vec::with_capacity(want);
         sink.begin(&e.path, e.size);
@@ -171,6 +183,7 @@ pub fn inspect_archive_part(
                 r.sha256 = Some(d.sha256);
                 r.crc32 = Some(d.crc32);
                 sink.end(!r.identity.mismatch);
+                r.stored = sink.stored();
             }
             Err(err) => {
                 r.issues.push(Issue {
@@ -195,7 +208,7 @@ pub fn inspect_archive_part(
 /// One loose file (uploaded on its own, or re-checked from storage).
 pub fn inspect_file(path: &str, src: &dyn Source) -> std::io::Result<FileResult> {
     let size = src.len();
-    let hint = formats::identify(path, &[]).format;
+    let hint = formats::from_name(path).format;
     let want = head_limit(&hint, size);
     let mut head = vec![0u8; want];
     src.read_exact_at(0, &mut head)?;
@@ -229,6 +242,8 @@ pub fn inspect_file(path: &str, src: &dyn Source) -> std::io::Result<FileResult>
         facts,
         issues,
         ignored: false,
+        suggestions: Vec::new(),
+        stored: None,
     })
 }
 

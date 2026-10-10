@@ -15,7 +15,7 @@ export const MARKETPLACE_WEBHOOK_SECRET = "whsec_test_" + "b".repeat(32);
 export const MARKETPLACE_KEY = "sk_test_marketplace_key_for_tests";
 export const ADMIN_EMAIL = "admin@autostacc.test";
 
-export async function startStores({ mock = true, stripe = true, name = "", ports = {} } = {}) {
+export async function startStores({ mock = true, stripe = true, name = "", ports = {}, vars: extraVars = {} } = {}) {
   const { mock: mockPort = 8801, stripe: stripePort = 8802, fakeStripe: fakePort = 8812 } = ports;
   const out = { fileIdFor, servers: [] };
   let stopping = false;
@@ -35,7 +35,7 @@ export async function startStores({ mock = true, stripe = true, name = "", ports
   await Promise.all([
     mock && (async () => {
       const stateDir = state("mock");
-      const s = start({ port: mockPort, stateDir, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL } });
+      const s = start({ port: mockPort, stateDir, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, ...extraVars } });
       out.mock = { url: await s.ready, stateDir, log: s.log };
     })(),
     stripe && (async () => {

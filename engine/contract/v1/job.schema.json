@@ -1,0 +1,54 @@
+{
+  "$comment": "AutoStacc engine contract v1: a job sent to the engine (POST /v1/jobs on the Container's service, or the same fields to the CLI and WebAssembly builds). docs/engine.md. With vocabulary, every accepted file also gets suggestions. process: inspect, and write each accepted file's original to target.prefix + n (n = 1, 2, \u2026 in the order files are read) as it is read; the storage side decides whether the key may be written and hashes it.",
+  "type": "object",
+  "required": [
+    "op",
+    "source"
+  ],
+  "properties": {
+    "op": {
+      "enum": [
+        "list",
+        "inspect",
+        "file",
+        "process"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        }
+      }
+    },
+    "path": {
+      "type": "string"
+    },
+    "vocabulary": {
+      "$ref": "vocabulary.schema.json"
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "bucket",
+        "prefix"
+      ],
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_/-]*/$"
+        }
+      }
+    }
+  }
+}

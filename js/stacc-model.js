@@ -1,5 +1,5 @@
 // Your Stacc's model (docs/library.md): turns the library API's owned products and files plus the static hierarchy
-// (data/projects.js, stacclets.js, pacs.js, content-types.js) into one list of assets, then builds the views from that
+// (data/projects.js, stacclets.js, pacs.js, content-types.js with its old-name aliases) into one list of assets, then builds the views from that
 // list. Pure functions, no DOM or window-only APIs: every view holds the same asset objects, never copies. Sets GS.stacc
 // in pages and in js/stacc-worker.js (Your Stacc's background thread); also loads in Node for the unit tests
 // (test/unit/stacc-model.test.js).
@@ -12,9 +12,11 @@
     return m ? m[1].toLowerCase() : "";
   };
 
-  // The admin's chosen kind, else the first content type listing the file's extension, else "other".
-  function kindOf(file, contentTypes) {
-    if (file.kind && contentTypes[file.kind]) return file.kind;
+  // The chosen kind (an old name like "samples" counts as its new one through aliases), else the first content type listing
+  // the file's extension, else "other".
+  function kindOf(file, contentTypes, aliases = {}) {
+    const chosen = file.kind && (contentTypes[file.kind] ? file.kind : aliases[file.kind]);
+    if (chosen && contentTypes[chosen]) return chosen;
     const format = formatOf(file.filename);
     const hit = Object.keys(contentTypes).find((k) => (contentTypes[k].formats || []).includes(format));
     return hit || "other";
@@ -24,6 +26,7 @@
   function assetsFrom(items, catalog) {
     const pacs = byId(catalog.pacs), stacclets = byId(catalog.stacclets);
     const types = catalog.contentTypes || {};
+    const aliases = catalog.kindAliases || {};
     const out = [];
     for (const item of items || []) {
       for (const f of item.files || []) {
@@ -34,8 +37,10 @@
           name: f.label || f.filename,
           filename: f.filename,
           format: formatOf(f.filename),
-          kind: kindOf(f, types),
+          kind: kindOf(f, types, aliases),
           sizeBytes: f.sizeBytes || 0,
+          folder: f.folderPath || "",
+          bundleable: Boolean(f.bundleable),
           productId: item.productId,
           productTitle: item.title,
           projectId: (stacclet && stacclet.project) || item.projectId || "",
@@ -51,7 +56,7 @@
   // Empty filter fields match everything. q: words that must all appear in the file's name, file name or product title.
   const words = (q) => String(q || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
   const matches = (a, f = {}) =>
-    words(f.q).every((w) => `${a.name} ${a.filename} ${a.productTitle}`.toLowerCase().includes(w)) &&
+    words(f.q).every((w) => `${a.name} ${a.filename} ${a.productTitle} ${a.folder}`.toLowerCase().includes(w)) &&
     (!f.project || a.projectId === f.project) && (!f.stacclet || a.staccletId === f.stacclet) &&
     (!f.pac || a.pacId === f.pac) && (!f.kind || a.kind === f.kind) && (!f.format || a.format === f.format);
   const filter = (assets, f) => assets.filter((a) => matches(a, f));
@@ -74,7 +79,7 @@
     return groupBy(assets, (a) => a.kind, Object.keys(types)).map(([kind, list]) => ({ kind, label: (types[kind] || {}).label || kind, assets: list }));
   };
 
-  // Content types across everything: MIDI (n), Samples (n), ...
+  // Content types across everything: MIDI (n), One-shots (n), ...
   const byKind = (assets, catalog, f) => kindGroups(filter(assets, f), catalog);
 
   // Project → Stacclet → Pac → content type → assets; files without a Pac sit under their product.
@@ -93,7 +98,9 @@
           id: pid,
           title: (pacs.get(pid) || {}).title || pid,
           count: inPac.length,
-          kinds: kindGroups(inPac, catalog)
+          kinds: kindGroups(inPac, catalog),
+          // A Pac published from Pack Builder keeps its creator's folders: shown instead of content types when present.
+          folders: inPac.some((a) => a.folder) ? groupBy(inPac, (a) => a.folder, []).map(([path, inFolder]) => ({ path, label: path || "Top level", assets: inFolder })) : null
         }))
       })),
       products: groupBy(inProject.filter((a) => !a.staccletId), (a) => a.productId, []).map(([productId, inProduct]) => ({

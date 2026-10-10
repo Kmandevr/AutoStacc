@@ -1,0 +1,58 @@
+{
+  "$comment": "AutoStacc engine contract v1: the words an engine suggests values from, sent with a job (server/discovery/vocabulary.js engineVocabulary(); a copy for the conformance suite is engine/conformance/vocabulary.json). kinds: each kind with the formats filed under it (audio formats are those of one-shots). words: folded word or phrase (lower case, words joined by '-') to value, per field. keys: the key values ('a-minor', 'cs-major'). bpm: the accepted tempo range. An engine compiles none of this in.",
+  "type": "object",
+  "required": [
+    "kinds",
+    "words",
+    "keys",
+    "bpm"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer"
+    },
+    "kinds": {
+      "type": "object"
+    },
+    "words": {
+      "type": "object",
+      "required": [
+        "kind",
+        "instrument",
+        "midiRole"
+      ],
+      "properties": {
+        "kind": {
+          "type": "object"
+        },
+        "instrument": {
+          "type": "object"
+        },
+        "midiRole": {
+          "type": "object"
+        }
+      }
+    },
+    "keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "bpm": {
+      "type": "object",
+      "required": [
+        "min",
+        "max"
+      ],
+      "properties": {
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

@@ -25,3 +25,24 @@ export async function readDownload(secret, token) {
   if (typeof payload.x !== "number" || payload.x < Math.floor(Date.now() / 1000)) return { error: "expired", payload };
   return { payload };
 }
+
+// Bundle links (several files as one ZIP): the same signature with their own prefix, so one kind can't pass for the other.
+export async function signBundle(secret, { bundleId, subject, ttlSeconds }) {
+  const payload = { b: bundleId, s: subject, x: Math.floor(Date.now() / 1000) + ttlSeconds };
+  const body = b64url(enc.encode(JSON.stringify(payload)));
+  return { token: `${body}.${await hmacSign(secret, "db1." + body)}`, expiresAt: new Date(payload.x * 1000).toISOString() };
+}
+
+export async function readBundle(secret, token) {
+  const [body, sig, extra] = String(token).split(".");
+  if (!body || !sig || extra !== undefined || body.length > 400) return { error: "bad_token" };
+  if (!(await hmacVerify(secret, "db1." + body, sig))) return { error: "bad_token" };
+  let payload;
+  try {
+    payload = JSON.parse(dec.decode(fromB64url(body)));
+  } catch {
+    return { error: "bad_token" };
+  }
+  if (typeof payload.x !== "number" || payload.x < Math.floor(Date.now() / 1000)) return { error: "expired", payload };
+  return { payload };
+}

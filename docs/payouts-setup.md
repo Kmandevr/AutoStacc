@@ -2,7 +2,7 @@
 title: Payouts setup
 summary: How creators get paid (Stripe Connect on a second Stripe account), what the owner sets up in Stripe and GitHub to switch it on, and how the code behaves until then.
 covers: [server/payments/connect.js, server/payments/accounts.js, server/payments/stripe.js, server/payments/routes.js, server/revenue/, server/studio/earnings.js, server/studio/payout-account.js, server/admin/payouts.js, server/checkout/routes.js, server/lib/config.js, server/creators/policy.js, db/migrations/0011_marketplace_payouts.sql, js/admin-payouts.js, js/studio-earnings.js, scripts/cloudflare.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Payouts setup

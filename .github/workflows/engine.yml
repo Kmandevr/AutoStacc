@@ -3,16 +3,15 @@
 # results on a generated pack, and a build of the Container image with a health check. On main (or by hand) it then
 # deploys the engine Worker and its Container, which runs nothing until a job is queued.
 #
-# Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit and Containers: Edit),
-# CLOUDFLARE_ACCOUNT_ID, ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (an R2 API token limited to the
-# autostacc-files bucket), optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes).
-# Without the R2 secrets the deploy step is skipped.
+# Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit, Containers: Edit, Account Settings: Read),
+# CLOUDFLARE_ACCOUNT_ID, optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes). The engine
+# needs no storage credentials: its Worker answers its reads from the R2 binding. Without the API token the deploy is skipped.
 name: Engine
 on:
   push:
-    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/unit/engine-worker.test.js", ".github/workflows/engine.yml"]
+    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/mock-engine/**", "test/unit/engine-worker.test.js", "test/unit/mock-engine.test.js", "scripts/engine-*.js", "scripts/lib/json-schema.js", ".github/workflows/engine.yml"]
   pull_request:
-    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/unit/engine-worker.test.js", ".github/workflows/engine.yml"]
+    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/mock-engine/**", "test/unit/engine-worker.test.js", "test/unit/mock-engine.test.js", "scripts/engine-*.js", "scripts/lib/json-schema.js", ".github/workflows/engine.yml"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -50,9 +49,12 @@ jobs:
       - name: Native and WebAssembly give identical results on a generated pack
         working-directory: .
         run: node test/bench/make-pack.js --mb 48 && node test/bench/engine-bench.js test/bench/out/pack-48mb.zip
-      - name: Engine Worker unit tests
+      - name: Contract conformance (native and WebAssembly builds)
         working-directory: .
-        run: node --test test/unit/engine-worker.test.js
+        run: node scripts/engine-conformance.js && node scripts/engine-conformance.js --wasm engine/target/wasm32-unknown-unknown/release/autostacc_engine.wasm
+      - name: Engine Worker and mock engine unit tests
+        working-directory: .
+        run: node --test test/unit/engine-worker.test.js test/unit/mock-engine.test.js
 
   image:
     runs-on: ubuntu-latest
@@ -76,8 +78,6 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      R2_KEY: ${{ secrets.ENGINE_R2_ACCESS_KEY_ID }}
-      R2_SECRET: ${{ secrets.ENGINE_R2_SECRET_ACCESS_KEY }}
       ADMIN_TOKEN: ${{ secrets.ENGINE_ADMIN_TOKEN }}
     defaults:
       run:
@@ -87,11 +87,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Skip without the engine's R2 secrets
+      - name: Skip without the Cloudflare API token
         id: ready
         run: |
-          if [ -z "$R2_KEY" ] || [ -z "$R2_SECRET" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::Engine not deployed: set ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (docs/engine.md)."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::warning::Engine not deployed: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (docs/engine.md)."
             echo "go=false" >> "$GITHUB_OUTPUT"
           else
             echo "go=true" >> "$GITHUB_OUTPUT"
@@ -99,18 +99,70 @@ jobs:
       - name: Install (the Containers library and Wrangler)
         if: steps.ready.outputs.go == 'true'
         run: npm ci && npm i --no-save wrangler@4.148.0
+      - name: What the API token can reach (for permission errors below)
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          # The token's own permission list (names only; the token itself is never printed).
+          api=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          # An account-owned token verifies under the account, a user-owned one under /user.
+          v=$(curl -s -H "$auth" "$api/verify")
+          if [ "$(echo "$v" | jq -r '.success')" != true ]; then api=https://api.cloudflare.com/client/v4/user/tokens; v=$(curl -s -H "$auth" "$api/verify"); fi
+          id=$(echo "$v" | jq -r '.result.id // empty')
+          echo "token status: $(echo "$v" | jq -r '.result.status // .errors[0].message') (${api#https://api.cloudflare.com/client/v4/})"
+          if [ -n "$id" ]; then
+            curl -s -H "$auth" "$api/$id" | jq -r '.result.policies[]? | "\(.effect): \([.permission_groups[].name] | join(", "))"' || true
+            curl -s -H "$auth" "$api/$id" | jq -r '.errors[0].message // empty'
+          fi
+      - name: Containers access (what Cloudflare answers before the image is built)
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          acct=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          code=$(curl -s -o /tmp/cme.json -w '%{http_code}' -H "$auth" "$acct/containers/me")
+          echo "containers/me: HTTP $code"; jq -c '{success, errors, messages}' /tmp/cme.json 2>/dev/null || head -c 600 /tmp/cme.json; echo
+          if [ "$code" != 200 ]; then
+            echo "::error::Cloudflare refuses Containers for this token or account (HTTP $code above). Check the token has Containers → Edit and that Containers is enabled for the account (dashboard → Workers & Pages → Containers)."
+            exit 1
+          fi
       - name: Queues (created once; existing ones are kept)
         if: steps.ready.outputs.go == 'true'
         run: |
           for q in autostacc-engine-jobs autostacc-engine-jobs-failed; do
-            npx wrangler queues create "$q" 2>&1 | tee /tmp/q.log || grep -qi "already" /tmp/q.log
+            out=$(npx wrangler queues create "$q" 2>&1) && { echo "created $q"; continue; }
+            if echo "$out" | grep -qiE "already (exists|taken)"; then echo "$q exists"; continue; fi
+            echo "$out"
+            if echo "$out" | grep -q "code: 10000"; then echo "::error::The Cloudflare API token can't manage Queues: give it Account → Queues → Edit (docs/engine.md)."; fi
+            exit 1
           done
       - name: Deploy the Worker and its Container
         if: steps.ready.outputs.go == 'true'
-        run: npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+        run: |
+          set -o pipefail
+          WRANGLER_LOG=debug npx wrangler deploy 2>&1 | tee /tmp/deploy.log | grep -vE "^\[debug\]|^-- |^[A-Za-z-]+: " || {
+            # Cloudflare's answer to the failing request (status and body; the debug log never prints the token).
+            grep -iE "containers/|cloudchamber|status: [45][0-9][0-9]|\"(code|message)\"" /tmp/deploy.log | grep -viE "authorization|bearer" | tail -25
+            grep -q "No access to the specified resource\|code: 10000" /tmp/deploy.log && echo "::error::The Cloudflare API token can't deploy Workers or Containers: give it Account → Workers Scripts → Edit and Containers → Edit (docs/engine.md)."
+            grep -q "containers/me" /tmp/deploy.log && echo "::error::Cloudflare refused the Containers setup (containers/me): the token needs Containers → Edit, and the account needs Workers Paid with Containers enabled (docs/engine.md)."
+            exit 1
+          }
       - name: Secrets
         if: steps.ready.outputs.go == 'true'
         run: |
-          printf '%s' "$R2_KEY" | npx wrangler secret put R2_ACCESS_KEY_ID
-          printf '%s' "$R2_SECRET" | npx wrangler secret put R2_SECRET_ACCESS_KEY
+          # Storage keys from the earlier design: the engine no longer has any.
+          for old in R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do npx wrangler secret delete "$old" >/dev/null 2>&1 || true; done
           if [ -n "$ADMIN_TOKEN" ]; then printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ENGINE_ADMIN_TOKEN; fi
+      - name: Smoke test the deployed engine (needs ENGINE_ADMIN_TOKEN)
+        if: steps.ready.outputs.go == 'true' && env.ADMIN_TOKEN != ''
+        env:
+          ENGINE_ADMIN_TOKEN: ${{ secrets.ENGINE_ADMIN_TOKEN }}
+        run: |
+          url=$(grep -oE "https://autostacc-engine\.[a-z0-9-]+\.workers\.dev" /tmp/deploy.log | head -1)
+          if [ -z "$url" ]; then echo "::warning::No workers.dev address in the deploy output; smoke test skipped."; exit 0; fi
+          key="incoming/smoke/pack-basic-${GITHUB_RUN_ID}.zip"
+          npx wrangler r2 object put "autostacc-files/$key" --file ../../engine/conformance/cases/pack-basic.zip --remote
+          set +e
+          node ../../scripts/engine-smoke.js "$url" autostacc-files "$key" pack-basic; code=$?
+          npx wrangler r2 object delete "autostacc-files/$key" --remote
+          if [ -s /tmp/smoke-job ]; then npx wrangler r2 object delete "autostacc-files/jobs/$(cat /tmp/smoke-job)/result.json" --remote; fi
+          exit $code

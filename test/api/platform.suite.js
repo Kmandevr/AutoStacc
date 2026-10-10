@@ -21,6 +21,15 @@ export default (ctx) => describe("platform", () => {
     assert.ok([401, 403].includes((await pending.req("PUT", "/api/follows/glitches-and-stitches", { body: {} })).status));
   });
 
+  test("Stacclets and Pacs from data/ are in the database with their project; drafts unpublished", async () => {
+    const pacs = sql(ctx.mock.stateDir, "SELECT id, stacclet_id, project_id, source, published FROM pacs WHERE deleted_at IS NULL ORDER BY id");
+    const midi = pacs.find((p) => p.id === "frayed-signals-midi");
+    assert.ok(midi, "a Pac from data/pacs.js is synced");
+    assert.deepEqual([midi.stacclet_id, midi.project_id, midi.source, midi.published], ["frayed-signals", "glitches-and-stitches", "catalog", 0]);
+    const st = sql(ctx.mock.stateDir, "SELECT project_id, source FROM stacclets WHERE id = 'frayed-signals'")[0];
+    assert.deepEqual([st.project_id, st.source], ["glitches-and-stitches", "catalog"]);
+  });
+
   test("follow, change Auto-Stacc, unfollow; bad input and unknown projects fail closed", async () => {
     const { c } = await newBuyer(ctx.mock.url, "follower");
     assert.equal((await c.req("PUT", "/api/follows/no-such-project", { body: {} })).status, 404);

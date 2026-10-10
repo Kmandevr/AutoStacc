@@ -1,0 +1,44 @@
+{
+  "$comment": "AutoStacc engine contract v1: every code an engine may answer. archive: the job failed as a whole ({error}). file: an issue on one file ({code, refused}). service: the HTTP service only. A replacement engine uses exactly these codes.",
+  "archive": {
+    "not_zip": "Not a ZIP archive.",
+    "truncated": "The archive ends early or its directory is damaged.",
+    "too_many_entries": "More entries than the limit (10,000).",
+    "central_directory_too_large": "The archive's directory is over 64 MB.",
+    "too_large": "The files add up to more than the limit.",
+    "io": "The bytes couldn't be read."
+  },
+  "file": {
+    "path_traversal": "The name climbs out of the archive (..).",
+    "absolute_path": "The name is an absolute path or a drive.",
+    "control_characters": "The name contains control characters.",
+    "reserved_name": "The name is reserved on Windows (CON, NUL, COM1, ...).",
+    "empty_path": "The name is empty.",
+    "too_deep": "More than 32 folders deep.",
+    "path_too_long": "The path is over 1,024 bytes.",
+    "symlink": "A symbolic link.",
+    "encrypted": "Password-protected.",
+    "unsupported_compression": "Compressed with a method other than store or deflate.",
+    "file_too_large": "One file over the per-file limit.",
+    "suspicious_compression_ratio": "Expands more than 200 times (a decompression bomb).",
+    "damaged_entry": "The entry's header is missing or its data runs into the directory.",
+    "overlapping_entries": "Its data overlaps another entry's.",
+    "size_mismatch": "It expands to a different size than declared.",
+    "crc_mismatch": "Its bytes don't match their checksum.",
+    "corrupt": "Its compressed data is damaged.",
+    "content_does_not_match_name": "The bytes are a different kind of file than the name says.",
+    "duplicate_name": "Same path as another file (warning).",
+    "case_collision": "Same path as another file except for letter case (warning)."
+  },
+  "service": {
+    "bad_request": "The job isn't valid JSON or misses fields.",
+    "bad_source": "The source isn't an allowed bucket and key (or a local file in development).",
+    "unknown_op": "Not one of list, inspect, file, process.",
+    "not_found": "No such object.",
+    "bucket_not_allowed": "The bucket isn't on the engine's list.",
+    "storage_unavailable": "Storage couldn't be reached.",
+    "busy": "Another job is running; retry later.",
+    "serialize": "The answer couldn't be encoded.",
+    "bad_target": "The process job's target isn't an allowed bucket and a plain prefix ending in /."
+  }
+}
