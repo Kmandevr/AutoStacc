@@ -48,7 +48,7 @@
       const res = await api(url);
       if (!res.ok) { body.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
       const { pac, versions, product, storage } = res.data;
-      const busy = Boolean(pac.draftVersionId);
+      const busy = Boolean(pac && pac.draftVersionId);
       body.innerHTML = `
         <p class="small-print"><strong>${e(product.title)}</strong>. Upload everything buyers get as one ZIP, in the folders you want them to see. AutoStacc checks every file (type, damage, unsafe names), keeps the originals byte for byte and suggests kinds, instruments, tempos and keys. Clean packs publish right away; anything flagged waits for AutoStacc's review.</p>
         <p class="small-print">File storage: ${mb(storage.usedBytes)} of ${mb(storage.quotaBytes)} used.</p>
@@ -60,8 +60,8 @@
         </form>
         <div data-pack-version></div>
         ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link-btn" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
-          · ${e(STATE[v.status] || v.status)}${v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${v.note ? ` · ${e(v.note)}` : ""}</li>`).join("")}</ul>` : ""}`;
-      const current = pac.draftVersionId || pac.liveVersionId;
+          · ${e(STATE[v.status] || v.status)}${pac && v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${v.note ? ` · ${e(v.note)}` : ""}</li>`).join("")}</ul>` : ""}`;
+      const current = pac && (pac.draftVersionId || pac.liveVersionId);
       if (current) showVersion(current);
     }
 

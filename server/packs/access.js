@@ -5,7 +5,7 @@
 //                              like a route that doesn't exist); uploads count against the creator's file storage and
 //                              publishing follows the automated review (review.js).
 // A Studio product gets its own Stacclet and Pac the first time it's used (the creator never manages them by hand).
-import { first, run, newId, now, parseJson } from "../lib/db.js";
+import { first, newId, now, parseJson } from "../lib/db.js";
 import { fail, id } from "../lib/http.js";
 import { requireAdmin, requireUser } from "../auth/session.js";
 import { requireOwnProduct } from "../creators/products.js";
@@ -75,13 +75,16 @@ export async function uploadFor(app, scope, actor, uploadId) {
   return u;
 }
 
-/** A Studio product's own Pac, made on first use (with its Stacclet) and added to the product's Pacs. */
-export async function ensureStudioPac(db, product) {
+/** A Studio product's own Pac, or null before its first upload. */
+export async function studioPacOf(db, product) {
   const existing = parseJson(product.pacs, []);
-  if (existing.length) {
-    const pac = await first(db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", existing[0]);
-    if (pac) return pac;
-  }
+  return existing.length ? first(db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", existing[0]) : null;
+}
+
+/** A Studio product's own Pac, made on first use (with its Stacclet) and set as the product's Pacs. */
+export async function ensureStudioPac(db, product) {
+  const had = await studioPacOf(db, product);
+  if (had) return had;
   const t = now();
   const staccletId = newId("st");
   const pacId = newId("pc");
@@ -90,10 +93,16 @@ export async function ensureStudioPac(db, product) {
       .bind(staccletId, product.project_id, product.title, t, t),
     db.prepare(`INSERT INTO pacs (id, stacclet_id, project_id, title, source, published, created_at, updated_at) VALUES (?, ?, ?, ?, 'studio', 1, ?, ?)`)
       .bind(pacId, staccletId, product.project_id, product.title, t, t),
-    // Only if the product still has no Pac (two first uses at once make one Pac, not two).
-    db.prepare("UPDATE products SET pacs = json_array(?), updated_at = ? WHERE id = ? AND pacs = '[]'").bind(pacId, t, product.id)
+    // Only if the product's Pacs are still what was read (two first uses at once make one Pac, not two; a Pac that was
+    // deleted is replaced).
+    db.prepare("UPDATE products SET pacs = json_array(?), updated_at = ? WHERE id = ? AND pacs = ?").bind(pacId, t, product.id, product.pacs)
   ]);
   const fresh = parseJson((await first(db, "SELECT pacs FROM products WHERE id = ?", product.id)).pacs, []);
-  if (fresh[0] !== pacId) await run(db, "UPDATE pacs SET deleted_at = ? WHERE id = ?", t, pacId);
-  return first(db, "SELECT * FROM pacs WHERE id = ?", fresh[0]);
+  if (fresh[0] !== pacId) {
+    // Lost the race: this call's Pac and Stacclet go; the winner's are used.
+    await db.batch([db.prepare("UPDATE pacs SET deleted_at = ? WHERE id = ?").bind(t, pacId), db.prepare("UPDATE stacclets SET deleted_at = ?, published = 0 WHERE id = ?").bind(t, staccletId)]);
+  }
+  const pac = await first(db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", fresh[0]);
+  if (!pac) fail(409, "try_again", "This product changed meanwhile. Try again.");
+  return pac;
 }

@@ -33,7 +33,11 @@
     const idempotencyKey = recall(memo) || crypto.randomUUID();
     remember(memo, idempotencyKey);
     const made = await api(create, { method: "POST", body: { ...body, filename: file.name, size: file.size, idempotencyKey } });
-    if (!made.ok) throw new Error(made.error.message);
+    // Refused (no room, a stopped upload): the next try starts a fresh version. Offline: keep the key to resume.
+    if (!made.ok) {
+      if (made.status >= 400 && made.status < 500) remember(memo, null);
+      throw new Error(made.error.message);
+    }
     const { upload: up } = made.data;
     const partBytes = up.partBytes;
     const total = Math.max(1, Math.ceil(file.size / partBytes));

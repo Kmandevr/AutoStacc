@@ -7,7 +7,8 @@ import { all, first, run, stmt, now, isGuardFailure } from "../lib/db.js";
 import { getVersion, move, releaseDraftStmt } from "./versions.js";
 import { queueProcess, jobState, jobObjects } from "./engine-client.js";
 import { importResult } from "./import.js";
-import { deleteKeys, abortMultipart } from "../storage/buckets.js";
+import { dropArchives } from "./uploads.js";
+import { deleteKeys } from "../storage/buckets.js";
 
 export const JOB_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
@@ -64,7 +65,7 @@ export async function refresh(app, version) {
       // Another request imported it a moment earlier: its guard rolled this one back. Anything else fails the version.
       if (!isGuardFailure(e)) {
         if (!e.code) console.error(`pack import ${version.id}:`, e && e.message);
-        await fail(app, version, job.id, e.code === "too_many_files" ? "too_many_files" : "import_failed");
+        await fail(app, version, job.id, ["too_many_files", "quota_exceeded"].includes(e.code) ? e.code : "import_failed");
       }
     }
   } else {
@@ -78,9 +79,6 @@ export async function discard(app, version) {
   const moved = await move(app.db, version.id, ["draft", "uploading", "ready", "in_review", "failed"], "discarded");
   if (!moved) return false;
   await run(app.db, "UPDATE pacs SET draft_version_id = NULL, updated_at = ? WHERE id = ? AND draft_version_id = ?", now(), version.pac_id, version.id);
-  const uploads = await all(app.db, "SELECT r2_key, upload_id, status FROM uploads WHERE version_id = ?", version.id);
-  for (const u of uploads.filter((x) => x.status === "open")) await abortMultipart(app.env, u.r2_key, u.upload_id).catch(() => {});
-  await deleteKeys(app.env, uploads.map((u) => u.r2_key));
-  await run(app.db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE version_id = ? AND status = 'open'", now(), version.id);
+  await dropArchives(app, version.id);
   return true;
 }

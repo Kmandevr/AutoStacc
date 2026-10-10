@@ -55,13 +55,20 @@ export default (ctx) => describe("packs in the Studio", () => {
     const { c, products: [product] } = await creatorWithProducts("pk-clean");
     const first = await c.get(`${S}/products/${product.id}`);
     assert.equal(first.status, 200, JSON.stringify(first.data));
-    assert.match(first.data.pac.id, /^pc_/);
+    assert.equal(first.data.pac, null, "looking makes nothing");
     assert.equal(first.data.storage.usedBytes, 0);
     assert.equal(first.data.storage.quotaBytes, 500 * 1024 * 1024);
-    assert.equal((await c.get(`${S}/products/${product.id}`)).data.pac.id, first.data.pac.id, "the same Pac every time");
-    assert.deepEqual(JSON.parse(db(`SELECT pacs FROM products WHERE id = '${product.id}'`)[0].pacs), [first.data.pac.id]);
+    assert.equal(db(`SELECT pacs FROM products WHERE id = '${product.id}'`)[0].pacs, "[]");
 
     const { version } = await build(c, product.id, caseZip("pack-basic"));
+    const pacId = (await c.get(`${S}/products/${product.id}`)).data.pac.id;
+    assert.match(pacId, /^pc_/, "the first upload made the Pac");
+    assert.deepEqual(JSON.parse(db(`SELECT pacs FROM products WHERE id = '${product.id}'`)[0].pacs), [pacId]);
+    // A checked file keeps its type: renaming it into a program after the review is refused.
+    const readme = version.files.find((f) => f.filename === "Read me.txt");
+    const bat = await c.req("PATCH", `${S}/versions/${version.id}/files/${readme.assetId}`, { body: { filename: "Install.bat" } });
+    assert.equal(bat.data.error.code, "extension_changed");
+    assert.equal((await c.req("PATCH", `${S}/versions/${version.id}/files/${readme.assetId}`, { body: { filename: "About.TXT" } })).status, 200);
     assert.equal(version.status, "ready", JSON.stringify(version));
     assert.equal(version.stats.review.verdict, "pass");
     const pub = await c.post(`${S}/versions/${version.id}/publish`, {});
@@ -139,6 +146,40 @@ export default (ctx) => describe("packs in the Studio", () => {
     assert.equal(db(`SELECT COUNT(*) AS n FROM pac_versions v JOIN products p ON p.id = v.product_id WHERE p.id IN ('${a.id}', '${b.id}') AND v.status IN ('draft', 'uploading')`)[0].n, 1);
     const free = r1.status === 409 ? a : b;
     assert.equal((await c.get(`${S}/products/${free.id}`)).data.pac.draftVersionId, null, "the refused product's Pac stays free");
+    // The reserved archive counts for single-file uploads too.
+    const one = await c.req("PUT", `/api/studio/products/${free.id}/files?filename=kick.wav`, { raw: Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVE"), Buffer.alloc(Math.floor(zip.length * 0.6))]), headers: { "Content-Type": "audio/wav" } });
+    assert.equal(one.data.error.code, "quota_exceeded");
+  });
+
+  test("a refused upload's key stays refused; quota counts the files unpacked, not the archive", async () => {
+    const { c, creator, products: [product] } = await creatorWithProducts("pk-unpack");
+    const zip = caseZip("pack-basic");
+    db(`UPDATE creators SET files_quota_bytes = 10 WHERE id = '${creator.id}'`);
+    const key = crypto.randomUUID();
+    const body = { filename: "kit.zip", size: zip.length, idempotencyKey: key };
+    assert.equal((await c.post(`${S}/products/${product.id}/versions`, body)).data.error.code, "quota_exceeded");
+    assert.equal((await c.post(`${S}/products/${product.id}/versions`, body)).data.error.code, "version_closed", "a retry with the same key");
+    // Room for the archive (27 KB) but not its 1.2 MB of files: the check fails it, nothing is claimed.
+    db(`UPDATE creators SET files_quota_bytes = ${zip.length + 1000} WHERE id = '${creator.id}'`);
+    const { version } = await build(c, product.id, zip);
+    assert.equal(version.status, "failed");
+    assert.equal(version.note, "quota_exceeded");
+    assert.equal((await c.get(`${S}/products/${product.id}`)).data.pac.draftVersionId, null);
+  });
+
+  test("a product whose Pac was deleted gets a new one on its next upload", async () => {
+    const { c, products: [product] } = await creatorWithProducts("pk-gone");
+    const { version } = await build(c, product.id, caseZip("pack-basic"));
+    assert.equal((await c.post(`${S}/versions/${version.id}/discard`, {})).status, 200);
+    const old = JSON.parse(db(`SELECT pacs FROM products WHERE id = '${product.id}'`)[0].pacs)[0];
+    db(`UPDATE pacs SET deleted_at = '2026-01-01T00:00:00.000Z' WHERE id = '${old}'`);
+    assert.equal((await c.get(`${S}/products/${product.id}`)).data.pac, null);
+    const made = await create(c, product.id, caseZip("pack-basic"));
+    assert.equal(made.status, 201, JSON.stringify(made.data));
+    const now = JSON.parse(db(`SELECT pacs FROM products WHERE id = '${product.id}'`)[0].pacs);
+    assert.equal(now.length, 1);
+    assert.notEqual(now[0], old);
+    assert.equal(db(`SELECT pac_id FROM pac_versions WHERE id = '${made.data.version.id}'`)[0].pac_id, now[0]);
   });
 
   test("nobody reaches another creator's packs: 404 everywhere, and no changes while impersonating", async () => {
