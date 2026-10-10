@@ -17,7 +17,7 @@ async function list(app) {
       (SELECT COUNT(*) FROM projects p WHERE p.creator_id = c.id AND p.deleted_at IS NULL AND p.published = 1) AS published_projects,
       (SELECT COALESCE(SUM(size_bytes), 0) FROM site_assets a WHERE a.creator_id = c.id AND a.status = 'active') AS used_bytes
     FROM creators c WHERE c.deleted_at IS NULL ORDER BY c.created_at DESC LIMIT 500`);
-  return json({ creators: rows.map((c) => ({ id: c.id, slug: c.slug, name: c.name, source: c.source, status: c.status, trusted: Boolean(c.trusted),
+  return json({ creators: rows.map((c) => ({ id: c.id, slug: c.slug, name: c.name, source: c.source, status: c.status, trusted: Boolean(c.trusted), packReview: c.pack_review || "auto",
     members: c.members, projects: c.projects, publishedProjects: c.published_projects, usedBytes: c.used_bytes,
     quotaBytes: quotaOf(c), ownQuota: c.storage_quota_bytes != null, feeBps: feeBpsOf(c), ownFee: c.platform_fee_bps != null, createdAt: c.created_at })) });
 }
@@ -42,9 +42,14 @@ async function update(app, { creatorId }) {
     if (!["active", "suspended"].includes(body.status)) fail(400, "invalid_field", "status must be active or suspended.");
     set.status = body.status;
   }
+  // "always_hold": every Pack Builder version of this creator waits for an admin, even when the automated review is clean.
+  if (body.packReview !== undefined) {
+    if (!["auto", "always_hold"].includes(body.packReview)) fail(400, "invalid_field", "packReview must be auto or always_hold.");
+    set.pack_review = body.packReview;
+  }
   if (body.platformFeeBps !== undefined) set.platform_fee_bps = nullableInt(body.platformFeeBps, "platformFeeBps", 10000);
   if (body.storageQuotaBytes !== undefined) set.storage_quota_bytes = nullableInt(body.storageQuotaBytes, "storageQuotaBytes", 1024 ** 4);
-  if (!Object.keys(set).length) fail(400, "nothing_to_change", "Send trusted, status, platformFeeBps or storageQuotaBytes.");
+  if (!Object.keys(set).length) fail(400, "nothing_to_change", "Send trusted, status, packReview, platformFeeBps or storageQuotaBytes.");
   await run(app.db, `UPDATE creators SET ${Object.keys(set).map((k) => `${k} = ?`).join(", ")}, updated_at = ? WHERE id = ?`, ...Object.values(set), now(), creator.id);
   await audit(app, "creator.updated", { targetType: "creator", targetId: creator.id, detail: set });
   // A suspended creator's products come off sale at once (buyers keep what they own); the creator puts them back on sale
