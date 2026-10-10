@@ -10,6 +10,13 @@ updated: 2026-10-10
 > **PLANNED / NOT IMPLEMENTED.** This note is the approved plan (owner, 2026-10-10). None of it exists yet: no engine, Container, Queue, engine Worker, pack tables or Pack Builder UI. Today's file handling is described in [store](store.md) and [library](library.md). Decisions behind it: [decisions](decisions.md#2026-10-10-pack-builder-asset-engine-and-selective-downloads-planned). Work is tracked in issue #101.
 
 
+> **Rev. 4 (2026-10-10).** The owner re-sent the brief and confirmed **Workers Paid**. The rev. 3 decisions all stand. Two points of the new brief change the design:
+>
+> 1. **"Use browser-side processing and Web Workers where beneficial."** The same Rust engine is also compiled to WebAssembly for the Pack Builder. That gives an instant tree and error list before anything uploads, uploads per file instead of the whole ZIP, and skips unchanged files in revisions. The Container stays the authority and re-verifies everything.
+> 2. **"Prebuild or cache common packages."** Handled as a measured, flagged cache for full-pack ZIPs only (section 8).
+>
+> Main branch unchanged since rev. 3 (f2e0ae3) [V].
+
 Labels: **[V]** verified in the repo or in Cloudflare's docs this session · **[R]** recommendation · **[A]** assumption, checked in Phase 0 · **[O]** open (section H).
 
 ## Context
@@ -116,7 +123,7 @@ AutoStacc sells Pacs through products. Today a Pac's contents are loose `product
 
 Heavy work moves from the creator's browser to a **server Container running the Rust engine natively**.
 
-- The browser becomes a thin uploader and review UI. No WASM in the browser for the first release, which also means no CSP change.
+- The browser runs the uploader and review UI, plus (rev. 4) the same engine as WebAssembly for instant listing, per-file upload and revision dedup (below). The Container is still the authority.
 - Pages Functions stay the application and authority layer (JS).
 - A new small **engine Worker** (JS) owns the Container and the job queue.
 
@@ -146,6 +153,25 @@ PAGES server/packs/ imports result.json into pac tables (idempotent), version �
 CUSTOMER: POST /api/downloads/bundle → token → Pages streams store-only ZIP64 (headers from stored CRC/size,
           R2 bodies passed through untouched) — no Container involved in downloads
 ```
+
+### Rev. 4: the same engine also runs in the browser (WebAssembly) [R]
+
+The engine's I/O-free modules (`zipread`, `hash`, `formats`, `facts`, `naming`, `classify`, `diff`) build twice from the same crate:
+
+- a native binary for the Container;
+- `engine-web.wasm` (`wasm32-unknown-unknown`, hand-rolled C-ABI loader, no wasm-bindgen; target ≤400 KB gz) for 2–4 Web Workers in the Pack Builder.
+
+`analysis` (decode/DSP) stays native-only, to keep the browser download small.
+
+| Browser does (free CPU, before upload) | Why it helps | Server still does (authority) |
+| --- | --- | --- |
+| Reads the ZIP central directory via `Blob.slice` (no full load) → tree and problems (unsafe paths, encrypted, unsupported, collisions) in about a second | Usability: the creator sees mistakes before uploading GBs | Re-applies every guard to what was actually uploaded |
+| Stream-inflates each entry, SHA-256 + CRC32, identify, header facts, suggestions | Uploads **each original file** instead of the ZIP. Resumable per file; no temporary ZIP in R2 | Single puts carry `sha256`, so R2 rejects any mismatch. The Container re-derives facts and analysis |
+| Asks "which of these hashes do you already have?" | **Revisions upload only changed files** (saves bandwidth, R2 operations and Container minutes inside the $5 plan) | Dedup is per creator only (no cross-tenant oracle) |
+| Revision diff preview | The creator sees the changes immediately | Container `diff` is authoritative at submit |
+
+- **Fallback:** if the WASM can't load (old browser, locked-down device), the whole ZIP is uploaded and the Container unpacks it. Same contract, same result.
+- **CSP:** add `'wasm-unsafe-eval'` to `/studio` and `/admin` only. Phase 0 checks that `_headers` applies to these Function-served pages.
 
 **Why this split**
 
@@ -331,6 +357,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 | Revision diff | `replaces=` only | `diff` | Container | Thousands of entries | ms | Fuzzy matches need confirmation |
 | Deflate variants | none | `pack` | Container (flagged) | Only small, compressible files | Bounded | — |
 | Legacy import (hash existing files) | none | `job import-legacy` | Container | GB reads | Streaming | — |
+| ZIP listing, per-file extraction, hashing, header facts, suggestions, diff preview (rev. 4) | none | same modules, WASM build | **Browser** (Web Workers) before upload; Container re-verifies | Instant feedback, per-file upload, revision dedup | Targets: tree <1 s for 5k entries, ≥200 MB/s inflate+hash in Chrome | Browser differences: Phase 0 benchmarks Chrome, Firefox, Safari; ZIP-upload fallback |
 | Inheritance resolution | none | — (JS `pack-resolve.js`) | Browser + server | Simple logic, needed live in the UI | µs | Parity test browser vs server |
 | Bundle ZIP framing | none | — (JS server/downloads/zip.js) | Pages | Pass-through I/O, no compute; streaming stays in Workers (no duration limit while the client is connected [V]) | Header bytes only | Verified by the engine's `zipread` in CI |
 | Derived facets/search | `facets.js`, `searchText` | — | Pages at publish | DB-bound | One set-based statement | — |
@@ -352,10 +379,10 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 
 | Phase | Objective | Changes / new | Acceptance |
 | --- | --- | --- | --- |
-| **0. Platform proof of concept** (~3–5 days) | Prove the Container path, its cost inside the $5 plan, and record the decision | server/usage/ budget meters; `workers/engine/` + Container DO + Queue (dev/preview/prod) via `scripts/cloudflare.js`; minimal Rust `zipread`+`hash`+`io`; R2 access from the Container (S3 token vs FUSE); bench harness test/bench/ (generated 2 GB / 1,500-file pack, 10k-entry ZIP, 1.5 GB RF64) | Cold start, throughput, cost per GB measured; `docs/decisions.md` + docs/engine.md record Rust and the infrastructure; Docker and local dev documented |
+| **0. Platform proof of concept** (~3–5 days) | Prove the Container path, its cost inside the $5 plan, and record the decision | server/usage/ budget meters; `workers/engine/` + Container DO + Queue (dev/preview/prod) via `scripts/cloudflare.js`; minimal Rust `zipread`+`hash`+`io`, built both natively and as `engine-web.wasm` (loaded in a browser Web Worker, `'wasm-unsafe-eval'` CSP check on `/studio` and `/admin`); R2 access from the Container (S3 token vs FUSE); bench harness test/bench/ (generated 2 GB / 1,500-file pack, 10k-entry ZIP, 1.5 GB RF64) | Cold start, throughput, cost per GB measured; `docs/decisions.md` + docs/engine.md record Rust and the infrastructure; Docker and local dev documented |
 | **1. Contract + vocabulary + schema** | The seams before the code | `engine/contract/v1/*.json`, `engine/conformance/` fixtures + scripts/engine-conformance.js; vocabulary extension; `data/content-types.js` generated; `0014_packs.sql`; Stacclet/Pac sync; `LIMITS` 500 MB; features file; **mock engine** (test/mock-engine/, JS, returns fixture results) so API tests run without Docker | Unit tests; `build.js --check`; existing suites green |
 | **2. Engine core** | Trusted processing | `zipread` guards, `formats`, `facts`, `naming`, `classify`, `job process-version` stage 1 | `cargo test`, `cargo fuzz` targets, conformance passes |
-| **3. Upload → process → publish → bundle (vertical slice)** | First real value | server/packs/ (versions, uploads with R2 multipart via the binding, process, import results, edits, publish), server/packs/engine-client.js; `server/files/upload.js`/`buckets.js` (multipart); server/downloads/bundle.js + `zip.js`; `/api/library` `folderPath`; `stacc-model.js` folder level; minimal builder UI (js/pack-builder.js, `-upload.js`, `-tree.js`) in the admin | API suite `packs.suite.js` (404s, idempotency, failed job leaves live intact, publish atomicity); browser E2E byte-equality; refund rule after a bundle download |
+| **3. Upload → process → publish → bundle (vertical slice)** | First real value | server/packs/ (versions, uploads with R2 multipart via the binding, process, import results, edits, publish), server/packs/engine-client.js; `server/files/upload.js`/`buckets.js` (multipart); server/downloads/bundle.js + `zip.js`; `/api/library` `folderPath`; `stacc-model.js` folder level; minimal builder UI (js/pack-builder.js, `-upload.js`, `-tree.js`, js/engine/engine-client.js + `engine-worker.js`: list the ZIP in the browser, upload each file with its SHA-256, whole-ZIP fallback) in the admin | API suite `packs.suite.js` (404s, idempotency, failed job leaves live intact, publish atomicity); browser E2E byte-equality; refund rule after a bundle download |
 | **4. Review UI + inheritance** | Guided automation | js/pack-resolve.js, `-review.js` (exceptions first, "auto" with reasons, bulk edit, folder defaults, move preview), `asset_values`/folder-values routes | Inheritance matrix tests; E2E correction and move keep explicit values |
 | **5. Studio creators + automated review** | Open to creators | Studio entry in `js/studio-products.js`; Pac/Stacclet auto-create; quotas (reservation at version create, race-proof); **automated review** replaces the per-file pending flow, as the documented "scanner between pending and published" | Quota race; auto-pass publishes; each red flag holds with its reason; admin override audited; impersonation refused |
 | **6. Revisions** | Safe replacement | `diff` in the engine; `-versions.js` review; blob dedup; carry-over; 7-day grace sweep (engine Worker cron, allowed in a Worker); buyers' "Updated" badge + removed-files list for 30 days (`pac_versions.stats.removed`, shown by `js/library-view.js`) | Diff matrix; unchanged files keep ids; failed revision leaves live intact |
@@ -363,7 +390,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 | **7. Store integration** | Contents-driven discovery | Derived facets at publish; `GET /api/products/:id/contents`; product page tree; new filters through `product_facets` | Product qualifies on ≥1 asset; drafts excluded; creator facets survive; search timing within ±20% |
 | **8. Analysis** | BPM/key/peaks suggestions | `analysis` (stage 2); labelled set; threshold calibration | Accuracy report; inferred values never shown as verified |
 | **9. Hardening, migration, docs** | Release | Legacy import job; deflate variants (flag); weekly fuzzing; perf suite; `/privacy` (`data/legal.js`) + creator wording ("checks files for type, not content" changes); `docs/packs.md`, docs/engine.md, updated `architecture.md`, `store.md`, `library.md`, `creators.md`, `discovery.md`, `development.md`, `decisions.md`; issues for deferred work | Section I |
-| **10. Optional** | — | Per-file audio previews (ffmpeg in the Container), MIDI previews, browser WASM instant preview, audio fingerprinting for automated review | Each gated by need |
+| **10. Optional** | — | Per-file audio previews (ffmpeg in the Container), MIDI previews, audio fingerprinting for automated review | Each gated by need |
 
 Reviews: `architect` before Phase 3; `security-reviewer` + `backend-reviewer` after 3, 5, 6; `frontend-reviewer` after 3, 4, 6.
 
@@ -389,7 +416,15 @@ Reviews: `architect` before Phase 3; `security-reviewer` + `backend-reviewer` af
 7. The library shows SHA-256.
 8. The E2E test compares hashes.
 
-**Caching:** no stored ZIPs. A store-only ZIP built from precomputed CRCs is deterministic and costs no CPU to stream; an `ETag` (version + file list) lets browsers and resumers reuse it.
+**Delivery and caching** (brief: "deliver individual files directly, prebuild or cache common packages, generate custom archives on demand")
+
+- **Single files:** streamed directly, as today.
+- **Custom selections and folders:** generated on demand as store-only ZIPs from precomputed CRCs and sizes. That's deterministic (same input → same bytes), costs almost no Worker CPU, and gets an `ETag` (version + file list), so browsers and download managers can reuse and resume them.
+- **Full-pack ZIP** (the common package): **prebuilt only behind the flag `downloads.packCache`**.
+  - Built once per published version from the same layout, stored as a derived object, and verified by CRC.
+  - Reused until the version changes; deleted with it.
+  - Off by default: with store-only packaging, a cached copy saves no CPU and doubles the pack's R2 storage, which matters inside the 10 GB free allowance.
+  - Phase 9 measures streaming vs serving the cached object (time to first byte, Worker CPU per GB) and switches it on only if streaming proves slower in practice, or once deflate variants make on-demand building costly.
 
 ## Section 9: library and selective downloads [R]
 
@@ -548,7 +583,7 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 
 - Per-asset purchasing / Pac-level ownership: the owner chose whole products.
 - Keeping every old version for buyers: "latest only".
-- Running the engine both in the browser and the Container in v1: browser WASM only later, for an instant preview.
+- Running heavy analysis (decode, BPM/key) in the browser: it stays Container-only; the browser build carries only listing, hashing, facts and suggestions.
 - Stored, cached full-pack ZIPs: determinism makes them unnecessary.
 - At-rest compression; deflate for audio.
 - Machine-learning classification: evidence rules + measured thresholds first.
@@ -575,6 +610,8 @@ The vertical slice (0–3) is the first point of real value.
 | Containers' maturity/GA and cold starts [A] | Phase 0 gate; the engine sits behind `engine-client.js` + contract, so the runner can be swapped |
 | Container/R2 cost beyond the $5 plan | `basic` instance, one job at a time, sleep after 30 s; dedup; analysis skipped near the cap; server/usage/ budget guard (80% alert, 95% pause); global storage cap 9 GB of the 10 GB free R2; cost per GB measured in Phase 0 |
 | `basic` instance too slow for big packs | Phase 0 benchmark; switch to standard-1 with one config line (fewer free hours: ~6/month) |
+| WASM speed and memory differ between browsers | Engine works in bounded chunks (4 MiB) per Web Worker; worker count adapts; whole-ZIP upload fallback; Phase 0 benchmarks three browsers |
+| Browser and Container results disagree | The Container's result always wins; a mismatch is logged with both engine versions and covered by a parity test on the conformance fixtures (WASM vs native) |
 | Local development needs Docker | Mock engine for `npm run test:store`; Docker only for engine work and conformance |
 | Multipart upload through the Worker (bytes pass through Pages) | I/O, not CPU; parts ≤64 MiB; alternative: presigned R2 URLs (needs bucket CORS + an S3 key in the browser flow), not chosen |
 | Malicious archives | Rust, guards, fuzzing, no secrets in the Container |
