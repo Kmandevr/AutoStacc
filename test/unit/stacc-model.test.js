@@ -141,3 +141,14 @@ test("a Pac published from Pack Builder shows its own folders; others keep conte
   assert.equal(pacs.find((p) => p.id === "fs-midi").folders, null);
   assert.deepEqual(ids(stacc.filter(list, { q: "kicks" })), ["pf_k1", "pf_k2"], "search finds folder names");
 });
+
+test("a Studio product's pack (its Pac isn't in the catalog) keeps its folders under the product", () => {
+  const studio = [{ productId: "sp_1", title: "Drum Kit", projectId: "pj_studio", pacs: ["pc_studio"], files: [
+    file("pf_s1", "Snare.wav", { pacId: "pc_studio", folderPath: "Drums" }),
+    file("pf_s2", "Notes.txt", { pacId: "pc_studio", folderPath: "" })
+  ] }];
+  const product = stacc.tree(stacc.assetsFrom(studio, catalog), catalog)[0].products[0];
+  assert.equal(product.id, "sp_1");
+  assert.deepEqual(product.folders.map((f) => [f.path, ids(f.assets)]), [["", ["pf_s2"]], ["Drums", ["pf_s1"]]]);
+  assert.equal(stacc.tree(stacc.assetsFrom(items, catalog), catalog)[0].products[0].folders, null, "loose files keep content types");
+});
