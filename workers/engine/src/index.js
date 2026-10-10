@@ -96,6 +96,9 @@ export default {
     if (request.method === "GET" && url.pathname === "/v1/health") {
       // Behind the admin token, so the reason for a failure is shown rather than Cloudflare's error page.
       try {
+        // ?restart=1: stop the running engine first, so the next start runs the newest deployed image (a running
+        // Container keeps its image until it stops; the smoke test uses this right after a deploy).
+        if (url.searchParams.get("restart") === "1") await engine(env).destroy().catch(() => {});
         const res = await engine(env).fetch(new Request("http://engine/healthz"));
         const text = await res.text();
         try {

@@ -31,7 +31,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   console.log(`health ${health.status} in ${coldMs} ms (includes the Container's cold start): ${healthBody}`);
   if (!health.ok) process.exit(1);
 
-  // A new Container image rolls out over a minute or two; until then the old engine answers. Wait for this version.
+  // A running Container keeps its image until it stops, so if the old engine answers, restart it and wait for this version.
   const want = /^version = "([^"]+)"/m.exec(fs.readFileSync(path.join(__dirname, "..", "engine/Cargo.toml"), "utf8"))[1];
   const rollout = Date.now();
   for (let v = JSON.parse(healthBody).engineVersion; v !== want; ) {
@@ -39,8 +39,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       console.log(`FAIL the deployed engine still reports ${v}, not ${want}, after 4 minutes`);
       process.exit(1);
     }
-    await sleep(10000);
-    const h = await fetch(`${base}/v1/health`, { headers: auth });
+    await sleep(15000);
+    const h = await fetch(`${base}/v1/health?restart=1`, { headers: auth });
     v = h.ok ? (await h.json()).engineVersion : v;
   }
   if (Date.now() - rollout > 1000) console.log(`engine ${want} answered after a ${Math.round((Date.now() - rollout) / 1000)} s rollout`);
