@@ -38,7 +38,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `orders/` | orders, status machine, fulfilment, guest keys, customer refunds (`refunds.js`) | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/orders/:id/refund`, `POST /api/guest/key` |
 | `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
 | `downloads/` | signed links, streaming private files | `POST /api/downloads`, `GET /api/downloads/:token` |
-| `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits | (used by downloads, library, admin) |
+| `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits; the allowed file types match the vocabulary's `FORMATS` ([discovery](discovery.md)) | (used by downloads, library, admin) |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
 | `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), payout requests (`payouts.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
