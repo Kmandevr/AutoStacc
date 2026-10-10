@@ -179,8 +179,9 @@ export async function updateProduct(db, { product, project, creator, input }) {
 export async function productViews(db, rows) {
   if (!rows.length) return [];
   const facets = await facetsOf(db, rows.map((r) => r.id));
-  const files = await all(db, `SELECT id, product_id, filename, size_bytes, status, status_note, active FROM product_files
-    WHERE product_id IN (${rows.map(() => "?").join(",")}) AND status <> 'deleted' ORDER BY created_at`, ...rows.map((r) => r.id));
+  // Files a Pack Builder version delivers are managed there (js/studio-packs.js): only counted here.
+  const files = await all(db, `SELECT id, product_id, filename, size_bytes, status, status_note, active, version_id FROM product_files
+    WHERE product_id IN (${rows.map(() => "?").join(",")}) AND status <> 'deleted' AND retired_at IS NULL ORDER BY created_at`, ...rows.map((r) => r.id));
   return rows.map((p) => ({
     id: p.id, title: p.title, description: p.description, type: p.type, priceCents: p.price_cents, currency: p.currency, artwork: p.artwork,
     tags: parseJson(p.tags, []), includes: parseJson(p.metadata, {}).includes || [], published: Boolean(p.published), salesPaused: Boolean(p.sales_paused),
@@ -189,7 +190,8 @@ export async function productViews(db, rows) {
     // Values the product's own words point to and it doesn't have yet, for the creator to accept or ignore.
     suggestions: Object.fromEntries(Object.entries(suggestFacets(p.type, `${p.title} ${p.description} ${parseJson(p.tags, []).join(" ")}`))
       .map(([f, vs]) => [f, vs.filter((v) => !((facets[p.id] || {})[f] || []).includes(v))]).filter(([, vs]) => vs.length)),
-    files: files.filter((f) => f.product_id === p.id && f.active).map((f) => ({ id: f.id, filename: f.filename, sizeBytes: f.size_bytes, status: f.status, note: f.status_note || "" }))
+    files: files.filter((f) => f.product_id === p.id && f.active && !f.version_id).map((f) => ({ id: f.id, filename: f.filename, sizeBytes: f.size_bytes, status: f.status, note: f.status_note || "" })),
+    packFiles: files.filter((f) => f.product_id === p.id && f.active && f.version_id).length
   }));
 }
 

@@ -1,9 +1,9 @@
-// Control Center, Packs tab: reviewing a checked version before it's published (docs/packs.md, Phase 4). Files that
+// Pack Builder (Control Center and Studio): reviewing a checked version before it's published (docs/packs.md, Phase 4). Files that
 // need a decision come first; each value shows where it comes from (yours, a folder's default, a suggestion you
 // accepted, or one the engine is sure of); unsure suggestions are offered to accept or reject; selected files can be
 // given a value, sent back to inheriting, or moved to another folder (with a preview of what that changes, from
-// js/pack-resolve.js); a folder can be given a default for everything below it. Sets GS.packReview { render, bind }
-// for js/admin-packs.js. Needs js/util.js, js/pack-resolve.js, data/content-types.js and data/vocabulary.js.
+// js/pack-resolve.js); a folder can be given a default for everything below it. Sets GS.packReview { render, bind(el, onChanged, base) }
+// for js/admin-packs.js and js/studio-packs.js (base: the scope's API prefix). Needs js/util.js, js/pack-resolve.js, data/content-types.js and data/vocabulary.js.
 (function () {
   "use strict";
 
@@ -57,14 +57,14 @@
   }
 
   // One handler set per tab; the open version is read from its box each time.
-  function bind(el, onChanged) {
+  function bind(el, onChanged, base = "/api/admin/packs") {
     const box = () => $("[data-pack-version]", el);
     const picked = () => [...el.querySelectorAll("[data-pick]:checked")].map((x) => x.dataset.pick);
     const status = (t) => { const m = $("[data-review-tools] [role=status]", el); if (m) m.textContent = t; };
     const current = () => box().__version;
     async function send(method, path, body, btn) {
       if (btn) btn.disabled = true;
-      const res = await api(`/api/admin/packs/versions/${encodeURIComponent(current().id)}${path}`, { method, body });
+      const res = await api(`${base}/versions/${encodeURIComponent(current().id)}${path}`, { method, body });
       if (btn) btn.disabled = false;
       if (!res.ok) { status(res.error.message); return; }
       onChanged(res.data.version);

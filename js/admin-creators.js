@@ -1,6 +1,7 @@
 // Control Center: the Creators tab. Every creator with its address, projects, storage and settings, and the switches
 // to run free creator sites: trust (lets search engines index its pages), suspend (its pages and images disappear),
-// and its own storage quota or platform fee (empty = the platform default). Talks to /api/admin/creators
+// whether its packs always wait for review (else only flagged ones do), and its own storage quota or platform fee
+// (empty = the platform default). Talks to /api/admin/creators
 // (server/admin/creators.js). Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
@@ -22,9 +23,10 @@
         <td>${c.publishedProjects} live / ${c.projects}</td>
         <td>${mb(c.usedBytes)} of <input type="number" min="0" step="1" aria-label="Quota in MB for ${e(c.name)}" data-quota value="${c.ownQuota ? Math.round(c.quotaBytes / 1048576) : ""}" placeholder="${Math.round(c.quotaBytes / 1048576)}"> MB</td>
         <td><input type="number" min="0" max="10000" step="1" aria-label="Platform fee in basis points for ${e(c.name)}" data-fee value="${c.ownFee ? c.feeBps : ""}" placeholder="${c.feeBps}"></td>
-        <td>${c.status === "active" ? "Active" : "<strong>Suspended</strong>"}${c.trusted ? " · Trusted" : ""}</td>
+        <td>${c.status === "active" ? "Active" : "<strong>Suspended</strong>"}${c.trusted ? " · Trusted" : ""}${c.packReview === "always_hold" ? " · Packs always reviewed" : ""}</td>
         <td><button class="btn ghost small" type="button" data-save>Save limits</button>
           <button class="btn ghost small" type="button" data-set='${JSON.stringify({ trusted: !c.trusted })}'>${c.trusted ? "Untrust" : "Trust"}</button>
+          <button class="btn ghost small" type="button" data-set='${JSON.stringify({ packReview: c.packReview === "always_hold" ? "auto" : "always_hold" })}'>${c.packReview === "always_hold" ? "Review flagged packs only" : "Review every pack"}</button>
           <button class="btn ghost small" type="button" data-set='${JSON.stringify({ status: c.status === "active" ? "suspended" : "active" })}'>${c.status === "active" ? "Suspend" : "Reinstate"}</button></td>
       </tr>`).join("")}</tbody></table></div>`;
   }
