@@ -89,4 +89,6 @@ Machine: this repository's cloud development container, Intel Xeon @ 2.1 GHz (4 
 - **What the $5 plan's Container allowance covers:** a job costs about 1 GiB × (job time + 15 s awake after it). For a 1 GB deflated pack that is about 36 GiB-seconds, so the 25 GiB-hours included are roughly 2,500 such packs a month; CPU (375 vCPU-minutes) allows about 4,400 and disk (200 GB-hours) about 5,000. Memory is the limit, far above the plan's estimate of 250–500. R2 transfer time inside Cloudflare isn't measured yet.
 - **Browser:** a 1 GB pack is checked in about 8 seconds with 4 Web Workers, far less than uploading it takes (about 3 minutes at 50 Mbit/s), so processing never holds up the creator.
 
-Not measured yet (needs the deployed Container): cold start on Cloudflare, R2 throughput from the Container, real billed usage per job.
+- **Deployed on Cloudflare (2026-10-10, smoke test on the `pack-basic` case):** health answered in 0.3–0.7 s from asleep; a queued job answered in 2.9 s end to end (1.3 s waiting in the queue, 0.6 s in the Worker, 0.4 s inside the engine), first attempt. Right after a new image is deployed the Container rolls out for about a minute, so the first job can wait for retries (one took 75 s).
+
+Not measured yet: storage throughput through the engine Worker on a large pack, and billed usage per job (needs Account Analytics read access, for the budget guard).
