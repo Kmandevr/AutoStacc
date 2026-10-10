@@ -16,6 +16,8 @@ node_modules/
 dist/
 test-results/
 playwright-report/
+engine/target/
+test/bench/out/
 *.log
 
 # Personal Claude Code settings (shared ones are .claude/settings.json)

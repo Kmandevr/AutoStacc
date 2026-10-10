@@ -1,0 +1,2 @@
+# Only the crate's sources go into the image build.
+target
