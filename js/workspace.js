@@ -109,7 +109,7 @@
       const a = act && actions[Number(act.dataset.wsAction)];
       if (a && a.act && !a.href) cfg.onAction && cfg.onAction(a.act, act);
     });
-    document.addEventListener("click", (ev) => { if (!ev.target.closest(".ws-menu")) closeMenu(false); });
+    document.addEventListener("click", (ev) => { if (ws.isConnected && !ev.target.closest(".ws-menu")) closeMenu(false); });
 
     ws.addEventListener("keydown", (ev) => {
       if (!pop.hidden && ev.target.closest(".ws-popover")) {
