@@ -34,10 +34,10 @@ async function create(app, { projectId }) {
 
 async function change(app, { productId }) {
   const user = await requireUser(app);
-  await limit(app, "studio-product-edit", 120, 3600);
+  await limit(app, "studio-product-edit", 600, 3600);
   const { product, project, creator } = await requireOwnProduct(app.db, productId, user);
   const input = cleanProductInput(await readJson(app.request, 8 * 1024));
-  const updated = await updateProduct(app.db, { product, project, creator, input });
+  const updated = await updateProduct(app.db, { product, project, creator, input, user });
   return json({ product: (await productViews(app.db, [updated]))[0] });
 }
 

@@ -1,7 +1,8 @@
 // Products a creator makes in the Studio (D1 products with source 'studio', one per row, under one of the creator's
 // projects): checking what they type, creating, changing and removing them, and the access check for an account that may
 // manage one. Price, availability and ownership stay the store's (server/catalog, server/cart): this only writes the rows.
-// A product goes on sale (published) only with a file a buyer could download (server/files/files.js).
+// A product goes on sale (published) only when it passes the readiness check (server/creators/readiness.js), and every
+// change is written to its release history (server/creators/product-history.js).
 import { all, first, run, randomToken, now, parseJson } from "../lib/db.js";
 import { fail, str } from "../lib/http.js";
 import { LIMITS, SELLING } from "./policy.js";
@@ -12,6 +13,9 @@ import { ownImages, imageSrc } from "../sites/images.js";
 import { DELIVERABLE } from "../files/files.js";
 import { cleanFacets, cleanBpm, cleanSpecs, suggestFacets, searchText, schemaOf } from "../discovery/vocabulary.js";
 import { facetsOf, replaceFacetsStmts } from "../discovery/facets.js";
+import { loadReadiness } from "./readiness.js";
+import { recordEvent } from "./events.js";
+import { changeEvents, recordChanges } from "./product-history.js";
 
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export { productPath };
@@ -140,14 +144,28 @@ export async function createProduct(db, { creator, project, user, input }) {
     id, input.title, input.description || "", input.type, input.priceCents, art, JSON.stringify(input.tags || []), JSON.stringify(input.includes ? { includes: input.includes } : {}),
     project.id, user.id, t, t, creator.id, LIMITS.productsPerCreator);
   if (!res.meta.changes) fail(409, "limit_reached", `A creator can have up to ${LIMITS.productsPerCreator} products.`);
+  await recordEvent(db, { productId: id, kind: "created", actorId: user ? user.id : null, detail: { priceCents: input.priceCents } });
   return saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", id), details, { project, creator });
 }
 
 export const hasDeliverableFile = async (db, productId) =>
   Boolean(await first(db, `SELECT 1 FROM product_files WHERE product_id = ? AND ${DELIVERABLE} LIMIT 1`, productId));
 
-// Applies a cleaned edit. Going on sale needs a downloadable file; removing takes it off sale (buyers keep their files).
-export async function updateProduct(db, { product, project, creator, input }) {
+// Refuses `published: true` unless the product (with this edit's title and price) is ready. The code stays
+// "needs_file" when a file is the only thing missing, else "not_ready"; both carry the blocking list.
+async function requireReady(db, product, creator, input) {
+  const overrides = {};
+  if (input.title !== undefined) overrides.title = input.title;
+  if (input.priceCents !== undefined) overrides.price_cents = input.priceCents;
+  const { blocking } = await loadReadiness(db, product, creator, overrides);
+  if (!blocking.length) return;
+  const code = blocking.length === 1 && blocking[0].code === "needs_file" ? "needs_file" : "not_ready";
+  fail(409, code, blocking[0].message, { blocking });
+}
+
+// Applies a cleaned edit. Going on sale needs the readiness check; removing takes it off sale (buyers keep their files).
+// user: who made the change, for the release history.
+export async function updateProduct(db, { product, project, creator, input, user = null }) {
   const details = cleanDetails(input.type || product.type, input);
   const sets = [], args = [];
   const add = (col, v) => { sets.push(`${col} = ?`); args.push(v); };
@@ -160,9 +178,7 @@ export async function updateProduct(db, { product, project, creator, input }) {
   if (input.artworkId !== undefined) add("artwork", await artworkSrc(db, creator.id, input.artworkId));
   if (input.salesPaused !== undefined) add("sales_paused", input.salesPaused ? 1 : 0);
   if (input.published !== undefined) {
-    if (input.published && !(await hasDeliverableFile(db, product.id))) {
-      fail(409, "needs_file", "Add a file and have it approved before putting this on sale.");
-    }
+    if (input.published) await requireReady(db, product, creator, input);
     add("published", input.published ? 1 : 0);
   }
   if (input.deleted !== undefined) {
@@ -170,9 +186,13 @@ export async function updateProduct(db, { product, project, creator, input }) {
     if (input.deleted) add("published", 0);
   }
   if (!sets.length && !Object.keys(details).length) fail(400, "invalid_field", "Nothing to change.");
+  const facetsBefore = (await facetsOf(db, [product.id]))[product.id] || {};
   if (sets.length) await run(db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), product.id);
   else await run(db, "UPDATE products SET updated_at = ? WHERE id = ?", now(), product.id);
-  return saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", product.id), details, { project, creator });
+  const saved = await saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", product.id), details, { project, creator });
+  const facetsAfter = (await facetsOf(db, [product.id]))[product.id] || {};
+  await recordChanges(db, product.id, user ? user.id : null, changeEvents(product, saved, { facetsBefore, facetsAfter }));
+  return saved;
 }
 
 // The creator's view of a product with its files (and why a file isn't delivered yet).
