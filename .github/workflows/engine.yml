@@ -128,3 +128,17 @@ jobs:
           printf '%s' "$R2_KEY" | npx wrangler secret put R2_ACCESS_KEY_ID
           printf '%s' "$R2_SECRET" | npx wrangler secret put R2_SECRET_ACCESS_KEY
           if [ -n "$ADMIN_TOKEN" ]; then printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ENGINE_ADMIN_TOKEN; fi
+      - name: Smoke test the deployed engine (needs ENGINE_ADMIN_TOKEN)
+        if: steps.ready.outputs.go == 'true' && env.ADMIN_TOKEN != ''
+        env:
+          ENGINE_ADMIN_TOKEN: ${{ secrets.ENGINE_ADMIN_TOKEN }}
+        run: |
+          url=$(grep -oE "https://autostacc-engine\.[a-z0-9-]+\.workers\.dev" /tmp/deploy.log | head -1)
+          if [ -z "$url" ]; then echo "::warning::No workers.dev address in the deploy output; smoke test skipped."; exit 0; fi
+          key="incoming/smoke/pack-basic-${GITHUB_RUN_ID}.zip"
+          npx wrangler r2 object put "autostacc-files/$key" --file ../../engine/conformance/cases/pack-basic.zip --remote
+          set +e
+          node ../../scripts/engine-smoke.js "$url" autostacc-files "$key" pack-basic; code=$?
+          npx wrangler r2 object delete "autostacc-files/$key" --remote
+          if [ -s /tmp/smoke-job ]; then npx wrangler r2 object delete "autostacc-files/jobs/$(cat /tmp/smoke-job)/result.json" --remote; fi
+          exit $code
