@@ -64,7 +64,7 @@ export async function usageProblem(db, promo, { email = "", userId = null } = {}
 
 // How much a code takes off these priced lines, and each line's share (largest remainder, so shares add up exactly).
 export function codeDiscount(promo, lines, products, totalCents) {
-  const eligible = lines.filter((l) => !l.problem && l.currency === promo.currency && appliesTo(promo, products.get(l.productId)));
+  const eligible = lines.filter((l) => !l.problem && !l.held && l.currency === promo.currency && appliesTo(promo, products.get(l.productId)));
   const base = eligible.reduce((s, l) => s + l.lineTotalCents, 0);
   if (!base) return { discountCents: 0, shares: new Map() };
   const discountCents = Math.max(0, Math.min(off(promo, base), base, totalCents - MIN_CHARGE_CENTS));

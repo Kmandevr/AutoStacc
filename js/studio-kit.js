@@ -49,5 +49,13 @@
     </div>`;
   }
 
-  window.GS.studioKit = { status, size, when, money, sentence, activity, readiness };
+  // While AutoStacc has creator checkout closed (no marketplace key yet, or paused), buyers can add but not buy.
+  function checkout(c) {
+    if (!c || c.open !== false) return "";
+    return `<p class="msg" role="status">${c.reason === "no_key"
+      ? "Creator checkout isn't open on AutoStacc yet. You can publish now: buyers can find your product and add it to their cart, and they can pay once checkout opens."
+      : "AutoStacc has paused creator checkout for now. Buyers can still add your product to their cart."}</p>`;
+  }
+
+  window.GS.studioKit = { status, size, when, money, sentence, activity, readiness, checkout };
 })();

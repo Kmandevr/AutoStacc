@@ -119,3 +119,8 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 .audit-action:is([data-area="order"], [data-area="test_purchase"], [data-area="entitlement"]) { border-color: var(--amber); }
 .audit-action:is([data-area="product"], [data-area="preview"], [data-area="project"], [data-area="promotion"]) { border-color: var(--violet); }
 .audit-as td { background: color-mix(in srgb, var(--coral) 7%, transparent); }
+
+/* Store-wide switches above a tab's table (Creators: creator purchases). */
+.admin-switch { margin: 0 0 16px; }
+.admin-switch h3 { margin: 0 0 6px; }
+.admin-switch p { margin: 0 0 10px; }

@@ -12,6 +12,7 @@
 .cart-what { display: grid; gap: 4px; min-width: 0; }
 .cart-what a { color: var(--accent); text-shadow: var(--glow); overflow-wrap: anywhere; }
 .cart-problem { color: var(--accent-2); text-shadow: var(--glow-2); font-size: .85rem; }
+.cart-held { display: block; color: var(--muted); font-size: .85rem; }
 .cart-line.has-problem .cart-price { text-decoration: line-through; color: var(--muted); }
 .cart-price { color: var(--accent); font-weight: 700; }
 .cart-qty select { min-height: 44px; padding: 6px 10px; background: var(--bg); color: var(--accent); border: 1px solid var(--line); font: inherit; }

@@ -22,7 +22,7 @@
           <p class="small-print">${p.deleted ? "Removed: buyers who have it keep their files."
             : p.published ? (p.salesPaused ? "Visible, but nobody can buy it until you resume sales." : "On sale. Saved edits are live as soon as they're saved.")
             : blocked ? "A draft. Fix what's listed below, then publish." : "A draft, ready to publish."}</p></div>
-        ${K.readiness(data.readiness)}
+        ${K.checkout(data.checkout)}${K.readiness(data.readiness)}
         <div class="sr-controls">${controls.join("")}</div>
         <h3>Final preview</h3>
         ${P ? P.html(data) : ""}

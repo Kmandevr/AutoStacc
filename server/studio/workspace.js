@@ -9,6 +9,7 @@ import { requireOwnProduct, productViews } from "../creators/products.js";
 import { loadReadiness } from "../creators/readiness.js";
 import { listEvents } from "../creators/events.js";
 import { isOn } from "../lib/features.js";
+import { creatorSalesState } from "../payments/creator-sales.js";
 import { periodTotals } from "./insights-data.js";
 
 const DAY = 86400000;
@@ -19,9 +20,9 @@ async function workspace(app, { productId }) {
   // The last 30 whole UTC days, today included (the same days as Insights' 30-day view).
   const until = new Date(Date.parse(new Date().toISOString().slice(0, 10)) + DAY);
   const since = new Date(until.getTime() - 30 * DAY);
-  const [view, readiness, activity, totals] = await Promise.all([
+  const [view, readiness, activity, totals, sales] = await Promise.all([
     productViews(app.db, [product]), loadReadiness(app.db, product, creator), listEvents(app.db, product.id, 10),
-    periodTotals(app, product.id, since, until)
+    periodTotals(app, product.id, since, until), creatorSalesState(app)
   ]);
   const owner = role === "owner";
   return json({
@@ -32,7 +33,9 @@ async function workspace(app, { productId }) {
     summary: { days: 30, orders: totals.orders, units: totals.units, netCents: totals.netCents, creatorShareCents: owner ? totals.creatorShareCents : null,
       downloads: totals.downloads, views: totals.views },
     limits: { ...SELLING, filesPerProduct: LIMITS.filesPerProduct },
-    features: { packsStudio: isOn(app, "packs.builder") }
+    features: { packsStudio: isOn(app, "packs.builder") },
+    // Whether buyers can check out creators' products right now (the owner's switch and the marketplace key).
+    checkout: { open: sales.open, reason: sales.reason }
   });
 }
 

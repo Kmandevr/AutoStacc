@@ -12,8 +12,11 @@ import { createOrder, attachCheckout, transition, findReusablePending, getOrderB
 import { newGuestKey, guestCookie, guestKeysFromRequest } from "../orders/guest.js";
 import { providerForAccount } from "../payments/index.js";
 import { accountsOfProducts, MAIN, MARKETPLACE } from "../payments/accounts.js";
+import { creatorSalesState } from "../payments/creator-sales.js";
 import { attributeLines } from "../revenue/split.js";
 import { limit } from "../lib/ratelimit.js";
+
+const CREATOR_SALES_CLOSED = "Creators' products can't be bought yet. They stay in your cart until creator checkout opens.";
 
 const PROMO_PROBLEMS = {
   invalid: "That code doesn't exist.",
@@ -58,12 +61,15 @@ async function checkout(app) {
     account = chosen;
     items.splice(0, items.length, ...items.filter((i) => (accountOf.get(i.productId) === MARKETPLACE) === (chosen === MARKETPLACE)));
   }
-  if (account === MARKETPLACE && !config.marketplaceEnabled) fail(503, "creator_sales_closed", "Creators' products can't be bought with real payments yet.");
+  if (account === MARKETPLACE && !config.marketplaceEnabled) fail(503, "creator_sales_closed", CREATOR_SALES_CLOSED);
+  const creatorSales = await creatorSalesState(app);
 
   const owned = user ? await ownedProductIds(db, { user }) : [];
   const promoCode = typeof body.promoCode === "string" ? body.promoCode.slice(0, 40) : "";
   if (promoCode.trim()) await limit(app, "promo", 15, 60);
-  const cart = await priceCart(db, items, { owned, promoCode, email, userId: user ? user.id : null });
+  const cart = await priceCart(db, items, { owned, promoCode, email, userId: user ? user.id : null, creatorSales });
+  // Creators' products while creator sales are closed: the cart holds them back, so a request with them is refused.
+  if (cart.held.length) fail(503, "creator_sales_closed", CREATOR_SALES_CLOSED, { held: cart.held, cart: publicView(cart) });
   const publicCart = publicView(cart);
   if (cart.problems.length) fail(409, "cart_changed", "Some items can't be bought right now.", { problems: cart.problems, cart: publicCart });
   if (cart.promoProblem) fail(409, "promo_invalid", PROMO_PROBLEMS[cart.promoProblem] || "That code can't be used.", { promoProblem: cart.promoProblem, cart: publicCart });
