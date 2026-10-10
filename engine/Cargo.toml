@@ -32,3 +32,9 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# Native only (the server Container's HTTP front and its R2 access); never in the WebAssembly build.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tiny_http = "0.12"
+ureq = { version = "2", default-features = false, features = ["tls"] }
+rusty-s3 = "0.7"

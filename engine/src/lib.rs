@@ -5,6 +5,10 @@ pub mod facts;
 pub mod formats;
 pub mod hash;
 pub mod job;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod r2;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod serve;
 pub mod source;
 pub mod zipread;
 

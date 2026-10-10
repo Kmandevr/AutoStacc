@@ -1,0 +1,29 @@
+// The engine Worker (docs/engine.md): a Queue consumer that hands each job to the processing engine running in a
+// Cloudflare Container (engine/Dockerfile) and stores the answer in R2. Separate from the Pages project because Pages
+// Functions can't consume Queues or own Containers. Sized to stay inside the Workers Paid allowance: the smallest
+// ("basic") instance, one instance, one job at a time, asleep 30 s after the last job (docs/packs.md).
+// Secrets (wrangler secret put): R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (a token for the FILES bucket only),
+// ENGINE_ADMIN_TOKEN (optional: enables the smoke-test routes). R2_ENDPOINT is set by the deploy from the account id.
+{
+  "name": "autostacc-engine",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "containers": [
+    { "class_name": "EngineContainer", "image": "../../engine/Dockerfile", "instance_type": "basic", "max_instances": 1 }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "ENGINE", "class_name": "EngineContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["EngineContainer"] }],
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "autostacc-engine-jobs" }],
+    "consumers": [
+      { "queue": "autostacc-engine-jobs", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 3, "dead_letter_queue": "autostacc-engine-jobs-failed" },
+      { "queue": "autostacc-engine-jobs-failed", "max_batch_size": 10 }
+    ]
+  },
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "autostacc-files" }],
+  "vars": { "R2_BUCKETS": "autostacc-files", "R2_ENDPOINT": "" }
+}

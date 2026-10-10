@@ -14,6 +14,7 @@ export const RESERVED = new Set([
   // site files and folders
   "api", "media", "css", "js", "data", "img", "images", "assets", "static", "fonts", "files", "downloads", "uploads",
   "previews", "functions", "server", "scripts", "dist", "test", "tests", "dev", "preview", "sitemap", "sitemap.xml",
+  "engine", "workers", "packs", "pack-builder",
   "robots.txt", "llms.txt", "favicon.ico", "404", "500", "_headers", "_redirects", "well-known", ".well-known",
   // names people would mistake for the platform itself
   "autostacc", "auto-stacc", "staff", "official", "moderator", "root", "system", "www", "mail", "email", "billing",

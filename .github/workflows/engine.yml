@@ -1,0 +1,116 @@
+# The processing engine (engine/, docs/engine.md) and its Worker (workers/engine/). On every change to them: Rust
+# format, lints (native and WebAssembly), tests, a parity check that the native and WebAssembly builds give identical
+# results on a generated pack, and a build of the Container image with a health check. On main (or by hand) it then
+# deploys the engine Worker and its Container, which runs nothing until a job is queued.
+#
+# Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit and Containers: Edit),
+# CLOUDFLARE_ACCOUNT_ID, ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (an R2 API token limited to the
+# autostacc-files bucket), optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes).
+# Without the R2 secrets the deploy step is skipped.
+name: Engine
+on:
+  push:
+    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/unit/engine-worker.test.js", ".github/workflows/engine.yml"]
+  pull_request:
+    paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/unit/engine-worker.test.js", ".github/workflows/engine.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: engine-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust with the WebAssembly target
+        run: rustup update stable --no-self-update && rustup default stable && rustup target add wasm32-unknown-unknown && rustup component add rustfmt clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engine/target
+          key: engine-${{ hashFiles('engine/Cargo.lock') }}
+      - name: Format
+        run: cargo fmt --check
+      - name: Lints (native and WebAssembly)
+        run: cargo clippy --all-targets -- -D warnings && cargo clippy --release --lib --target wasm32-unknown-unknown -- -D warnings
+      - name: Tests
+        run: cargo test
+      - name: Release builds (native binary and WebAssembly)
+        run: cargo build --release && cargo build --release --lib --target wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Native and WebAssembly give identical results on a generated pack
+        working-directory: .
+        run: node test/bench/make-pack.js --mb 48 && node test/bench/engine-bench.js test/bench/out/pack-48mb.zip
+      - name: Engine Worker unit tests
+        working-directory: .
+        run: node --test test/unit/engine-worker.test.js
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Container image
+        run: docker build -t autostacc-engine:ci engine
+      - name: It starts and answers its health check
+        run: |
+          docker run -d --name engine -p 8080:8080 autostacc-engine:ci
+          for i in $(seq 50); do curl -sf localhost:8080/healthz && exit 0; sleep 0.2; done
+          docker logs engine; exit 1
+
+  deploy:
+    needs: [test, image]
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: engine-deploy
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      R2_KEY: ${{ secrets.ENGINE_R2_ACCESS_KEY_ID }}
+      R2_SECRET: ${{ secrets.ENGINE_R2_SECRET_ACCESS_KEY }}
+      ADMIN_TOKEN: ${{ secrets.ENGINE_ADMIN_TOKEN }}
+    defaults:
+      run:
+        working-directory: workers/engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Skip without the engine's R2 secrets
+        id: ready
+        run: |
+          if [ -z "$R2_KEY" ] || [ -z "$R2_SECRET" ] || [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::Engine not deployed: set ENGINE_R2_ACCESS_KEY_ID and ENGINE_R2_SECRET_ACCESS_KEY (docs/engine.md)."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install (the Containers library and Wrangler)
+        if: steps.ready.outputs.go == 'true'
+        run: npm ci && npm i --no-save wrangler@4.148.0
+      - name: Queues (created once; existing ones are kept)
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          for q in autostacc-engine-jobs autostacc-engine-jobs-failed; do
+            npx wrangler queues create "$q" 2>&1 | tee /tmp/q.log || grep -qi "already" /tmp/q.log
+          done
+      - name: Deploy the Worker and its Container
+        if: steps.ready.outputs.go == 'true'
+        run: npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
+      - name: Secrets
+        if: steps.ready.outputs.go == 'true'
+        run: |
+          printf '%s' "$R2_KEY" | npx wrangler secret put R2_ACCESS_KEY_ID
+          printf '%s' "$R2_SECRET" | npx wrangler secret put R2_SECRET_ACCESS_KEY
+          if [ -n "$ADMIN_TOKEN" ]; then printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ENGINE_ADMIN_TOKEN; fi
