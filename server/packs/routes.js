@@ -1,149 +1,194 @@
-// Pack Builder, admin (docs/packs.md, Phase 3; Studio creators follow in Phase 5). A version of a Pac's contents for one
-// of the product's Pacs: upload its ZIP in parts, let the engine check and store it, review what it found, publish.
-// Every route is the admin's alone (404 to everyone else); creating, publishing and discarding are audited.
-//   GET  /api/admin/packs/:pacId                 the Pac, its live and in-progress versions, and the products that include it
-//   POST /api/admin/packs/:pacId/versions        {productId, filename, size, idempotencyKey} → version + upload plan
-//   PUT  /api/admin/packs/uploads/:uploadId/parts/:n   one part's bytes (Content-Length must match the plan)
-//   POST /api/admin/packs/uploads/:uploadId/complete   joins the parts and starts processing (or lists missing parts)
-//   GET  /api/admin/packs/versions/:versionId    state; imports the engine's answer once it is in
-//   POST /api/admin/packs/versions/:versionId/publish | /discard
-// Reviewing a ready version (values, suggestions, folder defaults, moves, renames): edit-routes.js.
+// Pack Builder routes (docs/packs.md). The same handlers serve two scopes (access.js): the admin's, on any Pac, and the
+// Studio's, on a creator's own products (404 for anything else). A version of a Pac: upload its ZIP in parts, let the
+// engine check and store it, review it (edit-routes.js), publish. Creating, publishing, discarding and review decisions
+// are audited.
+//   admin:  GET  /api/admin/packs/:pacId                      the Pac, its versions, the products that include it
+//           POST /api/admin/packs/:pacId/versions             {productId, filename, size, idempotencyKey}
+//           GET  /api/admin/packs/review                      versions held by the automated review
+//           POST /api/admin/packs/versions/:versionId/reject  {note} (a held or ready version; the creator sees why)
+//   studio: GET  /api/studio/packs/products/:productId        the product's own Pac (made on first use), versions, storage
+//           POST /api/studio/packs/products/:productId/versions {filename, size, idempotencyKey}
+//   both, under each prefix:
+//           PUT  /uploads/:uploadId/parts/:n, POST /uploads/:uploadId/complete
+//           GET  /versions/:versionId, POST /versions/:versionId/publish, POST /versions/:versionId/discard
+// Publishing in the Studio follows the automated review: a clean version (or only soft flags for a trusted creator) goes
+// live, anything else waits for an admin, who is alerted. An admin may publish any ready or held version.
 import { json, fail, readJson, str, id, int } from "../lib/http.js";
-import { first, all, parseJson, isGuardFailure } from "../lib/db.js";
-import { requireAdmin } from "../auth/session.js";
-import { getProduct, productsWithPac } from "../catalog/products.js";
+import { first, all, run, now, parseJson, isGuardFailure } from "../lib/db.js";
+import { productsWithPac } from "../catalog/products.js";
 import { safeFilename } from "../storage/buckets.js";
 import { audit } from "../audit/log.js";
-import { requireFeature } from "../lib/features.js";
-import { createVersion, getVersion, move } from "./versions.js";
-import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
+import { alertAdmins } from "../email/alerts.js";
+import { filesQuotaOf } from "../creators/policy.js";
+import { createVersion, move, releaseDraftStmt } from "./versions.js";
+import { startZip, storageUsed, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
 import { publishVersion } from "./publish.js";
+import { clearToPublish } from "./review.js";
+import { ADMIN, STUDIO, ownerOf, uploadFor, ensureStudioPac } from "./access.js";
 import { routes as engineStorage } from "./engine-storage.js";
-import { routes as editRoutes } from "./edit-routes.js";
+import { editRoutes } from "./edit-routes.js";
 import { versionView } from "./view.js";
 
-const OWNER = /^[a-z0-9_]{1,48}$/;
+const view = (app, versionId) => versionView(app.db, versionId);
+const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes: PART_BYTES, status: u.status,
+  partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
 
-// Whose stored originals a version uses: the project's creator, or AutoStacc for its own catalog. An id that can't be a
-// storage scope is refused rather than folded into another owner's (stored originals are never shared across owners).
-async function ownerOf(db, product) {
-  const p = product.project_id ? await first(db, "SELECT creator_id FROM projects WHERE id = ?", product.project_id) : null;
-  if (!p || !p.creator_id) return "autostacc";
-  if (!OWNER.test(p.creator_id)) fail(409, "unsupported_owner", "This product's creator can't store pack files yet.");
-  return p.creator_id;
+async function pacSummary(app, pac) {
+  const versions = await all(app.db, "SELECT id, number, status, stats, review_note, published_at, created_at FROM pac_versions WHERE pac_id = ? ORDER BY number DESC LIMIT 20", pac.id);
+  return {
+    pac: { id: pac.id, title: pac.title, stacclet: pac.stacclet_id, liveVersionId: pac.live_version_id, draftVersionId: pac.draft_version_id },
+    versions: versions.map((v) => ({ id: v.id, number: v.number, status: v.status, stats: parseJson(v.stats, {}), note: v.review_note || null,
+      publishedAt: v.published_at, createdAt: v.created_at }))
+  };
 }
 
-async function adminVersion(app, versionId) {
-  requireFeature(app, "packs.builder");
-  await requireAdmin(app);
-  const v = await getVersion(app.db, id(versionId, "versionId"));
-  if (!v) fail(404, "not_found", "No such version.");
-  return v;
-}
-
-async function newVersion(app, { pacId }) {
-  requireFeature(app, "packs.builder");
-  const user = await requireAdmin(app);
-  const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
-  if (!pac) fail(404, "not_found", "No such Pac.");
+// A new version and its upload plan (or the same ones again for the same idempotency key).
+async function createFor(app, actor, { pac, product, creator }) {
   const body = await readJson(app.request);
-  const product = await getProduct(app.db, id(body.productId, "productId"));
-  if (!product || !parseJson(product.pacs, []).includes(pac.id)) fail(400, "invalid_product", "That product doesn't include this Pac.");
   const filename = safeFilename(str(body.filename, "filename", { max: 160, pattern: /\.zip$/i }));
   const size = int(body.size, "size", { min: 22 });
   const key = str(body.idempotencyKey, "idempotencyKey", { min: 16, max: 64, pattern: /^[A-Za-z0-9_-]+$/ });
   const version = await createVersion(app.db, { pacId: pac.id, productId: product.id, ownerScope: await ownerOf(app.db, product), origin: "zip",
-    idempotencyKey: key, createdBy: user.id });
+    idempotencyKey: key, createdBy: actor.user.id });
   let upload = await first(app.db, "SELECT id FROM uploads WHERE version_id = ? AND kind = 'zip'", version.id);
-  const plan = upload ? null : await startZip(app, version, { filename, size });
+  const quota = creator ? { creatorId: creator.id, bytes: filesQuotaOf(creator) } : null;
+  let plan = null;
+  if (!upload) {
+    try {
+      plan = await startZip(app, version, { filename, size, quota });
+    } catch (e) {
+      // No room: the version that was just made goes away again, so the Pac stays free.
+      await discard(app, version);
+      throw e;
+    }
+  }
   // Always (a compare-and-set): a retry after a crash between planning the upload and this move still gets here.
   await move(app.db, version.id, ["draft"], "uploading");
-  if (plan) {
-    await audit(app, "pack.version_created", { targetType: "pac", targetId: pac.id, detail: { versionId: version.id, productId: product.id, sizeBytes: size } });
-  }
+  if (plan) await audit(app, "pack.version_created", { targetType: "pac", targetId: pac.id, detail: { versionId: version.id, productId: product.id, sizeBytes: size } });
   upload = await getUpload(app.db, plan ? plan.uploadId : upload.id);
   return json({ version: await view(app, version.id), upload: uploadView(upload) }, plan ? 201 : 200);
 }
 
-const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes: PART_BYTES, status: u.status, partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
-
-async function adminUpload(app, uploadId) {
-  requireFeature(app, "packs.builder");
-  await requireAdmin(app);
-  const u = await getUpload(app.db, id(uploadId, "uploadId"));
-  if (!u) fail(404, "not_found", "No such upload.");
-  return u;
+function shared(scope) {
+  const P = scope.prefix;
+  return [
+    ["PUT", `${P}/uploads/:uploadId/parts/:n`, async (app, { uploadId, n }) => {
+      const actor = await scope.actor(app);
+      return json(await putPart(app, await uploadFor(app, scope, actor, uploadId), Number(n)));
+    }],
+    ["POST", `${P}/uploads/:uploadId/complete`, async (app, { uploadId }) => {
+      const actor = await scope.actor(app);
+      const u = await uploadFor(app, scope, actor, uploadId);
+      const done = await complete(app, u);
+      if (!done.complete) return json(done, 409);
+      const version = await scope.version(app, actor, u.version_id);
+      await startProcess(app, version, await getUpload(app.db, u.id));
+      return json({ complete: true, version: await view(app, version.id) });
+    }],
+    ["GET", `${P}/versions/:versionId`, async (app, { versionId }) => {
+      const actor = await scope.actor(app);
+      const v = await scope.version(app, actor, versionId);
+      await refresh(app, v);
+      return json({ version: await view(app, v.id) });
+    }],
+    ["POST", `${P}/versions/:versionId/publish`, async (app, { versionId }) => {
+      const actor = await scope.actor(app);
+      const v = await scope.version(app, actor, versionId);
+      const allowed = actor.admin ? ["ready", "in_review"] : ["ready"];
+      if (!allowed.includes(v.status)) fail(409, "not_ready", v.status === "published" ? "Already published." : v.status === "in_review" ? "It's waiting for AutoStacc's review." : "Only a checked, ready version can be published.");
+      const stats = parseJson(v.stats, {});
+      if (!stats.files) fail(409, "nothing_to_publish", "No file in this version passed the checks.");
+      const rv = stats.review || null;
+      if (!actor.admin && !clearToPublish(rv, { trusted: Boolean(actor.creator.trusted), alwaysHold: actor.creator.pack_review === "always_hold" })) {
+        if (await move(app.db, v.id, ["ready"], "in_review")) {
+          await audit(app, "pack.version_held", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id, flags: (rv ? rv.flags : []).map((f) => f.code) } });
+          await alertAdmins(app, { key: `pack:${v.id}`, title: "a creator's Pac version is waiting for review",
+            lines: [`${actor.creator.name} (/${actor.creator.slug}) wants to publish version ${v.number} (${stats.files} files).`,
+              `Flags: ${(rv && rv.flags.length ? rv.flags.map((f) => f.code).join(", ") : "none (this creator's versions always wait)")}.`, "Approve or reject it in the Control Center, Packs."] });
+        }
+        return json({ version: await view(app, v.id) }, 202);
+      }
+      let res;
+      try {
+        res = await publishVersion(app, v, { reviewedBy: actor.admin ? actor.user.id : null });
+      } catch (e) {
+        if (isGuardFailure(e)) fail(409, "not_ready", "This version changed meanwhile; reload it.");
+        throw e;
+      }
+      const override = actor.admin && rv && rv.verdict === "hold";
+      await audit(app, override ? "pack.version_approved" : "pack.version_published", { targetType: "pac", targetId: v.pac_id,
+        detail: { versionId: v.id, productId: v.product_id, files: res.files, ...(override ? { flags: rv.flags.map((f) => f.code) } : {}) } });
+      return json({ version: await view(app, v.id) });
+    }],
+    ["POST", `${P}/versions/:versionId/discard`, async (app, { versionId }) => {
+      const actor = await scope.actor(app);
+      const v = await scope.version(app, actor, versionId);
+      if (!(await discard(app, v))) fail(409, "cannot_discard", "Only an unpublished version that isn't being processed can be discarded.");
+      await audit(app, "pack.version_discarded", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
+      return json({ version: await view(app, v.id) });
+    }],
+    ...editRoutes(scope)
+  ];
 }
 
-async function part(app, { uploadId, n }) {
-  const u = await adminUpload(app, uploadId);
-  return json(await putPart(app, u, Number(n)));
-}
-
-async function finishUpload(app, { uploadId }) {
-  const u = await adminUpload(app, uploadId);
-  const done = await complete(app, u);
-  if (!done.complete) return json(done, 409);
-  const version = await getVersion(app.db, u.version_id);
-  await startProcess(app, version, await getUpload(app.db, u.id));
-  return json({ complete: true, version: await view(app, version.id) });
-}
-
-const view = (app, versionId) => versionView(app.db, versionId);
-
-async function getOne(app, { versionId }) {
-  const v = await adminVersion(app, versionId);
-  await refresh(app, v);
-  return json({ version: await view(app, v.id) });
-}
-
-async function publish(app, { versionId }) {
-  const v = await adminVersion(app, versionId);
-  if (v.status !== "ready") fail(409, "not_ready", v.status === "published" ? "Already published." : "Only a checked, ready version can be published.");
-  if (!parseJson(v.stats, {}).files) fail(409, "nothing_to_publish", "No file in this version passed the checks.");
-  let res;
-  try {
-    res = await publishVersion(app, v);
-  } catch (e) {
-    if (isGuardFailure(e)) fail(409, "not_ready", "This version changed meanwhile; reload it.");
-    throw e;
-  }
-  await audit(app, "pack.version_published", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id, productId: v.product_id, files: res.files } });
-  return json({ version: await view(app, v.id) });
-}
-
-async function drop(app, { versionId }) {
-  const v = await adminVersion(app, versionId);
-  if (!(await discard(app, v))) fail(409, "cannot_discard", "Only an unpublished version that isn't being processed can be discarded.");
-  await audit(app, "pack.version_discarded", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
-  return json({ version: await view(app, v.id) });
-}
-
-async function pacOverview(app, { pacId }) {
-  requireFeature(app, "packs.builder");
-  await requireAdmin(app);
-  const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
-  if (!pac) fail(404, "not_found", "No such Pac.");
-  const [versions, products] = await Promise.all([
-    all(app.db, "SELECT id, number, status, stats, published_at, created_at FROM pac_versions WHERE pac_id = ? ORDER BY number DESC LIMIT 20", pac.id),
-    productsWithPac(app.db, pac.id)
-  ]);
-  return json({
-    pac: { id: pac.id, title: pac.title, stacclet: pac.stacclet_id, liveVersionId: pac.live_version_id, draftVersionId: pac.draft_version_id },
-    versions: versions.map((v) => ({ id: v.id, number: v.number, status: v.status, stats: parseJson(v.stats, {}), publishedAt: v.published_at, createdAt: v.created_at })),
-    products
-  });
-}
-
-export const routes = [
-  ["GET", "/api/admin/packs/:pacId", pacOverview],
-  ["POST", "/api/admin/packs/:pacId/versions", newVersion],
-  ["PUT", "/api/admin/packs/uploads/:uploadId/parts/:n", part],
-  ["POST", "/api/admin/packs/uploads/:uploadId/complete", finishUpload],
-  ["GET", "/api/admin/packs/versions/:versionId", getOne],
-  ["POST", "/api/admin/packs/versions/:versionId/publish", publish],
-  ["POST", "/api/admin/packs/versions/:versionId/discard", drop],
-  ...editRoutes,
-  ...engineStorage
+const adminRoutes = [
+  ["GET", "/api/admin/packs/review", async (app) => {
+    await ADMIN.actor(app);
+    const held = await all(app.db, `SELECT v.id, v.number, v.stats, v.updated_at, v.product_id, p.title AS pac_title, c.name AS creator_name, c.slug AS creator_slug
+      FROM pac_versions v JOIN pacs p ON p.id = v.pac_id LEFT JOIN projects j ON j.id = p.project_id LEFT JOIN creators c ON c.id = j.creator_id
+      WHERE v.status = 'in_review' ORDER BY v.updated_at LIMIT 200`);
+    return json({ versions: held.map((v) => ({ id: v.id, number: v.number, pac: v.pac_title, productId: v.product_id, creator: v.creator_name ? { name: v.creator_name, slug: v.creator_slug } : null,
+      flags: (parseJson(v.stats, {}).review || { flags: [] }).flags, files: parseJson(v.stats, {}).files || 0, since: v.updated_at })) });
+  }],
+  ["GET", "/api/admin/packs/:pacId", async (app, { pacId }) => {
+    await ADMIN.actor(app);
+    const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
+    if (!pac) fail(404, "not_found", "No such Pac.");
+    return json({ ...(await pacSummary(app, pac)), products: await productsWithPac(app.db, pac.id) });
+  }],
+  ["POST", "/api/admin/packs/:pacId/versions", async (app, { pacId }) => {
+    const actor = await ADMIN.actor(app);
+    const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
+    if (!pac) fail(404, "not_found", "No such Pac.");
+    const body = await app.request.clone().json().catch(() => ({}));
+    const { product } = await ADMIN.product(app, actor, body.productId, pac.id);
+    return createFor(app, actor, { pac, product, creator: null });
+  }],
+  ["POST", "/api/admin/packs/versions/:versionId/reject", async (app, { versionId }) => {
+    const actor = await ADMIN.actor(app);
+    const v = await ADMIN.version(app, actor, versionId);
+    const body = await readJson(app.request);
+    const note = typeof body.note === "string" && body.note.trim() ? body.note.trim().slice(0, 300) : "Not accepted by AutoStacc's review.";
+    if (!(await move(app.db, v.id, ["in_review", "ready"], "failed", { review_note: note, reviewed_by: actor.user.id }))) fail(409, "cannot_reject", "Only a version waiting for review (or ready) can be rejected.");
+    await app.db.batch([releaseDraftStmt(app.db, v.pac_id, v.id)]);
+    await discardUploads(app, v);
+    await audit(app, "pack.version_rejected", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
+    return json({ version: await view(app, v.id) });
+  }]
 ];
+
+// The archive of a rejected version is never needed again.
+async function discardUploads(app, v) {
+  const ups = await all(app.db, "SELECT r2_key FROM uploads WHERE version_id = ?", v.id);
+  await Promise.all(ups.map((u) => app.env.FILES.delete(u.r2_key)));
+  await run(app.db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE version_id = ?", now(), v.id);
+}
+
+const studioRoutes = [
+  ["GET", "/api/studio/packs/products/:productId", async (app, { productId }) => {
+    const actor = await STUDIO.actor(app);
+    const { product, creator } = await STUDIO.product(app, actor, productId);
+    const pac = await ensureStudioPac(app.db, product);
+    return json({ ...(await pacSummary(app, pac)), product: { id: product.id, title: product.title },
+      storage: { usedBytes: await storageUsed(app.db, creator.id), quotaBytes: filesQuotaOf(creator) } });
+  }],
+  ["POST", "/api/studio/packs/products/:productId/versions", async (app, { productId }) => {
+    const actor = await STUDIO.actor(app);
+    const { product, creator } = await STUDIO.product(app, actor, productId);
+    const pac = await ensureStudioPac(app.db, product);
+    return createFor(app, actor, { pac, product, creator });
+  }]
+];
+
+export const routes = [...adminRoutes, ...shared(ADMIN), ...studioRoutes, ...shared(STUDIO), ...engineStorage];

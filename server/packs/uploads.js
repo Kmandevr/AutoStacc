@@ -4,7 +4,7 @@
 // or discarded (R2 itself aborts unfinished uploads after 7 days).
 import { first, run, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { startMultipart, uploadPart, completeMultipart, headFile } from "../storage/buckets.js";
+import { startMultipart, uploadPart, completeMultipart, abortMultipart, headFile } from "../storage/buckets.js";
 
 export const PART_BYTES = 64 * 1024 * 1024;
 export const ZIP_MAX_BYTES = 50 * 1024 ** 3;
@@ -14,14 +14,31 @@ const partLength = (size, n) => (n < partsOf(size) ? PART_BYTES : size - (partsO
 
 export const getUpload = (db, id) => first(db, "SELECT * FROM uploads WHERE id = ?", id);
 
-export async function startZip(app, version, { filename, size }) {
+// A creator's storage in use: their delivered files, plus every archive on its way (uploaded or uploading for a
+// version not yet published, discarded or failed). Checked inside the insert that reserves room for a new archive, so
+// two uploads at the same moment can't both squeeze under the limit.
+const IN_USE = `(SELECT COALESCE(SUM(f.size_bytes), 0) FROM product_files f JOIN products p ON p.id = f.product_id JOIN projects j ON j.id = p.project_id
+    WHERE j.creator_id = ?1 AND f.active = 1 AND f.status IN ('pending', 'published') AND f.retired_at IS NULL)
+  + (SELECT COALESCE(SUM(u.size_bytes), 0) FROM uploads u JOIN pac_versions v ON v.id = u.version_id JOIN products p ON p.id = v.product_id
+    JOIN projects j ON j.id = p.project_id WHERE j.creator_id = ?1 AND v.status IN ('draft', 'uploading', 'processing', 'ready', 'in_review'))`;
+
+/** The creator's file storage in use: live files plus the archives of unfinished versions (what the quota counts). */
+export const storageUsed = async (db, creatorId) => (await first(db, `SELECT ${IN_USE} AS n`, creatorId)).n;
+
+/** quota: { creatorId, bytes } for a creator's upload (null for AutoStacc's own). */
+export async function startZip(app, version, { filename, size, quota = null }) {
   if (!Number.isSafeInteger(size) || size < 22 || size > ZIP_MAX_BYTES) fail(400, "invalid_size", "That isn't a ZIP size AutoStacc accepts.");
   const id = newId("up");
   const key = `uploads/${version.id}/${id}.zip`;
   const mp = await startMultipart(app.env, key);
   const t = now();
-  await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at)
-    VALUES (?, ?, 'zip', ?, ?, ?, ?, '[]', 'open', ?, ?)`, id, version.id, filename, key, mp.uploadId, size, t, t);
+  const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at)
+    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8 WHERE ?9 IS NULL OR ${IN_USE} + ?7 <= ?9`,
+    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null);
+  if (!res.meta.changes) {
+    await abortMultipart(app.env, key, mp.uploadId).catch(() => {});
+    fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota.bytes / 1048576)} MB of file storage. Remove files or a draft first.`);
+  }
   return { uploadId: id, partBytes: PART_BYTES, parts: partsOf(size) };
 }
 
