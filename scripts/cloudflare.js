@@ -25,8 +25,8 @@ const PROD = { db: "autostacc", placeholder: "00000000-0000-0000-0000-0000000000
 // Connect payouts, docs/payouts-setup.md) is off until its key and webhook secret are both set, and a project's newsletter
 // sign-up says "coming soon" until BREVO_NEWSLETTER_LISTS names its Brevo list.
 const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "BREVO_API_KEY", "ADMIN_EMAILS",
-  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST"];
-const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST"]);
+  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST", "SWEEP_TOKEN"];
+const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST", "SWEEP_TOKEN"]);
 
 // quiet: capture and resolve with the output; otherwise it goes straight to the deploy log and resolves with "".
 // Rejects like execFileSync threw: the error carries stderr when quiet.

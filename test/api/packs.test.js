@@ -4,10 +4,10 @@
 import { after } from "node:test";
 import { runGroup } from "./group.js";
 import { startMockEngine } from "../mock-engine/server.js";
-import packs from "./packs.suite.js";
+import packs, { SWEEP_TOKEN } from "./packs.suite.js";
 
 const STORE = 8808;
 const engine = await startMockEngine(8818, { storage: `http://localhost:${STORE}/api/internal/engine-storage` });
 after(() => engine.close());
 
-runGroup({ name: "packs", ports: { mock: STORE }, stripe: false, vars: { ENGINE_URL: engine.url } }, [packs]);
+runGroup({ name: "packs", ports: { mock: STORE }, stripe: false, vars: { ENGINE_URL: engine.url, SWEEP_TOKEN } }, [packs]);

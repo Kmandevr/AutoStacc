@@ -4,7 +4,8 @@
 # deploys the engine Worker and its Container, which runs nothing until a job is queued.
 #
 # Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit, Containers: Edit, Account Settings: Read),
-# CLOUDFLARE_ACCOUNT_ID, optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes). The engine
+# CLOUDFLARE_ACCOUNT_ID, optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes) and
+# SWEEP_TOKEN (the same value the site's deploy gives the store; turns on the daily retention sweep). The engine
 # needs no storage credentials: its Worker answers its reads from the R2 binding. Without the API token the deploy is skipped.
 name: Engine
 on:
@@ -79,6 +80,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ADMIN_TOKEN: ${{ secrets.ENGINE_ADMIN_TOKEN }}
+      SWEEP_TOKEN: ${{ secrets.SWEEP_TOKEN }}
     defaults:
       run:
         working-directory: workers/engine
@@ -152,6 +154,7 @@ jobs:
           # Storage keys from the earlier design: the engine no longer has any.
           for old in R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do npx wrangler secret delete "$old" >/dev/null 2>&1 || true; done
           if [ -n "$ADMIN_TOKEN" ]; then printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ENGINE_ADMIN_TOKEN; fi
+          if [ -n "$SWEEP_TOKEN" ]; then printf '%s' "$SWEEP_TOKEN" | npx wrangler secret put SWEEP_TOKEN; fi
       - name: Smoke test the deployed engine (needs ENGINE_ADMIN_TOKEN)
         if: steps.ready.outputs.go == 'true' && env.ADMIN_TOKEN != ''
         env:
