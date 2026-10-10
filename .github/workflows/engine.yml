@@ -108,8 +108,11 @@ jobs:
           # The token's own permission list (names only; the token itself is never printed).
           api=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens
           auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          id=$(curl -s -H "$auth" "$api/verify" | jq -r '.result.id // empty')
-          echo "token status: $(curl -s -H "$auth" "$api/verify" | jq -r '.result.status // .errors[0].message')"
+          # An account-owned token verifies under the account, a user-owned one under /user.
+          v=$(curl -s -H "$auth" "$api/verify")
+          if [ "$(echo "$v" | jq -r '.success')" != true ]; then api=https://api.cloudflare.com/client/v4/user/tokens; v=$(curl -s -H "$auth" "$api/verify"); fi
+          id=$(echo "$v" | jq -r '.result.id // empty')
+          echo "token status: $(echo "$v" | jq -r '.result.status // .errors[0].message') (${api#https://api.cloudflare.com/client/v4/})"
           if [ -n "$id" ]; then
             curl -s -H "$auth" "$api/$id" | jq -r '.result.policies[]? | "\(.effect): \([.permission_groups[].name] | join(", "))"' || true
             curl -s -H "$auth" "$api/$id" | jq -r '.errors[0].message // empty'
@@ -127,8 +130,12 @@ jobs:
       - name: Deploy the Worker and its Container
         if: steps.ready.outputs.go == 'true'
         run: |
-          npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" 2>&1 | tee /tmp/deploy.log || {
+          set -o pipefail
+          WRANGLER_LOG=debug npx wrangler deploy --var "R2_ENDPOINT:https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com" 2>&1 | tee /tmp/deploy.log | grep -vE "^\[debug\]|^-- |^[A-Za-z-]+: " || {
+            # Cloudflare's answer to the failing request (status and body; the debug log never prints the token).
+            grep -iE "containers/|cloudchamber|status: [45][0-9][0-9]|\"(code|message)\"" /tmp/deploy.log | grep -viE "authorization|bearer" | tail -25
             grep -q "No access to the specified resource\|code: 10000" /tmp/deploy.log && echo "::error::The Cloudflare API token can't deploy Workers or Containers: give it Account → Workers Scripts → Edit and Containers → Edit (docs/engine.md)."
+            grep -q "containers/me" /tmp/deploy.log && echo "::error::Cloudflare refused the Containers setup (containers/me): the token needs Containers → Edit, and the account needs Workers Paid with Containers enabled (docs/engine.md)."
             exit 1
           }
       - name: Secrets
