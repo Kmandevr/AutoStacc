@@ -70,6 +70,12 @@ export default (ctx) => describe("packs in the Studio", () => {
     const rows = db(`SELECT COUNT(*) AS n FROM product_files WHERE product_id = '${product.id}' AND version_id = '${version.id}' AND active = 1 AND status = 'published'`);
     assert.equal(rows[0].n, version.stats.files);
     assert.ok((await c.get(`${S}/products/${product.id}`)).data.storage.usedBytes > 0, "published files count against storage");
+    // Pack files are managed in the Pack Builder: the one-file list only counts them and can't remove one.
+    const listed = (await c.get(`/api/studio/projects/${db(`SELECT project_id FROM products WHERE id = '${product.id}'`)[0].project_id}/products`)).data.products.find((p) => p.id === product.id);
+    assert.equal(listed.packFiles, version.stats.files);
+    assert.equal(listed.files.length, 0);
+    const oneId = db(`SELECT id FROM product_files WHERE version_id = '${version.id}' LIMIT 1`)[0].id;
+    assert.equal((await c.req("DELETE", `/api/studio/products/${product.id}/files/${oneId}`)).data.error.code, "in_pack");
   });
 
   test("a flagged pack waits for an admin with its reasons; the admin's approval is an audited override", async () => {

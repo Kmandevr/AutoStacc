@@ -1,0 +1,138 @@
+// Studio Pack Builder (GS.studioPacks, for js/studio-products.js; docs/packs.md, Phase 5): a creator uploads their
+// product's contents as one ZIP, sees what the checks kept, refused and flagged, reviews the suggested kinds,
+// instruments, tempos and keys, and publishes. A clean version goes live at once; a flagged one waits for AutoStacc's
+// review (the server decides, this only shows its answer). Shows the creator's file storage. Talks to
+// /api/studio/packs; uses js/packs-upload.js, js/packs-preview.js, js/packs-version.js and js/packs-review.js.
+// Needs js/util.js.
+(function () {
+  "use strict";
+
+  const { $, escapeHTML: e, api } = window.GS;
+  const BASE = "/api/studio/packs";
+  const mb = (n) => `${(n / 1048576).toFixed(n < 10485760 ? 1 : 0)} MB`;
+  const STATE = { ready: "checked", in_review: "waiting for review", published: "published", superseded: "replaced", failed: "failed", discarded: "discarded",
+    processing: "checking", uploading: "uploading", draft: "draft" };
+
+  const enabled = () => Boolean(window.FEATURES && window.FEATURES["packs.builder"] && window.GS.packUpload && window.GS.packVersion);
+
+  function open(root, productId, onBack) {
+    let poll;
+    root.innerHTML = `<div class="studio-packs">
+        <div class="studio-bar"><button class="btn ghost" type="button" data-act="back">&larr; Products</button><h2>Pack Builder</h2></div>
+        <div data-pack-body><p class="msg pending">Loading…</p></div></div>`;
+    const el = $(".studio-packs", root);
+    const url = `${BASE}/products/${encodeURIComponent(productId)}`;
+
+    function draw(v) {
+      const box = $("[data-pack-version]", el);
+      box.dataset.id = v.id;
+      box.__version = v;
+      box.innerHTML = window.GS.packVersion.render(v);
+    }
+
+    async function showVersion(id) {
+      clearTimeout(poll);
+      const res = await api(`${BASE}/versions/${encodeURIComponent(id)}`);
+      const box = $("[data-pack-version]", el);
+      if (!box) return;
+      if (!res.ok) { box.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
+      draw(res.data.version);
+      if (res.data.version.status === "processing") poll = setTimeout(() => showVersion(id), 2500);
+    }
+
+    async function show() {
+      clearTimeout(poll);
+      const body = $("[data-pack-body]", el);
+      const res = await api(url);
+      if (!res.ok) { body.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
+      const { pac, versions, product, storage } = res.data;
+      const busy = Boolean(pac.draftVersionId);
+      body.innerHTML = `
+        <p class="small-print"><strong>${e(product.title)}</strong>. Upload everything buyers get as one ZIP, in the folders you want them to see. AutoStacc checks every file (type, damage, unsafe names), keeps the originals byte for byte and suggests kinds, instruments, tempos and keys. Clean packs publish right away; anything flagged waits for AutoStacc's review.</p>
+        <p class="small-print">File storage: ${mb(storage.usedBytes)} of ${mb(storage.quotaBytes)} used.</p>
+        <form class="panel" data-pack-form>
+          <div class="field"><label for="spk-file">The contents as one ZIP</label><input id="spk-file" name="file" type="file" accept=".zip,application/zip" required data-pack-file></div>
+          <div data-pack-preview aria-live="polite"></div>
+          <div class="actions"><button class="btn" type="submit"${busy ? " disabled data-locked" : ""}>Upload and check</button></div>
+          <progress max="1" value="0" hidden></progress><p class="msg" role="status">${busy ? "A version is in progress below: publish or discard it first." : ""}</p>
+        </form>
+        <div data-pack-version></div>
+        ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link-btn" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
+          · ${e(STATE[v.status] || v.status)}${v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${v.note ? ` · ${e(v.note)}` : ""}</li>`).join("")}</ul>` : ""}`;
+      const current = pac.draftVersionId || pac.liveVersionId;
+      if (current) showVersion(current);
+    }
+
+    el.addEventListener("change", async (ev) => {
+      const input = ev.target.closest("[data-pack-file]");
+      if (!input) return;
+      const box = $("[data-pack-preview]", el);
+      const file = input.files[0];
+      if (!file) { box.innerHTML = ""; return; }
+      box.innerHTML = `<p class="small-print">Looking inside ${e(file.name)}…</p>`;
+      const { result, error } = await window.GS.packPreview.list(file);
+      const submit = $("[data-pack-form] button[type=submit]", el);
+      if (error || !result) { box.innerHTML = `<p class="small-print">No preview here; the upload is checked in full anyway.</p>`; return; }
+      if (result.error) {
+        box.innerHTML = `<p class="msg error">This isn't a ZIP AutoStacc can read. Choose another file.</p>`;
+        if (submit) submit.disabled = true;
+        return;
+      }
+      if (submit && !submit.dataset.locked) submit.disabled = false;
+      const files = result.files.filter((f) => !f.ignored);
+      const refused = files.filter((f) => f.issues.some((i) => i.refused));
+      box.innerHTML = `<p>${files.length} file${files.length === 1 ? "" : "s"} in ${result.folders.length} folder${result.folders.length === 1 ? "" : "s"}, ${mb(files.reduce((n, f) => n + f.size, 0))} unpacked.</p>
+        ${refused.length ? `<details open><summary>${refused.length} would be refused</summary><ul>${refused.slice(0, 50).map((f) =>
+          `<li><code>${e(f.path)}</code>: ${e(f.issues.filter((i) => i.refused).map((i) => i.code).join(", "))}</li>`).join("")}</ul></details>` : ""}`;
+    });
+
+    el.addEventListener("submit", async (ev) => {
+      const form = ev.target.closest("[data-pack-form]");
+      if (!form) return;
+      ev.preventDefault();
+      const file = form.elements.file.files[0];
+      const msg = $("[role=status]", form), bar = $("progress", form), btn = $("button[type=submit]", form);
+      if (!file) return;
+      btn.disabled = true;
+      bar.hidden = false;
+      msg.textContent = "Uploading…";
+      try {
+        const v = await window.GS.packUpload.upload({ base: BASE, create: `${url}/versions` }, file, (x) => { bar.value = x; msg.textContent = `Uploading… ${Math.round(x * 100)}%`; });
+        await show();
+        showVersion(v.id);
+      } catch (err) {
+        msg.textContent = `${err.message} Choose the same file again to continue where it stopped.`;
+        btn.disabled = false;
+      }
+    });
+
+    el.addEventListener("click", async (ev) => {
+      if (ev.target.closest("[data-act=back]")) { clearTimeout(poll); return onBack(); }
+      const openV = ev.target.closest("[data-pack-open]");
+      if (openV) return showVersion(openV.dataset.packOpen);
+      const act = ev.target.closest("[data-pack-publish], [data-pack-discard]");
+      if (!act) return;
+      const id = $("[data-pack-version]", el).dataset.id;
+      const publishing = act.hasAttribute("data-pack-publish");
+      if (publishing && !confirm("Publish this version? Buyers get its files once it's live; files you changed or removed are replaced.")) return;
+      if (!publishing && !confirm("Discard this version? Its upload is deleted; the live version stays as it is.")) return;
+      act.disabled = true;
+      const res = await api(`${BASE}/versions/${encodeURIComponent(id)}/${publishing ? "publish" : "discard"}`, { method: "POST", body: {} });
+      if (!res.ok) {
+        act.disabled = false;
+        act.closest(".actions").insertAdjacentHTML("afterend", `<p class="msg error" role="alert">${e(res.error.message)}</p>`);
+        return;
+      }
+      await show();
+      if (res.status === 202) {
+        const m = $("[data-pack-form] [role=status]", el);
+        if (m) m.textContent = "Sent to AutoStacc for review. You'll see the result here.";
+      }
+    });
+
+    window.GS.packReview.bind(el, draw, BASE);
+    show();
+  }
+
+  window.GS.studioPacks = { open, enabled };
+})();

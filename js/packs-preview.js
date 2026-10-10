@@ -1,8 +1,8 @@
-// Control Center, Packs tab: lists a chosen ZIP in the browser before it uploads (js/engine/engine-worker.js, the
+// Pack Builder (Control Center and Studio): lists a chosen ZIP in the browser before it uploads (js/engine/engine-worker.js, the
 // engine's WebAssembly build in a Web Worker): its files, folders, size and anything the engine would refuse, in about
 // a second even for gigabytes, since only the archive's directory is read. A preview only: the server checks
 // everything again after the upload. Sets GS.packPreview.list(file) → Promise of { result } or { error }; loads before
-// js/admin-packs.js, its only user. Needs js/util.js.
+// js/admin-packs.js and js/studio-packs.js. Needs js/util.js.
 (function () {
   "use strict";
 
