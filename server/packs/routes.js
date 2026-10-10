@@ -26,6 +26,7 @@ import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js
 import { startProcess, refresh, discard } from "./process.js";
 import { publishVersion } from "./publish.js";
 import { clearToPublish } from "./review.js";
+import { recordEvent } from "../creators/events.js";
 import { ADMIN, STUDIO, ownerOf, uploadFor, studioPacOf, ensureStudioPac } from "./access.js";
 import { routes as engineStorage } from "./engine-storage.js";
 import { editRoutes } from "./edit-routes.js";
@@ -105,6 +106,7 @@ function shared(scope) {
       const rv = stats.review || null;
       if (!actor.admin && !clearToPublish(rv, { trusted: Boolean(actor.creator.trusted), alwaysHold: actor.creator.pack_review === "always_hold" })) {
         if (await move(app.db, v.id, ["ready"], "in_review")) {
+          if (v.product_id) await recordEvent(app.db, { productId: v.product_id, kind: "pac_version_submitted", actorId: actor.user.id, detail: { versionId: v.id, number: v.number } });
           await audit(app, "pack.version_held", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id, flags: (rv ? rv.flags : []).map((f) => f.code) } });
           await alertAdmins(app, { key: `pack:${v.id}`, title: "a creator's Pac version is waiting for review",
             lines: [`${actor.creator.name} (/${actor.creator.slug}) wants to publish version ${v.number} (${stats.files} files).`,
@@ -120,6 +122,8 @@ function shared(scope) {
         throw e;
       }
       const override = actor.admin && rv && rv.verdict === "hold";
+      if (v.product_id) await recordEvent(app.db, { productId: v.product_id, kind: v.status === "in_review" ? "pac_version_approved" : "pac_version_published",
+        actorId: actor.user.id, detail: { versionId: v.id, number: v.number, files: res.files } });
       await audit(app, override ? "pack.version_approved" : "pack.version_published", { targetType: "pac", targetId: v.pac_id,
         detail: { versionId: v.id, productId: v.product_id, files: res.files, ...(override ? { flags: rv.flags.map((f) => f.code) } : {}) } });
       return json({ version: await view(app, v.id) });

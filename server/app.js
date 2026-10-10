@@ -35,6 +35,9 @@ import { routes as studioSites } from "./studio/sites.js";
 import { routes as studioProducts } from "./studio/products.js";
 import { routes as studioProductFiles } from "./studio/product-files.js";
 import { routes as studioEarnings } from "./studio/earnings.js";
+import { routes as studioWorkspace } from "./studio/workspace.js";
+import { routes as studioPricing } from "./studio/pricing.js";
+import { routes as studioInsights } from "./studio/insights.js";
 import { routes as studioPayoutAccount } from "./studio/payout-account.js";
 import { routes as adminPayouts } from "./admin/payouts.js";
 import { routes as adminCreators } from "./admin/creators.js";
@@ -48,7 +51,7 @@ import { routes as maintenance } from "./maintenance/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioPayoutAccount, adminCreators, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, packs, maintenance, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, packs, maintenance, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;
