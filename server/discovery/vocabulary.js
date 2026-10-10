@@ -46,6 +46,100 @@ export const SPECS = { sampleRate: { label: "Sample rate", values: [44100, 48000
 export const BPM = { min: 40, max: 250 };
 export const LIMITS = { valuesPerFacet: 12 };
 
+// ---------- Assets (files inside Pacs): one vocabulary for the Pack Builder, the engine, Your Stacc and the store ----------
+
+// What a file really is, identified from its bytes by the processing engine (engine/src/formats.rs uses the same slugs
+// and extensions; test/unit/asset-vocabulary.test.js keeps the two, and server/files/policy.js, in step). ext: file
+// extensions, lower-case. facet: the store's `format` facet value it counts as (null: not a store filter).
+export const FORMATS = {
+  wav: { label: "WAV", ext: ["wav", "wave"], facet: "wav" },
+  aiff: { label: "AIFF", ext: ["aif", "aiff", "aifc"], facet: "aiff" },
+  flac: { label: "FLAC", ext: ["flac"], facet: "flac" },
+  mp3: { label: "MP3", ext: ["mp3"], facet: "mp3" },
+  ogg: { label: "Ogg", ext: ["ogg", "oga"], facet: null },
+  midi: { label: "MIDI", ext: ["mid", "midi"], facet: "midi" },
+  fxp: { label: "FXP/FXB preset", ext: ["fxp", "fxb"], facet: "fxp" },
+  vital: { label: "Vital preset", ext: ["vital", "vitalbank", "vitalpreset"], facet: "vital-preset" },
+  serum: { label: "Serum preset", ext: ["serumpreset", "serumpack"], facet: null },
+  h2p: { label: "u-he preset", ext: ["h2p"], facet: null },
+  nmsv: { label: "Massive preset", ext: ["nmsv"], facet: null },
+  adg: { label: "Ableton device group", ext: ["adg"], facet: null },
+  adv: { label: "Ableton device preset", ext: ["adv"], facet: null },
+  "bitwig-preset": { label: "Bitwig preset", ext: ["bwpreset"], facet: null },
+  "bitwig-clip": { label: "Bitwig clip", ext: ["bwclip"], facet: null },
+  sfz: { label: "SFZ instrument", ext: ["sfz"], facet: null },
+  sf2: { label: "SoundFont", ext: ["sf2"], facet: null },
+  exs: { label: "EXS instrument", ext: ["exs"], facet: null },
+  kontakt: { label: "Kontakt", ext: ["nki", "nkm", "nkx", "nkc", "ncw"], facet: null },
+  als: { label: "Ableton Live Set", ext: ["als"], facet: null },
+  alp: { label: "Ableton Live Pack", ext: ["alp"], facet: null },
+  flp: { label: "FL Studio project", ext: ["flp"], facet: null },
+  logicx: { label: "Logic Pro project", ext: ["logicx"], facet: null },
+  rpp: { label: "REAPER project", ext: ["rpp"], facet: null },
+  ptx: { label: "Pro Tools session", ext: ["ptx"], facet: null },
+  cpr: { label: "Cubase project", ext: ["cpr"], facet: null },
+  song: { label: "Studio One song", ext: ["song"], facet: null },
+  "bitwig-project": { label: "Bitwig project", ext: ["bwproject"], facet: null },
+  zip: { label: "ZIP archive", ext: ["zip"], facet: null },
+  pdf: { label: "PDF", ext: ["pdf"], facet: null },
+  text: { label: "Text", ext: ["txt", "md"], facet: null },
+  png: { label: "PNG", ext: ["png"], facet: "png" },
+  jpg: { label: "JPEG", ext: ["jpg", "jpeg"], facet: "jpg" },
+  gif: { label: "GIF", ext: ["gif"], facet: null },
+  webp: { label: "WebP", ext: ["webp"], facet: null },
+  mp4: { label: "MP4", ext: ["mp4", "m4a", "mov"], facet: "mp4" },
+  webm: { label: "WebM", ext: ["webm"], facet: null }
+};
+
+// What an asset is for (its kind): Your Stacc groups by it, the Pack Builder suggests it, the store's `contents` facet
+// is derived from it. formats: the formats a file of unknown kind is filed under by default (first match in this order).
+// contents: the product `contents` facet value it counts as. data/content-types.js is generated from this.
+export const KINDS = {
+  "one-shots": { label: "One-shots", formats: ["wav", "aiff", "flac", "mp3", "ogg"], contents: "one-shots" },
+  loops: { label: "Loops", formats: [], contents: "loops" },
+  stems: { label: "Stems", formats: [], contents: "stems" },
+  midi: { label: "MIDI", formats: ["midi"], contents: "midi" },
+  presets: { label: "Presets", formats: ["fxp", "vital", "serum", "h2p", "nmsv", "adg", "adv", "bitwig-preset"], contents: "presets" },
+  "sample-libraries": { label: "Sample libraries", formats: ["sfz", "sf2", "exs", "kontakt"], contents: null },
+  "project-files": { label: "Project files", formats: ["als", "alp", "flp", "logicx", "rpp", "ptx", "cpr", "song", "bitwig-project", "bitwig-clip", "zip"], contents: null },
+  images: { label: "Images", formats: ["png", "jpg", "webp", "gif"], contents: "images" },
+  video: { label: "Video", formats: ["mp4", "webm"], contents: "video-loops" },
+  documents: { label: "Documents", formats: ["pdf", "text"], contents: null },
+  other: { label: "Other", formats: [], contents: null }
+};
+// Older or casual names for a kind ("samples" was the kind for all audio until 2026-10-10; stored files keep it).
+export const KIND_SYNONYMS = {
+  samples: "one-shots", sample: "one-shots", "one-shot": "one-shots", oneshots: "one-shots", oneshot: "one-shots", hits: "one-shots",
+  loop: "loops", stem: "stems", "midi-files": "midi", "midi-patterns": "midi", preset: "presets", patches: "presets",
+  instruments: "sample-libraries", "sample-library": "sample-libraries", project: "project-files", projects: "project-files",
+  docs: "documents", doc: "documents", documentation: "documents", image: "images", artwork: "images", videos: "video"
+};
+// A MIDI asset's role, kept apart from its kind (MIDI is one kind; pattern vs arrangement is a detail of it).
+export const MIDI_ROLES = { pattern: "Pattern", arrangement: "Arrangement" };
+// An asset's instrument or role, for suggestions from file and folder names and, later, the store's filters.
+export const INSTRUMENTS = v(["Drums", "Kick", "Snare", "Clap", "Hats", "Cymbals", "Percussion", "Bass", "808", "Synth", "Lead", "Pad",
+  "Pluck", "Arp", "Keys", "Piano", "Guitar", "Strings", "Brass", "Vocals", "FX", "Textures", "Atmosphere"]);
+
+// The canonical kind for a word, or null.
+export function kindOf(word) {
+  const w = fold(word);
+  if (KINDS[w]) return w;
+  return KIND_SYNONYMS[w] || null;
+}
+
+// The canonical format for a file extension, or null when AutoStacc doesn't know it.
+export function formatOfExtension(ext) {
+  const e = String(ext || "").toLowerCase();
+  return Object.keys(FORMATS).find((f) => FORMATS[f].ext.includes(e)) || null;
+}
+
+// What the browser's library needs (data/content-types.js is generated from this by scripts/build.js): each kind with
+// its label and the file extensions filed under it by default, plus the old names that still mean a kind.
+export function contentTypes() {
+  const types = Object.fromEntries(Object.entries(KINDS).map(([k, x]) => [k, { label: x.label, formats: x.formats.flatMap((f) => FORMATS[f].ext) }]));
+  return { types, aliases: { ...KIND_SYNONYMS } };
+}
+
 // Words creators type that mean an existing value (lowercased, punctuation folded to hyphens).
 export const SYNONYMS = {
   genre: { dnb: "drum-and-bass", "d-b": "drum-and-bass", "drum-n-bass": "drum-and-bass", hiphop: "hip-hop", lofi: "lo-fi", "electronic-dance-music": "edm" },

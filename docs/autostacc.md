@@ -2,7 +2,7 @@
 title: AutoStacc
 summary: The platform's identity and vocabulary: what Auto and Stacc mean, Projects, Stacclets, Pacs, Your Stacc, and when to use plain words instead.
 covers: [css/platform.css, js/layout.js, js/account-nav.js, js/project-frame.js, css/project-frame.css, img/autostacc-mark.svg, data/site.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # AutoStacc: platform identity

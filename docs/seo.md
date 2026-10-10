@@ -2,7 +2,7 @@
 title: SEO
 summary: How search visibility works on autostacc.com: generated metadata, item pages, sitemap, structured data, tests, and what still needs the owner.
 covers: [scripts/build.js, scripts/lib/, scripts/seo-test.js, scripts/public-urls.txt, scripts/deploy-check.js, robots.txt, _redirects, _headers, sitemap.xml, llms.txt, .github/workflows/seo.yml, .github/workflows/deploy.yml, .claude/skills/verify-site/, data/site.js, data/projects.js, data/creators.js]
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # SEO: how the site tells search engines who it is
