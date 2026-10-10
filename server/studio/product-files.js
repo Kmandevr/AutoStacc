@@ -57,7 +57,9 @@ async function remove(app, { productId, fileId }) {
   const user = await requireUser(app);
   const { product } = await requireOwnProduct(app.db, productId, user);
   const fid = str(fileId, "fileId", { max: 40, pattern: FILE_ID });
-  if (!(await first(app.db, "SELECT 1 FROM product_files WHERE id = ? AND product_id = ? AND active = 1", fid, product.id))) fail(404, "not_found", "No such file.");
+  const file = await first(app.db, "SELECT version_id FROM product_files WHERE id = ? AND product_id = ? AND active = 1", fid, product.id);
+  if (!file) fail(404, "not_found", "No such file.");
+  if (file.version_id) fail(409, "in_pack", "This file is part of your pack. Upload a new version of the pack without it.");
   await setStatus(app.db, fid, "deleted");
   await unpublishEmptyStudioProducts(app.db);
   return json({ ok: true });
