@@ -8,22 +8,26 @@
 //   GET  /api/admin/packs/versions/:versionId    state; imports the engine's answer once it is in
 //   POST /api/admin/packs/versions/:versionId/publish | /discard
 import { json, fail, readJson, str, id, int } from "../lib/http.js";
-import { first, all, parseJson } from "../lib/db.js";
+import { first, all, parseJson, isGuardFailure } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
-import { getProduct } from "../catalog/products.js";
+import { getProduct, productsWithPac } from "../catalog/products.js";
 import { safeFilename } from "../storage/buckets.js";
 import { audit } from "../audit/log.js";
 import { createVersion, getVersion, move } from "./versions.js";
-import { startZip, getUpload, putPart, complete } from "./uploads.js";
+import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
 import { publishVersion } from "./publish.js";
 import { routes as engineStorage } from "./engine-storage.js";
 
 const OWNER = /^[a-z0-9_]{1,48}$/;
 
+// Whose stored originals a version uses: the project's creator, or AutoStacc for its own catalog. An id that can't be a
+// storage scope is refused rather than folded into another owner's (stored originals are never shared across owners).
 async function ownerOf(db, product) {
   const p = product.project_id ? await first(db, "SELECT creator_id FROM projects WHERE id = ?", product.project_id) : null;
-  return p && p.creator_id && OWNER.test(p.creator_id) ? p.creator_id : "autostacc";
+  if (!p || !p.creator_id) return "autostacc";
+  if (!OWNER.test(p.creator_id)) fail(409, "unsupported_owner", "This product's creator can't store pack files yet.");
+  return p.creator_id;
 }
 
 async function adminVersion(app, versionId) {
@@ -47,15 +51,16 @@ async function newVersion(app, { pacId }) {
     idempotencyKey: key, createdBy: user.id });
   let upload = await first(app.db, "SELECT id FROM uploads WHERE version_id = ? AND kind = 'zip'", version.id);
   const plan = upload ? null : await startZip(app, version, { filename, size });
+  // Always (a compare-and-set): a retry after a crash between planning the upload and this move still gets here.
+  await move(app.db, version.id, ["draft"], "uploading");
   if (plan) {
-    await move(app.db, version.id, ["draft"], "uploading");
     await audit(app, "pack.version_created", { targetType: "pac", targetId: pac.id, detail: { versionId: version.id, productId: product.id, sizeBytes: size } });
   }
   upload = await getUpload(app.db, plan ? plan.uploadId : upload.id);
   return json({ version: await view(app, version.id), upload: uploadView(upload) }, plan ? 201 : 200);
 }
 
-const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, status: u.status, partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
+const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes: PART_BYTES, status: u.status, partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
 
 async function adminUpload(app, uploadId) {
   await requireAdmin(app);
@@ -110,8 +115,9 @@ async function publish(app, { versionId }) {
   let res;
   try {
     res = await publishVersion(app, v);
-  } catch {
-    fail(409, "not_ready", "This version changed meanwhile; reload it.");
+  } catch (e) {
+    if (isGuardFailure(e)) fail(409, "not_ready", "This version changed meanwhile; reload it.");
+    throw e;
   }
   await audit(app, "pack.version_published", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id, productId: v.product_id, files: res.files } });
   return json({ version: await view(app, v.id) });
@@ -130,7 +136,7 @@ async function pacOverview(app, { pacId }) {
   if (!pac) fail(404, "not_found", "No such Pac.");
   const [versions, products] = await Promise.all([
     all(app.db, "SELECT id, number, status, stats, published_at, created_at FROM pac_versions WHERE pac_id = ? ORDER BY number DESC LIMIT 20", pac.id),
-    all(app.db, "SELECT id, title FROM products WHERE EXISTS (SELECT 1 FROM json_each(products.pacs) j WHERE j.value = ?) ORDER BY title", pac.id)
+    productsWithPac(app.db, pac.id)
   ]);
   return json({
     pac: { id: pac.id, title: pac.title, stacclet: pac.stacclet_id, liveVersionId: pac.live_version_id, draftVersionId: pac.draft_version_id },

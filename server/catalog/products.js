@@ -70,3 +70,7 @@ export function publicProduct(p, sales = [], seller = null) {
       projectPath: `/${seller.creator_slug}/${seller.project_slug}`, verified: Boolean(seller.trusted) } : { verified: p.source !== "studio" })
   };
 }
+
+// Every product that sells a Pac (its `pacs` list names it), for publishing a Pac's contents into each of them.
+export const productsWithPac = (db, pacId) =>
+  all(db, "SELECT id, title FROM products WHERE EXISTS (SELECT 1 FROM json_each(products.pacs) j WHERE j.value = ?) ORDER BY title", pacId);

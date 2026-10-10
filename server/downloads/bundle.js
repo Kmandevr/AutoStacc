@@ -8,7 +8,7 @@ import { json, fail, readJson } from "../lib/http.js";
 import { all, run, first, newId, now, parseJson } from "../lib/db.js";
 import { resolveAccess, requireAccess, subjectsOf } from "../entitlements/access.js";
 import { activeEntitlements, usableEntitlement } from "../entitlements/grants.js";
-import { DELIVERABLE } from "../files/files.js";
+import { deliverableAs, stillDelivered } from "../files/files.js";
 import { getFile, safeFilename } from "../storage/buckets.js";
 import { limit } from "../lib/ratelimit.js";
 import { signBundle, readBundle } from "./tokens.js";
@@ -21,10 +21,10 @@ const FILE_ID = /^pf_[a-z2-7]+$/;
 
 // The files with what a ZIP needs: their stored original's key, size and CRC-32 (files uploaded before Pack Builder
 // have no CRC on record, so they download one at a time).
-const filesWithBlobs = (db, ids) => all(db, `SELECT f.id, f.product_id, f.pac_id, f.filename, f.folder_path, b.r2_key AS blob_key, b.size_bytes, b.crc32,
+const filesWithBlobs = (db, ids) => all(db, `SELECT f.id, f.product_id, f.pac_id, f.filename, f.folder_path, f.retired_at, b.r2_key AS blob_key, b.size_bytes, b.crc32,
     p.title AS product_title, pc.title AS pac_title
   FROM product_files f JOIN products p ON p.id = f.product_id LEFT JOIN blobs b ON b.id = f.blob_id LEFT JOIN pacs pc ON pc.id = f.pac_id
-  WHERE f.${DELIVERABLE.replace(/ AND /g, " AND f.")} AND f.id IN (SELECT value FROM json_each(?))`, JSON.stringify(ids));
+  WHERE ${deliverableAs("f")} AND f.id IN (SELECT value FROM json_each(?))`, JSON.stringify(ids));
 
 const RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
 const part = (s) => {
@@ -35,12 +35,14 @@ const part = (s) => {
 /** Names inside the ZIP: folder/file for one Pac; product (and Pac) folders above when the bundle spans more. */
 export function layout(files) {
   const products = new Set(files.map((f) => f.product_id));
-  const pacs = new Set(files.map((f) => `${f.product_id}/${f.pac_id || ""}`));
+  // A Pac folder only where a product brings more than one Pac.
+  const pacsOf = new Map();
+  for (const f of files) (pacsOf.get(f.product_id) || pacsOf.set(f.product_id, new Set()).get(f.product_id)).add(f.pac_id || "");
   const taken = new Set();
   return files.map((f) => {
     const segs = [];
     if (products.size > 1) segs.push(part(f.product_title));
-    if (pacs.size > 1 && f.pac_title) segs.push(part(f.pac_title));
+    if (pacsOf.get(f.product_id).size > 1 && f.pac_title) segs.push(part(f.pac_title));
     for (const s of String(f.folder_path || "").split("/").filter(Boolean)) segs.push(part(s));
     const name = part(f.filename);
     let full = [...segs, name].join("/");
@@ -65,7 +67,7 @@ async function issue(app) {
   const files = await filesWithBlobs(app.db, ids);
   const ents = new Map();
   for (const pid of new Set(files.map((f) => f.product_id))) ents.set(pid, (await activeEntitlements(app.db, access, pid)).find((e) => subjectFor(access, e)));
-  if (files.length !== ids.length || files.some((f) => !ents.get(f.product_id))) {
+  if (files.length !== ids.length || files.some((f) => !ents.get(f.product_id) || !stillDelivered(f, ents.get(f.product_id).granted_at))) {
     await logEvent(app, "denied", { reason: "bundle: no entitlement", subject: subjectsOf(access)[0] });
     fail(403, "download_denied", "Some of those files aren't in your Stacc.");
   }
@@ -96,17 +98,21 @@ async function redeem(app, { token }) {
   const wanted = parseJson(row.file_ids, []);
   const files = await filesWithBlobs(app.db, wanted.map((w) => w.f));
   const byId = new Map(files.map((f) => [f.id, f]));
-  // Everything is checked again: still deliverable, still owned through the same entitlement, still stored.
+  // Everything is checked again: still deliverable, still owned through the same entitlement, still stored. A bundle
+  // spans few entitlements, so each is looked up once (a 2,000-file bundle stays far inside D1's queries per request).
+  const ents = new Map();
+  for (const e of new Set(wanted.map((w) => w.e))) ents.set(e, await usableEntitlement(app.db, access, e));
   for (const w of wanted) {
     const f = byId.get(w.f);
-    const ent = f && (await usableEntitlement(app.db, access, w.e));
-    if (!f || !f.blob_key || !ent || ent.product_id !== f.product_id) return deny("file or entitlement changed");
+    const ent = ents.get(w.e);
+    if (!f || !f.blob_key || !ent || ent.product_id !== f.product_id || !stillDelivered(f, ent.granted_at)) return deny("file or entitlement changed");
   }
   const ordered = wanted.map((w) => byId.get(w.f));
   const names = layout(ordered);
   const { length, stream } = zipStream(ordered.map((f, i) => ({
     name: names[i], size: f.size_bytes, crc32: f.crc32, open: async () => (await getFile(app.env, f.blob_key))?.body
   })));
+  // Logged as served when the ZIP starts, like a single download: an interrupted download still counts (refund rule).
   await logServedMany(app, wanted.map((w) => ({ productId: byId.get(w.f).product_id, fileId: w.f, entitlementId: w.e, subject: payload.s })));
   const filename = `${part(ordered.length && new Set(ordered.map((f) => f.product_id)).size === 1 ? ordered[0].product_title : "AutoStacc")}.zip`;
   return new Response(stream, {

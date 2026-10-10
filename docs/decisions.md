@@ -329,3 +329,7 @@ Reviewed before building (architect review), so the first end-to-end slice keeps
 - **File ids stay stable.** Publishing keeps a file's id when its bytes didn't change, retires a replaced or removed file (still downloadable for 30 days), and adds new rows. Rows backed by a stored original carry a placeholder `r2_key` (`blob/<file id>`, keeping that column unique without rebuilding the table); the real key is looked up in one place.
 - **The engine Worker gets no database.** It brokers an untrusted Container, so its bindings stay minimal. Its cron asks an internal store route (signed, 404 otherwise) to run the retention sweep.
 - **Phase 3 uploads the whole ZIP** (resumable multipart, parts streamed, never buffered); uploading each file with its hash, which skips unchanged files in revisions, follows with revisions (Phase 6).
+
+## 2026-10-10: Phase 3 review fixes
+
+The security and backend reviews of Phase 3 found one trust gap and several correctness gaps, all fixed with tests: the store now decides every stored key itself (an engine's claim must match it exactly), each `process` job runs in a freshly started Container, retired files follow the 30-day earlier-buyers rule everywhere, a Pac's files go to every product that sells it, no version can stay stuck in processing, and conditional D1 batches use a dedicated `batch_guard` table instead of breaking another table's rule. The retention sweep is the next piece.

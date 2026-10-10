@@ -39,6 +39,8 @@
           format: formatOf(f.filename),
           kind: kindOf(f, types, aliases),
           sizeBytes: f.sizeBytes || 0,
+          folder: f.folderPath || "",
+          bundleable: Boolean(f.bundleable),
           productId: item.productId,
           productTitle: item.title,
           projectId: (stacclet && stacclet.project) || item.projectId || "",
@@ -54,7 +56,7 @@
   // Empty filter fields match everything. q: words that must all appear in the file's name, file name or product title.
   const words = (q) => String(q || "").toLowerCase().split(/\s+/).filter(Boolean).slice(0, 6);
   const matches = (a, f = {}) =>
-    words(f.q).every((w) => `${a.name} ${a.filename} ${a.productTitle}`.toLowerCase().includes(w)) &&
+    words(f.q).every((w) => `${a.name} ${a.filename} ${a.productTitle} ${a.folder}`.toLowerCase().includes(w)) &&
     (!f.project || a.projectId === f.project) && (!f.stacclet || a.staccletId === f.stacclet) &&
     (!f.pac || a.pacId === f.pac) && (!f.kind || a.kind === f.kind) && (!f.format || a.format === f.format);
   const filter = (assets, f) => assets.filter((a) => matches(a, f));
@@ -96,7 +98,9 @@
           id: pid,
           title: (pacs.get(pid) || {}).title || pid,
           count: inPac.length,
-          kinds: kindGroups(inPac, catalog)
+          kinds: kindGroups(inPac, catalog),
+          // A Pac published from Pack Builder keeps its creator's folders: shown instead of content types when present.
+          folders: inPac.some((a) => a.folder) ? groupBy(inPac, (a) => a.folder, []).map(([path, inFolder]) => ({ path, label: path || "Top level", assets: inFolder })) : null
         }))
       })),
       products: groupBy(inProject.filter((a) => !a.staccletId), (a) => a.productId, []).map(([productId, inProduct]) => ({

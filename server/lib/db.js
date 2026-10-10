@@ -35,3 +35,8 @@ export const parseJson = (text, fallback) => {
     return fallback;
   }
 };
+
+// Makes a D1 batch conditional: as its first statement, this breaks a CHECK (rolling the whole batch back) unless
+// `condition` (trusted SQL with ? params) holds. isGuardFailure tells that failure from any other.
+export const guardStmt = (db, condition, ...params) => stmt(db, `INSERT INTO batch_guard (ok) SELECT 0 WHERE NOT (${condition})`, ...params);
+export const isGuardFailure = (e) => /CHECK constraint failed/i.test(String((e && e.message) || e));

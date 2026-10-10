@@ -6,19 +6,21 @@ import { all, stmt, newId, now } from "../lib/db.js";
 const CHUNK = 400;
 
 /**
- * Claims stored originals for written files: [{ key, sha256, size, crc32, format, facts, engineVersion }]. Returns
+ * Claims stored originals for written files. A new blob starts with a deletion date a day out: the import that uses it
+ * clears it in the same batch that adds the version's files, so a blob whose import never commits is swept, not kept.: [{ key, sha256, size, crc32, format, facts, engineVersion }]. Returns
  * statements that insert one blob per new (owner, sha256) and keep the existing one otherwise. Run them in a batch,
  * then call resolveClaims to learn which key each hash ended up with.
  */
 export function claimStmts(db, ownerScope, files) {
   const t = now();
+  const expires = new Date(Date.now() + 86400000).toISOString();
   const rows = files.map((f) => ({ id: newId("bl"), sha: f.sha256, crc: f.crc32, size: f.size, key: f.key, format: f.format || "unknown",
     facts: JSON.stringify(f.facts || {}), ev: f.engineVersion || null }));
   const out = [];
   for (let i = 0; i < rows.length; i += CHUNK) {
-    out.push(stmt(db, `INSERT INTO blobs (id, owner_scope, sha256, crc32, size_bytes, r2_key, format, facts, engine_version, verified_at, created_at)
-      SELECT j.value->>'id', ?, j.value->>'sha', j.value->>'crc', j.value->>'size', j.value->>'key', j.value->>'format', j.value->>'facts', j.value->>'ev', ?, ?
-      FROM json_each(?) j WHERE true ON CONFLICT(owner_scope, sha256) DO UPDATE SET delete_after = NULL`, ownerScope, t, t, JSON.stringify(rows.slice(i, i + CHUNK))));
+    out.push(stmt(db, `INSERT INTO blobs (id, owner_scope, sha256, crc32, size_bytes, r2_key, format, facts, engine_version, verified_at, created_at, delete_after)
+      SELECT j.value->>'id', ?, j.value->>'sha', j.value->>'crc', j.value->>'size', j.value->>'key', j.value->>'format', j.value->>'facts', j.value->>'ev', ?, ?, ?
+      FROM json_each(?) j WHERE true ON CONFLICT(owner_scope, sha256) DO NOTHING`, ownerScope, t, t, expires, JSON.stringify(rows.slice(i, i + CHUNK))));
   }
   return out;
 }

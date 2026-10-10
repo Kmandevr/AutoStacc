@@ -1,9 +1,10 @@
-// Publishing a ready version: its manifest becomes the product's files for this Pac (server/files/publish-rows.js keeps
+// Publishing a ready version: its manifest becomes the files for this Pac in every product that sells the Pac (server/files/publish-rows.js keeps
 // unchanged files' ids and retires the rest), the previous live version is superseded and the Pac is free for its next
 // version, all in one D1 batch (all or nothing) that runs only while the version is still ready.
-import { all, stmt, newId, now, parseJson } from "../lib/db.js";
+import { all, stmt, newId, now, parseJson, guardStmt } from "../lib/db.js";
 import { publishStmts } from "../files/publish-rows.js";
 import { releaseDraftStmt } from "./versions.js";
+import { productsWithPac } from "../catalog/products.js";
 
 // A suggested kind becomes the file's kind (how Your Stacc groups it) from this confidence; below it, the file's format
 // decides as before. Creators' own values (Phase 4) will always win.
@@ -50,12 +51,13 @@ export async function publishVersion(app, version) {
   const db = app.db;
   const t = now();
   const entries = await publishedEntries(db, version.id);
+  // A Pac is content and products sell it: every product that includes it gets the same files (each its own rows).
+  const products = await productsWithPac(db, version.pac_id);
   await db.batch([
-    // Guard: unless the version is still ready (not discarded or published meanwhile), this insert breaks a NOT NULL
-    // rule and the whole batch is rolled back; when it is ready, it inserts nothing.
-    stmt(db, "INSERT INTO pac_versions (id, pac_id) SELECT 'guard', NULL WHERE NOT EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'ready')", version.id),
+    // Only while the version is still ready (not discarded or published meanwhile); otherwise all of it rolls back.
+    guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'ready')", version.id),
     stmt(db, "UPDATE pac_versions SET status = 'published', published_at = ?, updated_at = ? WHERE id = ? AND status = 'ready'", t, t, version.id),
-    ...publishStmts(db, { productId: version.product_id, pacId: version.pac_id, versionId: version.id, entries, t }),
+    ...products.flatMap((p) => publishStmts(db, { productId: p.id, pacId: version.pac_id, versionId: version.id, entries: entries.map((e) => ({ ...e, fileId: newId("pf") })), t })),
     stmt(db, `UPDATE pac_versions SET status = 'superseded', updated_at = ? WHERE status = 'published' AND pac_id = ? AND id <> ?`, t, version.pac_id, version.id),
     stmt(db, "UPDATE pacs SET live_version_id = ?, updated_at = ? WHERE id = ?", version.id, t, version.pac_id),
     releaseDraftStmt(db, version.pac_id, version.id)

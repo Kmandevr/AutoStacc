@@ -9,3 +9,7 @@ ALTER TABLE processing_jobs ADD COLUMN attempt_used INTEGER;
 CREATE INDEX pac_versions_pac ON pac_versions(pac_id, status);
 CREATE INDEX product_files_version ON product_files(version_id);
 CREATE UNIQUE INDEX product_files_live_asset ON product_files(product_id, asset_id) WHERE asset_id IS NOT NULL AND retired_at IS NULL;
+
+-- A D1 batch that may only run while a condition holds starts with an insert here that breaks the CHECK unless the
+-- condition holds (server/lib/db.js guardStmt): the whole batch is then rolled back. Never holds a row.
+CREATE TABLE batch_guard (ok INTEGER NOT NULL CHECK (ok = 1));

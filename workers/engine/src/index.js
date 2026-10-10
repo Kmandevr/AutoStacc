@@ -40,12 +40,18 @@ async function runJob(env, job, msg) {
   const container = engine(env);
   const attempt = msg.attempts;
   if (job.op === "process") {
+    // A fresh engine for every job that writes: nothing an earlier archive left running (were it ever to take over the
+    // parser) can see this job's write scope or answer for it. A cold start costs about half a second.
+    await container.destroy().catch(() => {});
     await container.setOutboundByHost(STORAGE_HOST, "storageForJob", { jobId: job.jobId, attempt, prefix: writePrefix(job.ownerScope, job.jobId, attempt) });
   }
   try {
     await runOn(container, env, job, msg, started, attempt);
   } finally {
-    if (job.op === "process") await container.removeOutboundByHost(STORAGE_HOST);
+    if (job.op === "process") {
+      await container.removeOutboundByHost(STORAGE_HOST);
+      await container.destroy().catch(() => {});
+    }
   }
 }
 
