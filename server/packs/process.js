@@ -63,8 +63,8 @@ export async function refresh(app, version) {
     } catch (e) {
       // Another request imported it a moment earlier: its guard rolled this one back. Anything else fails the version.
       if (!isGuardFailure(e)) {
-        console.error(`pack import ${version.id}:`, e && e.message);
-        await fail(app, version, job.id, "import_failed");
+        if (!e.code) console.error(`pack import ${version.id}:`, e && e.message);
+        await fail(app, version, job.id, e.code === "too_many_files" ? "too_many_files" : "import_failed");
       }
     }
   } else {
@@ -75,7 +75,7 @@ export async function refresh(app, version) {
 
 /** Drops an unfinished version and its upload; the live version is untouched. */
 export async function discard(app, version) {
-  const moved = await move(app.db, version.id, ["draft", "uploading", "ready", "failed"], "discarded");
+  const moved = await move(app.db, version.id, ["draft", "uploading", "ready", "in_review", "failed"], "discarded");
   if (!moved) return false;
   await run(app.db, "UPDATE pacs SET draft_version_id = NULL, updated_at = ? WHERE id = ? AND draft_version_id = ?", now(), version.pac_id, version.id);
   const uploads = await all(app.db, "SELECT r2_key, upload_id, status FROM uploads WHERE version_id = ?", version.id);
