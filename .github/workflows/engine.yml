@@ -104,7 +104,16 @@ jobs:
         run: npm ci && npm i --no-save wrangler@4.148.0
       - name: What the API token can reach (for permission errors below)
         if: steps.ready.outputs.go == 'true'
-        run: npx wrangler whoami 2>&1 | grep -viE "email|@" || true
+        run: |
+          # The token's own permission list (names only; the token itself is never printed).
+          api=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          id=$(curl -s -H "$auth" "$api/verify" | jq -r '.result.id // empty')
+          echo "token status: $(curl -s -H "$auth" "$api/verify" | jq -r '.result.status // .errors[0].message')"
+          if [ -n "$id" ]; then
+            curl -s -H "$auth" "$api/$id" | jq -r '.result.policies[]? | "\(.effect): \([.permission_groups[].name] | join(", "))"' || true
+            curl -s -H "$auth" "$api/$id" | jq -r '.errors[0].message // empty'
+          fi
       - name: Queues (created once; existing ones are kept)
         if: steps.ready.outputs.go == 'true'
         run: |
