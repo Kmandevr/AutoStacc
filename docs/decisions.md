@@ -17,7 +17,7 @@ Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLE
 - **Packs are assets, not ZIPs.** A Pac holds folders and individually identified assets with versions and provenance; an uploaded ZIP is unpacked, every file stored byte for byte and checked by SHA-256, and the ZIP discarded. Originals are never converted, resampled or recompressed.
 - **Who:** the admin and Studio creators, in the first release. Moderation is **automated review**: clean versions publish; flagged ones wait for an admin with reasons.
 - **Buying stays per product.** Customers download any subset they own (file, folder, Pac, selection across products) as one store-only ZIP; checkout, entitlements and download authorization are unchanged.
-- **Revisions:** buyers get the latest version only; files a revision removes are listed in Your Stacc with an "Updated" badge for 30 days.
+- **Revisions:** the owner answered "buyers get the latest version only" (files a revision removes listed in Your Stacc with an "Updated" badge for 30 days). Reopened after the vision was added: it conflicts with purchase permanence (vision §6); see [packs](packs.md) H8. Not built until decided.
 - **Creator storage:** 500 MB free per creator; extra storage will be paid by the creator later (not built).
 - **Product pages** show the contents tree and stats before purchase; store filters come from the files, not hand-entered tags.
 - **Personal collections, tags and saved searches** in Your Stacc in the first release.
@@ -26,6 +26,9 @@ Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLE
 - **Browser side too (rev. 4):** the same Rust engine is compiled to WebAssembly for the Pack Builder: the pack's tree and problems show before uploading, files upload one by one, and revisions upload only changed files. The Container re-checks everything and stays the authority; old browsers upload the whole ZIP instead.
 - **Full-pack ZIP cache** exists behind a switch, off by default: streaming a store-only ZIP costs almost nothing, while a cached copy doubles the pack's storage; switched on only if measurements show it helps.
 - **Cost:** Workers Paid ($5/month), staying inside its included usage: a `basic` Container (¼ vCPU, 1 GiB), one job at a time, sleeping after 30 s; a budget guard alerts at 80% and pauses processing at 95% of any allowance; total R2 storage capped at 9 GB of the free 10 GB until the owner raises it.
+## 2026-10-10: The vision document guides the build
+
+The owner supplied a vision and product-principles document and asked that it guide the build. It lives in [vision](vision.md), named apart from [identity](identity.md) (the Glitches & Stitches project). It labels each point as established direction, working proposal or open question; agents follow the first, may plan with the second, and ask about the third. Earlier dated decisions here (e.g. the 20% fee, per-kind licences) stand until the owner changes them.
 
 ## 2026-10-09: A clean, glassy look with motion as feedback
 
