@@ -10,6 +10,7 @@ import { releaseDraftStmt } from "./versions.js";
 import { dropArchives } from "./uploads.js";
 import { ADMIN } from "./access.js";
 import { versionView } from "./view.js";
+import { recordEvent } from "../creators/events.js";
 
 export const routes = [
   ["GET", "/api/admin/packs/review", async (app) => {
@@ -37,6 +38,7 @@ export const routes = [
       throw e;
     }
     await dropArchives(app, v.id);
+    if (v.product_id) await recordEvent(app.db, { productId: v.product_id, kind: "pac_version_refused", actorId: actor.user.id, detail: { versionId: v.id, number: v.number } });
     await audit(app, "pack.version_rejected", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
     return json({ version: await versionView(app.db, v.id) });
   }]

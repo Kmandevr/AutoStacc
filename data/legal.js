@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-09",
+    updated: "2026-10-10",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -36,7 +36,7 @@ window.LEGAL = [
         "For every order: the email it was placed with, what was in it, the prices charged, any promo code, its status (paid, refunded and so on) and when. Stripe's reference numbers for the payment are kept so refunds and disputes can be matched to the order.",
         "What you own is recorded separately, so your library knows which files you can download.",
         "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, once you set up payouts, the reference of your Stripe payout account, the country of its bank account and whether it is ready (Stripe, not AutoStacc, collects and keeps your ID, tax and bank details; see [Stripe's privacy policy](https://stripe.com/privacy)). Each payout is recorded with its amount and Stripe's transfer reference. If payouts are still sent by hand, the payment details you type in (for example a PayPal address) are kept with the payout record, visible only to you and AutoStacc.",
-        "If you make a creator space in the Studio: its name and address, the pages and images you publish there (which are public), and which accounts can edit it.",
+        "If you make a creator space in the Studio: its name and address, the pages and images you publish there (which are public), and which accounts can edit it. For each of your products the Studio keeps a history of changes (what changed, such as the price or putting it on sale, when, and which member of your creator space did it), visible to your creator space and AutoStacc.",
         "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link for 30 days."
       ] },
       { id: "payments", heading: "Payments", body: [
