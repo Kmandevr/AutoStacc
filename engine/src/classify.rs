@@ -422,6 +422,7 @@ mod tests {
             issues: vec![],
             ignored: false,
             suggestions: vec![],
+            stored: None,
         }
     }
 

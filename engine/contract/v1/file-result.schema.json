@@ -1,5 +1,5 @@
 {
-  "$comment": "AutoStacc engine contract v1: one file. format/by/mismatch: what the bytes are (by = signature) or what the name says (by = extension, bytes unread). facts come only from the file's own headers; facts.embedded are values someone wrote into the file (claims, not facts). sha256/crc32 only when the bytes were read in full. suggestions: only when the job sent a vocabulary (suggestion.schema.json).",
+  "$comment": "AutoStacc engine contract v1: one file. format/by/mismatch: what the bytes are (by = signature) or what the name says (by = extension, bytes unread). facts come only from the file's own headers; facts.embedded are values someone wrote into the file (claims, not facts). sha256/crc32 only when the bytes were read in full. suggestions: only when the job sent a vocabulary (suggestion.schema.json). stored: the process job only, the key the original was written to (absent when it wasn't written or was refused).",
   "type": "object",
   "required": [
     "path",
@@ -115,6 +115,9 @@
       "items": {
         "$ref": "suggestion.schema.json"
       }
+    },
+    "stored": {
+      "type": "string"
     }
   }
 }
