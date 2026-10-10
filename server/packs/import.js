@@ -3,7 +3,8 @@
 // on which both agree are kept. Each becomes an asset in the version's manifest, its bytes one stored original per owner
 // and hash (a duplicate copy is deleted), its suggestions rows in asset_values. Then the uploaded archive and anything
 // the job left over are deleted: the manifest is the record from here on (owner's decision, docs/decisions.md).
-import { all, stmt, newId, now } from "../lib/db.js";
+import { all, stmt, newId, now, guardStmt } from "../lib/db.js";
+import { writePrefix } from "../../workers/engine/src/jobs.js";
 import { claimStmts, blobsByHash } from "../blobs/blobs.js";
 import { jobWrites, jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
@@ -20,21 +21,33 @@ function logicalPaths(paths) {
   return paths.map((p) => p.slice(strip));
 }
 
+/**
+ * Which files of an engine's answer are kept: those it accepted whose stored key is exactly the n-th key under this
+ * job's own prefix (built here, never taken from the engine) and whose bytes the relay recorded with the same SHA-256
+ * and size. An answer naming any other object (another owner's, another job's) is refused, so an engine can't make a
+ * version point at bytes it didn't write in this job. Pure, for tests.
+ */
+export function acceptStored(files, writes, prefix) {
+  const kept = [];
+  const refused = [];
+  for (const f of files || []) {
+    if (f.ignored) continue;
+    const codes = refusedOf(f);
+    const seg = typeof f.stored === "string" ? f.stored.slice(f.stored.lastIndexOf("/") + 1) : "";
+    const key = /^[1-9][0-9]{0,5}$/.test(seg) ? prefix + seg : null;
+    const w = key && key === f.stored ? writes[Number(seg)] : null;
+    if (codes.length || !f.stored) refused.push({ path: f.path, codes: codes.length ? codes : ["not_stored"] });
+    else if (!w || w.sha256 !== f.sha256 || w.size !== f.size) refused.push({ path: f.path, codes: ["storage_mismatch"] });
+    else kept.push({ ...f, stored: key, sha256: w.sha256, size: w.size });
+  }
+  return { kept, refused };
+}
+
 export async function importResult(app, version, job, state) {
   const { result, attempt } = state;
   const writes = await jobWrites(app, job.id, attempt);
   const owner = version.owner_scope;
-  const kept = [];
-  const refused = [];
-  for (const f of result.files || []) {
-    if (f.ignored) continue;
-    const codes = refusedOf(f);
-    const n = f.stored ? Number(f.stored.split("/").pop()) : 0;
-    const w = writes[n];
-    if (codes.length || !f.stored) refused.push({ path: f.path, codes: codes.length ? codes : ["not_stored"] });
-    else if (!w || w.sha256 !== f.sha256 || w.size !== f.size) refused.push({ path: f.path, codes: ["storage_mismatch"] });
-    else kept.push({ ...f, sha256: w.sha256, size: w.size });
-  }
+  const { kept, refused } = acceptStored(result.files, writes, writePrefix(owner, job.id, attempt));
 
   // One name per folder ignoring case (Windows and macOS would merge them); the engine already warned about these.
   const allPaths = logicalPaths(kept.map((f) => f.path));
@@ -74,14 +87,23 @@ export async function importResult(app, version, job, state) {
     const filename = p.slice(p.lastIndexOf("/") + 1);
     const asset = newId("as");
     entries.push({ asset, folder: folderOf(dir), filename, original: f.path, blob: blobs[f.sha256].id, sort: entries.length });
-    for (const s of f.suggestions || []) values.push({ asset, field: s.field, value: s.value, origin: s.origin, confidence: s.confidence, blob: blobs[f.sha256].id });
+    // One row per field, value and origin (the table's key), whatever an engine repeats.
+    const said = new Set();
+    for (const s of f.suggestions || []) {
+      const k = JSON.stringify([s.field, s.value, s.origin]);
+      if (said.has(k)) continue;
+      said.add(k);
+      values.push({ asset, field: s.field, value: s.value, origin: s.origin, confidence: s.confidence, blob: blobs[f.sha256].id });
+    }
   });
   const bytes = kept.reduce((n, f) => n + f.size, 0);
   const stats = { files: entries.length, bytes, folders: folders.size, refused, ignored: (result.files || []).filter((f) => f.ignored).length };
   const db = app.db;
   const batch = [
-    // Guard: if another request imported this answer first, this breaks a NOT NULL rule and the whole batch rolls back.
-    stmt(db, "INSERT INTO pac_versions (id, pac_id) SELECT 'guard', NULL WHERE NOT EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'processing')", version.id),
+    // Only while the version is still processing: if another request imported this answer first, all of this rolls back.
+    guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'processing')", version.id),
+    // The originals this version uses are wanted now (newly claimed ones expire otherwise, see claimStmts).
+    ...chunks(entries).map((json) => stmt(db, "UPDATE blobs SET delete_after = NULL WHERE id IN (SELECT j.value->>'blob' FROM json_each(?) j)", json)),
     ...chunks(entries).map((json) => stmt(db, "INSERT INTO assets (id, pac_id, created_at) SELECT j.value->>'asset', ?, ? FROM json_each(?) j", version.pac_id, t, json)),
     ...chunks([...folders.values()]).map((json) => stmt(db, `INSERT INTO pac_folders (id, version_id, parent_id, name, sort, original_path)
       SELECT j.value->>'id', ?, j.value->>'parent', j.value->>'name', j.value->>'sort', j.value->>'path' FROM json_each(?) j`, version.id, json)),

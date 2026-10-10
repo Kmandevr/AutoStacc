@@ -10,7 +10,7 @@ import { logEvent, subjectFor } from "./events.js";
 import { routes as bundles } from "./bundle.js";
 import { getFile, safeFilename } from "../storage/buckets.js";
 import { limit } from "../lib/ratelimit.js";
-import { getDeliverableFile as getActiveFile, storageKeyOf } from "../files/files.js";
+import { getDeliverableFile as getActiveFile, storageKeyOf, stillDelivered } from "../files/files.js";
 
 // Account deletion: the download history stays (statistics, refund checks) but no longer names the account.
 export const anonymiseDownloadsStmt = (db, userId, anonId) =>
@@ -23,7 +23,7 @@ async function issue(app) {
   const fileId = str(body.fileId, "fileId", { max: 40, pattern: /^pf_[a-z2-7]+$/ });
   const file = await getActiveFile(app.db, fileId);
   const ents = file ? await activeEntitlements(app.db, access, file.product_id) : [];
-  const ent = ents.find((e) => subjectFor(access, e));
+  const ent = ents.find((e) => subjectFor(access, e) && stillDelivered(file, e.granted_at));
   if (!file || !ent) {
     await logEvent(app, "denied", { fileId, productId: file && file.product_id, reason: "no entitlement", subject: subjectsOf(access)[0] });
     fail(403, "download_denied", "That file isn't in your Stacc.");
@@ -55,6 +55,7 @@ async function redeem(app, { token }) {
   const [ent, file] = await Promise.all([usableEntitlement(app.db, access, payload.e), getActiveFile(app.db, payload.f)]);
   if (!ent) return deny("entitlement inactive");
   if (!file || file.product_id !== ent.product_id) return deny("file mismatch");
+  if (!stillDelivered(file, ent.granted_at)) return deny("file retired");
   const key = await storageKeyOf(app.db, file);
   const object = key && (await getFile(app.env, key));
   if (!object) return deny("file missing from storage");

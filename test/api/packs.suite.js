@@ -126,6 +126,36 @@ export default (ctx) => describe("packs", () => {
     }
   });
 
+  test("a new version replaces the files: earlier buyers keep the old ones for now, new buyers only get the new", async () => {
+    const admin = await adminClient(base());
+    const early = await newBuyer(base(), "packs-early");
+    await mockBuy(early.c, [{ productId: PRODUCT }]);
+    const before = (await early.c.get("/api/library")).data.items.find((p) => p.productId === PRODUCT).files.filter((f) => f.pacId === "frayed-signals-samples" && f.folderPath);
+    assert.ok(before.length > 0);
+    const { version, upload } = await build(admin, "frayed-signals-samples", caseZip("pack-names"));
+    assert.equal(version.status, "ready");
+    const again = await admin.post(`/api/admin/packs/uploads/${upload.uploadId}/complete`, {});
+    assert.equal(again.status, 200, "completing twice is harmless");
+    assert.equal((await admin.post(`/api/admin/packs/versions/${version.id}/publish`, {})).status, 200);
+    const overview = (await admin.get("/api/admin/packs/frayed-signals-samples")).data;
+    assert.equal(overview.pac.liveVersionId, version.id);
+    assert.equal(overview.versions.filter((v) => v.status === "published").length, 1, "the earlier version is superseded");
+
+    const late = await newBuyer(base(), "packs-late");
+    await mockBuy(late.c, [{ productId: PRODUCT }]);
+    const lateFiles = (await late.c.get("/api/library")).data.items.find((p) => p.productId === PRODUCT).files;
+    assert.ok(lateFiles.every((f) => !f.retiredAt), "a new buyer sees only current files");
+    assert.ok(!lateFiles.some((f) => before.some((b) => b.id === f.id)));
+    assert.equal((await late.c.post("/api/downloads", { fileId: before[0].id })).status, 403, "nor can they download a retired one");
+    assert.equal((await late.c.post("/api/downloads/bundle", { fileIds: [before[0].id] })).status, 403);
+
+    const earlyFiles = (await early.c.get("/api/library")).data.items.find((p) => p.productId === PRODUCT).files;
+    const kept = earlyFiles.filter((f) => before.some((b) => b.id === f.id));
+    assert.equal(kept.length, before.length, "an earlier buyer still has the replaced files");
+    assert.ok(kept.every((f) => f.retiredAt));
+    assert.equal((await early.c.post("/api/downloads", { fileId: before[0].id })).status, 200);
+  });
+
   test("one version in progress per Pac; the same idempotency key returns the same version", async () => {
     const admin = await adminClient(base());
     const zip = caseZip("pack-names");

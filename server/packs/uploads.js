@@ -4,7 +4,7 @@
 // or discarded (R2 itself aborts unfinished uploads after 7 days).
 import { first, run, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { startMultipart, uploadPart, completeMultipart } from "../storage/buckets.js";
+import { startMultipart, uploadPart, completeMultipart, headFile } from "../storage/buckets.js";
 
 export const PART_BYTES = 64 * 1024 * 1024;
 export const ZIP_MAX_BYTES = 50 * 1024 ** 3;
@@ -47,7 +47,13 @@ export async function complete(app, upload) {
   for (let n = 1; n <= partsOf(upload.size_bytes); n++) if (!latest.has(n)) missing.push(n);
   if (missing.length) return { complete: false, missing };
   const parts = [...latest.values()].sort((a, b) => a.part - b.part).map((p) => ({ partNumber: p.part, etag: p.etag }));
-  await completeMultipart(app.env, upload.r2_key, upload.upload_id, parts);
+  try {
+    await completeMultipart(app.env, upload.r2_key, upload.upload_id, parts);
+  } catch (e) {
+    // Completed by an earlier try (or a request racing this one) whose bookkeeping didn't land: the object is there.
+    const done = await headFile(app.env, upload.r2_key);
+    if (!done || done.size !== upload.size_bytes) throw e;
+  }
   await run(app.db, "UPDATE uploads SET status = 'complete', updated_at = ? WHERE id = ? AND status = 'open'", now(), upload.id);
   return { complete: true };
 }

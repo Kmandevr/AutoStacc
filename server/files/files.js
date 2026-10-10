@@ -6,12 +6,22 @@ import { all, first, run, now } from "../lib/db.js";
 import { blobKey } from "../blobs/blobs.js";
 
 export const DELIVERABLE = "active = 1 AND status = 'published'";
+// The same rule for a query that names product_files with an alias ("f" → "f.active = 1 AND f.status = 'published'").
+export const deliverableAs = (alias) => `${alias}.active = 1 AND ${alias}.status = 'published'`;
+
+// A file a newer version removed or replaced (retired_at) stays downloadable for 30 days, and only to people whose
+// access began before it was retired (docs/packs.md H8, owner's decision); everyone else gets the current files only.
+export const RETIRED_KEEP_DAYS = 30;
+export function stillDelivered(file, grantedAt, nowMs = Date.now()) {
+  if (!file.retired_at) return true;
+  return Boolean(grantedAt) && grantedAt < file.retired_at && Date.parse(file.retired_at) > nowMs - RETIRED_KEEP_DAYS * 86400000;
+}
 export const STATUSES = ["pending", "published", "rejected", "deleted"];
 
 export const getDeliverableFile = (db, fileId) => first(db, `SELECT * FROM product_files WHERE id = ? AND ${DELIVERABLE}`, fileId);
 
 export const deliverableFiles = (db, productIds) => (productIds.length
-  ? all(db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind, folder_path, retired_at FROM product_files
+  ? all(db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind, folder_path, retired_at, blob_id FROM product_files
       WHERE ${DELIVERABLE} AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
   : Promise.resolve([]));
 
