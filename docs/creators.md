@@ -67,7 +67,7 @@ Future custom HTML/CSS needs its own model before it's allowed: creator code run
 
 - A creator page is **not a deployment**. Publishing renders each page once into `site_pages`. A view is one indexed D1 read, cached at the edge for a minute in production (`server/sites/public.js`).
 - Static pages never invoke the catch-all Function: `scripts/dist.js` writes `_routes.json` to exclude every static page and folder, first-party creators' folders and every `_redirects` source. Only unknown top-level addresses (Studio creators, typos) reach it.
-- Free-plan limits live in one file (`server/creators/policy.js`): projects, pages, blocks, document size, image size and count, an image storage quota (50 MB), and for selling products per creator, files per product and a separate paid-file quota (250 MB). An admin can raise a creator's quota. The quota is checked before an upload is stored, and again atomically when it's recorded, so parallel uploads can't squeeze past it.
+- Free-plan limits live in one file (`server/creators/policy.js`): projects, pages, blocks, document size, image size and count, an image storage quota (50 MB), and for selling products per creator, files per product and a separate paid-file quota (500 MB, owner 2026-10-10; extra storage will be paid by the creator, not built). A creator's own image quota (`storage_quota_bytes`) and paid-file quota (`files_quota_bytes`) can be set in the database to replace the plan's; there is no Control Center control for the paid-file one yet. The quota is checked before an upload is stored, and again atomically when it's recorded, so parallel uploads can't squeeze past it.
 
 ## Store foundations under creators
 

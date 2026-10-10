@@ -174,6 +174,20 @@ export default (ctx) => describe("selling", () => {
     assert.equal((await s.c.req("DELETE", `/api/studio/products/${p.id}/files/${fast.data.file.id}`)).status, 200);
   });
 
+  test("paid-file storage: an admin-set quota for a creator replaces the free plan's, and nothing over it is kept", async () => {
+    const s = await seller(base(), "quota");
+    const p = (await make(s)).data.product;
+    const up = (name) => put(s.c, `/api/studio/products/${p.id}/files?filename=${encodeURIComponent(name)}`, ZIP);
+    assert.equal((await up("one.zip")).status, 201, "the free plan's quota has room");
+    db(`UPDATE creators SET files_quota_bytes = ${ZIP.length + 10} WHERE id = '${s.creator.id}'`);
+    const over = await up("two.zip");
+    assert.equal(over.status, 409);
+    assert.equal(over.data.error.code, "quota_exceeded");
+    assert.equal(db(`SELECT COUNT(*) AS n FROM product_files WHERE product_id = '${p.id}' AND active = 1`)[0].n, 1, "the refused file left no row");
+    db(`UPDATE creators SET files_quota_bytes = NULL WHERE id = '${s.creator.id}'`);
+    assert.equal((await up("two.zip")).status, 201, "back on the free plan's quota");
+  });
+
   test("a sale: the seller split is recorded, the buyer gets the file, and earnings, hold and payouts follow", async () => {
     const s = await seller(base(), "earner");
     const stranger = await seller(base(), "nosy");

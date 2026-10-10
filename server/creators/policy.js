@@ -14,7 +14,10 @@ export const LIMITS = {
   // Selling: products per creator, paid-file storage (separate from the image storage above), files per product.
   productsPerCreator: 25,
   filesPerProduct: 20,
-  productFilesQuotaBytes: 250 * 1024 * 1024
+  // Paid files (originals for sale), free plan; extra storage will be paid by the creator (owner, 2026-10-10; not built).
+  productFilesQuotaBytes: 500 * 1024 * 1024,
+  // Files in one version of a Pac built with the Pack Builder (docs/packs.md).
+  filesPerPacVersion: 2000
 };
 
 // Selling rules (docs/creators.md). Prices are whole cents: free, or between the card processor's practical minimum
@@ -34,5 +37,7 @@ export const SELLING = {
 // affects later sales. A creator's own platform_fee_bps (Control Center) overrides it.
 export const DEFAULT_PLATFORM_FEE_BPS = 2000;
 
+// A creator's paid-file quota: an admin-set one (creators.files_quota_bytes), else the free plan's.
+export const filesQuotaOf = (creator) => (creator && creator.files_quota_bytes != null ? creator.files_quota_bytes : LIMITS.productFilesQuotaBytes);
 export const quotaOf = (creator) => (creator && creator.storage_quota_bytes != null ? creator.storage_quota_bytes : LIMITS.storageQuotaBytes);
 export const feeBpsOf = (creator) => (creator && creator.platform_fee_bps != null ? creator.platform_fee_bps : DEFAULT_PLATFORM_FEE_BPS);
