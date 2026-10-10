@@ -1,10 +1,25 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Decisions
+
+## 2026-10-10: Pack Builder, asset engine and selective downloads (planned)
+
+Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLEMENTED).
+
+- **Packs are assets, not ZIPs.** A Pac holds folders and individually identified assets with versions and provenance; an uploaded ZIP is unpacked, every file stored byte for byte and checked by SHA-256, and the ZIP discarded. Originals are never converted, resampled or recompressed.
+- **Who:** the admin and Studio creators, in the first release. Moderation is **automated review**: clean versions publish; flagged ones wait for an admin with reasons.
+- **Buying stays per product.** Customers download any subset they own (file, folder, Pac, selection across products) as one store-only ZIP; checkout, entitlements and download authorization are unchanged.
+- **Revisions:** buyers get the latest version only; files a revision removes are listed in Your Stacc with an "Updated" badge for 30 days.
+- **Creator storage:** 500 MB free per creator; extra storage will be paid by the creator later (not built).
+- **Product pages** show the contents tree and stats before purchase; store filters come from the files, not hand-entered tags.
+- **Personal collections, tags and saved searches** in Your Stacc in the first release.
+- **Engine: Rust, run natively in a Cloudflare Container** (server-side from the start, so processing continues with the tab closed), driven by a Queue and a small engine Worker; the site and API stay JavaScript. Chosen over C++ (memory-unsafe parsing of hostile files; best audio-analysis libraries are GPL/AGPL), Python (large image, slow cold start) and Go (weak audio libraries).
+- **Replaceable:** the engine is reached only through a versioned JSON job contract with conformance fixtures, so another implementation can replace it; each feature (analysis, bundles, derived facets, contents tree) can be switched off without affecting uploads, purchases or single downloads.
+- **Cost:** Workers Paid ($5/month), staying inside its included usage: a `basic` Container (¼ vCPU, 1 GiB), one job at a time, sleeping after 30 s; a budget guard alerts at 80% and pauses processing at 95% of any allowance; total R2 storage capped at 9 GB of the free 10 GB until the owner raises it.
 
 ## 2026-10-09: A clean, glassy look with motion as feedback
 
