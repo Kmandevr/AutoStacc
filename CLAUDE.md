@@ -9,6 +9,7 @@ Tasks and bugs live in GitHub Issues: use the `tasks` skill to find, claim and f
 ## Rules
 
 - For anything creative about Glitches & Stitches (copy, artwork, names, release ideas, branding, promotion), follow [docs/identity.md](docs/identity.md); don't turn it into a generic EDM brand. AutoStacc's copy, look and the Stacc vocabulary follow [docs/autostacc.md](docs/autostacc.md).
+- Product direction and principles for AutoStacc (what to build and what it must never become) come from [docs/vision.md](docs/vision.md). It separates established direction, working proposals and open questions: never build an open question as settled policy, never present a proposal as built, and ask before deciding one.
 - Never invent facts about the artist (bio, releases, collaborators, dates, prices). Use `docs/`. If it's missing, ask the user, or mark it as placeholder and open an issue for it.
 - Record decisions and new facts in `docs/` before ending a session (details in `.claude/rules/docs.md`).
 - Future feature work must preserve the production website requirements and must not bypass legal, security, accessibility, authorization, SEO or privacy protections: [docs/production.md](docs/production.md). When a change collects or shares something new, update `/privacy` (`data/legal.js`) in the same change.

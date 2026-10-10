@@ -1,10 +1,14 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-09
+updated: 2026-10-10
 ---
 
 # Decisions
+
+## 2026-10-10: The vision document guides the build
+
+The owner supplied a vision and product-principles document and asked that it guide the build. It lives in [vision](vision.md), named apart from [identity](identity.md) (the Glitches & Stitches project). It labels each point as established direction, working proposal or open question; agents follow the first, may plan with the second, and ask about the third. Earlier dated decisions here (e.g. the 20% fee, per-kind licences) stand until the owner changes them.
 
 ## 2026-10-09: A clean, glassy look with motion as feedback
 
