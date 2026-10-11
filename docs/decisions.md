@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # Decisions
@@ -78,7 +78,7 @@ Owner's request, with their answers: the home page everyone sees starts with a l
 - **Titles:** the home page's title must start with "AutoStacc"; the separator after it is grammar, not a rule.
 - **Stripe Checkout and statements say AutoStacc**, not Glitches & Stitches.
 - **"Stacc'd" gets used** in the site's copy: Your Stacc's intro, the payment-confirmed message and claiming a free product. Later the same day: it replaces "owned" and "purchased" everywhere the site talks about having something; legal pages and payment words stay plain.
-- **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. Creator payouts aren't set up yet (no marketplace Stripe account or secrets), so the key's permissions wait for that.
+- **Confirmed by the owner in Cloudflare:** the Bulk Redirect from `autostacc.pages.dev` to `autostacc.com`. Creator payouts weren't set up then; the marketplace Stripe account ("AutoStacc Payments") got its own key and webhook on 2026-10-11 ([payouts-setup](payouts-setup.md)).
 
 ## 2026-10-09: Docs are checked against the repository, not trusted
 
