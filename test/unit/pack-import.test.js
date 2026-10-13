@@ -1,9 +1,9 @@
-// Pack Builder import (server/packs/import.js acceptStored): only files the engine accepted AND the storage relay
+// Pack Builder import (server/packs/accept.js acceptStored): only files the engine accepted AND the storage relay
 // recorded under this job's own prefix, with the same hash and size, are kept. An engine can't point a version at an
 // object it didn't write in this job (another owner's paid file, another job's), nor at bytes it misreports.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { acceptStored } from "../../server/packs/import.js";
+import { acceptStored } from "../../server/packs/accept.js";
 
 const sha = (c) => c.repeat(64);
 const prefix = "blobs/cr_me/pj_job1/1/";

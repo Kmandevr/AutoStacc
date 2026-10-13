@@ -35,10 +35,11 @@ test("soft flags hold unless the creator is trusted; always-hold holds everythin
   assert.equal(clearToPublish(null, { trusted: true }), false, "no review at all holds");
 });
 
-test("a revision that drops over a quarter of the files or half the bytes is flagged", () => {
-  const before = Object.fromEntries(kept(4).map((f) => [f.sha256, f.size]));
-  assert.deepEqual(codes(review({ result: { files: kept(3) }, kept: kept(3), refused: [], previous: before })), []);
-  assert.deepEqual(codes(review({ result: { files: kept(2) }, kept: kept(2), refused: [], previous: before })), ["big_revision"]);
+test("a revision that removes over a quarter of the files or takes away over half the bytes is flagged", () => {
+  const rv = (revision) => codes(review({ result: { files: kept(3) }, kept: kept(3), refused: [], revision }));
+  assert.deepEqual(rv({ files: 4, bytes: 400, removed: 1, goneBytes: 200 }), [], "a quarter, half: not over");
+  assert.deepEqual(rv({ files: 4, bytes: 400, removed: 2, goneBytes: 200 }), ["big_revision"]);
+  assert.deepEqual(rv({ files: 4, bytes: 400, removed: 0, goneBytes: 201 }), ["big_revision"], "replacing most of the bytes counts too");
 });
 
 test("an archive inside the pack is a soft flag: its contents weren't checked", () => {

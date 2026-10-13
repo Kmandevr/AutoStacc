@@ -1,0 +1,30 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Read me.txt",
+   "size": 34
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Changelog.txt",
+   "size": 50
+  }
+ ],
+ "folders": [
+  "Pack"
+ ],
+ "totalSize": 84,
+ "zip64": false
+}

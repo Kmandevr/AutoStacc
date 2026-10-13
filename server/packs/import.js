@@ -1,84 +1,23 @@
-// Importing a finished `process` job into a version (docs/packs.md): the engine's answer says which files it accepted and
-// where it stored each; the storage relay's own record says what was actually written (its SHA-256 and size). Only files
-// on which both agree are kept. Each becomes an asset in the version's manifest, its bytes one stored original per owner
+// Importing a finished `process` job into a version (docs/packs.md): the files it keeps (accept.js: what the engine
+// stored and the relay recorded identically, plus a thin ZIP's carried files). Each becomes an asset in the version's
+// manifest (the live version's asset when it's the same file, revision.js), its bytes one stored original per owner
 // and hash (a duplicate copy is deleted), its suggestions rows in asset_values. Then the uploaded archive and anything
 // the job left over are deleted: the manifest is the record from here on (owner's decision, docs/decisions.md).
-import { first, all, stmt, newId, now, guardStmt } from "../lib/db.js";
-import { writePrefix } from "../../workers/engine/src/jobs.js";
-import { ALLOWED_EXTENSIONS, extensionOf } from "../files/policy.js";
+import { all, stmt, newId, now, guardStmt } from "../lib/db.js";
 import { review } from "./review.js";
 import { revisionOf } from "./revision.js";
-import { LIMITS, filesQuotaOf } from "../creators/policy.js";
-import { storageUsed } from "../creators/storage.js";
+import { keptFiles } from "./accept.js";
 import { claimStmts, blobsByHash } from "../blobs/blobs.js";
-import { jobWrites, jobObjects } from "./engine-client.js";
+import { jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
 import { deleteKeys } from "../storage/buckets.js";
 
 const CHUNK = 300;
 const chunks = (rows) => Array.from({ length: Math.ceil(rows.length / CHUNK) }, (_, i) => JSON.stringify(rows.slice(i * CHUNK, (i + 1) * CHUNK)));
-const refusedOf = (f) => (f.issues || []).filter((i) => i.refused).map((i) => i.code);
-
-// Drops one wrapper folder all files share ("My Pack/…"): the product already names the Pac.
-function logicalPaths(paths) {
-  const tops = new Set(paths.map((p) => (p.includes("/") ? p.split("/")[0] : "")));
-  const strip = tops.size === 1 && !tops.has("") ? [...tops][0].length + 1 : 0;
-  return paths.map((p) => p.slice(strip));
-}
-
-/**
- * Which files of an engine's answer are kept: those it accepted whose stored key is exactly the n-th key under this
- * job's own prefix (built here, never taken from the engine) and whose bytes the relay recorded with the same SHA-256
- * and size. An answer naming any other object (another owner's, another job's) is refused, so an engine can't make a
- * version point at bytes it didn't write in this job. Pure, for tests.
- */
-export function acceptStored(files, writes, prefix) {
-  const kept = [];
-  const refused = [];
-  for (const f of files || []) {
-    if (f.ignored) continue;
-    const codes = refusedOf(f);
-    const seg = typeof f.stored === "string" ? f.stored.slice(f.stored.lastIndexOf("/") + 1) : "";
-    const key = /^[1-9][0-9]{0,5}$/.test(seg) ? prefix + seg : null;
-    const w = key && key === f.stored ? writes[Number(seg)] : null;
-    if (codes.length || !f.stored) refused.push({ path: f.path, codes: codes.length ? codes : ["not_stored"] });
-    else if (!w || w.sha256 !== f.sha256 || w.size !== f.size) refused.push({ path: f.path, codes: ["storage_mismatch"] });
-    else kept.push({ ...f, stored: key, sha256: w.sha256, size: w.size });
-  }
-  return { kept, refused };
-}
-
 export async function importResult(app, version, job, state) {
   const { result, attempt } = state;
-  const writes = await jobWrites(app, job.id, attempt);
   const owner = version.owner_scope;
-  const accepted = acceptStored(result.files, writes, writePrefix(owner, job.id, attempt));
-  const refused = accepted.refused;
-  // Only kinds of files the store sells (server/files/policy.js, the same list as single uploads): nothing else reaches customers.
-  const kept = accepted.kept.filter((f) => ALLOWED_EXTENSIONS.has(extensionOf(f.path)) || (refused.push({ path: f.path, codes: ["unsupported_type"] }), false));
-
-  // One name per folder ignoring case (Windows and macOS would merge them); the engine already warned about these.
-  const allPaths = logicalPaths(kept.map((f) => f.path));
-  const seen = new Set();
-  const named = [];
-  kept.forEach((f, i) => {
-    const unique = allPaths[i].toLowerCase();
-    if (seen.has(unique)) refused.push({ path: f.path, codes: ["duplicate_name"] });
-    else (seen.add(unique), named.push({ ...f, logical: allPaths[i] }));
-  });
-  kept.length = 0;
-  kept.push(...named);
-  // The agreed limit per version (docs/packs.md H7): a bigger Pac goes in as more than one Pac.
-  if (kept.length > LIMITS.filesPerPacVersion) throw Object.assign(new Error("too many files"), { code: "too_many_files" });
-  // A creator's storage counts the files as unpacked, not the archive they came in (an archive can compress a lot):
-  // refused before anything is claimed if they don't fit beside what the creator already stores.
-  const creator = await first(app.db, "SELECT * FROM creators WHERE id = ?", owner);
-  if (creator) {
-    const bytes = kept.reduce((n, f) => n + f.size, 0);
-    const archive = (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ?", version.id)).n;
-    if ((await storageUsed(app.db, owner)) - archive + bytes > filesQuotaOf(creator)) throw Object.assign(new Error("over quota"), { code: "quota_exceeded" });
-  }
-
+  const { kept, refused, carried } = await keptFiles(app, version, job, state);
   // For the automated review: how many of these the owner already had. As a revision of the live version
   // (revision.js): which files are the live version's files, and which folders its folders.
   const already = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
@@ -120,9 +59,11 @@ export async function importResult(app, version, job, state) {
     }
   });
   const bytes = kept.reduce((n, f) => n + f.size, 0);
-  const stats = { files: entries.length, bytes, folders: folders.size, refused, ignored: (result.files || []).filter((f) => f.ignored).length,
-    review: review({ result, kept, refused, existingHashes: kept.filter((f) => already[f.sha256]).length,
-      previous: rev.previous }),
+  const stats = { files: entries.length, bytes, carried: kept.filter((f) => f.carried).length, folders: folders.size, refused, ignored: (result.files || []).filter((f) => f.ignored).length,
+    // "Already stored" means elsewhere: files this Pac's live version has are a revision's unchanged files, not duplicates.
+    review: review({ result: { ...result, files: [...(result.files || []), ...carried] }, kept, refused,
+      existingHashes: kept.filter((f) => already[f.sha256] && !(rev.previous && f.sha256 in rev.previous)).length,
+      revision: rev.risk }),
     // As a revision: what changed, with the files that are new to this Pac marked too.
     ...(rev.summary ? { diff: { ...rev.summary, changes: { ...rev.summary.changes, ...Object.fromEntries(entries.filter((e) => e.isNew).map((e) => [e.asset, "new"])) } } } : {}) };
   // The live version's folders this version keeps carry their defaults over.

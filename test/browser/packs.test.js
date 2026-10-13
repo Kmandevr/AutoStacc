@@ -1,13 +1,15 @@
 // Browser group for the Pack Builder (Control Center → Packs), against its own store and the mock engine: choose a Pac,
 // pick a ZIP (previewed in the browser by the engine's WebAssembly build), upload, wait for the check, then review: set
 // a value on selected files and see where each value comes from. And a Studio creator doing the same for their own
-// product in the Product Studio's Pac Builder section, whose clean pack publishes at once. No console errors throughout.
+// product in the Product Studio's Pac Builder section, whose clean pack publishes at once and whose next version
+// uploads only the files the store doesn't have (a thin ZIP, js/packs-thin.js). No console errors throughout.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { after } from "node:test";
 import { browserStore, DESK, ADMIN_EMAIL } from "../support/browser.js";
-import { ROOT, unique } from "../support/client.js";
+import fs from "node:fs";
+import { ROOT, unique, sql } from "../support/client.js";
 import { startMockEngine } from "../mock-engine/server.js";
 
 const PORT = 8809;
@@ -43,7 +45,7 @@ test("an admin uploads a Pac's ZIP, sees the preview and the engine's findings, 
   assert.deepEqual(page.errors, []);
 });
 
-test("a Studio creator uploads their product's pack, and a clean pack publishes at once", { timeout: 120000 }, async () => {
+test("a Studio creator uploads their product's pack, a clean pack publishes at once, and its next version uploads only what changed", { timeout: 120000 }, async () => {
   const { page } = await store.open(DESK);
   await store.signUp(page, unique("packer"));
   await page.goto("/studio");
@@ -70,5 +72,16 @@ test("a Studio creator uploads their product's pack, and a clean pack publishes 
   await page.waitForSelector(".spc-list >> text=from your Pac", { timeout: 15000 });
   await page.click('[data-ws-item="release"]');
   await page.waitForSelector(".sk-ok");
+
+  // Version 2: the browser checks the ZIP, the store already has five of its files, and only the rest uploads.
+  await page.click('[data-ws-item="pacs"]');
+  await page.waitForSelector("[data-pack-form]");
+  await page.setInputFiles("#spk-file", path.join(ROOT, "engine/conformance/cases/pack-revision.zip"));
+  await page.click("[data-pack-form] button[type=submit]");
+  await page.waitForSelector("[data-pack-publish]", { timeout: 60000 });
+  assert.match(await page.locator("[data-pack-version]").innerText(), /4 unchanged, 1 moved or renamed, 1 replaced, 1 new, 1 removed/);
+  const up = sql(store.stateDir, `SELECT u.size_bytes, u.carry FROM uploads u JOIN pac_versions v ON v.id = u.version_id WHERE v.product_id = '${product.id}' AND v.number = 2`)[0];
+  assert.equal(JSON.parse(up.carry).length, 5, "five files weren't uploaded again");
+  assert.ok(up.size_bytes < fs.statSync(path.join(ROOT, "engine/conformance/cases/pack-revision.zip")).size / 10);
   assert.deepEqual(page.errors, []);
 });

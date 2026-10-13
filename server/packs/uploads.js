@@ -15,16 +15,19 @@ const partLength = (size, n) => (n < partsOf(size) ? PART_BYTES : size - (partsO
 
 export const getUpload = (db, id) => first(db, "SELECT * FROM uploads WHERE id = ?", id);
 
-/** quota: { creatorId, bytes } for a creator's upload (null for AutoStacc's own). */
-export async function startZip(app, version, { filename, size, quota = null }) {
+/**
+ * quota: { creatorId, bytes } for a creator's upload (null for AutoStacc's own). carry: the files a thin ZIP leaves out,
+ * already shape-checked (carry.js cleanCarry).
+ */
+export async function startZip(app, version, { filename, size, quota = null, carry = [] }) {
   if (!Number.isSafeInteger(size) || size < 22 || size > ZIP_MAX_BYTES) fail(400, "invalid_size", "That isn't a ZIP size AutoStacc accepts.");
   const id = newId("up");
   const key = `uploads/${version.id}/${id}.zip`;
   const mp = await startMultipart(app.env, key);
   const t = now();
-  const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at)
-    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8 WHERE ?9 IS NULL OR ${inUseSql("?1")} + ?7 <= ?9`,
-    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null);
+  const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at, carry)
+    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8, ?10 WHERE ?9 IS NULL OR ${inUseSql("?1")} + ?7 <= ?9`,
+    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null, JSON.stringify(carry));
   if (!res.meta.changes) {
     await abortMultipart(app.env, key, mp.uploadId).catch(() => {});
     fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota.bytes / 1048576)} MB of file storage. Remove files or a draft first.`);
