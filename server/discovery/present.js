@@ -14,7 +14,8 @@ export function storeProduct(row, { sales, seller, facets = {}, at }) {
   return {
     ...p,
     facets: Object.fromEntries(Object.entries(facets).map(([f, vs]) => [f, vs.map((value) => ({ value, label: label(f, value) }))])),
-    bpm: row.bpm_min ? [row.bpm_min, row.bpm_max] : null,
+    // The creator's tempo range, else the files' (search rows carry both as bpm_lo/bpm_hi).
+    bpm: row.bpm_lo ? [row.bpm_lo, row.bpm_hi] : row.bpm_min ? [row.bpm_min, row.bpm_max] : null,
     specs: parseJson(row.metadata, {}).specs || {},
     released,
     badges: {

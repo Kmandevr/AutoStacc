@@ -382,3 +382,7 @@ Savings are real only for tag edits and trims with content-defined chunking; re-
 
 The plan had collection items and tags reference asset ids, so they survive revisions. Files sold before the Pack Builder have no asset, so an item key is the file's asset when it has one and its file id otherwise; both are shown to the person anyway. Every add is checked against what the person can download at that moment, and a file that stops being theirs is counted, never listed, so the feature can't reveal or keep anything they don't own. It is a feature switch of its own (`library.collections`): Your Stacc and every download work the same without it.
 
+## 2026-10-13: The store learns from what packs contain (Phase 7)
+
+A product's store details now come from two places kept apart in `product_facets`: what its creator (or the catalog) chose, and what its published files contain (`origin = 'derived'`, worked out at each publish from the files' published details). The creator's always win and are the only ones the Studio form shows; derived values only add. Instrument, sample rate and bit depth exist only as derived facets, so they can't be claimed by hand. The plan kept the totals in `products.metadata.contents`; they live in their own table, `product_contents`, because the catalog sync rewrites a catalog product's `metadata` on every deploy. Search with 3,000 products stayed within a few percent of its timing before the change (the plan allowed ±20%). Each switch (`store.derivedFacets`, `product.contentsTree`) turns its part off without affecting the rest.
+

@@ -31,8 +31,10 @@ function base(sales, at) {
   const eff = effective(sales);
   return {
     sql: `WITH sold AS (SELECT product_id, COUNT(*) AS n FROM entitlements WHERE source_type = 'purchase' AND status = 'active' AND granted_at >= ? GROUP BY product_id),
-      e AS (SELECT p.*, ${eff.sql} AS eff, COALESCE(sold.n, 0) AS sold, COALESCE(p.released_at, p.created_at) AS released
-        FROM products p LEFT JOIN sold ON sold.product_id = p.id WHERE p.published = 1 AND p.deleted_at IS NULL)`,
+      e AS (SELECT p.*, ${eff.sql} AS eff, COALESCE(sold.n, 0) AS sold, COALESCE(p.released_at, p.created_at) AS released,
+        CASE WHEN p.bpm_min IS NOT NULL THEN p.bpm_min ELSE pc.bpm_min END AS bpm_lo, CASE WHEN p.bpm_min IS NOT NULL THEN p.bpm_max ELSE pc.bpm_max END AS bpm_hi
+        FROM products p LEFT JOIN sold ON sold.product_id = p.id LEFT JOIN product_contents pc ON pc.product_id = p.id
+        WHERE p.published = 1 AND p.deleted_at IS NULL)`,
     params: [iso(at, PURCHASE_DAYS), ...eff.params]
   };
 }
@@ -56,8 +58,9 @@ function where(f, at, skip = "") {
   if (skip !== "sale" && f.sale) add("e.eff < e.price_cents");
   if (skip !== "new" && f.recent) add("e.released >= ?", iso(at, NEW_DAYS));
   if (skip !== "bpm") {
-    if (f.bpmMin !== null) add("e.bpm_max >= ?", f.bpmMin);
-    if (f.bpmMax !== null) add("e.bpm_min <= ?", f.bpmMax);
+    // The creator's tempo range, else the one the files' published details give (contents.js).
+    if (f.bpmMin !== null) add("e.bpm_hi >= ?", f.bpmMin);
+    if (f.bpmMax !== null) add("e.bpm_lo <= ?", f.bpmMax);
   }
   return { sql: c.length ? c.join(" AND ") : "1", params };
 }
@@ -94,7 +97,8 @@ export async function search(db, f, { sales = [], kinds = [], at = new Date().to
     statement(`${b.sql} SELECT COUNT(*) AS n FROM e WHERE ${w.sql}`, ...b.params, ...w.params)
   ];
   // Facet groups that apply to the chosen kinds (all kinds when none is chosen); selected groups count without themselves.
-  const shown = Object.keys(FACETS).filter((facet) => (f.categories.length ? f.categories : kinds).some((k) => schemaOf(k).facets.includes(facet)));
+  // Derived facets (worked out from files, contents.js) apply to every kind: they show wherever a product has values.
+  const shown = Object.keys(FACETS).filter((facet) => FACETS[facet].derived || (f.categories.length ? f.categories : kinds).some((k) => schemaOf(k).facets.includes(facet)));
   const groups = [];
   const unselected = shown.filter((facet) => !f.facets[facet]);
   if (unselected.length) {
@@ -115,7 +119,7 @@ export async function search(db, f, { sales = [], kinds = [], at = new Date().to
     statement(`${b.sql} SELECT e.project_id AS value, j.name AS name, COUNT(*) AS n FROM e LEFT JOIN projects j ON j.id = e.project_id
       WHERE ${wp.sql} AND e.project_id IS NOT NULL GROUP BY e.project_id ORDER BY n DESC, j.name LIMIT 30`, ...b.params, ...wp.params),
     statement(`${b.sql} SELECT MIN(e.eff) AS lo, MAX(e.eff) AS hi FROM e WHERE ${wr.sql}`, ...b.params, ...wr.params),
-    statement(`${b.sql} SELECT MIN(e.bpm_min) AS lo, MAX(e.bpm_max) AS hi FROM e WHERE ${wb.sql}`, ...b.params, ...wb.params),
+    statement(`${b.sql} SELECT MIN(e.bpm_lo) AS lo, MAX(e.bpm_hi) AS hi FROM e WHERE ${wb.sql}`, ...b.params, ...wb.params),
     statement(`${b.sql} SELECT SUM(e.price_cents = 0) AS n FROM e WHERE ${wt("free").sql}`, ...b.params, ...wt("free").params),
     statement(`${b.sql} SELECT SUM(e.eff < e.price_cents) AS n FROM e WHERE ${wt("sale").sql}`, ...b.params, ...wt("sale").params),
     statement(`${b.sql} SELECT SUM(e.released >= ?) AS n FROM e WHERE ${wt("new").sql}`, ...b.params, iso(at, NEW_DAYS), ...wt("new").params)

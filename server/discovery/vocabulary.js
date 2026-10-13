@@ -120,6 +120,14 @@ export const MIDI_ROLES = { pattern: "Pattern", arrangement: "Arrangement" };
 export const INSTRUMENTS = v(["Drums", "Kick", "Snare", "Clap", "Hats", "Cymbals", "Percussion", "Bass", "808", "Synth", "Lead", "Pad",
   "Pluck", "Arp", "Keys", "Piano", "Guitar", "Strings", "Brass", "Vocals", "FX", "Textures", "Atmosphere"]);
 
+// Facets the store derives from a product's published files (server/discovery/contents.js, docs/packs.md Phase 7) and
+// nobody sets by hand: no product kind lists them, so the Studio refuses them, and the store offers them wherever some
+// product has such files. Contents, format, key, DAW and plugin are derived too, beside what the creator chose.
+export const DERIVED_FACETS = ["instrument", "sample-rate", "bit-depth"];
+FACETS.instrument = { label: "Instrument", multi: true, derived: true, values: INSTRUMENTS };
+FACETS["sample-rate"] = { label: "Sample rate", multi: true, derived: true, values: { 44100: "44.1 kHz", 48000: "48 kHz", 88200: "88.2 kHz", 96000: "96 kHz" } };
+FACETS["bit-depth"] = { label: "Bit depth", multi: true, derived: true, values: { 16: "16-bit", 24: "24-bit", 32: "32-bit" } };
+
 // Other words for an instrument in file and folder names (plurals of the values are added automatically).
 export const INSTRUMENT_SYNONYMS = {
   kickdrum: "kick", bd: "kick", sd: "snare", snr: "snare", claps: "clap", hat: "hats", hihat: "hats", "hi-hat": "hats", hh: "hats",

@@ -3,6 +3,7 @@
 // profile the browser sends; never stored, never cached). Ownership is not in these answers: the browser reads it from
 // /api/products/state, the one place that decides it.
 import { json, readJson, fail, id } from "../lib/http.js";
+import { routes as contentsRoutes } from "./contents-routes.js";
 import { limit } from "../lib/ratelimit.js";
 import { runningSales } from "../promotions/promotions.js";
 import { sellersOf, productPath } from "../catalog/products.js";
@@ -60,6 +61,7 @@ async function recommendations(app) {
 }
 
 export const routes = [
+  ...contentsRoutes,
   ["GET", "/api/store/search", find],
   ["GET", "/api/store/suggest", suggest],
   ["GET", "/api/store/similar/:productId", similar],

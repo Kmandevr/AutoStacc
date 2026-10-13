@@ -83,5 +83,16 @@ test("a Studio creator uploads their product's pack, a clean pack publishes at o
   const up = sql(store.stateDir, `SELECT u.size_bytes, u.carry FROM uploads u JOIN pac_versions v ON v.id = u.version_id WHERE v.product_id = '${product.id}' AND v.number = 2`)[0];
   assert.equal(JSON.parse(up.carry).length, 5, "five files weren't uploaded again");
   assert.ok(up.size_bytes < fs.statSync(path.join(ROOT, "engine/conformance/cases/pack-revision.zip")).size / 10);
+
+  // On sale, its page says what's inside: version 1's files (version 2 isn't published), by folder.
+  const sale = await page.evaluate(async (id) => (await fetch(`/api/studio/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ published: true }) })).status, product.id);
+  assert.equal(sale, 200);
+  await page.goto(`/product?p=${product.id}`);
+  await page.waitForSelector("[data-product-contents] >> text=What's inside");
+  const inside = await page.locator("[data-product-contents]").innerText();
+  assert.match(inside, /7 files/);
+  assert.match(inside, /Drums › Kicks/);
+  assert.match(inside, /sample rate/i);
+  assert.ok(!/Changelog/.test(inside), "an unpublished version shows nothing");
   assert.deepEqual(page.errors, []);
 });

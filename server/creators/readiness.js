@@ -40,7 +40,7 @@ export async function loadReadiness(db, product, creator, overrides = {}) {
   const [deliverable, inReview, facets] = await Promise.all([
     first(db, `SELECT 1 FROM product_files WHERE product_id = ? AND ${DELIVERABLE} LIMIT 1`, product.id),
     first(db, "SELECT 1 FROM pac_versions WHERE product_id = ? AND status = 'in_review' LIMIT 1", product.id),
-    facetsOf(db, [product.id])
+    facetsOf(db, [product.id], { creatorOnly: true })
   ]);
   return readiness({ product: { ...product, ...overrides }, deliverable: Boolean(deliverable), inReview: Boolean(inReview), creator, facets: facets[product.id] || {} });
 }
