@@ -85,7 +85,7 @@ export async function resolveCarry(db, owner, carry) {
     if (!b) throw Object.assign(new Error("carried file missing"), { code: "missing_files" });
     if (!b.exts.has(ext(n.path))) { refused.push({ path: n.path, codes: ["content_does_not_match_name"] }); continue; }
     kept.push({ path: n.path, sha256: b.sha256, size: b.size_bytes, crc32: b.crc32, format: b.format, facts: JSON.parse(b.facts || "{}"),
-      stored: b.r2_key, suggestions: [], carried: true });
+      stored: b.r2_key, blobId: b.id, suggestions: [], carried: true });
   }
   return { kept, refused };
 }

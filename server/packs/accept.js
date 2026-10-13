@@ -42,7 +42,10 @@ export function acceptStored(files, writes, prefix) {
   return { kept, refused };
 }
 
-/** { kept: [{ ...file, logical }], refused: [{ path, codes }], carried: carried files kept } for a finished job. */
+/**
+ * { kept: [{ ...file, logical }], refused: [{ path, codes }], carried: carried files kept, room: for a creator, the
+ * { archive, bytes, quota } its storage check used (null for AutoStacc's own) } for a finished job.
+ */
 export async function keptFiles(app, version, job, { result, attempt }) {
   const writes = await jobWrites(app, job.id, attempt);
   const owner = version.owner_scope;
@@ -72,11 +75,14 @@ export async function keptFiles(app, version, job, { result, attempt }) {
   // A creator's storage counts the files as unpacked, not the archive they came in (an archive can compress a lot):
   // refused before anything is claimed if they don't fit beside what the creator already stores.
   const creator = await first(app.db, "SELECT * FROM creators WHERE id = ?", owner);
+  let room = null;
   if (creator) {
     const bytes = kept.reduce((n, f) => n + f.size, 0);
     const archive = (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ?", version.id)).n;
     if ((await storageUsed(app.db, owner)) - archive + bytes > filesQuotaOf(creator)) throw Object.assign(new Error("over quota"), { code: "quota_exceeded" });
+    // Checked again inside the import's batch (two imports at once can't both squeeze in): import.js.
+    room = { archive, bytes, quota: filesQuotaOf(creator) };
   }
 
-  return { kept, refused, carried: carried.kept };
+  return { kept, refused, carried: carried.kept, room };
 }
