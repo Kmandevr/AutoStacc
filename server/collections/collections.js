@@ -101,8 +101,8 @@ export async function addTag(db, userId, keys, tag) {
   await db.batch([stmt(db, `INSERT OR IGNORE INTO asset_tags (user_id, item_key, tag, created_at)
     SELECT ?, j.value, ?, ? FROM json_each(?) j
     WHERE (SELECT COUNT(*) FROM asset_tags x WHERE x.user_id = ? AND x.item_key = j.value) < ?
-      AND (SELECT COUNT(*) FROM asset_tags x WHERE x.user_id = ?) < ?`,
-    userId, tag, t, JSON.stringify(keys), userId, LIMITS.tagsPerFile, userId, LIMITS.tagRows)]);
+    LIMIT max(0, ? - (SELECT COUNT(*) FROM asset_tags x WHERE x.user_id = ?))`,
+    userId, tag, t, JSON.stringify(keys), userId, LIMITS.tagsPerFile, LIMITS.tagRows, userId)]);
 }
 export const removeTag = (db, userId, keys, tag) =>
   run(db, "DELETE FROM asset_tags WHERE user_id = ? AND tag = ? AND item_key IN (SELECT value FROM json_each(?))", userId, tag, JSON.stringify(keys));

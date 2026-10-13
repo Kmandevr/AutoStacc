@@ -75,6 +75,12 @@ export default (ctx) => describe("collections", () => {
     assert.equal(db("SELECT COUNT(*) AS n FROM asset_values")[0].n, before);
     assert.deepEqual(db(`SELECT filename, kind, meta FROM product_files WHERE id = '${a.files[0].id}'`)[0], meta);
     assert.equal((await a.c.post("/api/tags/remove", { fileIds: [a.files[0].id], tag: "mine" })).status, 200);
+    // The tag cap holds even for one request with many files: 4,999 rows, then two files tagged at once.
+    db(`WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 4999)
+      INSERT INTO asset_tags (user_id, item_key, tag, created_at) SELECT '${a.user.id}', 'as_fake' || i, 'x', '2026-01-01' FROM n`);
+    await a.c.post("/api/tags", { fileIds: a.files.slice(0, 2).map((f) => f.id), tag: "over" });
+    assert.equal(db(`SELECT COUNT(*) AS n FROM asset_tags WHERE user_id = '${a.user.id}'`)[0].n, 5000);
+    db(`DELETE FROM asset_tags WHERE user_id = '${a.user.id}'`);
     assert.deepEqual((await a.c.get("/api/collections")).data.tags, {});
   });
 

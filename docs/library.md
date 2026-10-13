@@ -40,10 +40,10 @@ A Pac published from the Pack Builder keeps its creator's folders: inside it, Yo
 A signed-in person can organize Your Stacc their own way (feature switch `library.collections`; `server/collections/`, `js/library-personal.js`, `db/migrations/0019_collections.sql`). It never changes what creators said about their files, and nobody else sees it.
 
 - **Collections**: tick files, then **Add to** an existing collection or a new one (up to 100 collections, 2,000 files each; names unique per person). The Collection menu filters by one; inside it, the selected files can be taken out, and the collection renamed or deleted (its files stay in Your Stacc).
-- **Tags**: tick files and **Tag** them (up to 20 tags per file; lowercase words of up to 30 letters or numbers). Tags show on each file, with ✕ to remove one; the Tag menu filters by one, and search finds them.
+- **Tags**: tick files and **Tag** them (up to 20 tags per file and 5,000 in all, capped inside each write; lowercase words of up to 30 letters or numbers). Tags show on each file, with ✕ to remove one; the Tag menu filters by one, and search finds them.
 - **Saved searches**: with any filter or search on, **Save search** keeps the address (`/library?…`, only Your Stacc's own filter names; up to 50); each is a link back to it.
 - **Items survive revisions**: collections and tags point at a file's asset (the same across a Pac's versions, so a moved or unchanged file stays in them) or, for a file with no asset, its file id. A file that stops being the person's (removed in an update and its 30 days passed, a refund) is counted, never listed: "N no longer in Your Stacc" with **Clear them**.
-- **Only their own files**: every add goes through what the person can download right now (`server/entitlements/owned.js`); another person's file id, collection or saved search is 404, the same as one that doesn't exist. Writes are rate-limited and refused during a support impersonation.
+- **Only their own files**: every add goes through what the person's account can download right now (`server/entitlements/owned.js`; a guest receipt's key in the same browser doesn't count); another person's file id, collection or saved search is 404, the same as one that doesn't exist. Writes are rate-limited and refused during a support impersonation.
 - **Their data**: included in the data download (`collections`, `tags`, `savedSearches`) and deleted with the account; on [/privacy](../data/legal.js).
 
 ## Follows and Auto-Stacc
