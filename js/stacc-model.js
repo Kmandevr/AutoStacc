@@ -41,6 +41,8 @@
           sizeBytes: f.sizeBytes || 0,
           folder: f.folderPath || "",
           bundleable: Boolean(f.bundleable),
+          // Removed or replaced by an update of its pack: still the buyer's until availableUntil (docs/packs.md H8).
+          availableUntil: f.retiredAt ? f.availableUntil || null : null,
           productId: item.productId,
           productTitle: item.title,
           projectId: (stacclet && stacclet.project) || item.projectId || "",
@@ -99,7 +101,8 @@
           title: (pacs.get(pid) || {}).title || pid,
           count: inPac.length,
           kinds: kindGroups(inPac, catalog),
-          folders: foldersOf(inPac)
+          folders: foldersOf(inPac),
+          updated: inPac.some((a) => a.availableUntil)
         }))
       })),
       products: groupBy(inProject.filter((a) => !a.staccletId), (a) => a.productId, []).map(([productId, inProduct]) => ({
@@ -107,7 +110,8 @@
         title: inProduct[0].productTitle,
         count: inProduct.length,
         kinds: kindGroups(inProduct, catalog),
-        folders: foldersOf(inProduct)
+        folders: foldersOf(inProduct),
+        updated: inProduct.some((a) => a.availableUntil)
       }))
     }));
   }

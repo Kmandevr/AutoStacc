@@ -37,7 +37,7 @@ test("each owned file becomes one asset that keeps every relationship", () => {
   assert.equal(assets.length, 8);
   assert.equal(new Set(ids(assets)).size, 8);
   assert.deepEqual(assets.find((a) => a.id === "pf_bass2"), {
-    id: "pf_bass2", name: "Bass 02.MID", filename: "Bass 02.MID", format: "mid", kind: "midi", sizeBytes: 10, folder: "", bundleable: false,
+    id: "pf_bass2", name: "Bass 02.MID", filename: "Bass 02.MID", format: "mid", kind: "midi", sizeBytes: 10, folder: "", bundleable: false, availableUntil: null,
     productId: "fs-pack", productTitle: "Frayed Signals Pack", projectId: "gs", staccletId: "frayed", pacId: "fs-midi", sources: ["purchase"]
   });
   const stray = assets.find((a) => a.id === "pf_stray");
@@ -151,4 +151,14 @@ test("a Studio product's pack (its Pac isn't in the catalog) keeps its folders u
   assert.equal(product.id, "sp_1");
   assert.deepEqual(product.folders.map((f) => [f.path, ids(f.assets)]), [["", ["pf_s2"]], ["Drums", ["pf_s1"]]]);
   assert.equal(stacc.tree(stacc.assetsFrom(items, catalog), catalog)[0].products[0].folders, null, "loose files keep content types");
+});
+
+test("a file removed in an update says until when, and its Pac shows it was updated", () => {
+  const list = stacc.assetsFrom([{ productId: "fs-pack", title: "Frayed Signals Pack", projectId: "gs", pacs: ["fs-samples"], files: [
+    file("pf_old", "Old.wav", { pacId: "fs-samples", retiredAt: "2026-10-01T00:00:00.000Z", availableUntil: "2026-10-31T00:00:00.000Z" }),
+    file("pf_new", "New.wav", { pacId: "fs-samples" })
+  ] }], catalog);
+  assert.equal(list.find((a) => a.id === "pf_old").availableUntil, "2026-10-31T00:00:00.000Z");
+  assert.equal(list.find((a) => a.id === "pf_new").availableUntil, null);
+  assert.equal(stacc.tree(list, catalog)[0].stacclets[0].pacs[0].updated, true);
 });

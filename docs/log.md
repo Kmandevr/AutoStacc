@@ -1,13 +1,14 @@
 ---
 title: Log
 summary: Dated history of changes, newest first.
-updated: 2026-10-11
+updated: 2026-10-13
 ---
 
 # Log
 
 Newest first.
 
+- 2026-10-13: Pack Builder Phase 6 part 1, revisions: a new version is matched to the live one (`js/pack-diff.js`, `server/packs/revision.js`: unchanged, moved, replaced, new, removed), matched files keep their asset, values and published file id, folders keep their defaults, the builder shows the changes before publishing, and Your Stacc marks updated packs with each removed file's last day. New conformance case `pack-revision`. Fixed: a held version showed no files to its reviewer. Notes: packs, library, decisions.
 - 2026-10-11: Marketplace Stripe account ("AutoStacc Payments") set up by the owner with its own key and webhook; redeployed, and the live store now reports creator sales as `paused` rather than `no_key` (the key is in place), with the marketplace webhook rejecting unsigned requests. Creator purchases open once the owner presses **Allow creator purchases** in the Control Center. Notes: payouts-setup, decisions.
 - 2026-10-10: Product Studio (owner's brief, issue #106): each Studio product opens in its own workspace with a sidebar of sections (Overview, Pac Builder, Store Page, Pricing, Insights, Release; names in `data/workspaces.js`) and a compact header, sharing one shell (`js/workspace.js`) with the Control Center, which moved from tabs to grouped sections and a phone drawer. Server: readiness guarding publish (`server/creators/readiness.js`), product history (`product_events`), creator sales on the shared promotions table, per-product insights with CSV, and the creator purchases switch (creators' products held in carts until the marketplace Stripe key is set or while the owner pauses them; `store_settings`, `/api/admin/creator-sales`). Store Page previews with the product page's own renderer (`js/product-view.js`). Migration 0017; privacy page updated (product history). Tests: API group `studio`, browser group `studio`. Team (collaboration) documented, not built. Notes: [studio](studio.md) (new), creators, admin, packs, store, payouts-setup, development, architecture, production, decisions.
 - 2026-10-10: Pack Builder Phase 5, Studio creators and automated review: creators build their products' packs in the Studio (`js/studio-packs.js`, Pac made on first use), admin and Studio routes share handlers through two scopes (`server/packs/access.js`), uploads reserve storage against the creator's quota race-free, the import's automated review (`server/packs/review.js`) decides whether a version publishes at once or waits (`in_review`, admins alerted), and the Control Center gets a review queue with approve and reject (`js/admin-packs-queue.js`) and a per-creator "review every pack" switch (`db/migrations/0016_pack_review.sql`). The shared scripts are now `js/packs-*.js`; Your Stacc keeps a Studio pack's folders. Tests: `test/api/packs-studio.suite.js`, a Studio browser test, review unit tests. No change to `/privacy`: nothing new is collected about people. Notes: packs, creators, admin, decisions.

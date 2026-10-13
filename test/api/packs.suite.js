@@ -146,15 +146,18 @@ export default (ctx) => describe("packs", () => {
     await mockBuy(late.c, [{ productId: PRODUCT }]);
     const lateFiles = (await late.c.get("/api/library")).data.items.find((p) => p.productId === PRODUCT).files;
     assert.ok(lateFiles.every((f) => !f.retiredAt), "a new buyer sees only current files");
-    assert.ok(!lateFiles.some((f) => before.some((b) => b.id === f.id)));
-    assert.equal((await late.c.post("/api/downloads", { fileId: before[0].id })).status, 403, "nor can they download a retired one");
-    assert.equal((await late.c.post("/api/downloads/bundle", { fileIds: [before[0].id] })).status, 403);
+    // The one file both packs share byte for byte (the same MIDI) is the same file, moved: it keeps its id.
+    const shared = before.filter((b) => lateFiles.some((f) => f.id === b.id));
+    assert.deepEqual(shared.map((f) => f.filename), ["Chords Am.mid"]);
+    const gone = before.find((b) => !shared.includes(b));
+    assert.equal((await late.c.post("/api/downloads", { fileId: gone.id })).status, 403, "nor can they download a retired one");
+    assert.equal((await late.c.post("/api/downloads/bundle", { fileIds: [gone.id] })).status, 403);
 
     const earlyFiles = (await early.c.get("/api/library")).data.items.find((p) => p.productId === PRODUCT).files;
     const kept = earlyFiles.filter((f) => before.some((b) => b.id === f.id));
     assert.equal(kept.length, before.length, "an earlier buyer still has the replaced files");
-    assert.ok(kept.every((f) => f.retiredAt));
-    assert.equal((await early.c.post("/api/downloads", { fileId: before[0].id })).status, 200);
+    assert.ok(kept.every((f) => Boolean(f.retiredAt) !== shared.some((x) => x.id === f.id)));
+    assert.equal((await early.c.post("/api/downloads", { fileId: gone.id })).status, 200);
   });
 
   test("one version in progress per Pac; the same idempotency key returns the same version", async () => {
@@ -296,6 +299,54 @@ export default (ctx) => describe("packs", () => {
     assert.ok(done.blobs >= unused.length);
     assert.equal(db(`SELECT COUNT(*) AS n FROM blobs WHERE id IN (${unused.map((b) => `'${b}'`).join(",")})`)[0].n, 0);
     assert.ok(db(`SELECT COUNT(*) AS n FROM blobs WHERE id IN (${[...live].map((b) => `'${b}'`).join(",")})`)[0].n === live.size, "originals in use stay");
+  });
+
+  test("a revision: unchanged and moved files keep their ids and values, a replaced or removed one stays with buyers for now", async () => {
+    const admin = await adminClient(base());
+    const PAC = "frayed-signals-loops";
+    await clearDraft(admin, PAC);
+    const one = (await build(admin, PAC, caseZip("pack-basic"))).version;
+    const url = `/api/admin/packs/versions/${one.id}`;
+    const kick = one.files.find((f) => f.filename === "Kick 01.wav");
+    assert.equal((await admin.send("PUT", `${url}/values`, { body: { assetIds: [kick.assetId], field: "kind", value: "one-shots" } })).status, 200);
+    const drums = one.folders.find((f) => f.path === "Drums");
+    assert.equal((await admin.send("PUT", `${url}/folders/${drums.id}/values`, { body: { field: "key", value: "c-minor" } })).status, 200);
+    assert.equal((await admin.post(`${url}/publish`, {})).status, 200);
+    const { c } = await newBuyer(base(), "packs-revision");
+    await mockBuy(c, [{ productId: PRODUCT }]);
+    const mine = async () => (await c.get("/api/library")).data.items.find((p) => p.productId === PRODUCT).files.filter((f) => f.pacId === PAC);
+    const before = await mine();
+    const idOf = (list, name) => list.find((f) => f.filename === name && !f.retiredAt).id;
+
+    const two = (await build(admin, PAC, caseZip("pack-revision"))).version;
+    assert.equal(two.status, "ready", JSON.stringify(two));
+    assert.deepEqual(two.stats.diff.counts, { same: 4, moved: 1, replaced: 1, added: 1, removed: 1 });
+    assert.deepEqual(two.stats.diff.removed, [{ filename: "Wobble.vital", folderPath: "Presets" }]);
+    const file = (name) => two.files.find((f) => f.filename === name);
+    assert.equal(file("Kick 01.wav").assetId, kick.assetId, "an unchanged file is the same asset");
+    assert.equal(file("Kick 01.wav").change, undefined);
+    assert.equal(file("Kick 01.wav").own.kind, "one-shots", "the creator's value carries over");
+    assert.equal(file("Air.aif").change, "moved");
+    assert.equal(file("Air.aif").folderPath, "Ambience");
+    assert.equal(file("Read me.txt").change, "replaced");
+    assert.equal(file("Changelog.txt").change, "new");
+    assert.equal(two.folders.find((f) => f.path === "Drums").id, drums.id, "a kept folder is the same folder");
+    assert.equal(two.folders.find((f) => f.path === "Drums").values.key, "c-minor", "and keeps its defaults");
+    // The live version is untouched until this one is published.
+    assert.deepEqual((await mine()).map((f) => f.id).sort(), before.map((f) => f.id).sort());
+
+    assert.equal((await admin.post(`/api/admin/packs/versions/${two.id}/publish`, {})).status, 200);
+    const after = await mine();
+    for (const name of ["Kick 01.wav", "Groove 128 Am.wav", "Room.flac", "Chords Am.mid", "Air.aif"]) {
+      assert.equal(idOf(after, name), idOf(before, name), `${name} keeps its file id`);
+    }
+    assert.equal(after.find((f) => f.filename === "Air.aif").folderPath, "Ambience");
+    assert.notEqual(idOf(after, "Read me.txt"), idOf(before, "Read me.txt"), "replaced bytes are a new file");
+    const gone = after.filter((f) => f.retiredAt).map((f) => f.filename).sort();
+    assert.deepEqual(gone, ["Read me.txt", "Wobble.vital"], "the replaced and removed files stay with this buyer for now");
+    const wobble = after.find((f) => f.filename === "Wobble.vital");
+    assert.equal(Date.parse(wobble.availableUntil) - Date.parse(wobble.retiredAt), 30 * 86400000, "and the library says until when");
+    assert.ok(after.some((f) => f.filename === "Changelog.txt" && !f.retiredAt));
   });
 
   // Discards whatever version a Pac still has in progress (tests share one store).

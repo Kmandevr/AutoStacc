@@ -4,7 +4,9 @@
 (function () {
   "use strict";
 
-  const { escapeHTML: e, cents } = window.GS;
+  const { escapeHTML: e, cents, fmtDate } = window.GS;
+  // A pack its creator updated: some of its files are going (each says until when).
+  const UPDATED = `<span class="tag" title="Some files were removed or replaced in an update. Download them before the date shown.">Updated</span>`;
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : b >= 1024 ? `${Math.round(b / 1024)} KB` : `${b} B`);
   const items = (n) => `${n} item${n === 1 ? "" : "s"}`;
   const files = (n) => `${n} file${n === 1 ? "" : "s"}`;
@@ -16,7 +18,7 @@
     const source = showSource ? `${e(ctx.names.project(a.projectId))} › ${e(where)} · ` : a.pacId ? `${e(a.productTitle)} · ` : "";
     return `<li class="stacc-asset">
       <label class="stacc-pick"><input type="checkbox" data-select="${e(a.id)}"${ctx.selected.has(a.id) ? " checked" : ""}>
-        <span class="stacc-name">${e(a.name)}<span class="small-print"> ${source}${e(a.format.toUpperCase() || "file")} · ${size(a.sizeBytes)}${a.sources.includes("auto") ? " · auto-stacc'd" : ""}</span></span></label>
+        <span class="stacc-name">${e(a.name)}<span class="small-print"> ${source}${e(a.format.toUpperCase() || "file")} · ${size(a.sizeBytes)}${a.sources.includes("auto") ? " · auto-stacc'd" : ""}${a.availableUntil ? ` · <strong>removed in an update; yours to download until ${e(fmtDate(a.availableUntil.slice(0, 10)))}</strong>` : ""}</span></span></label>
       <button class="btn ghost" type="button" data-download="${e(a.id)}" data-product="${e(a.productId)}">Download</button>
     </li>`;
   }
@@ -42,9 +44,9 @@
     return tree.map((p) => `<section class="stacc-project">
       <h2>${e(p.name)} <span class="stacc-count">${items(p.count)}</span></h2>
       ${p.stacclets.map((s) => `<details class="stacc-stacclet" open><summary><span class="stacc-kind">Stacclet</span> ${e(s.title)} <span class="stacc-count">${items(s.count)}</span></summary>
-        ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span></summary>${pac.folders ? folders(pac.folders, ctx) : kinds(pac.kinds, ctx)}</details>`).join("")}
+        ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span>${pac.updated ? ` ${UPDATED}` : ""}</summary>${pac.folders ? folders(pac.folders, ctx) : kinds(pac.kinds, ctx)}</details>`).join("")}
       </details>`).join("")}
-      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span></summary>${x.folders ? folders(x.folders, ctx) : kinds(x.kinds, ctx)}</details>`).join("")}
+      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span>${x.updated ? ` ${UPDATED}` : ""}</summary>${x.folders ? folders(x.folders, ctx) : kinds(x.kinds, ctx)}</details>`).join("")}
     </section>`).join("");
   }
 
