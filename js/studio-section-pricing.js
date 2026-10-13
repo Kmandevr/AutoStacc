@@ -56,10 +56,16 @@
             <button class="btn small" type="submit">Start sale</button><p class="msg" role="status"></p></form>`}`}`;
       }
 
+      // Redraws from the server's answer. Unless this follows a save (note), what the person already typed while it
+      // loaded stays, with the cursor where it was: the first draw shows before the answer arrives.
       async function load(note) {
         const res = await api(`${base}/pricing`);
         if (!el.isConnected) return;
+        const typed = note ? [] : [...el.querySelectorAll("input[id], textarea[id]")].filter((i) => i.type !== "checkbox" && i.type !== "radio" && i.value !== i.defaultValue).map((i) => [i.id, i.value]);
+        const focused = !note && el.contains(document.activeElement) && document.activeElement.id;
         draw(res.ok ? res.data : null);
+        for (const [id, value] of typed) { const i = el.querySelector(`#${CSS.escape(id)}`); if (i) i.value = value; }
+        if (focused) { const i = el.querySelector(`#${CSS.escape(focused)}`); if (i) i.focus(); }
         if (note) window.GS.say($("[data-pr-price]", el), note);
       }
 
