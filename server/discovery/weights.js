@@ -18,7 +18,7 @@ export const WEIGHTS = {
 export const EVIDENCE = { wishlist: 1, preference: 1, cart: 0.7, preview: 0.5, owned: 0.4, click: 0.25, view: 0.15, filter: 0.3, dismissed: -0.6 };
 
 // Facets that describe taste, and how much each counts inside the preference component.
-export const TASTE_FACETS = { genre: 1, style: 0.8, mood: 0.6, use: 0.6, energy: 0.3, contents: 0.5, category: 0.7 };
+export const TASTE_FACETS = { genre: 1, style: 0.8, mood: 0.6, use: 0.6, energy: 0.3, contents: 0.5, instrument: 0.4, category: 0.7 };
 
 export const POLICY = {
   neutral: 0.3,          // a facet the person cares about but the product doesn't state: neither a match nor a miss

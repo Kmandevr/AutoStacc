@@ -116,7 +116,7 @@ function cleanDetails(type, input) {
 // one batch with nothing else in between.
 async function saveDetails(db, product, details, { project, creator }) {
   const facets = details.facets !== undefined ? details.facets
-    : cleanFacets(product.type, (await facetsOf(db, [product.id]))[product.id] || {}).facets; // a kind change drops what no longer applies
+    : cleanFacets(product.type, (await facetsOf(db, [product.id], { creatorOnly: true }))[product.id] || {}).facets; // a kind change drops what no longer applies
   const meta = parseJson(product.metadata, {});
   if (details.specs !== undefined) { if (Object.keys(details.specs).length) meta.specs = details.specs; else delete meta.specs; }
   else if (meta.specs) meta.specs = cleanSpecs(product.type, meta.specs).specs;
@@ -186,11 +186,11 @@ export async function updateProduct(db, { product, project, creator, input, user
     if (input.deleted) add("published", 0);
   }
   if (!sets.length && !Object.keys(details).length) fail(400, "invalid_field", "Nothing to change.");
-  const facetsBefore = (await facetsOf(db, [product.id]))[product.id] || {};
+  const facetsBefore = (await facetsOf(db, [product.id], { creatorOnly: true }))[product.id] || {};
   if (sets.length) await run(db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), product.id);
   else await run(db, "UPDATE products SET updated_at = ? WHERE id = ?", now(), product.id);
   const saved = await saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", product.id), details, { project, creator });
-  const facetsAfter = (await facetsOf(db, [product.id]))[product.id] || {};
+  const facetsAfter = (await facetsOf(db, [product.id], { creatorOnly: true }))[product.id] || {};
   await recordChanges(db, product.id, user ? user.id : null, changeEvents(product, saved, { facetsBefore, facetsAfter }));
   return saved;
 }
@@ -198,7 +198,7 @@ export async function updateProduct(db, { product, project, creator, input, user
 // The creator's view of a product with its files (and why a file isn't delivered yet).
 export async function productViews(db, rows) {
   if (!rows.length) return [];
-  const facets = await facetsOf(db, rows.map((r) => r.id));
+  const facets = await facetsOf(db, rows.map((r) => r.id), { creatorOnly: true });
   // Files a Pack Builder version delivers are managed there (js/studio-packs.js): only counted here.
   const files = await all(db, `SELECT id, product_id, filename, size_bytes, status, status_note, active, version_id FROM product_files
     WHERE product_id IN (${rows.map(() => "?").join(",")}) AND status <> 'deleted' AND retired_at IS NULL ORDER BY created_at`, ...rows.map((r) => r.id));

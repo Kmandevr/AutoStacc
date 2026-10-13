@@ -78,9 +78,12 @@ function catalogSql(products, types, projects = []) {
   // Facet rows follow their product, and only while it is a catalog product (a Studio row with the same id is never touched).
   const isCatalog = (id) => `EXISTS (SELECT 1 FROM products WHERE id = ${q(id)} AND source = 'catalog')`;
   const facetSql = rows.flatMap((r) => [
-    `DELETE FROM product_facets WHERE product_id = ${q(r.id)} AND ${isCatalog(r.id)};`,
+    // Only the catalog's own (creator) rows: values worked out from published files (origin 'derived',
+    // server/discovery/contents.js) stay, and come back for a value the catalog no longer lists.
+    `DELETE FROM product_facets WHERE product_id = ${q(r.id)} AND origin = 'creator' AND ${isCatalog(r.id)};`,
     ...Object.entries(r.facets).flatMap(([facet, values]) => values.map((value) =>
-      `INSERT OR IGNORE INTO product_facets (product_id, facet, value) SELECT ${q(r.id)}, ${q(facet)}, ${q(value)} WHERE ${isCatalog(r.id)};`))
+      `INSERT OR REPLACE INTO product_facets (product_id, facet, value, origin) SELECT ${q(r.id)}, ${q(facet)}, ${q(value)}, 'creator' WHERE ${isCatalog(r.id)};`)),
+    `INSERT OR IGNORE INTO product_facets (product_id, facet, value, origin) SELECT c.product_id, f.key, v.key, 'derived' FROM product_contents c, json_each(c.summary, '$.facets') f, json_each(f.value) v WHERE c.product_id = ${q(r.id)} AND c.indexed = 1 AND ${isCatalog(r.id)};`
   ]);
   const cols = [...COLS, "catalog_hash"];
   const updates = cols.filter((c) => c !== "id").map((c) => `${c} = excluded.${c}`).join(", ");

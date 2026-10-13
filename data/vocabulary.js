@@ -184,6 +184,54 @@ window.VOCABULARY = {
     "intermediate": "Intermediate",
     "advanced": "Advanced"
    }
+  },
+  "instrument": {
+   "label": "Instrument",
+   "multi": true,
+   "values": {
+    "808": "808",
+    "drums": "Drums",
+    "kick": "Kick",
+    "snare": "Snare",
+    "clap": "Clap",
+    "hats": "Hats",
+    "cymbals": "Cymbals",
+    "percussion": "Percussion",
+    "bass": "Bass",
+    "synth": "Synth",
+    "lead": "Lead",
+    "pad": "Pad",
+    "pluck": "Pluck",
+    "arp": "Arp",
+    "keys": "Keys",
+    "piano": "Piano",
+    "guitar": "Guitar",
+    "strings": "Strings",
+    "brass": "Brass",
+    "vocals": "Vocals",
+    "fx": "FX",
+    "textures": "Textures",
+    "atmosphere": "Atmosphere"
+   }
+  },
+  "sample-rate": {
+   "label": "Sample rate",
+   "multi": true,
+   "values": {
+    "44100": "44.1 kHz",
+    "48000": "48 kHz",
+    "88200": "88.2 kHz",
+    "96000": "96 kHz"
+   }
+  },
+  "bit-depth": {
+   "label": "Bit depth",
+   "multi": true,
+   "values": {
+    "16": "16-bit",
+    "24": "24-bit",
+    "32": "32-bit"
+   }
   }
  },
  "schemas": {
