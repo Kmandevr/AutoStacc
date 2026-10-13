@@ -7,6 +7,7 @@ import { all, stmt, newId, now, guardStmt } from "../lib/db.js";
 import { review } from "./review.js";
 import { revisionOf } from "./revision.js";
 import { keptFiles } from "./accept.js";
+import { inUseSql } from "../creators/storage.js";
 import { claimStmts, blobsByHash } from "../blobs/blobs.js";
 import { jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
@@ -17,18 +18,23 @@ const chunks = (rows) => Array.from({ length: Math.ceil(rows.length / CHUNK) }, 
 export async function importResult(app, version, job, state) {
   const { result, attempt } = state;
   const owner = version.owner_scope;
-  const { kept, refused, carried } = await keptFiles(app, version, job, state);
+  const { kept, refused, carried, room } = await keptFiles(app, version, job, state);
   // For the automated review: how many of these the owner already had. As a revision of the live version
   // (revision.js): which files are the live version's files, and which folders its folders.
   const already = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
   const rev = await revisionOf(app.db, version, kept);
 
-  // 1. One stored original per owner and hash: claim, then learn which key each hash ended up with.
-  if (kept.length) {
-    await app.db.batch(claimStmts(app.db, owner, kept.map((f) => ({ key: f.stored, sha256: f.sha256, size: f.size, crc32: f.crc32,
+  // 1. One stored original per owner and hash: claim, then learn which key each hash ended up with. Carried files
+  // already are stored originals: never claimed again (a row the sweep removed meanwhile must not come back pointing
+  // at a deleted object), and the batch below goes ahead only while they all still exist.
+  const fresh = kept.filter((f) => !f.carried);
+  if (fresh.length) {
+    await app.db.batch(claimStmts(app.db, owner, fresh.map((f) => ({ key: f.stored, sha256: f.sha256, size: f.size, crc32: f.crc32,
       format: f.format, facts: f.facts, engineVersion: result.engineVersion }))));
   }
   const blobs = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
+  if (kept.some((f) => !blobs[f.sha256])) throw Object.assign(new Error("carried file missing"), { code: "missing_files" });
+  const carriedIds = [...new Set(carried.map((f) => f.blobId))];
 
   // 2. Folders, assets, the manifest and suggestions, in one batch with the move to ready.
   const folders = new Map();
@@ -72,6 +78,10 @@ export async function importResult(app, version, job, state) {
   const batch = [
     // Only while the version is still processing: if another request imported this answer first, all of this rolls back.
     guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'processing')", version.id),
+    // If either of these fails, nothing is written and the version stays processing: the next look re-imports it and
+    // fails it with the reason (missing_files, quota_exceeded).
+    ...(carriedIds.length ? [guardStmt(db, "(SELECT COUNT(*) FROM blobs WHERE id IN (SELECT value FROM json_each(?))) = ?", JSON.stringify(carriedIds), carriedIds.length)] : []),
+    ...(room ? [guardStmt(db, `${inUseSql("?1")} - ?2 + ?3 <= ?4`, owner, room.archive, room.bytes, room.quota)] : []),
     // The originals this version uses are wanted now (newly claimed ones expire otherwise, see claimStmts).
     ...chunks(entries).map((json) => stmt(db, "UPDATE blobs SET delete_after = NULL WHERE id IN (SELECT j.value->>'blob' FROM json_each(?) j)", json)),
     // New assets only: a file matched to the live version keeps its asset, and the values said about it.
