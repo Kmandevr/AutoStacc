@@ -42,7 +42,7 @@ async function library(app) {
       sources: [...new Set(mine.map((e) => (e.source_type === "free" && e.note === AUTO_NOTE ? "auto" : e.source_type)))],
       grantedAt: mine[0].granted_at,
       files: files.filter((f) => f.product_id === pid && stillDelivered(f, mine[0].granted_at)).map((f) => ({ id: f.id, filename: f.filename, label: f.label, contentType: f.content_type, sizeBytes: f.size_bytes, pacId: f.pac_id || null, kind: f.kind || "",
-        folderPath: f.folder_path || "", ...(f.retired_at ? { retiredAt: f.retired_at, availableUntil: new Date(Date.parse(f.retired_at) + RETIRED_KEEP_DAYS * 86400000).toISOString() } : {}),
+        folderPath: f.folder_path || "", ...(f.asset_id ? { assetId: f.asset_id } : {}), ...(f.retired_at ? { retiredAt: f.retired_at, availableUntil: new Date(Date.parse(f.retired_at) + RETIRED_KEEP_DAYS * 86400000).toISOString() } : {}),
         // Files with a stored original can go into a ZIP with others (POST /api/downloads/bundle).
         ...(f.blob_id && bundles ? { bundleable: true } : {}) }))
     };

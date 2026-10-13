@@ -378,3 +378,7 @@ The owner asked for deltas inside a file only if measurements show real savings.
 
 Savings are real only for tag edits and trims with content-defined chunking; re-exports, normalizing and re-renders, the usual reasons a sample changes, save nothing. A replaced file's old bytes are kept only 30 days (owner's decision), so any saving is temporary, while a chunk store would change how every original is stored and delivered (files assembled from chunks instead of streamed byte for byte from one object, more storage operations). **Recommendation: don't build deltas**; whole-file dedup by SHA-256 (built) already covers unchanged, moved and renamed files. This is the owner's call; until they confirm, nothing is built either way.
 
+## 2026-10-13: Personal collections and tags point at item keys (Phase 6b)
+
+The plan had collection items and tags reference asset ids, so they survive revisions. Files sold before the Pack Builder have no asset, so an item key is the file's asset when it has one and its file id otherwise; both are shown to the person anyway. Every add is checked against what the person can download at that moment, and a file that stops being theirs is counted, never listed, so the feature can't reveal or keep anything they don't own. It is a feature switch of its own (`library.collections`): Your Stacc and every download work the same without it.
+

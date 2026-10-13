@@ -343,6 +343,39 @@ describe("features in the browser", () => {
     await ctx.close();
   });
 
+  test("Your Stacc on a phone: put files in a new collection, tag them, filter by both and save the search", async () => {
+    const { ctx, page } = await open(PHONE);
+    // Bought as a guest, then an account with the same email: the purchase joins it.
+    const email = unique("organizer");
+    await toMockPay(page, email, "serum-presets");
+    await page.click("[data-mock=paid]");
+    await page.waitForSelector("text=Payment confirmed");
+    await signUp(page, email);
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-asset");
+    const boxes = page.locator("[data-select]");
+    const n = Math.min(2, await boxes.count());
+    for (let i = 0; i < n; i++) await boxes.nth(i).check();
+    await page.fill('[data-personal="collect"] [name="name"]', "Favorites");
+    await page.click('[data-personal="collect"] button[type=submit]');
+    await page.waitForFunction((label) => [...document.querySelectorAll('[data-filter="collection"] option')].some((o) => o.textContent === label), `Favorites (${n})`);
+    await boxes.first().check();
+    await page.fill('[data-personal="tag"] [name="tag"]', "Dark");
+    await page.click('[data-personal="tag"] button[type=submit]');
+    await page.waitForSelector(".stacc-asset .chip >> text=dark");
+    await page.selectOption('[data-filter="tag"]', "dark");
+    await page.waitForFunction(() => new URLSearchParams(location.search).get("tag") === "dark");
+    assert.equal(await page.locator(".stacc-asset").count(), 1, "only the tagged file");
+    await page.fill('[data-personal="search"] [name="name"]', "Dark ones");
+    await page.click('[data-personal="search"] button[type=submit]');
+    await page.waitForSelector(".stacc-saved a >> text=Dark ones");
+    assert.equal(await page.locator(".stacc-saved a").getAttribute("href"), "/library?tag=dark");
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(overflow <= 0, `Your Stacc overflows by ${overflow}px`);
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
   test("drop-in modules: a second Listen player and newsletter sign-up on the same page each render and work on their own", async () => {
     const { ctx, page } = await open(DESK);
     // A copy of each module, placed by attributes alone (the newsletter one empty, so it draws the standard form).

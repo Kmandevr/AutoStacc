@@ -2,7 +2,7 @@
 title: Production requirements
 summary: What makes AutoStacc fit to run as a public store (trust pages, licences, support, privacy, security, accessibility, SEO) and the rules every change must keep.
 covers: [data/legal.js, data/help.js, data/licenses.js, data/product-types.js, data/site.js, scripts/lib/trust-pages.js, scripts/lib/rich-text.js, scripts/seo-test.js, _headers, server/files/policy.js, server/sites/images.js, server/sites/render.js, server/auth/index.js, server/lib/ratelimit.js, server/account/, server/email/preferences.js, server/analytics/routes.js, server/downloads/, server/impersonation/, js/layout.js]
-updated: 2026-10-10
+updated: 2026-10-13
 ---
 
 # Production requirements
@@ -44,7 +44,7 @@ Nothing is accepted that isn't on a list. Paid files and previews: only the exte
 
 ## Accounts and privacy
 
-Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`, wishlist included) and delete their account (which erases the wishlist). The store's personal picks use history kept only in the browser and sent with each request, never stored by the server ([discovery](discovery.md)); searches and filters on Projects and Explore join that same history, and the home page reads it on the device to suggest projects ([browse](browse.md)). Deletion keeps orders only as anonymous sales records ([store](store.md#settings)), and keeps a product's change history while forgetting who made each change ([studio](studio.md)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track. Deletion is refused while the account owns a Studio creator, has a checkout that could still be paid, or is an admin (`server/account/delete.js`).
+Users can see their data, change their name and password, sign out devices, choose optional emails, download everything (`/settings/privacy`, wishlist, collections, tags and saved searches included) and delete their account (which erases them). The store's personal picks use history kept only in the browser and sent with each request, never stored by the server ([discovery](discovery.md)); searches and filters on Projects and Explore join that same history, and the home page reads it on the device to suggest projects ([browse](browse.md)). Deletion keeps orders only as anonymous sales records ([store](store.md#settings)), and keeps a product's change history while forgetting who made each change ([studio](studio.md)). Optional emails are opt-in and checked with `wants()` before sending (`server/email/preferences.js`). Visit counts are anonymous daily totals, skipped under Global Privacy Control or Do Not Track. Deletion is refused while the account owns a Studio creator, has a checkout that could still be paid, or is an admin (`server/account/delete.js`).
 
 ## Security
 

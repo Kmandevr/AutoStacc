@@ -12,13 +12,15 @@
   const files = (n) => `${n} file${n === 1 ? "" : "s"}`;
   const SOURCES = { purchase: "bought", free: "free", auto: "auto-stacc'd", promo: "promo", manual: "gift", bundle: "bundle", subscription: "subscription", replacement: "replacement" };
 
-  // ctx: { catalog, selected: Set of asset ids, names: { project(id), stacclet(id), pac(id) } }
+  // ctx: { catalog, selected: Set of asset ids, names: { project(id), stacclet(id), pac(id) } }, and optional hooks for a
+  // person's own organization (js/library-personal.js): filters(facets), tools(count), chips(asset).
   function asset(a, ctx, showSource) {
     const where = a.pacId ? `${ctx.names.stacclet(a.staccletId)} › ${ctx.names.pac(a.pacId)}` : a.productTitle;
     const source = showSource ? `${e(ctx.names.project(a.projectId))} › ${e(where)} · ` : a.pacId ? `${e(a.productTitle)} · ` : "";
     return `<li class="stacc-asset">
       <label class="stacc-pick"><input type="checkbox" data-select="${e(a.id)}"${ctx.selected.has(a.id) ? " checked" : ""}>
         <span class="stacc-name">${e(a.name)}<span class="small-print"> ${source}${e(a.format.toUpperCase() || "file")} · ${size(a.sizeBytes)}${a.sources.includes("auto") ? " · auto-stacc'd" : ""}${a.availableUntil ? ` · <strong>removed in an update; yours to download until ${e(fmtDate(a.availableUntil.slice(0, 10)))}</strong>` : ""}</span></span></label>
+      ${ctx.chips ? ctx.chips(a) : ""}
       <button class="btn ghost" type="button" data-download="${e(a.id)}" data-product="${e(a.productId)}">Download</button>
     </li>`;
   }
@@ -81,13 +83,15 @@
       ${facets.projects.length > 1 ? select("project", "Project", facets.projects.map(([id, n]) => [id, `${ctx.names.project(id)} (${n})`]), state.filter.project) : ""}
       ${select("kind", "Type", facets.kinds.map(([k, n]) => [k, `${(types[k] || {}).label || k} (${n})`]), state.filter.kind)}
       ${select("format", "Format", facets.formats.map(([f, n]) => [f, `${f.toUpperCase()} (${n})`]), state.filter.format)}
+      ${ctx.filters ? ctx.filters(facets) : ""}
     </div>`;
   }
 
-  function selection(count) {
+  // ctx.tools (optional): more for the selected files (js/library-personal.js: collections and tags).
+  function selection(count, ctx = {}) {
     return `<div class="stacc-selection" role="status">${count ? `${items(count)} selected
       <button class="btn" type="button" data-download-selected>Download selected</button>
-      <button class="link-btn" type="button" data-clear-selection>Clear</button>` : "Tick files to download several at once."}</div>`;
+      <button class="link-btn" type="button" data-clear-selection>Clear</button>${ctx.tools ? ctx.tools(count) : ""}` : "Tick files to download several at once."}</div>`;
   }
 
   // Owned products with no files yet.

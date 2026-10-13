@@ -18,7 +18,9 @@
   const params = new URLSearchParams(location.search);
 
   // The page's own Stacc (no data-project) keeps its view, search and filters in the address (/library?q=&kind=...).
-  const FILTERS = ["q", "project", "kind", "format"];
+  const FILTERS = ["q", "project", "kind", "format", "collection", "tag"];
+  // A signed-in person's collections, tags and saved searches (js/library-personal.js), when it's loaded and switched on.
+  const P = window.GS.libraryPersonal;
   let mounted = 0;
   function mount(root) {
     const uid = ++mounted;
@@ -27,7 +29,8 @@
     const catalog = { projects: [...(window.PROJECTS || [])], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
     const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
     const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
-    const state = { view: root.dataset.staccView === "kinds" ? "kinds" : "projects", filter: { q: "", project: root.dataset.project || "", kind: "", format: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [] };
+    const state = { view: root.dataset.staccView === "kinds" ? "kinds" : "projects", filter: { q: "", project: root.dataset.project || "", kind: "", format: "", collection: "", tag: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [], personal: null };
+    root.staccSelection = () => [...state.selected];
     let asked = 0, shown = null; // the newest model request, and the last answer drawn
     if (addressed) {
       for (const k of FILTERS) state.filter[k] = (params.get(k) || "").slice(0, 80);
@@ -52,17 +55,23 @@
       return "";
     }
 
+    function context() {
+      const p = state.personal;
+      return { catalog, names, selected: state.selected, uid,
+        ...(p && P ? { filters: (facets) => P.filters(p, facets, state.filter), tools: (n) => P.tools(p, n, state.filter), chips: P.chips } : {}) };
+    }
+
     // Draws the last model answer; redraws that need no model work (clearing the selection) call this directly.
     function paint() {
       const box = root.querySelector("[data-stacc-files]");
       if (!box || !shown) return;
-      const ctx = { catalog, names, selected: state.selected, uid };
+      const ctx = context();
       const head = root.querySelector("[data-stacc-head]");
       if (head && state.assets.length && !head.firstChild) head.innerHTML = V.search(state, ctx);
       const count = root.querySelector("[data-stacc-found]"), said = V.found(state, shown);
       if (count && count.dataset.said !== said) { count.innerHTML = said; count.dataset.said = said; } // announce changes only
       const view = shown.view === "kinds" ? V.kindView(shown.groups, ctx) : V.treeView(shown.groups, ctx);
-      const files = state.assets.length ? `${V.toolbar(shown.facets, state, ctx)}${V.selection(state.selected.size)}
+      const files = state.assets.length ? `${addressed && P ? P.saved(state.personal, state.filter) : ""}${V.toolbar(shown.facets, state, ctx)}${V.selection(state.selected.size, ctx)}
         <div class="stacc-view">${view || `<p class="msg">Nothing matches those filters.</p>`}</div>` : "";
       const waiting = state.items.filter((it) => !it.files.length);
       box.innerHTML = files + V.waiting(waiting) + V.following(state.follows, state.discover, ctx);
@@ -99,8 +108,10 @@
       items.forEach((i) => {
         if (i.projectId && i.projectName && !catalog.projects.some((p) => p.id === i.projectId)) catalog.projects.push({ id: i.projectId, name: i.projectName });
       });
-      const built = await model.ask({ type: "build", items, catalog });
+      const personal = signedIn && P ? await P.load() : null;
+      const built = await model.ask({ type: "build", items, catalog, personal });
       if (n !== asked) return;
+      state.personal = personal;
       state.items = items;
       state.assets = built.assets;
       const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
@@ -193,7 +204,7 @@
       root.querySelectorAll("[data-select]").forEach((box) => (box.checked = state.selected.has(box.dataset.select)));
       root.querySelectorAll("[data-select-group]").forEach((box) => (box.checked = box.dataset.selectGroup.split(" ").every((id) => state.selected.has(id))));
       const bar = root.querySelector(".stacc-selection");
-      if (bar) bar.outerHTML = V.selection(state.selected.size);
+      if (bar) bar.outerHTML = V.selection(state.selected.size, context());
     }
 
     root.addEventListener("change", (e) => {
@@ -219,6 +230,18 @@
       }, 220);
     });
     root.addEventListener("submit", (e) => { if (e.target.matches("[data-stacc-search]")) e.preventDefault(); });
+
+    // A collection, tag or saved search changed (js/library-personal.js): reload them and redraw.
+    root.addEventListener("gs:stacc-personal", async (e) => {
+      const personal = await P.load();
+      const { clear, leave } = e.detail || {};
+      if (leave) state.filter[leave] = "";
+      if (clear) state.selected.clear();
+      const built = await model.ask({ type: "build", items: state.items, catalog, personal });
+      state.personal = personal;
+      state.assets = built.assets;
+      render();
+    });
 
     return load;
   }

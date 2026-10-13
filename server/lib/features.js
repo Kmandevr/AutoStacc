@@ -11,7 +11,10 @@ export const FEATURES = {
   // Suggested kinds, instruments, tempos and keys from names and headers (the vocabulary sent with engine jobs).
   "packs.suggestions": { on: true, label: "Suggestions from names and headers" },
   // Several files as one ZIP: "Download folder (ZIP)" and /api/downloads/bundle (single downloads always work).
-  "downloads.bundles": { on: true, label: "ZIP downloads" }
+  "downloads.bundles": { on: true, label: "ZIP downloads" },
+  // Your Stacc's personal collections, tags and saved searches (/api/collections, /api/tags, /api/saved-searches; the
+  // library itself and every download work without them).
+  "library.collections": { on: true, label: "Collections, tags and saved searches" }
 };
 
 const offIn = (env) => new Set(String((env && env.FEATURES_OFF) || "").split(",").map((s) => s.trim()).filter(Boolean));
