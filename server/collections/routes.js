@@ -25,7 +25,8 @@ async function person(app, { write = false } = {}) {
   const access = await requireAccess(app);
   if (!access.user) fail(401, "unauthenticated", "Log in to organize Your Stacc.");
   if (write) await limit(app, `collections:${access.user.id}`, 120, 60);
-  return access;
+  // The account's own purchases only: a guest receipt's key in this browser (maybe someone else's) doesn't count here.
+  return { ...access, guestOrderIds: [] };
 }
 
 // The item keys of these file ids, all of which must be this person's right now.
