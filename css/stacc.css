@@ -45,3 +45,11 @@
 .stacc-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .stacc-found { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
 .stacc-found .link-btn { margin-left: 8px; }
+/* A person's own organization (js/library-personal.js): saved searches, the forms in the selection bar, tag chips. */
+.stacc-personal { margin: 0 0 12px; }
+.stacc-saved { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 8px; }
+.stacc-personal-form { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.stacc-personal-form :is(input, select) { min-height: 36px; padding: 4px 8px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
+.stacc-asset .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: .78rem; border: 1px solid var(--line); border-radius: 999px; }
+.stacc-asset .chip .link { min-width: 24px; min-height: 24px; }
+@media (max-width: 600px) { .stacc-personal-form { flex: 1 1 100%; } .stacc-personal-form input { flex: 1 1 140px; } }

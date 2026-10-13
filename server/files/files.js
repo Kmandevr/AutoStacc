@@ -21,7 +21,7 @@ export const STATUSES = ["pending", "published", "rejected", "deleted"];
 export const getDeliverableFile = (db, fileId) => first(db, `SELECT * FROM product_files WHERE id = ? AND ${DELIVERABLE}`, fileId);
 
 export const deliverableFiles = (db, productIds) => (productIds.length
-  ? all(db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind, folder_path, retired_at, blob_id FROM product_files
+  ? all(db, `SELECT id, product_id, filename, label, content_type, size_bytes, pac_id, kind, folder_path, retired_at, blob_id, asset_id FROM product_files
       WHERE ${DELIVERABLE} AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
   : Promise.resolve([]));
 

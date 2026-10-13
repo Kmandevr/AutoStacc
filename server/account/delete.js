@@ -1,4 +1,5 @@
-// Deleting your account. The person types their email and password. The account, its sign-ins, follows, wishlist, votes,
+// Deleting your account. The person types their email and password. The account, its sign-ins, follows, wishlist,
+// collections, tags and saved searches, votes,
 // email preferences and creator memberships go; orders stay as anonymous sales records (tax, refunds, disputes) and
 // everything it owned stops downloading. One transaction, so a failure leaves the account exactly as it was.
 // Refused while it still owns a Studio creator (its pages and sales need an owner: AutoStacc sorts that out), while a
@@ -16,6 +17,7 @@ import { erasePreferencesStmt, getPreferences } from "../email/preferences.js";
 import { syncNewsList } from "../email/contacts.js";
 import { removeAllFollowsStmt } from "../projects/follows.js";
 import { removeWishlistStmt } from "../wishlist/wishlist.js";
+import { eraseCollectionsStmts } from "../collections/collections.js";
 import { removeVotesStmt } from "../polls/polls.js";
 import { creatorsOfUser, leaveAllCreatorsStmt } from "../creators/creators.js";
 import { forgetActorStmt } from "../creators/events.js";
@@ -52,6 +54,7 @@ async function deleteAccount(app) {
     erasePreferencesStmt(db, user.id),
     removeAllFollowsStmt(db, user.id),
     removeWishlistStmt(db, user.id),
+    ...eraseCollectionsStmts(db, user.id),
     removeVotesStmt(db, user.id),
     leaveAllCreatorsStmt(db, user.id),
     forgetActorStmt(db, user.id),

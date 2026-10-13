@@ -37,7 +37,7 @@ test("each owned file becomes one asset that keeps every relationship", () => {
   assert.equal(assets.length, 8);
   assert.equal(new Set(ids(assets)).size, 8);
   assert.deepEqual(assets.find((a) => a.id === "pf_bass2"), {
-    id: "pf_bass2", name: "Bass 02.MID", filename: "Bass 02.MID", format: "mid", kind: "midi", sizeBytes: 10, folder: "", bundleable: false, availableUntil: null,
+    id: "pf_bass2", key: "pf_bass2", tags: [], collections: [], name: "Bass 02.MID", filename: "Bass 02.MID", format: "mid", kind: "midi", sizeBytes: 10, folder: "", bundleable: false, availableUntil: null,
     productId: "fs-pack", productTitle: "Frayed Signals Pack", projectId: "gs", staccletId: "frayed", pacId: "fs-midi", sources: ["purchase"]
   });
   const stray = assets.find((a) => a.id === "pf_stray");
@@ -161,4 +161,19 @@ test("a file removed in an update says until when, and its Pac shows it was upda
   assert.equal(list.find((a) => a.id === "pf_old").availableUntil, "2026-10-31T00:00:00.000Z");
   assert.equal(list.find((a) => a.id === "pf_new").availableUntil, null);
   assert.equal(stacc.tree(list, catalog)[0].stacclets[0].pacs[0].updated, true);
+});
+
+test("a person's own collections and tags: by item key (the asset across versions), filterable and searchable", () => {
+  const owned = [{ productId: "fs-pack", title: "Frayed Signals Pack", projectId: "gs", pacs: ["fs-samples"], files: [
+    file("pf_a", "Kick.wav", { pacId: "fs-samples", assetId: "as_kick" }),
+    file("pf_b", "Snare.wav", { pacId: "fs-samples" })
+  ] }];
+  const personal = { tags: { as_kick: ["punchy"], pf_b: ["punchy", "dark"] }, collections: [{ id: "cl_1", items: ["as_kick"] }] };
+  const list = stacc.assetsFrom(owned, catalog, personal);
+  assert.deepEqual(list.map((a) => [a.key, a.tags, a.collections]), [["as_kick", ["punchy"], ["cl_1"]], ["pf_b", ["punchy", "dark"], []]]);
+  assert.deepEqual(ids(stacc.filter(list, { collection: "cl_1" })), ["pf_a"]);
+  assert.deepEqual(ids(stacc.filter(list, { tag: "dark" })), ["pf_b"]);
+  assert.deepEqual(ids(stacc.filter(list, { q: "punchy" })), ["pf_a", "pf_b"], "search finds your tags");
+  assert.deepEqual(stacc.facets(list).tags, [["dark", 1], ["punchy", 2]]);
+  assert.deepEqual(stacc.assetsFrom(owned, catalog).map((a) => a.tags), [[], []], "no personal data: nothing personal");
 });
