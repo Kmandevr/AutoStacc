@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-11
+updated: 2026-10-13
 ---
 
 # Decisions
@@ -354,4 +354,8 @@ The owner sent an architecture outline for a "Project Studio" and answered four 
 - **The Pac Builder section reuses Phase 5** (built in parallel and merged first): the same `/api/studio/packs` routes, automated review and the admin's review queue. The Product Studio only gives it a place in the workspace.
 - **Collaboration (Team) is not built.** Roles and revenue splits are open questions in the vision.
 - **Insights collects nothing new:** orders, refunds, downloads and the existing per-day view counters. Traffic sources are shown as not tracked.
+
+## 2026-10-13: How a revision is matched (Phase 6)
+
+A new version is matched to the live one when it's imported, by hash first and never by name alone (same bytes in the same place: unchanged; same bytes elsewhere: moved; new bytes at a live file's path: replaced; the rest new or removed). The plan put this `diff` in the Rust engine; it is plain JavaScript instead (`js/pack-diff.js`), because it needs the live version from the database, takes milliseconds for thousands of files, and the same file runs in the browser for a preview, like the resolver. A file's values belong to its asset, not to a version: a matched file keeps them, so a creator never re-enters them, and edits made while reviewing a draft are the asset's (customers only ever see what a published version snapshot). A replaced file keeps its values too and is shown first, tagged, so they can be checked against the new bytes.
 

@@ -33,8 +33,12 @@
     return `<td>${shown}${offers ? `<br>${offers}` : ""}</td>`;
   }
 
-  // Files without a kind, or with suggestions waiting for a decision, first.
-  const needsLook = (f) => (!f.resolved.kind ? 2 : 0) + ((f.suggestions || []).some((s) => s.status === "suggested" && !(f.resolved[s.field] && f.resolved[s.field].value === s.value)) ? 1 : 0);
+  // Files without a kind, then replaced files (their values came from the bytes they replace), then new files and files
+  // with suggestions waiting for a decision, first.
+  const needsLook = (f) => (!f.resolved.kind ? 4 : 0) + (f.change === "replaced" ? 2 : 0)
+    + (f.change === "new" || (f.suggestions || []).some((s) => s.status === "suggested" && !(f.resolved[s.field] && f.resolved[s.field].value === s.value)) ? 1 : 0);
+  // How a file relates to the live version (server/packs/revision.js); unchanged files say nothing.
+  const CHANGE = { new: "new", moved: "moved or renamed", replaced: "replaced: check its values" };
 
   function render(v) {
     const files = [...v.files].sort((a, b) => needsLook(b) - needsLook(a));
@@ -42,7 +46,7 @@
     const folderOpts = v.folders.map((f) => `<option value="${e(f.id)}">${e(f.path)}</option>`).join("");
     const head = Object.values(LABELS).map((l) => `<th>${l}</th>`).join("");
     const rows = files.map((f) => `<tr><td><input type="checkbox" data-pick="${e(f.assetId)}" aria-label="Select ${e(f.filename)}"></td>
-      <td><code>${e(f.folderPath ? `${f.folderPath}/` : "")}${e(f.filename)}</code><br><small class="small-print">${e(f.format)}</small></td>
+      <td><code>${e(f.folderPath ? `${f.folderPath}/` : "")}${e(f.filename)}</code><br><small class="small-print">${e(f.format)}</small>${f.change ? ` <span class="tag">${e(CHANGE[f.change] || f.change)}</span>` : ""}</td>
       ${Object.keys(LABELS).map((field) => cell(f, field)).join("")}</tr>`).join("");
     const tools = v.editable ? `<div class="panel wide" data-review-tools>
         <div class="field"><label for="rv-target">Apply to</label><select id="rv-target" name="target"><option value="">Selected files</option>${v.folders.map((f) => `<option value="folder:${e(f.id)}">Default for folder ${e(f.path)}</option>`).join("")}</select></div>

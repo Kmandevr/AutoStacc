@@ -109,6 +109,17 @@ const CASES = {
     { name: "__MACOSX/Pack/._Read me.txt", data: "x", store: true },
     { name: "Pack/.DS_Store", data: "x", store: true }
   ]),
+  // The next version of pack-basic, for revisions: the same kick, groove, room, chords; Air moved to another folder;
+  // the read-me replaced; the preset removed; a changelog added.
+  "pack-revision": () => zip([
+    { name: "Pack/Drums/Kicks/Kick 01.wav", data: wav({ frames: 13230, acid: { oneShot: true }, seed: 2 }) },
+    { name: "Pack/Loops/128 BPM/Groove 128 Am.wav", data: wav({ sr: 48000, frames: 180000, acid: { bpm: 128 }, seed: 3 }) },
+    { name: "Pack/Ambience/Air.aif", data: aiff() },
+    { name: "Pack/Textures/Room.flac", data: flac() },
+    { name: "Pack/MIDI/Chords Am.mid", data: midi() },
+    { name: "Pack/Read me.txt", data: "Thanks for downloading version 2.\n", store: true },
+    { name: "Pack/Changelog.txt", data: "Version 2: Air moved to Ambience, Wobble removed.\n", store: true }
+  ]),
   // How creators name things, for suggestions: kinds, instruments, tempos and keys in folder and file names, a tempo
   // that fits the length and one that doesn't, a name and a header that disagree, MIDI patterns and arrangements.
   "pack-names": () => zip([
