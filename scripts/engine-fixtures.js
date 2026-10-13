@@ -172,9 +172,25 @@ const CASES = {
   "not-a-zip": () => Buffer.from("This is a text file with a .zip name.\n")
 };
 
-fs.mkdirSync(OUT, { recursive: true });
-for (const [name, make] of Object.entries(CASES)) {
-  const file = path.join(OUT, `${name}.zip`);
-  fs.writeFileSync(file, make());
-  console.log(`${path.relative(process.cwd(), file)}  ${fs.statSync(file).size} bytes`);
-}
+// Archives the Pack Builder makes in the browser (js/zip-thin.js), so tests can follow it end to end: pack-revision as
+// sent when the store already has pack-basic's files (only the read-me and changelog), and an archive with nothing
+// left in it (a revision that only moves files).
+const { thin } = require("../js/zip-thin.js");
+const THIN = {
+  "pack-revision-thin": async () => {
+    const blob = new Blob([CASES["pack-revision"]()]);
+    const { directory } = require("../js/zip-thin.js");
+    const keep = (await directory(blob)).filter((e) => /^Pack\/(Read me|Changelog)\.txt$/.test(e.nameText));
+    return Buffer.from(await (await thin(blob, keep)).arrayBuffer());
+  },
+  "empty": async () => Buffer.from(await (await thin(new Blob([CASES["pack-revision"]()]), [])).arrayBuffer())
+};
+
+(async () => {
+  fs.mkdirSync(OUT, { recursive: true });
+  for (const [name, make] of [...Object.entries(CASES), ...Object.entries(THIN)]) {
+    const file = path.join(OUT, `${name}.zip`);
+    fs.writeFileSync(file, await make());
+    console.log(`${path.relative(process.cwd(), file)}  ${fs.statSync(file).size} bytes`);
+  }
+})();

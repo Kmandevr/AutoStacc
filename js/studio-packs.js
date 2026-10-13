@@ -99,7 +99,9 @@
       bar.hidden = false;
       msg.textContent = "Uploading…";
       try {
-        const v = await window.GS.packUpload.upload({ base: BASE, create: `${url}/versions` }, file, (x) => { bar.value = x; msg.textContent = `Uploading… ${Math.round(x * 100)}%`; });
+        let note = "";
+        const v = await window.GS.packUpload.upload({ base: BASE, create: `${url}/versions`, have: { url: `${url}/have`, body: {} } }, file,
+          (x) => { bar.value = x; msg.textContent = `${note} Uploading… ${Math.round(x * 100)}%`.trim(); }, (t) => { note = t; msg.textContent = t; });
         await show();
         showVersion(v.id);
       } catch (err) {
