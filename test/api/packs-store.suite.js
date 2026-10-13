@@ -5,6 +5,8 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, sql } from "../support/client.js";
+import { adminClient } from "../support/flows.js";
+import { SWEEP_TOKEN } from "./packs.suite.js";
 import * as P from "../support/packs.js";
 
 const { S, caseZip, build } = P;
@@ -41,9 +43,11 @@ export default (ctx) => describe("packs in the store", () => {
     const res = await new Client(base()).get("/api/store/search?category=sample-pack");
     const groups = res.data.facets.map((g) => g.id);
     assert.ok(groups.includes("sample-rate") && groups.includes("bit-depth"), "the derived filters are offered");
-    const loops = (await new Client(base()).get(`/api/store/search?bpm_min=120&bpm_max=130`)).data.products.map((p) => p.id);
-    const contents = db(`SELECT bpm_min, bpm_max FROM product_contents WHERE product_id = '${product.id}'`)[0];
-    if (contents.bpm_min) assert.ok(loops.includes(product.id) === (contents.bpm_min <= 130 && contents.bpm_max >= 120), "the files' tempo range filters when the creator gave none");
+    // The files' tempo range (the creator gave none): 120 to 128 BPM, from the loop and the kick's suggestions.
+    assert.deepEqual(db(`SELECT bpm_min, bpm_max FROM product_contents WHERE product_id = '${product.id}'`)[0], { bpm_min: 120, bpm_max: 128 });
+    assert.ok((await search("bpm_min=125&bpm_max=140")).includes(product.id));
+    assert.ok(!(await search("bpm_min=130&bpm_max=140")).includes(product.id));
+    assert.deepEqual((await new Client(base()).get(`/api/products/${product.id}`)).data.product.bpm, [120, 128], "the product page says it too");
   });
 
   test("a creator's own details stay theirs and win; derived values come back when the creator drops one", async () => {
@@ -79,5 +83,21 @@ export default (ctx) => describe("packs in the store", () => {
     // Off sale: not there for anyone.
     await c.req("PATCH", `/api/studio/products/${product.id}`, { body: { published: false } });
     assert.equal((await anon.get(`/api/products/${product.id}/contents`)).status, 404);
+  });
+
+  test("contents follow the files: an admin pulling a file, and the daily sweep catching up", async () => {
+    const { product } = await onSale("st-follow");
+    const vital = db(`SELECT id FROM product_files WHERE product_id = '${product.id}' AND filename = 'Wobble.vital'`)[0].id;
+    const admin = await adminClient(base());
+    assert.equal((await admin.req("DELETE", `/api/admin/files/${vital}`)).status, 200);
+    assert.ok(!derived(product.id).some((r) => r.facet === "plugin"), "the pulled file's values leave the store");
+    assert.ok(!(await search("plugin=vital")).includes(product.id));
+    // A lost refresh: the sweep works the contents out again.
+    db(`DELETE FROM product_contents WHERE product_id = '${product.id}'; DELETE FROM product_facets WHERE product_id = '${product.id}' AND origin = 'derived'`);
+    const res = await fetch(`${base()}/api/internal/sweep`, { method: "POST", headers: { Authorization: `Bearer ${SWEEP_TOKEN}` } });
+    assert.equal(res.status, 200);
+    assert.ok((await res.json()).contents.refreshed >= 1);
+    assert.ok(derived(product.id).some((r) => r.facet === "sample-rate"));
+    assert.ok(!derived(product.id).some((r) => r.facet === "plugin"));
   });
 });

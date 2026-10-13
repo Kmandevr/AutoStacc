@@ -69,3 +69,23 @@ export async function refreshContents(app, productId) {
   await refreshSearchText(db, productId);
   return c;
 }
+
+/**
+ * The daily sweep's part (server/maintenance/sweep.js): makes the derived rows follow the store.derivedFacets switch
+ * (off: every derived row goes and nothing is indexed; on: every product with contents is indexed again), and works
+ * out again any product whose files changed since its contents were stored (a missed refresh). Returns counts.
+ */
+export async function sweepContents(app, { limit = 50 } = {}) {
+  const db = app.db;
+  if (!isOn(app, "store.derivedFacets")) {
+    const [gone] = await db.batch([stmt(db, "DELETE FROM product_facets WHERE origin = 'derived'"), stmt(db, "UPDATE product_contents SET indexed = 0 WHERE indexed = 1")]);
+    return { removed: gone.meta.changes, refreshed: 0 };
+  }
+  // Products whose Pack Builder files changed after their contents were stored, or that have such files and none stored.
+  const stale = await all(db, `SELECT DISTINCT f.product_id AS id FROM product_files f LEFT JOIN product_contents c ON c.product_id = f.product_id
+    WHERE f.version_id IS NOT NULL AND (c.product_id IS NULL OR c.indexed = 0 OR COALESCE(f.status_at, f.created_at) > c.updated_at
+      OR (f.retired_at IS NOT NULL AND f.retired_at > c.updated_at)) LIMIT ?`, limit);
+  for (const r of stale) await refreshContents(app, r.id);
+  return { removed: 0, refreshed: stale.length };
+}
+

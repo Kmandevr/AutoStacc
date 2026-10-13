@@ -10,6 +10,7 @@ import { putVerifiedFile } from "../files/upload.js";
 import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
 import { audit } from "../audit/log.js";
+import { refreshContents } from "../discovery/contents.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
 
@@ -48,6 +49,12 @@ async function uploadFile(app, { productId }) {
   return json({ ok: true, fileId, sizeBytes: object.size, status, replaced: status === "published" ? replaces : null }, 201);
 }
 
+// A Pack Builder file taken out of (or back into) delivery changes what its product contains (server/discovery/contents.js).
+async function refreshContentsOf(app, fileId) {
+  const f = await first(app.db, "SELECT product_id, version_id FROM product_files WHERE id = ?", fileId);
+  if (f && f.version_id) await refreshContents(app, f.product_id);
+}
+
 // PATCH { status: "published" | "pending" | "rejected", note? }: the file's place in its lifecycle.
 async function fileStatus(app, { fileId }) {
   await requireAdmin(app);
@@ -58,6 +65,7 @@ async function fileStatus(app, { fileId }) {
   const res = await setStatus(app.db, fid, status, note);
   if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
   await unpublishEmptyStudioProducts(app.db);
+  await refreshContentsOf(app, fid);
   await audit(app, `product.file_${status}`, { targetType: "file", targetId: fid });
   return json({ ok: true, status });
 }
@@ -68,6 +76,7 @@ async function removeFile(app, { fileId }) {
   const res = await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", str(fileId, "fileId", { max: 40 }));
   if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
   await unpublishEmptyStudioProducts(app.db);
+  await refreshContentsOf(app, fileId);
   await audit(app, "product.file_deactivated", { targetType: "file", targetId: fileId });
   return json({ ok: true });
 }
