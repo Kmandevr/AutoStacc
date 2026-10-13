@@ -27,12 +27,13 @@ function effective(sales) {
 }
 
 // WITH e: visible products with eff (price now), sold (confirmed purchases, 90 days) and released (date for "new").
-function base(sales, at) {
+function base(sales, at, derived = true) {
   const eff = effective(sales);
   return {
     sql: `WITH sold AS (SELECT product_id, COUNT(*) AS n FROM entitlements WHERE source_type = 'purchase' AND status = 'active' AND granted_at >= ? GROUP BY product_id),
       e AS (SELECT p.*, ${eff.sql} AS eff, COALESCE(sold.n, 0) AS sold, COALESCE(p.released_at, p.created_at) AS released,
-        CASE WHEN p.bpm_min IS NOT NULL THEN p.bpm_min ELSE pc.bpm_min END AS bpm_lo, CASE WHEN p.bpm_min IS NOT NULL THEN p.bpm_max ELSE pc.bpm_max END AS bpm_hi
+        CASE WHEN p.bpm_min IS NOT NULL OR ${derived ? 0 : 1} THEN p.bpm_min ELSE pc.bpm_min END AS bpm_lo,
+        CASE WHEN p.bpm_min IS NOT NULL OR ${derived ? 0 : 1} THEN p.bpm_max ELSE pc.bpm_max END AS bpm_hi
         FROM products p LEFT JOIN sold ON sold.product_id = p.id LEFT JOIN product_contents pc ON pc.product_id = p.id
         WHERE p.published = 1 AND p.deleted_at IS NULL)`,
     params: [iso(at, PURCHASE_DAYS), ...eff.params]
@@ -86,8 +87,9 @@ const ORDER = {
 };
 
 // Runs the search: one batch of statements (page, total, every facet group's counts, ranges, toggles).
-export async function search(db, f, { sales = [], kinds = [], at = new Date().toISOString() } = {}) {
-  const b = base(sales, at);
+// derived: the store.derivedFacets switch (off, the files' tempo range isn't used either).
+export async function search(db, f, { sales = [], kinds = [], at = new Date().toISOString(), derived = true } = {}) {
+  const b = base(sales, at, derived);
   const w = where(f, at);
   const rel = relevance(f.words);
   const statement = (sql, ...params) => db.prepare(sql).bind(...params);

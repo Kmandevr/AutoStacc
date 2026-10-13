@@ -16,7 +16,8 @@ export const FEATURES = {
   // library itself and every download work without them).
   "library.collections": { on: true, label: "Collections, tags and saved searches" },
   // Store filters, search and recommendations from what a product's published files contain (server/discovery/
-  // contents.js); off, products keep only their creators' own details.
+  // contents.js). Off, the files' tempo range stops counting at once and the derived values leave the store at the
+  // next daily sweep (or the next publish); products keep their creators' own details. On again, the sweep restores them.
   "store.derivedFacets": { on: true, label: "Store filters from file contents" },
   // A product page's "What's inside" (GET /api/products/:id/contents): its folders and files, before purchase.
   "product.contentsTree": { on: true, label: "What's inside on product pages" }

@@ -7,7 +7,8 @@ import { runningSales } from "../promotions/promotions.js";
 import { downloadSizes } from "../files/files.js";
 import { facetsOf } from "../discovery/facets.js";
 import { label } from "../discovery/vocabulary.js";
-import { parseJson } from "../lib/db.js";
+import { first, parseJson } from "../lib/db.js";
+import { isOn } from "../lib/features.js";
 
 async function list(app) {
   const [listed, sales] = await Promise.all([listProducts(app.db), runningSales(app.db)]);
@@ -19,10 +20,12 @@ async function list(app) {
 async function one(app, { productId }) {
   const [p, sales] = await Promise.all([getProduct(app.db, id(productId, "productId")), runningSales(app.db)]);
   if (!isVisible(p)) fail(404, "not_found", "No product with that id.");
-  const [sellers, facetRows] = await Promise.all([sellersOf(app.db, [p]), facetsOf(app.db, [p.id])]);
+  const [sellers, facetRows, contents] = await Promise.all([sellersOf(app.db, [p]), facetsOf(app.db, [p.id]),
+    isOn(app, "store.derivedFacets") ? first(app.db, "SELECT bpm_min, bpm_max FROM product_contents WHERE product_id = ?", p.id) : null]);
   // With its store details (labelled), BPM and specs, for the product page.
   const details = { facets: Object.fromEntries(Object.entries(facetRows[p.id] || {}).map(([f, vs]) => [f, vs.map((v) => ({ value: v, label: label(f, v) }))])),
-    bpm: p.bpm_min ? [p.bpm_min, p.bpm_max] : null, specs: parseJson(p.metadata, {}).specs || {} };
+    // The creator's tempo range, else the one its published files give (server/discovery/contents.js).
+    bpm: p.bpm_min ? [p.bpm_min, p.bpm_max] : contents && contents.bpm_min ? [contents.bpm_min, contents.bpm_max] : null, specs: parseJson(p.metadata, {}).specs || {} };
   return json({ product: { ...publicProduct(p, sales, sellers.get(p.id)), ...details } }, 200, { "Cache-Control": "public, max-age=60" });
 }
 

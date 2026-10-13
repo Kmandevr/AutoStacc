@@ -3,6 +3,7 @@
 // profile the browser sends; never stored, never cached). Ownership is not in these answers: the browser reads it from
 // /api/products/state, the one place that decides it.
 import { json, readJson, fail, id } from "../lib/http.js";
+import { isOn } from "../lib/features.js";
 import { routes as contentsRoutes } from "./contents-routes.js";
 import { limit } from "../lib/ratelimit.js";
 import { runningSales } from "../promotions/promotions.js";
@@ -23,7 +24,7 @@ async function find(app) {
   const at = new Date().toISOString();
   const f = parseFilters(new URL(app.request.url).searchParams, kinds);
   const sales = await runningSales(app.db, at);
-  const r = await search(app.db, f, { sales, kinds, at });
+  const r = await search(app.db, f, { sales, kinds, at, derived: isOn(app, "store.derivedFacets") });
   const [facets, sellers] = await Promise.all([facetsOf(app.db, r.rows.map((x) => x.id)), sellersOf(app.db, r.rows)]);
   return json({
     total: r.total, page: f.page, per: f.per, pages: Math.max(1, Math.ceil(r.total / f.per)), sort: f.sort,

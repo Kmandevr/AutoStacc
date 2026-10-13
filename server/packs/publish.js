@@ -49,6 +49,10 @@ export async function publishVersion(app, version, { reviewedBy = null } = {}) {
     releaseDraftStmt(db, version.pac_id, version.id)
   ]);
   // What each product now contains, for its page and the store's filters (after the commit: only published files count).
-  for (const p of products) await refreshContents(app, p.id);
+  // A failure here never undoes or fails the publish (already committed): it's logged, and the next publish, admin file
+  // change or daily sweep (server/maintenance/) works the contents out again.
+  for (const p of products) {
+    await refreshContents(app, p.id).catch((e) => console.error(`contents ${p.id}:`, e && e.message));
+  }
   return { files: entries.length };
 }
