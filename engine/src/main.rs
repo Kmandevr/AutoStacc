@@ -3,7 +3,8 @@
 //   autostacc-engine inspect <archive.zip> [--extract <dir>]  → full inspection; optionally writes the originals
 //   autostacc-engine file <path>                     → one loose file
 //   autostacc-engine serve [addr]                    → the Container's HTTP service (serve.rs), default 0.0.0.0:8080
-// With --vocabulary <file.json> (list, inspect, file), each accepted file also gets suggestions (classify.rs).
+// With --vocabulary <file.json> (list, inspect, file), each accepted file also gets suggestions (classify.rs); with
+// --analyze (inspect), each audio file's start is also analysed for a tempo, key and waveform (analysis.rs).
 // Output is the JSON job contract on stdout; failures are {"error": code} with exit status 2.
 use autostacc_engine::classify::{self, Vocabulary};
 use autostacc_engine::job::{self, Discard, Sink};
@@ -56,6 +57,15 @@ fn main() {
         }
         r
     };
+    // --analyze (inspect): also listen to each audio file's start for a tempo, key and waveform (analysis.rs).
+    let analyze = args.iter().any(|a| a == "--analyze");
+    let run = |src: &FileSource, sink: &mut dyn job::Sink| {
+        if analyze {
+            job::inspect_archive_analyzed(src, &Limits::default(), sink)
+        } else {
+            job::inspect_archive(src, &Limits::default(), sink)
+        }
+    };
     let out = match (args.first().map(String::as_str), args.get(1)) {
         (Some("list"), Some(p)) => serde_json::to_string(&with(
             job::list_archive(&open(p), &Limits::default()).unwrap_or_else(|e| fail(e.code)),
@@ -65,9 +75,8 @@ fn main() {
             let r = match args.iter().position(|a| a == "--extract").and_then(|i| args.get(i + 1)) {
                 Some(dir) => {
                     std::fs::create_dir_all(dir).unwrap_or_else(|_| fail("io"));
-                    job::inspect_archive(
+                    run(
                         &src,
-                        &Limits::default(),
                         &mut ExtractTo {
                             dir: dir.into(),
                             n: 0,
@@ -75,7 +84,7 @@ fn main() {
                         },
                     )
                 }
-                None => job::inspect_archive(&src, &Limits::default(), &mut Discard),
+                None => run(&src, &mut Discard),
             };
             serde_json::to_string(&with(r.unwrap_or_else(|e| fail(e.code))))
         }
@@ -88,7 +97,7 @@ fn main() {
             serde_json::to_string(&r)
         }
         _ => {
-            eprintln!("usage: autostacc-engine list|inspect|file <path> [--extract <dir>] [--vocabulary <file>] | serve [addr]");
+            eprintln!("usage: autostacc-engine list|inspect|file <path> [--extract <dir>] [--vocabulary <file>] [--analyze] | serve [addr]");
             std::process::exit(64)
         }
     };

@@ -24,7 +24,8 @@ export async function publishedEntries(db, versionId) {
       kind: f.resolved.kind ? f.resolved.kind.value : guess ? guess.value : "",
       meta: {
         format: f.format, sha256: f.sha256,
-        facts: { durationMs: f.facts.durationMs, sampleRate: f.facts.sampleRate, bitDepth: f.facts.bitDepth, channels: f.facts.channels },
+        facts: { durationMs: f.facts.durationMs, sampleRate: f.facts.sampleRate, bitDepth: f.facts.bitDepth, channels: f.facts.channels,
+          ...(Array.isArray(f.facts.peaks) ? { peaks: f.facts.peaks } : {}) },
         values: Object.fromEntries(Object.entries(f.resolved).map(([k, r]) => [k, { value: r.value, source: r.source }]))
       }
     };

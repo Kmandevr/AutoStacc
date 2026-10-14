@@ -1,0 +1,70 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Loop A.wav",
+   "size": 352844
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Loop B.wav",
+   "size": 846764
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Hit.wav",
+   "size": 30914
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Air.wav",
+   "size": 264644
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Silence.wav",
+   "size": 176444
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Odd codec.wav",
+   "size": 30914
+  }
+ ],
+ "folders": [
+  "Sounds"
+ ],
+ "totalSize": 1702524,
+ "zip64": false
+}

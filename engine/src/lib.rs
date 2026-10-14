@@ -1,6 +1,8 @@
 // AutoStacc processing engine: the CPU-heavy work on creators' files, with no network or database access of its own.
 // The same code runs natively in the server Container (main.rs) and as WebAssembly in the Pack Builder (abi.rs).
 // Callers hand it a `Source` (random-access bytes); it answers with plain data that serializes to the job contract.
+#[cfg(not(target_arch = "wasm32"))]
+pub mod analysis;
 pub mod classify;
 pub mod facts;
 pub mod formats;

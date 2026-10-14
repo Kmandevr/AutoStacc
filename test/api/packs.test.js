@@ -8,9 +8,10 @@ import packs, { SWEEP_TOKEN } from "./packs.suite.js";
 import packsStudio from "./packs-studio.suite.js";
 import packsRevisions from "./packs-revisions.suite.js";
 import packsStore from "./packs-store.suite.js";
+import packsAnalysis from "./packs-analysis.suite.js";
 
 const STORE = 8808;
 const engine = await startMockEngine(8818, { storage: `http://localhost:${STORE}/api/internal/engine-storage` });
 after(() => engine.close());
 
-runGroup({ name: "packs", ports: { mock: STORE }, stripe: false, vars: { ENGINE_URL: engine.url, SWEEP_TOKEN } }, [packs, packsStudio, packsRevisions, packsStore]);
+runGroup({ name: "packs", ports: { mock: STORE }, stripe: false, vars: { ENGINE_URL: engine.url, SWEEP_TOKEN } }, [packs, packsStudio, packsRevisions, packsStore, packsAnalysis]);

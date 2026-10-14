@@ -2,7 +2,7 @@
 # Pack Builder's Web Workers (docs/engine.md). Modules: hash, zipread, formats, facts, job; results are JSON (contract v1).
 [package]
 name = "autostacc-engine"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 license = "UNLICENSED"
@@ -37,3 +37,6 @@ strip = true
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tiny_http = "0.12"
 ureq = { version = "2", default-features = false }
+# Audio analysis (src/analysis.rs: tempo, key, waveform): decoding and FFT, server side only.
+symphonia = { version = "0.5", default-features = false, features = ["wav", "aiff", "flac", "mp3", "ogg", "vorbis", "pcm"] }
+rustfft = "6"

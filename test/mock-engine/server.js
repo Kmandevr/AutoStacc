@@ -1,6 +1,7 @@
 // A stand-in engine for tests that don't need the real one (no Rust, no Docker): the same HTTP contract as the Container's
 // service (engine/src/serve.rs), answering each job with the expected answer of the conformance case it names
-// (engine/conformance/expected/<case>.<op>.json, or <case>.suggest.json for an inspect sent with a vocabulary, matched by
+// (engine/conformance/expected/<case>.<op>.json, or <case>.suggest.json for an inspect sent with a vocabulary and
+// <case>.analyze.json with analysis too, matched by
 // the source file's or key's name). Unknown sources are 404.
 // It passes `node scripts/engine-conformance.js --http` like the real engine (test/unit/mock-engine.test.js), so tests
 // built on it test the contract, not a guess. A `process` job (store each accepted original) needs a storage service
@@ -35,13 +36,16 @@ export function entries(zip) {
   return out;
 }
 
+// Which expected answer a job gets: "analyze" for one with the vocabulary and analysis, "suggest" with the vocabulary only.
+const checkOf = (job) => job.op === "list" || job.op === "file" ? job.op : job.vocabulary ? (job.analyze ? "analyze" : "suggest") : "inspect";
+
 async function processJob(job, storage) {
   const src = await fetch(`${storage}/${job.source.bucket}/${job.source.key}`);
   if (src.status === 404) return [404, { error: "not_found" }];
   const zip = Buffer.from(await src.arrayBuffer());
   const name = caseByHash.get(sha(zip));
   if (!name) return [404, { error: "not_found" }];
-  const answer = JSON.parse(fs.readFileSync(path.join(EXPECTED, `${name}.${job.vocabulary ? "suggest" : "inspect"}.json`), "utf8"));
+  const answer = JSON.parse(fs.readFileSync(path.join(EXPECTED, `${name}.${checkOf(job)}.json`), "utf8"));
   if (answer.error) return [422, answer];
   const files = entries(zip);
   let n = 0;
@@ -74,8 +78,7 @@ export function startMockEngine(port = 0, { storage } = {}) {
       if (!["list", "inspect", "file"].includes(job.op)) return json(res, 400, { error: "unknown_op" });
       const ref = (job.source && (job.source.file || job.source.key)) || "";
       const name = path.basename(ref).replace(/\.zip$/, "");
-      const check = job.op === "inspect" && job.vocabulary ? "suggest" : job.op;
-      const file = path.join(EXPECTED, `${name}.${check}.json`);
+      const file = path.join(EXPECTED, `${name}.${checkOf(job)}.json`);
       if (!/^[a-z0-9-]+$/.test(name) || !fs.existsSync(file)) return json(res, 404, { error: "not_found" });
       const answer = JSON.parse(fs.readFileSync(file, "utf8"));
       json(res, answer.error ? 422 : 200, { ...answer, engineVersion: "mock" });

@@ -27,10 +27,17 @@
     const r = f.resolved[field];
     const open = (f.suggestions || []).filter((s) => s.field === field && s.status === "suggested" && (!r || s.value !== r.value));
     const shown = r ? `<strong>${e(valueLabel(field, r.value))}</strong> <small class="small-print">${e(SOURCE[r.source] || r.source)}${r.folder ? ` (${e(r.folder)})` : ""}${r.confidence ? ` ${Math.round(r.confidence * 100)}%` : ""}</small>` : `<span class="small-print">–</span>`;
-    const offers = open.map((s) => `<span class="chip">${e(valueLabel(field, s.value))} ${Math.round(s.confidence * 100)}%
+    const offers = open.map((s) => `<span class="chip">${e(valueLabel(field, s.value))} ${Math.round(s.confidence * 100)}%${s.origin === "analysis" ? " heard" : ""}
       <button class="link" type="button" data-decide="${e(f.assetId)}" data-field="${field}" data-value="${e(s.value)}" data-accept="1" aria-label="Accept">✓</button>
       <button class="link" type="button" data-decide="${e(f.assetId)}" data-field="${field}" data-value="${e(s.value)}" data-accept="0" aria-label="Reject">✕</button></span>`).join(" ");
     return `<td>${shown}${offers ? `<br>${offers}` : ""}</td>`;
+  }
+
+  // A small waveform from the engine's analysis (100 peaks, 0 to 100), when it listened to the file; decoration only.
+  function wave(peaks) {
+    if (!Array.isArray(peaks) || !peaks.length || !peaks.every((p) => Number.isFinite(p))) return "";
+    const bars = peaks.map((p, i) => { const h = Math.max(1, Math.min(100, p)) / 100 * 9; return `M${i} ${10 - h}V${10 + h}`; }).join("");
+    return ` <svg class="pack-wave" viewBox="0 0 ${peaks.length} 20" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${bars}"/></svg>`;
   }
 
   // Files without a kind, then replaced files (their values came from the bytes they replace), then new files and files
@@ -46,7 +53,7 @@
     const folderOpts = v.folders.map((f) => `<option value="${e(f.id)}">${e(f.path)}</option>`).join("");
     const head = Object.values(LABELS).map((l) => `<th>${l}</th>`).join("");
     const rows = files.map((f) => `<tr><td><input type="checkbox" data-pick="${e(f.assetId)}" aria-label="Select ${e(f.filename)}"></td>
-      <td><code>${e(f.folderPath ? `${f.folderPath}/` : "")}${e(f.filename)}</code><br><small class="small-print">${e(f.format)}</small>${f.change ? ` <span class="tag">${e(CHANGE[f.change] || f.change)}</span>` : ""}</td>
+      <td><code>${e(f.folderPath ? `${f.folderPath}/` : "")}${e(f.filename)}</code><br><small class="small-print">${e(f.format)}</small>${wave(f.facts && f.facts.peaks)}${f.change ? ` <span class="tag">${e(CHANGE[f.change] || f.change)}</span>` : ""}</td>
       ${Object.keys(LABELS).map((field) => cell(f, field)).join("")}</tr>`).join("");
     const tools = v.editable ? `<div class="panel wide" data-review-tools>
         <div class="field"><label for="rv-target">Apply to</label><select id="rv-target" name="target"><option value="">Selected files</option>${v.folders.map((f) => `<option value="folder:${e(f.id)}">Default for folder ${e(f.path)}</option>`).join("")}</select></div>

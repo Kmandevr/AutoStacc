@@ -73,6 +73,22 @@ fn round2(x: f64) -> f64 {
 
 /// Several pieces of evidence for one field → one suggestion: agreeing evidence adds up (1 − Π(1 − w)), a rival value
 /// takes away half its own strength. The origin is that of the strongest evidence for the winner.
+/// The most an analysis alone may weigh: below the store's auto-accept (js/pack-resolve.js AUTO_ACCEPT, 0.85), so a
+/// tempo or key only heard is offered to the creator, never applied by itself (docs/engine.md, "Analysis": calibration).
+pub const ANALYSIS_MAX: f64 = 0.8;
+
+/// What an analysis estimate weighs: at most ANALYSIS_MAX, and half that against a value the name, folder or header
+/// already gives (what the creator wrote is a claim; what was heard is a guess, so it can question it, never replace it).
+fn heard_weight(evidence: &[Evidence], value: &str, confidence: f64) -> f64 {
+    let w = confidence.min(ANALYSIS_MAX);
+    let named = evidence.iter().any(|e| e.origin != "analysis");
+    if named && !evidence.iter().any(|e| e.value == value) {
+        w / 2.0
+    } else {
+        w
+    }
+}
+
 fn decide(field: &'static str, evidence: Vec<Evidence>) -> Option<Suggestion> {
     let mut by_value: Vec<(String, f64, Vec<&Evidence>)> = Vec::new();
     for e in &evidence {
@@ -245,6 +261,21 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
             }
         }
     }
+    // What listening to the file found (analysis.rs, when the job asked for it).
+    let heard = f.analysis.as_ref();
+    if let Some(a) = heard.and_then(|a| a.bpm.as_ref()) {
+        if let Ok(b) = a.value.parse::<f64>() {
+            if in_range(b) && (audio || midi) {
+                let w = heard_weight(&bpm_ev, &bpm_text(b), a.confidence);
+                bpm_ev.push(ev(
+                    bpm_text(b),
+                    "analysis",
+                    w,
+                    format!("heard: {}", a.reasons.join("; ")),
+                ));
+            }
+        }
+    }
     let mut tempo = decide("bpm", bpm_ev);
 
     // Kind.
@@ -258,7 +289,8 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
         if e.loop_points == Some(true) {
             ev_kind.push(ev("loops", "embedded", 0.6, "loop points in the file".into()));
         }
-        if let (Some(ms), Some(t)) = (f.facts.duration_ms, &tempo) {
+        // Not from a tempo only analysis found: analysis already fits its tempo to the length, so it proves nothing.
+        if let (Some(ms), Some(t)) = (f.facts.duration_ms, tempo.as_ref().filter(|t| t.origin != "analysis")) {
             if let Some(bars) = t.value.parse().ok().and_then(|b| whole_bars(ms, b)) {
                 ev_kind.push(ev(
                     "loops",
@@ -297,8 +329,9 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
         }
     }
 
-    // Tempo, checked against the length for audio: a loop's length is whole bars.
-    if let (Some(t), true) = (tempo.as_mut(), audio) {
+    // Tempo, checked against the length for audio: a loop's length is whole bars. Not for a tempo only analysis found:
+    // it already fitted the length, so the check would count the same evidence twice.
+    if let (Some(t), true) = (tempo.as_mut().filter(|t| t.origin != "analysis"), audio) {
         let looped = out.iter().any(|s| s.field == "kind" && s.value == "loops");
         if let (Some(ms), Ok(b)) = (f.facts.duration_ms, t.value.parse::<f64>()) {
             match whole_bars(ms, b) {
@@ -329,6 +362,15 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
         }
         if let Some(k) = &e.key {
             ev_key.push(ev(k.clone(), "embedded", 0.8, format!("written in the file: {k}")));
+        }
+        if let Some(a) = heard.and_then(|a| a.key.as_ref()) {
+            let w = heard_weight(&ev_key, &a.value, a.confidence);
+            ev_key.push(ev(
+                a.value.clone(),
+                "analysis",
+                w,
+                format!("heard: {}", a.reasons.join("; ")),
+            ));
         }
         ev_key.retain(|x| vocab.keys.contains(&x.value));
         out.extend(decide("key", ev_key));
@@ -402,7 +444,12 @@ mod tests {
                 ]),
                 midi_role: w(&[("pattern", "pattern")]),
             },
-            keys: vec!["a-minor".into(), "cs-minor".into()],
+            keys: vec![
+                "a-minor".into(),
+                "cs-minor".into(),
+                "fs-minor".into(),
+                "gs-major".into(),
+            ],
             bpm: BpmRange { min: 40.0, max: 250.0 },
         }
     }
@@ -423,6 +470,7 @@ mod tests {
             ignored: false,
             suggestions: vec![],
             stored: None,
+            analysis: None,
         }
     }
 
@@ -506,5 +554,44 @@ mod tests {
             &vocab(),
         );
         assert!(s.iter().all(|x| x.field != "bpm" && x.field != "key"), "{s:?}");
+    }
+
+    #[test]
+    fn what_was_heard_suggests_but_never_overrides_a_name() {
+        use crate::job::{AudioAnalysis, Estimate};
+        let heard = |bpm: &str, key: &str| AudioAnalysis {
+            bpm: Some(Estimate {
+                value: bpm.into(),
+                confidence: 1.0,
+                reasons: vec!["onsets".into()],
+            }),
+            key: Some(Estimate {
+                value: key.into(),
+                confidence: 1.0,
+                reasons: vec!["notes".into()],
+            }),
+            ..Default::default()
+        };
+        // Nothing named: heard values are suggested, never above ANALYSIS_MAX (under the store's auto-accept).
+        let mut f = file("Pack/Loops/Thing.wav", "wav", Facts::default());
+        f.analysis = Some(heard("100", "a-minor"));
+        let s = suggest(&f, &vocab());
+        for field in ["bpm", "key"] {
+            let x = get(&s, field);
+            assert_eq!(x.origin, "analysis");
+            assert!(x.confidence <= ANALYSIS_MAX, "{x:?}");
+        }
+        // Named otherwise: the name wins and the disagreement lowers it; named the same: the two add up.
+        let mut f = file("Pack/Loops/Bass 140 BPM F#min.wav", "wav", Facts::default());
+        f.analysis = Some(heard("100", "gs-major"));
+        let s = suggest(&f, &vocab());
+        assert_eq!(
+            (get(&s, "bpm").value.as_str(), get(&s, "key").value.as_str()),
+            ("140", "fs-minor")
+        );
+        assert!(get(&s, "key").reasons.iter().any(|r| r == "but gs-major"));
+        let mut f = file("Pack/Loops/Bass 140 BPM F#min.wav", "wav", Facts::default());
+        f.analysis = Some(heard("140", "fs-minor"));
+        assert!(get(&suggest(&f, &vocab()), "key").confidence > 0.75);
     }
 }
