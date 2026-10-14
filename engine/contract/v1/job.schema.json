@@ -1,5 +1,5 @@
 {
-  "$comment": "AutoStacc engine contract v1: a job sent to the engine (POST /v1/jobs on the Container's service, or the same fields to the CLI and WebAssembly builds). docs/engine.md. With vocabulary, every accepted file also gets suggestions. process: inspect, and write each accepted file's original to target.prefix + n (n = 1, 2, \u2026 in the order files are read) as it is read; the storage side decides whether the key may be written and hashes it.",
+  "$comment": "AutoStacc engine contract v1: a job sent to the engine (POST /v1/jobs on the Container's service, or the same fields to the CLI and WebAssembly builds). docs/engine.md. With vocabulary, every accepted file also gets suggestions. process: inspect, and write each accepted file's original to target.prefix + n (n = 1, 2, \u2026 in the order files are read) as it is read; the storage side decides whether the key may be written and hashes it. With analyze, audio files also carry analysis (file-result.schema.json).",
   "type": "object",
   "required": [
     "op",
@@ -49,6 +49,10 @@
           "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_/-]*/$"
         }
       }
+    },
+    "analyze": {
+      "type": "boolean",
+      "$comment": "inspect and process: also analyse each audio file's start (tempo, key, waveform). An engine that can't analyse ignores it."
     }
   }
 }

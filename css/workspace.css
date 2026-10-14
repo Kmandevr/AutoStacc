@@ -69,3 +69,7 @@
   .ws-body > * { animation: ws-in .18s ease-out; }
 }
 @keyframes ws-in { from { opacity: 0; transform: translateY(4px); } }
+
+/* Pack review (js/packs-review.js): a file's waveform from the engine's analysis, beside its format. */
+.pack-wave { display: inline-block; width: 80px; height: 14px; vertical-align: middle; }
+.pack-wave path { stroke: var(--muted); stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }

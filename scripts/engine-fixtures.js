@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
+const S = require("./lib/synth.js");
 
 const OUT = path.join(__dirname, "..", "engine", "conformance", "cases");
 
@@ -67,10 +68,10 @@ function wav({ sr = 44100, ch = 2, bits = 24, frames = 4410, acid = null, seed =
   return Buffer.concat([riff, body]);
 }
 
-function aiff() {
+function aiff({ zeroRate = false } = {}) {
   const comm = Buffer.alloc(26);
   comm.write("COMM", 0); comm.writeUInt32BE(18, 4); comm.writeUInt16BE(1, 8); comm.writeUInt32BE(22050, 10); comm.writeUInt16BE(16, 14);
-  Buffer.from([0x40, 0x0e, 0xac, 0x44, 0, 0, 0, 0, 0, 0]).copy(comm, 16);
+  if (!zeroRate) Buffer.from([0x40, 0x0e, 0xac, 0x44, 0, 0, 0, 0, 0, 0]).copy(comm, 16);
   const ssnd = Buffer.alloc(16 + 44100);
   ssnd.write("SSND", 0); ssnd.writeUInt32BE(8 + 44100, 4);
   const body = Buffer.concat([comm, ssnd]);
@@ -119,6 +120,27 @@ const CASES = {
     { name: "Pack/MIDI/Chords Am.mid", data: midi() },
     { name: "Pack/Read me.txt", data: "Thanks for downloading version 2.\n", store: true },
     { name: "Pack/Changelog.txt", data: "Version 2: Air moved to Ambience, Wobble removed.\n", store: true }
+  ]),
+  // Real sounds for the analysis check (engine --analyze): names that say nothing about tempo or key, so only
+  // listening can tell. A 120 BPM drum break, a 100 BPM A minor chord loop, a one-shot and noise (scripts/lib/synth.js).
+  "analysis": () => zip([
+    { name: "Sounds/Loop A.wav", data: S.wav16(S.drumLoop({ bpm: 120, bars: 2, pattern: "break", seed: 11 })) },
+    { name: "Sounds/Loop B.wav", data: S.wav16(S.chordLoop({ bpm: 100, tonic: 57, minor: true, bars: 4 })) },
+    { name: "Sounds/Hit.wav", data: S.wav16(S.kick()) },
+    { name: "Sounds/Air.wav", data: S.wav16(S.noise(3)) },
+    // Kept, with a warning for the automated review: two seconds of nothing, and a WAV in a codec nothing decodes.
+    { name: "Sounds/Silence.wav", data: S.wav16(new Float32Array(S.SR * 2)) },
+    { name: "Sounds/Odd codec.wav", data: (() => { const b = S.wav16(S.kick()); b.writeUInt16LE(0x7777, 20); return b; })() },
+    // Crafted headers that once crashed the decoder (a sample rate of 0): warned about, never a crashed job.
+    { name: "Sounds/Zero rate.wav", data: (() => { const b = S.wav16(S.kick()); b.writeUInt32LE(0, 24); b.writeUInt32LE(0, 28); return b; })() },
+    { name: "Sounds/Zero rate.aif", data: aiff({ zeroRate: true }) },
+    // Ogg with a codec analysis can't decode (Opus): kept, not heard, and not called broken.
+    { name: "Sounds/Voice.ogg", data: (() => {
+      const head = Buffer.from("OpusHead\x01\x01\x38\x01\x80\xbb\x00\x00\x00\x00\x00", "latin1");
+      const page = Buffer.alloc(27);
+      page.write("OggS", 0); page[5] = 2; page.writeUInt32LE(1, 14); page[26] = 1;
+      return Buffer.concat([page, Buffer.from([head.length]), head]);
+    })() }
   ]),
   // How creators name things, for suggestions: kinds, instruments, tempos and keys in folder and file names, a tempo
   // that fits the length and one that doesn't, a name and a header that disagree, MIDI patterns and arrangements.

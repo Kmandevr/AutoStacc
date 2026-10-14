@@ -8,13 +8,20 @@ import { review } from "./review.js";
 import { revisionOf } from "./revision.js";
 import { keptFiles } from "./accept.js";
 import { inUseSql } from "../creators/storage.js";
-import { claimStmts, blobsByHash } from "../blobs/blobs.js";
+import { claimStmts, addPeaksStmt, blobsByHash } from "../blobs/blobs.js";
 import { jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
 import { deleteKeys } from "../storage/buckets.js";
 
 const CHUNK = 300;
 const chunks = (rows) => Array.from({ length: Math.ceil(rows.length / CHUNK) }, (_, i) => JSON.stringify(rows.slice(i * CHUNK, (i + 1) * CHUNK)));
+// A stored original's facts, plus its waveform when the engine listened to it (analysis peaks: measured from the bytes,
+// so they live with them; 100 numbers 0 to 100).
+const withPeaks = (f) => {
+  const peaks = f.analysis && Array.isArray(f.analysis.peaks) ? f.analysis.peaks.filter((p) => Number.isInteger(p) && p >= 0 && p <= 100).slice(0, 100) : [];
+  return peaks.length ? { ...f.facts, peaks } : f.facts;
+};
+
 export async function importResult(app, version, job, state) {
   const { result, attempt } = state;
   const owner = version.owner_scope;
@@ -29,8 +36,9 @@ export async function importResult(app, version, job, state) {
   // at a deleted object), and the batch below goes ahead only while they all still exist.
   const fresh = kept.filter((f) => !f.carried);
   if (fresh.length) {
-    await app.db.batch(claimStmts(app.db, owner, fresh.map((f) => ({ key: f.stored, sha256: f.sha256, size: f.size, crc32: f.crc32,
-      format: f.format, facts: f.facts, engineVersion: result.engineVersion }))));
+    const heard = fresh.map((f) => ({ sha256: f.sha256, peaks: withPeaks(f).peaks })).filter((f) => f.peaks);
+    await app.db.batch([...claimStmts(app.db, owner, fresh.map((f) => ({ key: f.stored, sha256: f.sha256, size: f.size, crc32: f.crc32,
+      format: f.format, facts: withPeaks(f), engineVersion: result.engineVersion }))), ...(heard.length ? [addPeaksStmt(app.db, owner, heard)] : [])]);
   }
   const blobs = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
   if (kept.some((f) => !blobs[f.sha256])) throw Object.assign(new Error("carried file missing"), { code: "missing_files" });

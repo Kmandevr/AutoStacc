@@ -1,0 +1,221 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "signature",
+   "crc32": 2717687597,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 4000,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Loop A.wav",
+   "sha256": "7cf12f6fd18a8ab2680455bba51576a5e00599ad845876c26d844f9d5e61071b",
+   "size": 352844,
+   "suggestions": [
+    {
+     "confidence": 0.85,
+     "field": "kind",
+     "origin": "filename",
+     "reasons": [
+      "name: Loop"
+     ],
+     "value": "loops"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 4253472829,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 9600,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Loop B.wav",
+   "sha256": "bbdbd3dc98c4ae099e3b7959f65d65daffd4eef32fb69b49f07ddf16bd2d63fe",
+   "size": 846764,
+   "suggestions": [
+    {
+     "confidence": 0.85,
+     "field": "kind",
+     "origin": "filename",
+     "reasons": [
+      "name: Loop"
+     ],
+     "value": "loops"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 4013048452,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 350,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Hit.wav",
+   "sha256": "9414b02425ab0327689e5d97d88a1182ad5806d2c967ef6019fc861992dfb13c",
+   "size": 30914,
+   "suggestions": [
+    {
+     "confidence": 0.5,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "short: 0.3 s"
+     ],
+     "value": "one-shots"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 2668264381,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 3000,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Air.wav",
+   "sha256": "b37c6d3ca47e0750f5782563cab322e2ab7edd528980800acbb8241439367140",
+   "size": 264644
+  },
+  {
+   "by": "signature",
+   "crc32": 4003879194,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 2000,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Silence.wav",
+   "sha256": "cfc6b206e99b298a229480f020e61d2b22a791e08a840fdd40ef62d8bd78b155",
+   "size": 176444
+  },
+  {
+   "by": "signature",
+   "crc32": 1910825753,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 350,
+    "encoding": "other",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Odd codec.wav",
+   "sha256": "716f7a2f8da6b7b8c27d30f8ae9dbf1a6e8ff737bb25598f98a609d5b5e8203b",
+   "size": 30914,
+   "suggestions": [
+    {
+     "confidence": 0.5,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "short: 0.3 s"
+     ],
+     "value": "one-shots"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 2222936658,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "encoding": "pcm",
+    "problems": [
+     "no readable fmt/data header"
+    ],
+    "sampleRate": 0
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Zero rate.wav",
+   "sha256": "d0ee5cfe230229c68df59e02c435e0e1aca01221cf6959c5f33270182de7eee1",
+   "size": 30914
+  },
+  {
+   "by": "signature",
+   "crc32": 1722022077,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "encoding": "pcm"
+   },
+   "format": "aiff",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Zero rate.aif",
+   "sha256": "34ae86d9fcb87979a14619a4cbbdbee37e80173c79d3062d42148f6805b38d08",
+   "size": 44154
+  },
+  {
+   "by": "signature",
+   "crc32": 4213010339,
+   "facts": {},
+   "format": "ogg",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Voice.ogg",
+   "sha256": "9cf9c9882e8c2b3fdfd5cb0aabee64ec8a82fc4ebd14ef7a8fbdd3ec6db50e41",
+   "size": 47,
+   "suggestions": [
+    {
+     "confidence": 0.8,
+     "field": "instrument",
+     "origin": "filename",
+     "reasons": [
+      "name: Voice"
+     ],
+     "value": "vocals"
+    }
+   ]
+  }
+ ],
+ "folders": [
+  "Sounds"
+ ],
+ "totalSize": 1777639,
+ "zip64": false
+}

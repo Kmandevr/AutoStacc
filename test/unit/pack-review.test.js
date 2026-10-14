@@ -49,3 +49,20 @@ test("an archive inside the pack is a soft flag: its contents weren't checked", 
   assert.equal(clearToPublish(rv), false);
   assert.equal(clearToPublish(rv, { trusted: true }), true);
 });
+
+test("audio that is largely silent or won't decode holds; a stray file doesn't", () => {
+  const heard = kept(8, { analysis: { peaks: [50], analyzedMs: 1000 } });
+  const silent = (f) => ({ ...f, issues: [{ code: "silent_audio", refused: false }] });
+  const broken = (f) => ({ path: f.path, format: "wav", sha256: f.sha256, size: 100, issues: [{ code: "audio_does_not_decode", refused: false }] });
+  const one = [silent(heard[0]), broken(heard[1]), ...heard.slice(2)];
+  assert.deepEqual(review({ result: { files: one }, kept: one, refused: [] }).flags, [], "one of each in eight is normal");
+  const many = [...heard.slice(0, 3).map(silent), ...heard.slice(3, 6).map(broken), ...heard.slice(6)];
+  const rv = review({ result: { files: many }, kept: many, refused: [] });
+  assert.deepEqual(codes(rv), ["silent_audio", "undecodable_audio"]);
+  assert.ok(rv.flags.every((f) => !f.hard && f.count === 3));
+  // Too few files to call it a share: one broken file of two holds nothing.
+  const pair = [broken(heard[0]), heard[1]];
+  assert.deepEqual(review({ result: { files: pair }, kept: pair, refused: [] }).flags, []);
+  // Without analysis (switched off) nothing is heard, so nothing is flagged.
+  assert.deepEqual(review({ result: { files: kept(4) }, kept: kept(4), refused: [] }).flags, []);
+});

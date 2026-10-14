@@ -29,6 +29,33 @@ pub struct FileResult {
     /// Where the original was written (the `process` job only): a key under the job's storage prefix.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stored: Option<String>,
+    /// What listening to the start of an audio file found (analysis.rs; server side, only when a job asks for it).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub analysis: Option<AudioAnalysis>,
+}
+
+/// An estimate from analysis: a value (a tempo like "128" or a key like "a-minor"), how sure, and why.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct Estimate {
+    pub value: String,
+    pub confidence: f64,
+    pub reasons: Vec<String>,
+}
+
+/// The result of analysing an audio file (analysis.rs): suggestions only, never facts.
+#[derive(Debug, Clone, Serialize, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AudioAnalysis {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bpm: Option<Estimate>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<Estimate>,
+    /// The loudest sample in each of 100 slices of what was analysed, 0 to 100 (to draw a waveform).
+    pub peaks: Vec<u8>,
+    pub analyzed_ms: u64,
+    /// Nothing louder than -60 dBFS, heard to its end (reported as the issue `silent_audio`, not in the analysis).
+    #[serde(skip)]
+    pub silent: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -90,6 +117,7 @@ fn listing_only(e: &Entry) -> FileResult {
         ignored: e.ignored,
         suggestions: Vec::new(),
         stored: None,
+        analysis: None,
     }
 }
 
@@ -123,7 +151,29 @@ fn folders_of(entries: &[Entry]) -> Vec<String> {
 
 /// Checks a ZIP and reads every importable file once: SHA-256 + CRC-32, real format, header facts.
 pub fn inspect_archive(src: &dyn Source, limits: &Limits, sink: &mut dyn Sink) -> Result<InspectResult, JobError> {
-    inspect_archive_part(src, limits, sink, None)
+    inspect_inner(src, limits, sink, None, false)
+}
+
+/// Same, also analysing each audio file's start (tempo, key, waveform; analysis.rs). Server side only.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn inspect_archive_analyzed(
+    src: &dyn Source,
+    limits: &Limits,
+    sink: &mut dyn Sink,
+) -> Result<InspectResult, JobError> {
+    inspect_inner(src, limits, sink, None, true)
+}
+
+// Audio the analysis can decode (by the name's format, before the bytes are read).
+const ANALYZABLE: [&str; 5] = ["wav", "aiff", "flac", "mp3", "ogg"];
+// How much of an audio file's start analysis keeps (none in the WebAssembly build, which doesn't analyze).
+#[cfg(not(target_arch = "wasm32"))]
+fn keep_for_analysis(size: u64) -> usize {
+    (size as usize).min(crate::analysis::ANALYZE_BYTES)
+}
+#[cfg(target_arch = "wasm32")]
+fn keep_for_analysis(_size: u64) -> usize {
+    0
 }
 
 /// Same, for one share of the files: `part = (i, n)` takes every n-th file starting at the i-th, so n Web Workers can
@@ -133,6 +183,16 @@ pub fn inspect_archive_part(
     limits: &Limits,
     sink: &mut dyn Sink,
     part: Option<(usize, usize)>,
+) -> Result<InspectResult, JobError> {
+    inspect_inner(src, limits, sink, part, false)
+}
+
+fn inspect_inner(
+    src: &dyn Source,
+    limits: &Limits,
+    sink: &mut dyn Sink,
+    part: Option<(usize, usize)>,
+    analyze: bool,
 ) -> Result<InspectResult, JobError> {
     let a = zipread::list(src, limits)?;
     let folders = folders_of(&a.entries);
@@ -152,7 +212,12 @@ pub fn inspect_archive_part(
             continue;
         }
         let hint = formats::from_name(&e.path).format;
-        let want = head_limit(&hint, e.size);
+        // For analysis, the start of an audio file is kept too (bounded), while it streams past.
+        let want = if analyze && ANALYZABLE.contains(&hint.as_str()) {
+            head_limit(&hint, e.size).max(keep_for_analysis(e.size))
+        } else {
+            head_limit(&hint, e.size)
+        };
         let mut head = Vec::with_capacity(want);
         sink.begin(&e.path, e.size);
         let mut reader = EntryReader::open(src, e)?;
@@ -174,6 +239,32 @@ pub fn inspect_archive_part(
                 let d = reader.digests().cloned().expect("digests after a clean end");
                 r.identity = formats::identify(&e.path, &head);
                 r.facts = facts::extract(&r.identity.format, &head, e.size);
+                #[cfg(not(target_arch = "wasm32"))]
+                if analyze && !r.identity.mismatch && ANALYZABLE.contains(&r.identity.format.as_str()) {
+                    let ext = e.path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+                    let complete = head.len() as u64 >= e.size;
+                    // Ogg holds other codecs than Vorbis (Opus, FLAC) that analysis has no decoder for: not heard,
+                    // and not a fault of the file.
+                    let vorbis = r.identity.format != "ogg" || head.windows(7).take(4096).any(|w| w == b"\x01vorbis");
+                    // A header with no sample rate or no channels can't be audio; never handed to a decoder.
+                    let empty = r.facts.sample_rate == Some(0) || r.facts.channels == Some(0);
+                    if vorbis && !empty {
+                        r.analysis = crate::analysis::analyze(&ext, std::mem::take(&mut head), complete);
+                    }
+                    // Warnings for the automated review, never refusals: the file is kept either way.
+                    match &r.analysis {
+                        None if !vorbis => {}
+                        None => r.issues.push(Issue {
+                            code: "audio_does_not_decode",
+                            refused: false,
+                        }),
+                        Some(a) if a.silent => r.issues.push(Issue {
+                            code: "silent_audio",
+                            refused: false,
+                        }),
+                        _ => {}
+                    }
+                }
                 if r.identity.mismatch {
                     r.issues.push(Issue {
                         code: "content_does_not_match_name",
@@ -244,6 +335,7 @@ pub fn inspect_file(path: &str, src: &dyn Source) -> std::io::Result<FileResult>
         ignored: false,
         suggestions: Vec::new(),
         stored: None,
+        analysis: None,
     })
 }
 
