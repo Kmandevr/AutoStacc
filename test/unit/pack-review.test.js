@@ -60,6 +60,9 @@ test("audio that is largely silent or won't decode holds; a stray file doesn't",
   const rv = review({ result: { files: many }, kept: many, refused: [] });
   assert.deepEqual(codes(rv), ["silent_audio", "undecodable_audio"]);
   assert.ok(rv.flags.every((f) => !f.hard && f.count === 3));
+  // Too few files to call it a share: one broken file of two holds nothing.
+  const pair = [broken(heard[0]), heard[1]];
+  assert.deepEqual(review({ result: { files: pair }, kept: pair, refused: [] }).flags, []);
   // Without analysis (switched off) nothing is heard, so nothing is flagged.
   assert.deepEqual(review({ result: { files: kept(4) }, kept: kept(4), refused: [] }).flags, []);
 });

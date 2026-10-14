@@ -738,11 +738,80 @@
      "value": "one-shots"
     }
    ]
+  },
+  {
+   "by": "signature",
+   "crc32": 2222936658,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "encoding": "pcm",
+    "problems": [
+     "no readable fmt/data header"
+    ],
+    "sampleRate": 0
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "audio_does_not_decode",
+     "refused": false
+    }
+   ],
+   "mismatch": false,
+   "path": "Sounds/Zero rate.wav",
+   "sha256": "d0ee5cfe230229c68df59e02c435e0e1aca01221cf6959c5f33270182de7eee1",
+   "size": 30914
+  },
+  {
+   "by": "signature",
+   "crc32": 1722022077,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "encoding": "pcm"
+   },
+   "format": "aiff",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "audio_does_not_decode",
+     "refused": false
+    }
+   ],
+   "mismatch": false,
+   "path": "Sounds/Zero rate.aif",
+   "sha256": "34ae86d9fcb87979a14619a4cbbdbee37e80173c79d3062d42148f6805b38d08",
+   "size": 44154
+  },
+  {
+   "by": "signature",
+   "crc32": 4213010339,
+   "facts": {},
+   "format": "ogg",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Sounds/Voice.ogg",
+   "sha256": "9cf9c9882e8c2b3fdfd5cb0aabee64ec8a82fc4ebd14ef7a8fbdd3ec6db50e41",
+   "size": 47,
+   "suggestions": [
+    {
+     "confidence": 0.8,
+     "field": "instrument",
+     "origin": "filename",
+     "reasons": [
+      "name: Voice"
+     ],
+     "value": "vocals"
+    }
+   ]
   }
  ],
  "folders": [
   "Sounds"
  ],
- "totalSize": 1702524,
+ "totalSize": 1777639,
  "zip64": false
 }

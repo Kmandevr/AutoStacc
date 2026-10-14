@@ -25,6 +25,12 @@ export function claimStmts(db, ownerScope, files) {
   return out;
 }
 
+/** Gives stored originals that have no waveform yet the one a job just heard ([{ sha256, peaks }]): a file stored before
+ * analysis ran (or while it was switched off) gets one the next time it comes through. */
+export const addPeaksStmt = (db, ownerScope, files) => stmt(db, `UPDATE blobs SET facts = json_set(COALESCE(facts, '{}'), '$.peaks', json(j.value->>'peaks'))
+  FROM json_each(?) j WHERE blobs.owner_scope = ? AND blobs.sha256 = j.value->>'sha' AND json_extract(blobs.facts, '$.peaks') IS NULL`,
+JSON.stringify(files.map((f) => ({ sha: f.sha256, peaks: JSON.stringify(f.peaks) }))), ownerScope);
+
 /** { sha256: { id, key } } for these hashes of this owner. */
 export async function blobsByHash(db, ownerScope, hashes) {
   const out = {};

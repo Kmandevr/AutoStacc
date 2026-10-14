@@ -2,8 +2,8 @@
 // (the "suggest" check, engine/conformance/vocabulary.json) and, for engines that analyze audio (not the WebAssembly
 // build), `inspect` with the vocabulary and analysis (the "analyze" check) on every case in
 // engine/conformance/cases/, checks each answer against the JSON schemas in engine/contract/v1/, and compares it with the
-// expected answer in engine/conformance/expected/ (engineVersion and elapsedMs ignored; analysis confidences may differ by
-// 0.05 and peaks by 2, as floating point does between CPUs). Any engine, in any language, that
+// expected answer in engine/conformance/expected/ (engineVersion and elapsedMs ignored; inside a file's analysis,
+// confidences may differ by 0.05 and peaks by 2, as floating point does between CPUs). Any engine, in any language, that
 // passes can replace this one. Modes:
 //   node scripts/engine-conformance.js [--cli <binary>]   the command-line build (default engine/target/release/autostacc-engine)
 //   node scripts/engine-conformance.js --wasm <file.wasm> the WebAssembly build, through js/engine/engine-wasm.js
@@ -64,13 +64,18 @@ const normal = (v) => {
   return v;
 };
 
-// Equal, except that numbers under an analysis estimate's "confidence" or in "peaks" may differ a little.
-const same = (a, b, key = "") => {
-  if (typeof a === "number" && typeof b === "number") return key === "confidence" ? Math.abs(a - b) <= 0.05 + 1e-9 : key === "peaks" ? Math.abs(a - b) <= 2 : a === b;
-  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => same(v, b[i], key));
+// Equal, except inside a file's "analysis": there its estimates' confidences may differ by 0.05 and its peaks by 2.
+const same = (a, b, key = "", heard = false) => {
+  const inside = heard || key === "analysis";
+  if (typeof a === "number" && typeof b === "number") {
+    if (inside && key === "confidence") return Math.abs(a - b) <= 0.05 + 1e-9;
+    if (inside && key === "peaks") return Math.abs(a - b) <= 2;
+    return a === b;
+  }
+  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => same(v, b[i], key, inside));
   if (a && b && typeof a === "object" && typeof b === "object") {
     const ka = Object.keys(a), kb = Object.keys(b);
-    return ka.length === kb.length && ka.every((k) => k in b && same(a[k], b[k], k));
+    return ka.length === kb.length && ka.every((k) => k in b && same(a[k], b[k], k, inside));
   }
   return a === b;
 };
