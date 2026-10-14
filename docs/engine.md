@@ -2,7 +2,7 @@
 title: Processing engine
 summary: The Rust processing engine (engine/): safe ZIP reading, SHA-256/CRC-32, format identification and header facts; built natively for a Cloudflare Container run by the engine Worker (workers/engine/) and as WebAssembly for the Pack Builder's Web Workers; its loader, CI and benchmarks. Phase 0 of the Pack Builder plan.
 covers: [engine/, js/engine/, test/bench/, workers/engine/, .github/workflows/engine.yml, .github/workflows/engine-fuzz.yml, test/unit/engine-worker.test.js, test/unit/mock-engine.test.js, test/mock-engine/, scripts/engine-conformance.js, scripts/engine-fixtures.js, scripts/engine-smoke.js, scripts/engine-wasm.js, scripts/lib/json-schema.js]
-updated: 2026-10-10
+updated: 2026-10-13
 ---
 
 # Processing engine
@@ -36,7 +36,7 @@ The site serves the WebAssembly build as `js/engine/autostacc_engine.wasm` (rebu
 The site only ever reads the engine's JSON, never its code, so the engine can be replaced by anything that keeps the contract (owner's requirement; [packs](packs.md#replaceability-owner-requirement-r)).
 
 - **Contract v1** (`engine/contract/v1/`): JSON schemas for a job (`job.schema.json`), an archive answer (`archive-result.schema.json`: `list` and `inspect`), one file (`file-result.schema.json`, `issue.schema.json`, `suggestion.schema.json`), the vocabulary a job may carry (`vocabulary.schema.json`; added in engine 0.2.0, optional, so older answers stay valid) and a failed job (`error.schema.json`), plus every code an engine may answer (`errors.json`: archive, file and service codes). A breaking change becomes v2, served beside v1.
-- **Conformance** (`engine/conformance/`): `cases/` are small fixed archives (a normal pack, unsafe paths, a symlink and encrypted entry, bombs, deceptive and damaged files, colliding and code-page-437 names, overlapping entries, not a ZIP), written by `node scripts/engine-fixtures.js`; `pack-names` covers how creators name things (kinds, instruments, tempos and keys in names, a tempo that fits the length and one that doesn't, a name and a header that disagree). `expected/` holds the answer each must get to `list`, `inspect` and `inspect` with the vocabulary (`<case>.suggest.json`). `node scripts/engine-conformance.js` checks the command-line build (`--wasm <file>` the WebAssembly build, `--http <url>` an engine service) against the schemas and the expected answers; `--update` rewrites them from the current engine for review. All three builds pass; CI runs the CLI and WebAssembly checks.
+- **Conformance** (`engine/conformance/`): `cases/` are small fixed archives (a normal pack and its next version for revisions, that version as the Pack Builder's thin ZIP sends it (`js/zip-thin.js`) and an empty archive, unsafe paths, a symlink and encrypted entry, bombs, deceptive and damaged files, colliding and code-page-437 names, overlapping entries, not a ZIP), written by `node scripts/engine-fixtures.js`; `pack-names` covers how creators name things (kinds, instruments, tempos and keys in names, a tempo that fits the length and one that doesn't, a name and a header that disagree). `expected/` holds the answer each must get to `list`, `inspect` and `inspect` with the vocabulary (`<case>.suggest.json`). `node scripts/engine-conformance.js` checks the command-line build (`--wasm <file>` the WebAssembly build, `--http <url>` an engine service) against the schemas and the expected answers; `--update` rewrites them from the current engine for review. All three builds pass; CI runs the CLI and WebAssembly checks.
 - **Fuzzing** (`engine/fuzz/`, nightly Rust and `cargo-fuzz`): `zip` (any bytes as an archive: list, inspect and suggest; the sink never gets more bytes than an entry declares), `headers` (any bytes as every known format) and `names` (any text as a path). `cargo +nightly fuzz run <target>` from `engine/`. First run (2026-10-10): 90 s each, about 8.3 million inputs, no crash. `.github/workflows/engine-fuzz.yml` runs each for five minutes every Monday and keeps any crashing input.
 - **Mock engine** (`test/mock-engine/server.js`): the same HTTP contract, answering from `expected/`, for tests that shouldn't need Rust or Docker. A unit test runs the conformance suite against it, so it can't drift from the real one.
 
@@ -73,6 +73,7 @@ Benchmarks (generated packs land in `test/bench/out/`, ignored by git):
 node test/bench/make-pack.js --mb 1024 [--store]    # synthetic pack: 24-bit WAV one-shots and loops, MIDI, folders
 node test/bench/engine-bench.js <pack.zip>          # native and WebAssembly in Node; fails if their results differ
 node test/bench/browser-bench.js <pack.zip>         # WebAssembly in headless Chromium, 1, 2 and 4 Web Workers
+node test/bench/delta-bench.js                       # how much of a revised WAV a delta store could reuse (decisions)
 ```
 
 ## Measurements (Phase 0, 2026-10-10)

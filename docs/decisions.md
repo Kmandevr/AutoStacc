@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-11
+updated: 2026-10-13
 ---
 
 # Decisions
@@ -354,4 +354,35 @@ The owner sent an architecture outline for a "Project Studio" and answered four 
 - **The Pac Builder section reuses Phase 5** (built in parallel and merged first): the same `/api/studio/packs` routes, automated review and the admin's review queue. The Product Studio only gives it a place in the workspace.
 - **Collaboration (Team) is not built.** Roles and revenue splits are open questions in the vision.
 - **Insights collects nothing new:** orders, refunds, downloads and the existing per-day view counters. Traffic sources are shown as not tracked.
+
+## 2026-10-13: How a revision is matched (Phase 6)
+
+A new version is matched to the live one when it's imported, by hash first and never by name alone (same bytes in the same place: unchanged; same bytes elsewhere: moved; new bytes at a live file's path: replaced; the rest new or removed). The plan put this `diff` in the Rust engine; it is plain JavaScript instead (`js/pack-diff.js`), because it needs the live version from the database, takes milliseconds for thousands of files, and the same file runs in the browser for a preview, like the resolver. A file's values belong to its asset, not to a version: a matched file keeps them, so a creator never re-enters them, and edits made while reviewing a draft are the asset's (customers only ever see what a published version snapshot). A replaced file keeps its values too and is shown first, tagged, so they can be checked against the new bytes.
+
+## 2026-10-13: A revision uploads a thin ZIP of what changed (Phase 6)
+
+The plan said the browser would upload each file separately. It uploads one thin ZIP instead: the entries the store doesn't have, copied byte for byte from the creator's archive, plus a list of the files it left out (path and SHA-256). That keeps one way in for the engine (the same `process` job, contract and Container run, resumable multipart upload) instead of a second contract for loose files, and the Container still checks every new byte. The server trusts nothing in the list: paths pass the engine's rules, hashes must be the owner's own checked originals, and a file can't change type by being carried. The store only ever answers "which of these do I have" about the asking owner's own files, so it says nothing about anyone else's.
+
+## 2026-10-13: Deltas inside files: measured; recommendation not to build (owner to confirm)
+
+The owner asked for deltas inside a file only if measurements show real savings. `node test/bench/delta-bench.js` (an 8 s, 24-bit stereo WAV, 2 MB) measured how much of a revised file a delta store could reuse from the old one:
+
+| Edit | 64 KiB blocks | Content-defined chunks |
+| --- | --- | --- |
+| New tag text, or a tag added | 0% | 99% |
+| Trimmed 10 ms at the start | 0% | 99% |
+| Fade-out on the last 0.5 s | 93% | 92% |
+| Half a second added at the end | 90% | 92% |
+| Gain −1 dB, normalize (every sample changes) | 0% | 0% |
+| Re-rendered from the project | 0% | 0% |
+
+Savings are real only for tag edits and trims with content-defined chunking; re-exports, normalizing and re-renders, the usual reasons a sample changes, save nothing. A replaced file's old bytes are kept only 30 days (owner's decision), so any saving is temporary, while a chunk store would change how every original is stored and delivered (files assembled from chunks instead of streamed byte for byte from one object, more storage operations). **Recommendation: don't build deltas**; whole-file dedup by SHA-256 (built) already covers unchanged, moved and renamed files. This is the owner's call; until they confirm, nothing is built either way.
+
+## 2026-10-13: Personal collections and tags point at item keys (Phase 6b)
+
+The plan had collection items and tags reference asset ids, so they survive revisions. Files sold before the Pack Builder have no asset, so an item key is the file's asset when it has one and its file id otherwise; both are shown to the person anyway. Every add is checked against what the person can download at that moment, and a file that stops being theirs is counted, never listed, so the feature can't reveal or keep anything they don't own. It is a feature switch of its own (`library.collections`): Your Stacc and every download work the same without it.
+
+## 2026-10-13: The store learns from what packs contain (Phase 7)
+
+A product's store details now come from two places kept apart in `product_facets`: what its creator (or the catalog) chose, and what its published files contain (`origin = 'derived'`, worked out at each publish from the files' published details). The creator's always win and are the only ones the Studio form shows; derived values only add. Instrument, sample rate and bit depth exist only as derived facets, so they can't be claimed by hand. The plan kept the totals in `products.metadata.contents`; they live in their own table, `product_contents`, because the catalog sync rewrites a catalog product's `metadata` on every deploy. Search with 3,000 products stayed within a few percent of its timing before the change (the plan allowed ±20%). Each switch (`store.derivedFacets`, `product.contentsTree`) turns its part off without affecting the rest.
 

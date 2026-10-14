@@ -65,7 +65,7 @@ export async function refresh(app, version) {
       // Another request imported it a moment earlier: its guard rolled this one back. Anything else fails the version.
       if (!isGuardFailure(e)) {
         if (!e.code) console.error(`pack import ${version.id}:`, e && e.message);
-        await fail(app, version, job.id, ["too_many_files", "quota_exceeded"].includes(e.code) ? e.code : "import_failed");
+        await fail(app, version, job.id, ["too_many_files", "quota_exceeded", "missing_files"].includes(e.code) ? e.code : "import_failed");
       }
     }
   } else {

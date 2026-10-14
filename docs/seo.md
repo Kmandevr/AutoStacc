@@ -2,7 +2,7 @@
 title: SEO
 summary: How search visibility works on autostacc.com: generated metadata, item pages, sitemap, structured data, tests, and what still needs the owner.
 covers: [scripts/build.js, scripts/lib/, scripts/seo-test.js, scripts/public-urls.txt, scripts/deploy-check.js, robots.txt, _redirects, _headers, sitemap.xml, llms.txt, .github/workflows/seo.yml, .github/workflows/deploy.yml, .claude/skills/verify-site/, data/site.js, data/projects.js, data/creators.js]
-updated: 2026-10-10
+updated: 2026-10-13
 ---
 
 # SEO: how the site tells search engines who it is
@@ -18,7 +18,7 @@ Since 2026-10-08 autostacc.com is AutoStacc, the platform (WebSite and Organizat
   - one static page per product (`shop/<id>.html` → `/shop/<id>`), and per project release (`<creator>/<project>/music/<id>.html`) and news post (`<creator>/<project>/news/<id>.html`), in the project's skin, with breadcrumbs, artwork, related links and structured data. Product pages list every structured detail the data states (contents, formats, genre, compatibility, BPM, specs; [discovery](discovery.md)) and load "You might also like" by script. Draft products still get a page (`noindex`, "Coming soon"); draft releases and news get none. Templates: `scripts/lib/pages.js`; head and JSON-LD: `scripts/lib/head.js`.
   - each first-party creator's profile page (`<creator>.html` → `/<creator>`, from `data/creators.js`; `scripts/lib/creator-page.js`), and the trust pages `/privacy`, `/terms`, `/refunds`, `/security`, `/contact` (`data/legal.js`), `/help` (`data/help.js`) and `/license` (`data/licenses.js`) (`scripts/lib/trust-pages.js`).
   - a plain link per published project inside `<!-- projects:start -->`/`<!-- projects:end -->` on the home page and `/projects` (so project pages are linked in the HTML itself; `js/projects.js` upgrades them to cards),
-  - `sitemap.xml` with every indexable page, `llms.txt` (below), `scripts/public-urls.txt` (the record of every URL ever published) and `db/catalog.sql` (the store database's copy of the catalog, [store](store.md)). Generated pages whose data entry is gone (or became a draft) are deleted.
+  - `sitemap.xml` with every indexable page, `llms.txt` (below), `scripts/public-urls.txt` (the record of every URL ever published) and `db/catalog.sql` (the store database's copy of the catalog, [store](store.md); it rewrites only the catalog's own facet rows, never those worked out from published files, [discovery](discovery.md)). Generated pages whose data entry is gone (or became a draft) are deleted.
   - the browser's copies of lists the store owns (`data/vocabulary.js`, `data/content-types.js`, `data/features.js`) and the processing engine's test vocabulary (`engine/conformance/vocabulary.json`), so they can't drift from the server's.
   - `--check` writes nothing and fails if anything is out of date. Output is committed, so the repo is exactly what goes live; the deploy refuses to publish if it is out of date.
 - Pages stay static HTML on Cloudflare Pages: no server rendering, no framework. Only the store API (`/api/*`) runs code ([store](store.md)); live price, ownership and download size are added to product pages by script, on top of the static price (in the purchase panel above the details). Lists (shop grid, news, release cards) are still rendered in the browser from `data/`; the head, item pages and sitemap are static so every crawler and link preview sees them.

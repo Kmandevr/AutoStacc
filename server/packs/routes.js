@@ -30,9 +30,13 @@ import { recordEvent } from "../creators/events.js";
 import { ADMIN, STUDIO, ownerOf, uploadFor, studioPacOf, ensureStudioPac } from "./access.js";
 import { routes as engineStorage } from "./engine-storage.js";
 import { editRoutes } from "./edit-routes.js";
+import { cleanCarry } from "./carry.js";
+import { routes as carryRoutes } from "./carry-routes.js";
 import { routes as reviewRoutes } from "./review-routes.js";
 import { versionView } from "./view.js";
 
+// Room for a carry list of the most files a version may have.
+const CREATE_BYTES = 3 * 1024 * 1024;
 const view = (app, versionId) => versionView(app.db, versionId);
 const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes: PART_BYTES, status: u.status,
   partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
@@ -49,6 +53,8 @@ async function pacSummary(app, pac) {
 // A new version and its upload plan (or the same ones again for the same idempotency key).
 async function createFor(app, actor, { pac, product, creator, body }) {
   const filename = safeFilename(str(body.filename, "filename", { max: 160, pattern: /\.zip$/i }));
+  // A thin ZIP of a revision lists the files it leaves out (carry.js); checked when the version is imported.
+  const carry = cleanCarry(body.carry);
   const size = int(body.size, "size", { min: 22 });
   const key = str(body.idempotencyKey, "idempotencyKey", { min: 16, max: 64, pattern: /^[A-Za-z0-9_-]+$/ });
   const version = await createVersion(app.db, { pacId: pac.id, productId: product.id, ownerScope: await ownerOf(app.db, product), origin: "zip",
@@ -60,7 +66,7 @@ async function createFor(app, actor, { pac, product, creator, body }) {
   let plan = null;
   if (!upload) {
     try {
-      plan = await startZip(app, version, { filename, size, quota });
+      plan = await startZip(app, version, { filename, size, quota, carry });
     } catch (e) {
       // No room: the version that was just made goes away again, so the Pac stays free.
       await discard(app, version);
@@ -150,7 +156,7 @@ const adminRoutes = [
     const actor = await ADMIN.actor(app);
     const pac = await first(app.db, "SELECT * FROM pacs WHERE id = ? AND deleted_at IS NULL", id(pacId, "pacId"));
     if (!pac) fail(404, "not_found", "No such Pac.");
-    const body = await readJson(app.request);
+    const body = await readJson(app.request, CREATE_BYTES);
     const { product } = await ADMIN.product(app, actor, body.productId, pac.id);
     return createFor(app, actor, { pac, product, creator: null, body });
   }]
@@ -170,10 +176,10 @@ const studioRoutes = [
     // Each version costs an engine run: a creator's uploads are rate-limited like single files.
     await limit(app, "studio-pack", 20, 3600);
     const { product, creator } = await STUDIO.product(app, actor, productId);
-    const body = await readJson(app.request);
+    const body = await readJson(app.request, CREATE_BYTES);
     const pac = await ensureStudioPac(app.db, product);
     return createFor(app, actor, { pac, product, creator, body });
   }]
 ];
 
-export const routes = [...reviewRoutes, ...adminRoutes, ...shared(ADMIN), ...studioRoutes, ...shared(STUDIO), ...engineStorage];
+export const routes = [...reviewRoutes, ...carryRoutes, ...adminRoutes, ...shared(ADMIN), ...studioRoutes, ...shared(STUDIO), ...engineStorage];

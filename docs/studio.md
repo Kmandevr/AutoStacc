@@ -2,7 +2,7 @@
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
 covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
-updated: 2026-10-10
+updated: 2026-10-13
 ---
 
 # Product Studio and the workspace shell
@@ -58,6 +58,7 @@ All sections read and write the same D1 rows. No section keeps its own copy of p
 | Release | readiness rules, publish state, release history | `products.published`/`sales_paused`/`deleted_at`, `product_events` |
 
 - **Store Page reuses the Pac's facts.** The "included content" summary on the store page is counted from the published files (how many of each kind and format, and the total size), never typed in again. Store details suggested from the product's own words stay suggestions until the creator accepts them.
+- **Typing is never lost to a redraw.** Pricing draws at once and again when the server's numbers arrive; that second draw keeps anything already typed (and the cursor), unless it follows a save.
 - **Pricing supplies the displayed price.** A creator's sale is an ordinary `promotions` sale scoped to that one product, so the cart, checkout, search, the "on sale" filter and order history already handle it (`server/cart/pricing.js` is still the only place prices are combined).
 - **Release reads everything.** It runs one readiness check (`server/creators/readiness.js`), and the same check guards `published: true` on the server. No other code path can publish around it.
 

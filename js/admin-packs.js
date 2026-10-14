@@ -92,7 +92,11 @@
     bar.hidden = false;
     msg.textContent = "Uploading…";
     try {
-      const v = await window.GS.packUpload.upload({ base: BASE, create: `${BASE}/${encodeURIComponent(pacId)}/versions`, body: { productId: form.elements.product.value } }, file, (x) => { bar.value = x; msg.textContent = `Uploading… ${pct(x)}`; });
+      const productId = form.elements.product.value;
+      let note = "";
+      const v = await window.GS.packUpload.upload({ base: BASE, create: `${BASE}/${encodeURIComponent(pacId)}/versions`, body: { productId },
+        have: { url: `${BASE}/${encodeURIComponent(pacId)}/have`, body: { productId } } }, file,
+        (x) => { bar.value = x; msg.textContent = `${note} Uploading… ${pct(x)}`.trim(); }, (t) => { note = t; msg.textContent = t; });
       msg.textContent = "Uploaded. Checking every file…";
       await showPac();
       showVersion(v.id);

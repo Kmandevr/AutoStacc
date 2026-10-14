@@ -3,5 +3,8 @@
 window.FEATURES = {
  "packs.builder": true,
  "packs.suggestions": true,
- "downloads.bundles": true
+ "downloads.bundles": true,
+ "library.collections": true,
+ "store.derivedFacets": true,
+ "product.contentsTree": true
 };

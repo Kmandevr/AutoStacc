@@ -11,7 +11,16 @@ export const FEATURES = {
   // Suggested kinds, instruments, tempos and keys from names and headers (the vocabulary sent with engine jobs).
   "packs.suggestions": { on: true, label: "Suggestions from names and headers" },
   // Several files as one ZIP: "Download folder (ZIP)" and /api/downloads/bundle (single downloads always work).
-  "downloads.bundles": { on: true, label: "ZIP downloads" }
+  "downloads.bundles": { on: true, label: "ZIP downloads" },
+  // Your Stacc's personal collections, tags and saved searches (/api/collections, /api/tags, /api/saved-searches; the
+  // library itself and every download work without them).
+  "library.collections": { on: true, label: "Collections, tags and saved searches" },
+  // Store filters, search and recommendations from what a product's published files contain (server/discovery/
+  // contents.js). Off, the files' tempo range stops counting at once and the derived values leave the store at the
+  // next daily sweep (or the next publish); products keep their creators' own details. On again, the sweep restores them.
+  "store.derivedFacets": { on: true, label: "Store filters from file contents" },
+  // A product page's "What's inside" (GET /api/products/:id/contents): its folders and files, before purchase.
+  "product.contentsTree": { on: true, label: "What's inside on product pages" }
 };
 
 const offIn = (env) => new Set(String((env && env.FEATURES_OFF) || "").split(",").map((s) => s.trim()).filter(Boolean));

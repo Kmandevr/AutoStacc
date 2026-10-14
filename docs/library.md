@@ -1,8 +1,8 @@
 ---
 title: Your Stacc
-summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, follows and Auto-Stacc.
-covers: [library.html, js/library.js, js/library-view.js, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
-updated: 2026-10-10
+summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, personal collections, tags and saved searches, follows and Auto-Stacc.
+covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
+updated: 2026-10-13
 ---
 
 # Your Stacc
@@ -33,7 +33,18 @@ The model runs on a background thread: `js/stacc-client.js` sends `{ type: "buil
 
 Every file has its own Download button (a fresh 5-minute signed link per click, as before). Checkboxes, with "select all" per Pac and per content type, feed **Download selected**: the page asks for each file's link in turn and saves them one after another.
 
-A Pac published from the Pack Builder keeps its creator's folders: inside it, Your Stacc groups files by folder ("Drums › Kicks") instead of by content type, and search matches folder names (`folderPath` from `/api/library`; `js/stacc-model.js`). Each folder has **Download folder (ZIP)** (`js/library-bundle.js`, `POST /api/downloads/bundle`): one ZIP of the original bytes, for files the API marks `bundleable`. A file a newer version replaced or removed (`retiredAt`) stays listed and downloadable for people who had it before, for 30 days ([packs](packs.md)).
+A Pac published from the Pack Builder keeps its creator's folders: inside it, Your Stacc groups files by folder ("Drums › Kicks") instead of by content type, and search matches folder names (`folderPath` from `/api/library`; `js/stacc-model.js`). Each folder has **Download folder (ZIP)** (`js/library-bundle.js`, `POST /api/downloads/bundle`): one ZIP of the original bytes, for files the API marks `bundleable`. A file a newer version replaced or removed (`retiredAt`) stays listed and downloadable for people who had it before, for 30 days ([packs](packs.md)): its row says "removed in an update" with the last day (`availableUntil`), and its Pac or product shows **Updated**. Files a revision kept (unchanged or moved) keep their id, so selections and download history stay valid.
+
+## Collections, tags and saved searches
+
+A signed-in person can organize Your Stacc their own way (feature switch `library.collections`; `server/collections/`, `js/library-personal.js`, `db/migrations/0019_collections.sql`). It never changes what creators said about their files, and nobody else sees it.
+
+- **Collections**: tick files, then **Add to** an existing collection or a new one (up to 100 collections, 2,000 files each; names unique per person). The Collection menu filters by one; inside it, the selected files can be taken out, and the collection renamed or deleted (its files stay in Your Stacc).
+- **Tags**: tick files and **Tag** them (up to 20 tags per file and 5,000 in all, capped inside each write; lowercase words of up to 30 letters or numbers). Tags show on each file, with ✕ to remove one; the Tag menu filters by one, and search finds them.
+- **Saved searches**: with any filter or search on, **Save search** keeps the address (`/library?…`, only Your Stacc's own filter names; up to 50); each is a link back to it.
+- **Items survive revisions**: collections and tags point at a file's asset (the same across a Pac's versions, so a moved or unchanged file stays in them) or, for a file with no asset, its file id. A file that stops being the person's (removed in an update and its 30 days passed, a refund) is counted, never listed: "N no longer in Your Stacc" with **Clear them**.
+- **Only their own files**: every add goes through what the person's account can download right now (`server/entitlements/owned.js`; a guest receipt's key in the same browser doesn't count); another person's file id, collection or saved search is 404, the same as one that doesn't exist. Writes are rate-limited and refused during a support impersonation.
+- **Their data**: included in the data download (`collections`, `tags`, `savedSearches`) and deleted with the account; on [/privacy](../data/legal.js).
 
 ## Follows and Auto-Stacc
 
