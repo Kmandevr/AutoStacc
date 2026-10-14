@@ -84,6 +84,7 @@
       ${changes(s.diff)}
       ${flags(s.review)}
       ${actions(v, admin)}
+      <p><a class="btn ghost small" href="/api/${admin ? "admin" : "studio"}/packs/versions/${e(v.id)}/download" download>Download this version's originals (ZIP)</a></p>
       <p class="small-print">Suggestions come from names, the files' own headers and, marked "heard", listening to the audio; a percentage is how sure the engine is, and what it only heard is never sure enough to count without you. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>
       ${window.GS.packReview.render(v)}`;
   }
