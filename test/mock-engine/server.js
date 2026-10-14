@@ -36,8 +36,9 @@ export function entries(zip) {
   return out;
 }
 
-// Which expected answer a job gets: "analyze" for one with the vocabulary and analysis, "suggest" with the vocabulary only.
-const checkOf = (job) => job.op === "list" || job.op === "file" ? job.op : job.vocabulary ? (job.analyze ? "analyze" : "suggest") : "inspect";
+// Which expected answer a job gets: "analyze" for one with the vocabulary and analysis, "suggest" with the vocabulary
+// only. Analysis without a vocabulary has no expected answer (the store never asks for it): null, answered 400.
+const checkOf = (job) => job.op === "list" || job.op === "file" ? job.op : job.analyze && !job.vocabulary ? null : job.vocabulary ? (job.analyze ? "analyze" : "suggest") : "inspect";
 
 async function processJob(job, storage) {
   const src = await fetch(`${storage}/${job.source.bucket}/${job.source.key}`);
@@ -45,6 +46,7 @@ async function processJob(job, storage) {
   const zip = Buffer.from(await src.arrayBuffer());
   const name = caseByHash.get(sha(zip));
   if (!name) return [404, { error: "not_found" }];
+  if (!checkOf(job)) return [400, { error: "bad_request" }];
   const answer = JSON.parse(fs.readFileSync(path.join(EXPECTED, `${name}.${checkOf(job)}.json`), "utf8"));
   if (answer.error) return [422, answer];
   const files = entries(zip);
@@ -78,6 +80,7 @@ export function startMockEngine(port = 0, { storage } = {}) {
       if (!["list", "inspect", "file"].includes(job.op)) return json(res, 400, { error: "unknown_op" });
       const ref = (job.source && (job.source.file || job.source.key)) || "";
       const name = path.basename(ref).replace(/\.zip$/, "");
+      if (!checkOf(job)) return json(res, 400, { error: "bad_request" });
       const file = path.join(EXPECTED, `${name}.${checkOf(job)}.json`);
       if (!/^[a-z0-9-]+$/.test(name) || !fs.existsSync(file)) return json(res, 404, { error: "not_found" });
       const answer = JSON.parse(fs.readFileSync(file, "utf8"));

@@ -76,7 +76,8 @@ pub fn decode(ext: &str, bytes: Vec<u8>) -> Option<(Vec<f32>, f64, bool)> {
 pub fn analyze_samples(mono: &[f32], rate: f64, whole: bool) -> AudioAnalysis {
     let analyzed_ms = (mono.len() as f64 / rate * 1000.0) as u64;
     let peaks = peaks(mono);
-    let silent = mono.iter().all(|v| v.abs() < SILENT);
+    // Silent only when all of it was heard: stems and long files are often quiet for their first 30 s.
+    let silent = whole && mono.iter().all(|v| v.abs() < SILENT);
     let (low, low_rate) = downsample(&normalized(mono), rate);
     AudioAnalysis {
         bpm: tempo(&low, low_rate, whole),
@@ -90,11 +91,19 @@ pub fn analyze_samples(mono: &[f32], rate: f64, whole: bool) -> AudioAnalysis {
 /// -60 dBFS: quieter than this throughout is silence (or a file rendered without its sound).
 const SILENT: f32 = 0.001;
 
-/// Decodes and analyses (None when the file can't be decoded).
+/// Decodes and analyses (None when the file can't be decoded). A decoder that panics on a crafted file (the release
+/// build unwinds for this) counts as a file that doesn't decode, never as a crashed job.
 pub fn analyze(ext: &str, bytes: Vec<u8>, complete: bool) -> Option<AudioAnalysis> {
-    let (mono, rate, ended) = decode(ext, bytes)?;
-    // The whole file was heard only if its bytes were all here and decoding ran to the end of them.
-    Some(analyze_samples(&mono, rate, complete && ended))
+    // Quiet while it runs (the engine runs one job at a time): a caught panic is an answer, not an error to log.
+    let loud = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|_| {}));
+    let out = std::panic::catch_unwind(move || {
+        let (mono, rate, ended) = decode(ext, bytes)?;
+        // The whole file was heard only if its bytes were all here and decoding ran to the end of them.
+        Some(analyze_samples(&mono, rate, complete && ended))
+    });
+    std::panic::set_hook(loud);
+    out.ok().flatten()
 }
 
 // Scaled so the loudest sample is 1: the measures below then don't depend on how loud a file was mastered.
@@ -592,5 +601,24 @@ mod tests {
             .collect();
         assert!(analyze_samples(&noise, SR, true).key.is_none());
         assert_eq!(analyze_samples(&noise, SR, true).peaks.len(), PEAKS);
+    }
+
+    #[test]
+    fn a_crafted_header_is_undecodable_never_a_crash() {
+        // A 16-bit mono WAV whose fmt chunk says 0 Hz: the decoder panics on it; analysis must answer None.
+        let mut w = Vec::new();
+        let data = vec![0u8; 4000];
+        w.extend_from_slice(b"RIFF");
+        w.extend_from_slice(&((36 + data.len()) as u32).to_le_bytes());
+        w.extend_from_slice(b"WAVEfmt ");
+        w.extend_from_slice(&16u32.to_le_bytes());
+        w.extend_from_slice(&[1, 0, 1, 0]);
+        w.extend_from_slice(&0u32.to_le_bytes()); // sample rate
+        w.extend_from_slice(&0u32.to_le_bytes()); // byte rate
+        w.extend_from_slice(&[2, 0, 16, 0]);
+        w.extend_from_slice(b"data");
+        w.extend_from_slice(&(data.len() as u32).to_le_bytes());
+        w.extend_from_slice(&data);
+        assert!(analyze("wav", w, true).is_none());
     }
 }

@@ -30,7 +30,9 @@ miniz_oxide = "0.8"
 opt-level = 3
 lto = true
 codegen-units = 1
-panic = "abort"
+# Unwind, so a decoder panic on a crafted file is caught (analysis.rs) instead of ending the Container process.
+# The WebAssembly build aborts regardless (its target has no unwinding) and never runs a decoder.
+panic = "unwind"
 strip = true
 
 # Native only (the server Container's HTTP front and its R2 access); never in the WebAssembly build.

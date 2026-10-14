@@ -53,7 +53,7 @@ pub struct AudioAnalysis {
     /// The loudest sample in each of 100 slices of what was analysed, 0 to 100 (to draw a waveform).
     pub peaks: Vec<u8>,
     pub analyzed_ms: u64,
-    /// Nothing louder than -60 dBFS in what was analysed (reported as the issue `silent_audio`, not in the analysis).
+    /// Nothing louder than -60 dBFS, heard to its end (reported as the issue `silent_audio`, not in the analysis).
     #[serde(skip)]
     pub silent: bool,
 }
@@ -243,9 +243,17 @@ fn inspect_inner(
                 if analyze && !r.identity.mismatch && ANALYZABLE.contains(&r.identity.format.as_str()) {
                     let ext = e.path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
                     let complete = head.len() as u64 >= e.size;
-                    r.analysis = crate::analysis::analyze(&ext, std::mem::take(&mut head), complete);
+                    // Ogg holds other codecs than Vorbis (Opus, FLAC) that analysis has no decoder for: not heard,
+                    // and not a fault of the file.
+                    let vorbis = r.identity.format != "ogg" || head.windows(7).take(4096).any(|w| w == b"\x01vorbis");
+                    // A header with no sample rate or no channels can't be audio; never handed to a decoder.
+                    let empty = r.facts.sample_rate == Some(0) || r.facts.channels == Some(0);
+                    if vorbis && !empty {
+                        r.analysis = crate::analysis::analyze(&ext, std::mem::take(&mut head), complete);
+                    }
                     // Warnings for the automated review, never refusals: the file is kept either way.
                     match &r.analysis {
+                        None if !vorbis => {}
                         None => r.issues.push(Issue {
                             code: "audio_does_not_decode",
                             refused: false,
