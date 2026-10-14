@@ -37,6 +37,9 @@ struct Job {
     /// Where `process` writes originals.
     #[serde(default)]
     target: Option<Target>,
+    /// Also listen to each audio file's start for a tempo, key and waveform (inspect and process; analysis.rs).
+    #[serde(default)]
+    analyze: bool,
 }
 
 #[derive(Deserialize)]
@@ -139,14 +142,18 @@ fn run(job: &Job, r2: Option<&R2Config>) -> (u16, serde_json::Value) {
                 serde_json::to_value(r).unwrap()
             })
             .map_err(|e| e.code),
-        "inspect" => job::inspect_archive(src.as_ref(), &limits, &mut Discard)
-            .map(|mut r| {
-                if let Some(v) = &job.vocabulary {
-                    classify::apply(&mut r, v)
-                }
-                serde_json::to_value(r).unwrap()
-            })
-            .map_err(|e| e.code),
+        "inspect" => (if job.analyze {
+            job::inspect_archive_analyzed
+        } else {
+            job::inspect_archive
+        })(src.as_ref(), &limits, &mut Discard)
+        .map(|mut r| {
+            if let Some(v) = &job.vocabulary {
+                classify::apply(&mut r, v)
+            }
+            serde_json::to_value(r).unwrap()
+        })
+        .map_err(|e| e.code),
         "process" => {
             let (Some(t), Some(cfg)) = (&job.target, r2) else {
                 return (400, error("bad_target"));
@@ -166,14 +173,18 @@ fn run(job: &Job, r2: Option<&R2Config>) -> (u16, serde_json::Value) {
                 ok: true,
                 done: None,
             };
-            job::inspect_archive(src.as_ref(), &limits, &mut sink)
-                .map(|mut r| {
-                    if let Some(v) = &job.vocabulary {
-                        classify::apply(&mut r, v)
-                    }
-                    serde_json::to_value(r).unwrap()
-                })
-                .map_err(|e| e.code)
+            (if job.analyze {
+                job::inspect_archive_analyzed
+            } else {
+                job::inspect_archive
+            })(src.as_ref(), &limits, &mut sink)
+            .map(|mut r| {
+                if let Some(v) = &job.vocabulary {
+                    classify::apply(&mut r, v)
+                }
+                serde_json::to_value(r).unwrap()
+            })
+            .map_err(|e| e.code)
         }
         "file" => job::inspect_file(job.path.as_deref().unwrap_or(""), src.as_ref())
             .map(|mut r| {

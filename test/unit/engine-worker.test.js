@@ -68,6 +68,12 @@ test("a vocabulary rides along to the engine, within a size limit", () => {
   for (const bad of [[], "words", null, { big: "x".repeat(70 * 1024) }]) assert.throws(() => checkJob({ ...ok, vocabulary: bad }, ["autostacc-files"]));
 });
 
+test("analysis is asked for only by a plain true", () => {
+  assert.equal(engineRequest(checkJob({ ...ok, analyze: true }, ["autostacc-files"])).analyze, true);
+  assert.equal(engineRequest(checkJob({ ...ok, analyze: false }, ["autostacc-files"])).analyze, undefined);
+  for (const bad of ["yes", 1, null, {}]) assert.throws(() => checkJob({ ...ok, analyze: bad }, ["autostacc-files"]), /analyze/);
+});
+
 test("writes: only the running job's own numbered keys, with a declared length", () => {
   const allowed = ["autostacc-files"];
   const prefix = writePrefix("cr_abc", "job0123456789", 1);

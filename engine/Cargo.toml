@@ -2,7 +2,7 @@
 # Pack Builder's Web Workers (docs/engine.md). Modules: hash, zipread, formats, facts, job; results are JSON (contract v1).
 [package]
 name = "autostacc-engine"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 license = "UNLICENSED"
@@ -30,10 +30,15 @@ miniz_oxide = "0.8"
 opt-level = 3
 lto = true
 codegen-units = 1
-panic = "abort"
+# Unwind, so a decoder panic on a crafted file is caught (analysis.rs) instead of ending the Container process.
+# The WebAssembly build aborts regardless (its target has no unwinding) and never runs a decoder.
+panic = "unwind"
 strip = true
 
 # Native only (the server Container's HTTP front and its R2 access); never in the WebAssembly build.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tiny_http = "0.12"
 ureq = { version = "2", default-features = false }
+# Audio analysis (src/analysis.rs: tempo, key, waveform): decoding and FFT, server side only.
+symphonia = { version = "0.5", default-features = false, features = ["wav", "aiff", "flac", "mp3", "ogg", "vorbis", "pcm"] }
+rustfft = "6"

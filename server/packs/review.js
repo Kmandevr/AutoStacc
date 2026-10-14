@@ -7,6 +7,7 @@ const DAMAGED = new Set(["crc_mismatch", "size_mismatch", "corrupt"]);
 // Never sold, and a sign the archive isn't what it claims: programs and scripts.
 export const EXECUTABLE = new Set(["exe", "dll", "msi", "bat", "cmd", "com", "scr", "ps1", "vbs", "js", "jar", "sh", "app", "apk", "dmg", "pkg", "deb", "rpm"]);
 
+const MIN_HEARD = 4;
 const ARCHIVE = new Set(["zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz"]);
 const ext = (path) => (String(path).match(/\.([a-z0-9]{1,12})$/i) || [])[1]?.toLowerCase() || "";
 
@@ -31,6 +32,14 @@ export function review({ result, kept, refused, existingHashes = 0, revision = n
   const unknown = kept.filter((f) => !f.format || f.format === "unknown").map((f) => f.path);
   if (kept.length && unknown.length / kept.length > 0.5) flag("mostly_unknown_formats", false, unknown);
   if (kept.length && existingHashes === kept.length) flag("all_duplicates", false, kept.map((f) => f.path));
+  // From listening to the audio (engine analysis, when switched on): a pack whose audio is largely silence or can't be
+  // decoded isn't what it claims (renamed or broken files). A stray one is normal: over a quarter of the audio heard,
+  // and at least MIN_HEARD files of it, holds.
+  const heard = kept.filter((f) => f.analysis || (f.issues || []).some((i) => i.code === "audio_does_not_decode"));
+  for (const [code, issue] of [["silent_audio", "silent_audio"], ["undecodable_audio", "audio_does_not_decode"]]) {
+    const hit = heard.filter((f) => (f.issues || []).some((i) => i.code === issue)).map((f) => f.path);
+    if (heard.length >= MIN_HEARD && hit.length / heard.length > 0.25) flag(code, false, hit);
+  }
   const r = revision;
   if (r && r.files && (r.removed / r.files > 0.25 || (r.bytes && r.goneBytes / r.bytes > 0.5))) {
     flags.push({ code: "big_revision", hard: false, count: r.removed, examples: [] });

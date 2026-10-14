@@ -19,7 +19,9 @@
     nested_archives: "Archives inside the pack (their contents aren't checked)",
     mostly_unknown_formats: "Most files are in formats AutoStacc can't identify",
     all_duplicates: "Every file is already in another of your packs",
-    big_revision: "This version removes a large part of the one that's live"
+    big_revision: "This version removes a large part of the one that's live",
+    silent_audio: "Much of the audio is silent",
+    undecodable_audio: "Much of the audio can't be played"
   };
   const STATE = { draft: "Draft", uploading: "Uploading", processing: "Checking", ready: "Checked", in_review: "Waiting for AutoStacc's review",
     published: "Published", superseded: "Replaced by a newer version", failed: "Failed", discarded: "Discarded" };
@@ -69,7 +71,7 @@
       ${changes(s.diff)}
       ${flags(s.review)}
       ${actions(v, admin)}
-      <p class="small-print">Suggestions come from names and the files' own headers; a percentage is how sure the engine is. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>
+      <p class="small-print">Suggestions come from names, the files' own headers and, marked "heard", listening to the audio; a percentage is how sure the engine is, and what it only heard is never sure enough to count without you. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>
       ${window.GS.packReview.render(v)}`;
   }
 

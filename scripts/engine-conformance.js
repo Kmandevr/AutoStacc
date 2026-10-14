@@ -1,7 +1,9 @@
-// Checks that an engine keeps the contract (docs/engine.md): runs `list`, `inspect` and `inspect` with the vocabulary
-// (the "suggest" check, engine/conformance/vocabulary.json) on every case in
+// Checks that an engine keeps the contract (docs/engine.md): runs `list`, `inspect`, `inspect` with the vocabulary
+// (the "suggest" check, engine/conformance/vocabulary.json) and, for engines that analyze audio (not the WebAssembly
+// build), `inspect` with the vocabulary and analysis (the "analyze" check) on every case in
 // engine/conformance/cases/, checks each answer against the JSON schemas in engine/contract/v1/, and compares it with the
-// expected answer in engine/conformance/expected/ (engineVersion and elapsedMs ignored). Any engine, in any language, that
+// expected answer in engine/conformance/expected/ (engineVersion and elapsedMs ignored; inside a file's analysis,
+// confidences may differ by 0.05 and peaks by 2, as floating point does between CPUs). Any engine, in any language, that
 // passes can replace this one. Modes:
 //   node scripts/engine-conformance.js [--cli <binary>]   the command-line build (default engine/target/release/autostacc-engine)
 //   node scripts/engine-conformance.js --wasm <file.wasm> the WebAssembly build, through js/engine/engine-wasm.js
@@ -25,7 +27,7 @@ const VOCABULARY = path.join(ROOT, "engine/conformance/vocabulary.json");
 async function makeRunner() {
   if (arg("--http")) {
     const base = arg("--http").replace(/\/$/, "");
-    return { name: `http ${base}`, run: async (op, file, vocabulary) => (await fetch(`${base}/v1/jobs`, { method: "POST", body: JSON.stringify({ op, source: { file }, ...(vocabulary ? { vocabulary } : {}) }) })).json() };
+    return { name: `http ${base}`, analyzes: true, run: async (op, file, vocabulary, analyze) => (await fetch(`${base}/v1/jobs`, { method: "POST", body: JSON.stringify({ op, source: { file }, ...(vocabulary ? { vocabulary } : {}), ...(analyze ? { analyze } : {}) }) })).json() };
   }
   if (arg("--wasm")) {
     const Engine = require(path.join(ROOT, "js/engine/engine-wasm.js"));
@@ -43,8 +45,10 @@ async function makeRunner() {
   const bin = arg("--cli") || path.join(ROOT, "engine/target/release/autostacc-engine");
   return {
     name: `cli ${path.relative(ROOT, bin)}`,
-    run: async (op, file, vocabulary) => {
-      try { return JSON.parse(execFileSync(bin, [op, file, ...(vocabulary ? ["--vocabulary", VOCABULARY] : [])], { maxBuffer: 1 << 28 })); } catch (e) { return JSON.parse(e.stdout.toString()); }
+    analyzes: true,
+    run: async (op, file, vocabulary, analyze) => {
+      const args = [op, file, ...(vocabulary ? ["--vocabulary", VOCABULARY] : []), ...(analyze ? ["--analyze"] : [])];
+      try { return JSON.parse(execFileSync(bin, args, { maxBuffer: 1 << 28 })); } catch (e) { return JSON.parse(e.stdout.toString()); }
     }
   };
 }
@@ -60,18 +64,35 @@ const normal = (v) => {
   return v;
 };
 
+// Equal, except inside a file's "analysis": there its estimates' confidences may differ by 0.05 and its peaks by 2.
+const same = (a, b, key = "", heard = false) => {
+  const inside = heard || key === "analysis";
+  if (typeof a === "number" && typeof b === "number") {
+    if (inside && key === "confidence") return Math.abs(a - b) <= 0.05 + 1e-9;
+    if (inside && key === "peaks") return Math.abs(a - b) <= 2;
+    return a === b;
+  }
+  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => same(v, b[i], key, inside));
+  if (a && b && typeof a === "object" && typeof b === "object") {
+    const ka = Object.keys(a), kb = Object.keys(b);
+    return ka.length === kb.length && ka.every((k) => k in b && same(a[k], b[k], k, inside));
+  }
+  return a === b;
+};
+
 (async () => {
   const runner = await makeRunner();
   const vocabulary = JSON.parse(fs.readFileSync(VOCABULARY, "utf8"));
-  let failures = 0;
+  let failures = 0, checks = 0;
   const cases = fs.readdirSync(CASES).filter((f) => f.endsWith(".zip")).sort();
   fs.mkdirSync(EXPECTED, { recursive: true });
   for (const c of cases) {
     // "suggest": inspect with the vocabulary, so every accepted file also carries its suggestions.
-    for (const kind of ["list", "inspect", "suggest"]) {
-      const op = kind === "suggest" ? "inspect" : kind;
+    for (const kind of ["list", "inspect", "suggest", ...(runner.analyzes ? ["analyze"] : [])]) {
+      const op = kind === "list" ? "list" : "inspect";
       const name = `${c.replace(/\.zip$/, "")}.${kind}.json`;
-      const got = await runner.run(op, path.join(CASES, c), kind === "suggest" ? vocabulary : null);
+      checks++;
+      const got = await runner.run(op, path.join(CASES, c), kind === "suggest" || kind === "analyze" ? vocabulary : null, kind === "analyze");
       const schema = path.join(CONTRACT, got && got.error ? "error.schema.json" : "archive-result.schema.json");
       const problems = check(schema, got);
       if (got && got.error) {
@@ -84,11 +105,11 @@ const normal = (v) => {
       const file = path.join(EXPECTED, name);
       if (update) fs.writeFileSync(file, JSON.stringify(normal(got), null, 1) + "\n");
       else if (!fs.existsSync(file)) problems.push("no expected answer (run with --update)");
-      else if (JSON.stringify(normal(got)) !== JSON.stringify(JSON.parse(fs.readFileSync(file, "utf8")))) problems.push("differs from the expected answer");
+      else if (!same(normal(got), JSON.parse(fs.readFileSync(file, "utf8")))) problems.push("differs from the expected answer");
       if (problems.length) failures++;
       console.log(`${problems.length ? "FAIL" : "PASS"} ${name}${problems.length ? `\n  ${problems.slice(0, 8).join("\n  ")}` : ""}`);
     }
   }
-  console.log(`${runner.name}: ${failures ? `${failures} failed` : "all passed"} (${cases.length * 3} checks)${update ? ", expected answers rewritten" : ""}`);
+  console.log(`${runner.name}: ${failures ? `${failures} failed` : "all passed"} (${checks} checks)${update ? ", expected answers rewritten" : ""}`);
   process.exit(failures ? 1 : 0);
 })();

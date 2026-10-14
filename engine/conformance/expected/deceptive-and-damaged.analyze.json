@@ -1,0 +1,40 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "crc32": 2314580766,
+   "facts": {},
+   "format": "unknown",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "content_does_not_match_name",
+     "refused": true
+    }
+   ],
+   "mismatch": true,
+   "path": "Not audio.wav",
+   "sha256": "97d6125ef035b82bd5e8dc266684ad1906850b376b95dea4eaa7a212dade4f77",
+   "size": 33
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "crc_mismatch",
+     "refused": true
+    }
+   ],
+   "mismatch": false,
+   "path": "Bad crc.txt",
+   "size": 14
+  }
+ ],
+ "folders": [],
+ "totalSize": 47,
+ "zip64": false
+}

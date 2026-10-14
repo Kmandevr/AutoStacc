@@ -73,6 +73,70 @@ fn round2(x: f64) -> f64 {
 
 /// Several pieces of evidence for one field → one suggestion: agreeing evidence adds up (1 − Π(1 − w)), a rival value
 /// takes away half its own strength. The origin is that of the strongest evidence for the winner.
+/// The most an analysis alone may weigh: below the store's auto-accept (js/pack-resolve.js AUTO_ACCEPT, 0.85), so a
+/// tempo or key only heard is offered to the creator, never applied by itself (docs/engine.md, "Analysis": calibration).
+pub const ANALYSIS_MAX: f64 = 0.8;
+
+/// What an analysis estimate adds: `(value, weight)` to push as evidence, or None to leave it out. It weighs at most
+/// ANALYSIS_MAX. When the name, folder or header already gives a value, what was heard can support it or question it,
+/// never replace it (what the creator wrote is a claim; what was heard is a guess): `agrees(heard, named)` is 1 when
+/// it supports a named value, -1 for the usual near miss (half or double time, the relative key), which then says
+/// nothing, and 0 otherwise; a value that agrees with no named one is a rival at half weight.
+fn heard_evidence(
+    evidence: &[Evidence],
+    value: &str,
+    confidence: f64,
+    agrees: impl Fn(&str, &str) -> f64,
+) -> Option<(String, f64)> {
+    let w = confidence.min(ANALYSIS_MAX);
+    let named: Vec<&Evidence> = evidence.iter().filter(|e| e.origin != "analysis").collect();
+    if named.is_empty() {
+        return Some((value.to_string(), w));
+    }
+    let best = named
+        .iter()
+        .map(|e| (agrees(value, &e.value), &e.value))
+        .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal))?;
+    match best.0 {
+        x if x > 0.0 => Some((best.1.clone(), w * x)),
+        x if x < 0.0 => None,
+        _ => Some((value.to_string(), w / 2.0)),
+    }
+}
+
+/// How a heard tempo bears on a named one: the same within 1% supports it; half or double time (the usual mistake,
+/// which analysis names itself) neither supports nor questions it.
+fn tempo_agrees(heard: &str, named: &str) -> f64 {
+    let (Ok(h), Ok(n)) = (heard.parse::<f64>(), named.parse::<f64>()) else {
+        return 0.0;
+    };
+    let close = |a: f64, b: f64| (a / b - 1.0).abs() <= 0.01;
+    if close(h, n) {
+        1.0
+    } else if close(h * 2.0, n) || close(h / 2.0, n) {
+        -1.0
+    } else {
+        0.0
+    }
+}
+
+/// How a heard key bears on a named one: the same supports it; its relative key (same notes, the usual mistake)
+/// neither supports nor questions it.
+fn key_agrees(heard: &str, named: &str) -> f64 {
+    if heard == named {
+        return 1.0;
+    }
+    const NAMES: [&str; 12] = ["c", "cs", "d", "ds", "e", "f", "fs", "g", "gs", "a", "as", "b"];
+    let parse = |k: &str| {
+        let (t, q) = k.split_once('-')?;
+        Some((NAMES.iter().position(|n| *n == t)?, q == "minor"))
+    };
+    match (parse(heard), parse(named)) {
+        (Some((h, hm)), Some((n, nm))) if hm != nm && (if hm { (h + 3) % 12 == n } else { (h + 9) % 12 == n }) => -1.0,
+        _ => 0.0,
+    }
+}
+
 fn decide(field: &'static str, evidence: Vec<Evidence>) -> Option<Suggestion> {
     let mut by_value: Vec<(String, f64, Vec<&Evidence>)> = Vec::new();
     for e in &evidence {
@@ -97,8 +161,11 @@ fn decide(field: &'static str, evidence: Vec<Evidence>) -> Option<Suggestion> {
         confidence *= 1.0 - strength / 2.0;
         reasons.push(format!("but {rival}"));
     }
-    let origin = list
-        .iter()
+    // Where the value comes from: its heaviest named evidence; "analysis" only when nothing but listening says it.
+    let named: Vec<&&Evidence> = list.iter().filter(|e| e.origin != "analysis").collect();
+    let pool: Vec<&&Evidence> = if named.is_empty() { list.iter().collect() } else { named };
+    let origin = pool
+        .into_iter()
         .max_by(|a, b| a.weight.partial_cmp(&b.weight).unwrap_or(std::cmp::Ordering::Equal))
         .map(|e| e.origin)?;
     Some(Suggestion {
@@ -245,6 +312,17 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
             }
         }
     }
+    // What listening to the file found (analysis.rs, when the job asked for it).
+    let heard = f.analysis.as_ref();
+    if let Some(a) = heard.and_then(|a| a.bpm.as_ref()) {
+        if let Ok(b) = a.value.parse::<f64>() {
+            if in_range(b) && (audio || midi) {
+                if let Some((v, w)) = heard_evidence(&bpm_ev, &bpm_text(b), a.confidence, tempo_agrees) {
+                    bpm_ev.push(ev(v, "analysis", w, format!("heard: {}", a.reasons.join("; "))));
+                }
+            }
+        }
+    }
     let mut tempo = decide("bpm", bpm_ev);
 
     // Kind.
@@ -258,7 +336,8 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
         if e.loop_points == Some(true) {
             ev_kind.push(ev("loops", "embedded", 0.6, "loop points in the file".into()));
         }
-        if let (Some(ms), Some(t)) = (f.facts.duration_ms, &tempo) {
+        // Not from a tempo only analysis found: analysis already fits its tempo to the length, so it proves nothing.
+        if let (Some(ms), Some(t)) = (f.facts.duration_ms, tempo.as_ref().filter(|t| t.origin != "analysis")) {
             if let Some(bars) = t.value.parse().ok().and_then(|b| whole_bars(ms, b)) {
                 ev_kind.push(ev(
                     "loops",
@@ -297,8 +376,9 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
         }
     }
 
-    // Tempo, checked against the length for audio: a loop's length is whole bars.
-    if let (Some(t), true) = (tempo.as_mut(), audio) {
+    // Tempo, checked against the length for audio: a loop's length is whole bars. Not for a tempo only analysis found:
+    // it already fitted the length, so the check would count the same evidence twice.
+    if let (Some(t), true) = (tempo.as_mut().filter(|t| t.origin != "analysis"), audio) {
         let looped = out.iter().any(|s| s.field == "kind" && s.value == "loops");
         if let (Some(ms), Ok(b)) = (f.facts.duration_ms, t.value.parse::<f64>()) {
             match whole_bars(ms, b) {
@@ -329,6 +409,11 @@ pub fn suggest(f: &FileResult, vocab: &Vocabulary) -> Vec<Suggestion> {
         }
         if let Some(k) = &e.key {
             ev_key.push(ev(k.clone(), "embedded", 0.8, format!("written in the file: {k}")));
+        }
+        if let Some(a) = heard.and_then(|a| a.key.as_ref()) {
+            if let Some((v, w)) = heard_evidence(&ev_key, &a.value, a.confidence, key_agrees) {
+                ev_key.push(ev(v, "analysis", w, format!("heard: {}", a.reasons.join("; "))));
+            }
         }
         ev_key.retain(|x| vocab.keys.contains(&x.value));
         out.extend(decide("key", ev_key));
@@ -402,7 +487,13 @@ mod tests {
                 ]),
                 midi_role: w(&[("pattern", "pattern")]),
             },
-            keys: vec!["a-minor".into(), "cs-minor".into()],
+            keys: vec![
+                "a-minor".into(),
+                "cs-minor".into(),
+                "fs-minor".into(),
+                "gs-major".into(),
+                "a-major".into(),
+            ],
             bpm: BpmRange { min: 40.0, max: 250.0 },
         }
     }
@@ -423,6 +514,7 @@ mod tests {
             ignored: false,
             suggestions: vec![],
             stored: None,
+            analysis: None,
         }
     }
 
@@ -506,5 +598,61 @@ mod tests {
             &vocab(),
         );
         assert!(s.iter().all(|x| x.field != "bpm" && x.field != "key"), "{s:?}");
+    }
+
+    #[test]
+    fn what_was_heard_suggests_but_never_overrides_a_name() {
+        use crate::job::{AudioAnalysis, Estimate};
+        let heard = |bpm: &str, key: &str| AudioAnalysis {
+            bpm: Some(Estimate {
+                value: bpm.into(),
+                confidence: 1.0,
+                reasons: vec!["onsets".into()],
+            }),
+            key: Some(Estimate {
+                value: key.into(),
+                confidence: 1.0,
+                reasons: vec!["notes".into()],
+            }),
+            ..Default::default()
+        };
+        // Nothing named: heard values are suggested, never above ANALYSIS_MAX (under the store's auto-accept).
+        let mut f = file("Pack/Loops/Thing.wav", "wav", Facts::default());
+        f.analysis = Some(heard("100", "a-minor"));
+        let s = suggest(&f, &vocab());
+        for field in ["bpm", "key"] {
+            let x = get(&s, field);
+            assert_eq!(x.origin, "analysis");
+            assert!(x.confidence <= ANALYSIS_MAX, "{x:?}");
+        }
+        // Named otherwise: the name wins and the disagreement lowers it; named the same: the two add up.
+        let mut f = file("Pack/Loops/Bass 140 BPM F#min.wav", "wav", Facts::default());
+        f.analysis = Some(heard("100", "gs-major"));
+        let s = suggest(&f, &vocab());
+        assert_eq!(
+            (get(&s, "bpm").value.as_str(), get(&s, "key").value.as_str()),
+            ("140", "fs-minor")
+        );
+        assert!(get(&s, "key").reasons.iter().any(|r| r == "but gs-major"));
+        let mut f = file("Pack/Loops/Bass 140 BPM F#min.wav", "wav", Facts::default());
+        f.analysis = Some(heard("140", "fs-minor"));
+        let s = suggest(&f, &vocab());
+        assert!(get(&s, "key").confidence > 0.75);
+        // Agreeing, the value is still the name's (never marked as only heard), and close tempos agree.
+        assert_eq!((get(&s, "bpm").origin, get(&s, "key").origin), ("filename", "filename"));
+        f.analysis = Some(heard("139.2", "fs-minor"));
+        assert!(get(&suggest(&f, &vocab()), "bpm")
+            .reasons
+            .iter()
+            .all(|r| !r.starts_with("but")));
+        // The usual near misses (half time, the relative key) neither support nor question it.
+        let plain = suggest(
+            &file("Pack/Loops/Bass 140 BPM F#min.wav", "wav", Facts::default()),
+            &vocab(),
+        );
+        f.analysis = Some(heard("70", "a-major"));
+        let s = suggest(&f, &vocab());
+        assert_eq!(get(&s, "bpm").confidence, get(&plain, "bpm").confidence);
+        assert_eq!(get(&s, "key").confidence, get(&plain, "key").confidence);
     }
 }
