@@ -448,7 +448,7 @@ Reviews: `architect` before Phase 3; `security-reviewer` + `backend-reviewer` af
 | Layer | Policy |
 | --- | --- |
 | **Stored originals** | Exactly as uploaded; no at-rest compression. Audio dominates and barely deflates (WAV ~3–10%); FLAC, MP3, OGG, ZIP, `.als` and images are already compressed |
-| **Transport ZIP** | Standard ZIP/ZIP64. **Store** by default (zero CPU, exact Content-Length). **Deflate** only when the measured probe ratio ≤0.8 and size ≤8 MB (MIDI, text, JSON/XML presets), using variants made once by the engine, stored as derived objects and verified by inflate + re-hash. Behind a flag |
+| **Transport ZIP** | Standard ZIP/ZIP64. **Store** by default (zero CPU, exact Content-Length). **Deflate** only when the measured probe ratio ≤0.8 and size ≤8 MB (MIDI, text, JSON/XML presets), using variants made once by the engine, stored as derived objects and verified by inflate + re-hash. Behind a flag. **Built (Phase 9, 2026-10-14)**, switch `downloads.deflate`, off by default: the daily sweep, not the engine, makes them (`server/downloads/variants.js`: MIDI, presets, SFZ/EXS, REAPER projects and text from 64 bytes to 8 MB, published; deflated to 80% or less with the built-in CompressionStream, inflated again and re-hashed before being kept at `variants/<blob>.deflate`; the ratio is recorded either way, `blobs.compress_ratio`/`deflate_bytes`, migration 0022), and bundles carry them deflated with the original's CRC and size. They count toward the storage cap and go with their original |
 | **Previews** | Separate `PREVIEWS` bucket, never replacing originals |
 | **Never** | Transcoding, resampling, bit-depth or channel changes, rewriting MIDI/presets/projects, recompressing archives |
 

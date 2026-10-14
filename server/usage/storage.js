@@ -7,7 +7,7 @@
 // for use inside the insert or batch that takes the room, so two uploads at once can't both squeeze under.
 import { first } from "../lib/db.js";
 
-export const storedSql = () => `((SELECT COALESCE(SUM(size_bytes), 0) FROM blobs)
+export const storedSql = () => `((SELECT COALESCE(SUM(size_bytes + COALESCE(deflate_bytes, 0)), 0) FROM blobs)
   + (SELECT COALESCE(SUM(size_bytes), 0) FROM product_files WHERE blob_id IS NULL AND json_extract(COALESCE(meta, '{}'), '$.purgedAt') IS NULL)
   + (SELECT COALESCE(SUM(size_bytes), 0) FROM uploads WHERE status IN ('open', 'complete'))
   + (SELECT COALESCE(SUM(size_bytes), 0) FROM site_assets WHERE status = 'active'))`;

@@ -134,6 +134,8 @@ const CASES = {
     // Crafted headers that once crashed the decoder (a sample rate of 0): warned about, never a crashed job.
     { name: "Sounds/Zero rate.wav", data: (() => { const b = S.wav16(S.kick()); b.writeUInt32LE(0, 24); b.writeUInt32LE(0, 28); return b; })() },
     { name: "Sounds/Zero rate.aif", data: aiff({ zeroRate: true }) },
+    // Text that deflates well (for ZIP downloads' deflate variants, server/downloads/variants.js).
+    { name: "Notes.txt", data: Array.from({ length: 120 }, (_, i) => `Loop ${i % 4 ? "B" : "A"}: tempo and key from listening, not from the name.\n`).join("") },
     // Ogg with a codec analysis can't decode (Opus): kept, not heard, and not called broken.
     { name: "Sounds/Voice.ogg", data: (() => {
       const head = Buffer.from("OpusHead\x01\x01\x38\x01\x80\xbb\x00\x00\x00\x00\x00", "latin1");

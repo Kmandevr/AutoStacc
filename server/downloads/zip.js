@@ -13,15 +13,17 @@ function header(size) {
 }
 const big = (view, at, n) => view.setBigUint64(at, BigInt(n), true);
 
-/** files: [{ name, size, crc32, open: () => Promise<ReadableStream> }] → { length, stream } */
+/** files: [{ name, size, crc32, open: () => Promise<ReadableStream>, deflated? }] → { length, stream }. deflated: the
+ * length of a raw-deflate copy that open() returns instead of the original (a small, compressible file's variant,
+ * downloads/variants.js); size and crc32 stay the original's, so unzipping checks the original bytes. */
 export function zipStream(files) {
   let offset = 0;
   const entries = files.map((f) => {
     const name = enc.encode(f.name);
     const z64 = f.size >= MAX32 || offset >= MAX32;
     const local = 30 + name.length + (z64 ? 20 : 0);
-    const e = { ...f, nameBytes: name, z64, offset, local };
-    offset += local + f.size;
+    const e = { ...f, nameBytes: name, z64, offset, local, stored: f.deflated ?? f.size, method: f.deflated != null ? 8 : 0 };
+    offset += local + e.stored;
     return e;
   });
   const cdStart = offset;
@@ -38,10 +40,10 @@ export function zipStream(files) {
     view.setUint32(0, 0x04034b50, true);
     view.setUint16(4, e.z64 ? 45 : 20, true);
     view.setUint16(6, 0x0800, true); // UTF-8 names
-    view.setUint16(8, 0, true); // stored
+    view.setUint16(8, e.method, true); // 0 stored, 8 deflated
     view.setUint16(12, DOS_DATE, true);
     view.setUint32(14, e.crc32 >>> 0, true);
-    view.setUint32(18, e.z64 ? MAX32 : e.size, true);
+    view.setUint32(18, e.z64 ? MAX32 : e.stored, true);
     view.setUint32(22, e.z64 ? MAX32 : e.size, true);
     view.setUint16(26, e.nameBytes.length, true);
     view.setUint16(28, e.z64 ? 20 : 0, true);
@@ -51,7 +53,7 @@ export function zipStream(files) {
       view.setUint16(at, 0x0001, true);
       view.setUint16(at + 2, 16, true);
       big(view, at + 4, e.size);
-      big(view, at + 12, e.size);
+      big(view, at + 12, e.stored);
     }
     return buf;
   }
@@ -66,9 +68,10 @@ export function zipStream(files) {
       view.setUint16(p + 4, 45, true);
       view.setUint16(p + 6, extra ? 45 : 20, true);
       view.setUint16(p + 8, 0x0800, true);
+      view.setUint16(p + 10, e.method, true);
       view.setUint16(p + 14, DOS_DATE, true);
       view.setUint32(p + 16, e.crc32 >>> 0, true);
-      view.setUint32(p + 20, bigSize ? MAX32 : e.size, true);
+      view.setUint32(p + 20, bigSize ? MAX32 : e.stored, true);
       view.setUint32(p + 24, bigSize ? MAX32 : e.size, true);
       view.setUint16(p + 28, e.nameBytes.length, true);
       view.setUint16(p + 30, extra, true);
@@ -79,7 +82,7 @@ export function zipStream(files) {
         view.setUint16(x, 0x0001, true);
         view.setUint16(x + 2, extra - 4, true);
         x += 4;
-        if (bigSize) (big(view, x, e.size), big(view, x + 8, e.size), (x += 16));
+        if (bigSize) (big(view, x, e.size), big(view, x + 8, e.stored), (x += 16));
         if (bigOffset) big(view, x, e.offset);
       }
       p += 46 + e.nameBytes.length + extra;
