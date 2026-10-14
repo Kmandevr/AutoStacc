@@ -562,6 +562,8 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 - bundle time to first byte <500 ms
 - search p95 within ±20%
 
+> **Measured (Phase 9, 2026-10-14)** with `node test/bench/store-perf.js` (a local store and the real engine, a 2,000-file 17 MB pack; `test/bench/out/store-perf.md`): create a version 67 ms; upload 432 ms; check all 2,000 files and import them 29 s (the engine, with analysis, writing each original through the local storage relay; on Cloudflare the engine Worker answers from R2 instead); load the version for review 139 ms; **publish 282 ms**; a buyer's library 47 ms; a ZIP link for 2,000 files 61 ms, **its first byte 86 ms**, the whole 17 MB 3.7 s; the daily sweep 320 ms. Search with 3,000 products is timed by the discovery API suite (within a few percent of before, Phase 7). Engine throughput and the 1 GB pack: [engine](engine.md).
+
 ---
 
 ## Reality check: what works, what doesn't, limits, best practices, effort
