@@ -20,9 +20,11 @@ export const BUNDLE_MAX_FILES = 2000;
 export const BUNDLE_MAX_BYTES = 20 * 1024 ** 3;
 const FILE_ID = /^pf_[a-z2-7]+$/;
 
-// The files with what a ZIP needs: their stored original's key, size and CRC-32 (files uploaded before Pack Builder
-// have no CRC on record, so they download one at a time).
-const filesWithBlobs = (db, ids) => all(db, `SELECT f.id, f.product_id, f.pac_id, f.filename, f.folder_path, f.retired_at, b.r2_key AS blob_key, b.size_bytes, b.crc32,
+// The files with what a ZIP needs: their stored original's key, size and CRC-32. Files from before Pack Builder have
+// them once the daily sweep has hashed them (files/legacy.js); until then they download one at a time.
+const filesWithBlobs = (db, ids) => all(db, `SELECT f.id, f.product_id, f.pac_id, f.filename, f.folder_path, f.retired_at,
+    COALESCE(b.r2_key, CASE WHEN json_extract(f.meta, '$.crc32') IS NOT NULL THEN f.r2_key END) AS blob_key,
+    COALESCE(b.size_bytes, f.size_bytes) AS size_bytes, COALESCE(b.crc32, json_extract(f.meta, '$.crc32')) AS crc32,
     p.title AS product_title, pc.title AS pac_title
   FROM product_files f JOIN products p ON p.id = f.product_id LEFT JOIN blobs b ON b.id = f.blob_id LEFT JOIN pacs pc ON pc.id = f.pac_id
   WHERE ${deliverableAs("f")} AND f.id IN (SELECT value FROM json_each(?))`, JSON.stringify(ids));

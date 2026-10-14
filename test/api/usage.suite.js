@@ -121,6 +121,56 @@ export default (ctx) => describe("usage: the budget guard", () => {
     }
   });
 
+  test("at import, unpacked files past the cap fail the version (storage_full)", async () => {
+    const { c, creator, products } = await P.creatorWithProducts(base(), "us-capimport");
+    const admin = await adminClient(base());
+    const zip = caseZip("pack-basic");
+    const stored = (await admin.get("/api/admin/usage")).data.usage.meters.r2_bytes.used;
+    // Room for the archive (27 KB) but not for what it unpacks to (1.2 MB).
+    db(`INSERT INTO site_assets (id, creator_id, r2_key, filename, content_type, size_bytes, status, created_at)
+      VALUES ('sa_usage_fill2', '${creator.id}', 'x', 'x.png', 'image/png', ${1e9 - stored - zip.length - 1000}, 'active', 'x')`);
+    try {
+      assert.equal((await admin.req("PUT", "/api/admin/usage", { body: { capGb: 1 } })).status, 200);
+      const { version } = await build(c, products[0].id, zip);
+      assert.equal(version.status, "failed", JSON.stringify(version));
+      assert.equal(version.note, "storage_full");
+    } finally {
+      db("DELETE FROM site_assets WHERE id = 'sa_usage_fill2'; DELETE FROM store_settings WHERE key = 'storage_cap_gb'");
+    }
+  });
+
+  test("a deleted file holds its creator's room until its bytes are deleted a day later", async () => {
+    const { c, creator, products } = await P.creatorWithProducts(base(), "us-purge");
+    db(`UPDATE creators SET files_quota_bytes = 10000 WHERE id = '${creator.id}'`);
+    const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVE"), Buffer.alloc(6000)]);
+    const put = () => c.req("PUT", `/api/studio/products/${products[0].id}/files?filename=kick.wav`, { raw: wav, headers: { "Content-Type": "audio/wav" } });
+    const first = await put();
+    assert.equal(first.status, 201, JSON.stringify(first.data));
+    assert.equal((await c.req("DELETE", `/api/studio/products/${products[0].id}/files/${first.data.file.id}`)).status, 200);
+    assert.equal((await put()).data.error.code, "quota_exceeded", "deleting and uploading again can't fill storage");
+    db(`UPDATE product_files SET status_at = '2000-01-01T00:00:00.000Z' WHERE id = '${first.data.file.id}'`);
+    assert.ok((await sweep()).purgedFiles >= 1);
+    assert.ok(JSON.parse(db(`SELECT meta FROM product_files WHERE id = '${first.data.file.id}'`)[0].meta).purgedAt);
+    assert.equal((await put()).status, 201, "the room is back once the bytes are gone");
+  });
+
+  test("a waiting job whose version went away never blocks the line", async () => {
+    const { c, products } = await P.creatorWithProducts(base(), "us-orphan", 2);
+    let second, a;
+    await at(0.96, async () => {
+      a = (await build(c, products[0].id, caseZip("pack-basic"))).version;
+      second = (await build(c, products[1].id, caseZip("pack-basic"))).version;
+      // As if a discard had raced the start: the version ended, its job still waits first in line.
+      db(`UPDATE pac_versions SET status = 'discarded' WHERE id = '${a.id}'`);
+    });
+    const res = await sweep();
+    assert.ok(res.waiting >= 1, JSON.stringify(res));
+    assert.equal(db(`SELECT status FROM processing_jobs WHERE version_id = '${a.id}'`)[0].status, "cancelled");
+    let v;
+    for (let i = 0; i < 40 && (!v || v.status === "processing"); i++) v = (await c.get(`${S}/versions/${second.id}`)).data.version;
+    assert.equal(v.status, "ready");
+  });
+
   test("admin only; bad input refused", async () => {
     const anon = new Client(base());
     assert.equal((await anon.get("/api/admin/usage")).status, 404);
@@ -128,8 +178,9 @@ export default (ctx) => describe("usage: the budget guard", () => {
     const got = await admin.get("/api/admin/usage");
     assert.equal(got.status, 200);
     assert.deepEqual(Object.keys(got.data.usage.meters).sort(), ["class_a", "container_ms", "r2_bytes"]);
-    for (const body of [{}, { allowThisMonth: "yes" }, { capGb: 0 }, { capGb: 1.5 }, { capGb: "9" }]) {
+    for (const body of [{}, { allowThisMonth: "yes" }, { capGb: 0 }, { capGb: 1.5 }, { capGb: "9" }, { allowThisMonth: true, capGb: 0 }]) {
       assert.equal((await admin.req("PUT", "/api/admin/usage", { body })).status, 400, JSON.stringify(body));
     }
+    assert.equal((await admin.get("/api/admin/usage")).data.usage.allowed, false, "a refused change saves nothing");
   });
 });
