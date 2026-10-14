@@ -14,7 +14,7 @@ const VOCABULARY_MAX = 64 * 1024;
  */
 export function checkJob(job, allowedBuckets) {
   if (!job || typeof job !== "object") throw new Error("not an object");
-  const { jobId, op, bucket, key, path, vocabulary, ownerScope } = job;
+  const { jobId, op, bucket, key, path, vocabulary, ownerScope, analyze } = job;
   if (typeof jobId !== "string" || !ID.test(jobId)) throw new Error("bad jobId");
   if (!OPS.has(op)) throw new Error("bad op");
   if (!allowedBuckets.includes(bucket)) throw new Error("bucket not allowed");
@@ -24,11 +24,13 @@ export function checkJob(job, allowedBuckets) {
     if (!vocabulary || typeof vocabulary !== "object" || Array.isArray(vocabulary)) throw new Error("bad vocabulary");
     if (JSON.stringify(vocabulary).length > VOCABULARY_MAX) throw new Error("vocabulary too large");
   }
+  if (analyze !== undefined && typeof analyze !== "boolean") throw new Error("bad analyze");
   if (op === "process" && (typeof ownerScope !== "string" || !OWNER.test(ownerScope))) throw new Error("bad ownerScope");
   return {
     jobId, op, bucket, key,
     ...(path !== undefined ? { path } : {}),
     ...(vocabulary !== undefined ? { vocabulary } : {}),
+    ...(analyze ? { analyze } : {}),
     ...(op === "process" ? { ownerScope } : {})
   };
 }
@@ -42,6 +44,7 @@ export const engineRequest = (job, attempt = 1) => ({
   source: { bucket: job.bucket, key: job.key },
   ...(job.path ? { path: job.path } : {}),
   ...(job.vocabulary ? { vocabulary: job.vocabulary } : {}),
+  ...(job.analyze ? { analyze: true } : {}),
   ...(job.op === "process" ? { target: { bucket: job.bucket, prefix: writePrefix(job.ownerScope, job.jobId, attempt) } } : {})
 });
 

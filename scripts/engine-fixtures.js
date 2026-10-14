@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
+const S = require("./lib/synth.js");
 
 const OUT = path.join(__dirname, "..", "engine", "conformance", "cases");
 
@@ -119,6 +120,17 @@ const CASES = {
     { name: "Pack/MIDI/Chords Am.mid", data: midi() },
     { name: "Pack/Read me.txt", data: "Thanks for downloading version 2.\n", store: true },
     { name: "Pack/Changelog.txt", data: "Version 2: Air moved to Ambience, Wobble removed.\n", store: true }
+  ]),
+  // Real sounds for the analysis check (engine --analyze): names that say nothing about tempo or key, so only
+  // listening can tell. A 120 BPM drum break, a 100 BPM A minor chord loop, a one-shot and noise (scripts/lib/synth.js).
+  "analysis": () => zip([
+    { name: "Sounds/Loop A.wav", data: S.wav16(S.drumLoop({ bpm: 120, bars: 2, pattern: "break", seed: 11 })) },
+    { name: "Sounds/Loop B.wav", data: S.wav16(S.chordLoop({ bpm: 100, tonic: 57, minor: true, bars: 4 })) },
+    { name: "Sounds/Hit.wav", data: S.wav16(S.kick()) },
+    { name: "Sounds/Air.wav", data: S.wav16(S.noise(3)) },
+    // Kept, with a warning for the automated review: two seconds of nothing, and a WAV in a codec nothing decodes.
+    { name: "Sounds/Silence.wav", data: S.wav16(new Float32Array(S.SR * 2)) },
+    { name: "Sounds/Odd codec.wav", data: (() => { const b = S.wav16(S.kick()); b.writeUInt16LE(0x7777, 20); return b; })() }
   ]),
   // How creators name things, for suggestions: kinds, instruments, tempos and keys in folder and file names, a tempo
   // that fits the length and one that doesn't, a name and a header that disagree, MIDI patterns and arrangements.

@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-13
+updated: 2026-10-14
 ---
 
 # Decisions
@@ -386,3 +386,6 @@ The plan had collection items and tags reference asset ids, so they survive revi
 
 A product's store details now come from two places kept apart in `product_facets`: what its creator (or the catalog) chose, and what its published files contain (`origin = 'derived'`, worked out at each publish from the files' published details). The creator's always win and are the only ones the Studio form shows; derived values only add. Instrument, sample rate and bit depth exist only as derived facets, so they can't be claimed by hand. The plan kept the totals in `products.metadata.contents`; they live in their own table, `product_contents`, because the catalog sync rewrites a catalog product's `metadata` on every deploy. Search with 3,000 products stayed within a few percent of its timing before the change (the plan allowed ±20%). Each switch (`store.derivedFacets`, `product.contentsTree`) turns its part off without affecting the rest.
 
+## 2026-10-14: What the engine hears is a suggestion, never a claim (Phase 8)
+
+Audio analysis (tempo, key, waveform) runs natively in the one processing job, not as a separate later stage as the plan had it: it bounds itself to 30 s of each file and adds about 4 s per GB, which didn't justify a second job, queue message and Container start. Its values are origin `analysis` and weigh at most 0.8 (`ANALYSIS_MAX`), under the store's auto-accept (0.85), so nothing only heard ever counts until the creator or an admin accepts it, and against a value a name, folder or header gives it weighs half: it can question what the creator wrote, never replace it. The threshold stays where the plan put it because the labelled set (183 synthetic files, [engine](engine.md#analysis-phase-8-2026-10-14)) shows the misses are exactly the ones a person catches at a glance (half or double time, the relative key) and synthetic material can't stand in for real packs; raising it to auto-accept needs a labelled set of real packs first. Silent and undecodable audio are warnings, never refusals; the automated review holds a version (soft) when they are over a quarter of the audio heard. The waveform peaks are stored with the original's facts (measured from its bytes) and in the published details. Switch: `packs.analysis`. Engine 0.3.0; contract v1 gains the optional `analysis` field and job `analyze`, so older answers stay valid.

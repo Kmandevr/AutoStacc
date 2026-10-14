@@ -16,9 +16,10 @@ const direct = (app) => !app.config.production && app.env.ENGINE_URL;
 
 /** Queues a `process` job: check the archive at `key`, store each accepted file for `ownerScope`, suggest values. */
 export async function queueProcess(app, { jobId, key, ownerScope }) {
-  // Without suggestions switched on, the engine gets no vocabulary and suggests nothing.
-  const vocabulary = isOn(app, "packs.suggestions") ? { vocabulary: engineVocabulary() } : {};
-  const job = checkJob({ jobId, op: "process", bucket: FILES_BUCKET, key, ownerScope, ...vocabulary }, [FILES_BUCKET]);
+  // Without suggestions switched on, the engine gets no vocabulary and suggests nothing; analysis comes with them.
+  const suggest = isOn(app, "packs.suggestions");
+  const extra = suggest ? { vocabulary: engineVocabulary(), ...(isOn(app, "packs.analysis") ? { analyze: true } : {}) } : {};
+  const job = checkJob({ jobId, op: "process", bucket: FILES_BUCKET, key, ownerScope, ...extra }, [FILES_BUCKET]);
   if (!direct(app)) {
     if (!app.env.JOBS) fail(503, "engine_unavailable", "File processing isn't set up here yet.");
     await app.env.JOBS.send(job);

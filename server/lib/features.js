@@ -10,6 +10,9 @@ export const FEATURES = {
   "packs.builder": { on: true, label: "Pack Builder" },
   // Suggested kinds, instruments, tempos and keys from names and headers (the vocabulary sent with engine jobs).
   "packs.suggestions": { on: true, label: "Suggestions from names and headers" },
+  // Listening to audio (engine analysis: tempo, key, a waveform, silent or undecodable files for the automated review).
+  // Only with suggestions on; off, jobs run faster and suggestions come from names and headers alone.
+  "packs.analysis": { on: true, label: "Tempo and key from listening to audio" },
   // Several files as one ZIP: "Download folder (ZIP)" and /api/downloads/bundle (single downloads always work).
   "downloads.bundles": { on: true, label: "ZIP downloads" },
   // Your Stacc's personal collections, tags and saved searches (/api/collections, /api/tags, /api/saved-searches; the

@@ -1,0 +1,638 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "analysis": {
+    "analyzedMs": 300,
+    "peaks": [
+     93,
+     100,
+     99,
+     92,
+     94,
+     83,
+     93,
+     93,
+     97,
+     100,
+     92,
+     94,
+     97,
+     92,
+     95,
+     90,
+     97,
+     94,
+     90,
+     94,
+     95,
+     93,
+     92,
+     95,
+     90,
+     93,
+     95,
+     90,
+     93,
+     95,
+     92,
+     93,
+     95,
+     92,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     90,
+     93,
+     95,
+     90,
+     93,
+     95,
+     92,
+     93,
+     95,
+     92,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     90,
+     93,
+     95,
+     90,
+     93,
+     95,
+     92,
+     93,
+     95,
+     92,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     90,
+     93,
+     95,
+     90,
+     93,
+     95,
+     92,
+     93,
+     95,
+     92,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95,
+     93,
+     92,
+     95
+    ]
+   },
+   "by": "signature",
+   "crc32": 4190487208,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 300,
+    "embedded": {
+     "oneShot": true,
+     "rootNote": 60,
+     "timeSignature": "4/4"
+    },
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Drums/Kicks/Kick 01.wav",
+   "sha256": "50d7f0d3fa8d2cf14c522694e48acb6cdc6998388a6844f98a8c826a30f219ec",
+   "size": 79456,
+   "suggestions": [
+    {
+     "confidence": 0.85,
+     "field": "kind",
+     "origin": "embedded",
+     "reasons": [
+      "written in the file: one-shot",
+      "short: 0.3 s"
+     ],
+     "value": "one-shots"
+    },
+    {
+     "confidence": 0.94,
+     "field": "instrument",
+     "origin": "filename",
+     "reasons": [
+      "name: Kick",
+      "folder: Kicks"
+     ],
+     "value": "kick"
+    }
+   ]
+  },
+  {
+   "analysis": {
+    "analyzedMs": 3750,
+    "bpm": {
+     "confidence": 0.3,
+     "reasons": [
+      "the onsets repeat at this tempo",
+      "or 78 (half or double time)"
+     ],
+     "value": "156.2"
+    },
+    "key": {
+     "confidence": 1,
+     "reasons": [
+      "its notes fit A# major best"
+     ],
+     "value": "as-major"
+    },
+    "peaks": [
+     100,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96,
+     96
+    ]
+   },
+   "by": "signature",
+   "crc32": 1055398318,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 3750,
+    "embedded": {
+     "bpm": 128,
+     "oneShot": false,
+     "rootNote": 60,
+     "timeSignature": "4/4"
+    },
+    "encoding": "pcm",
+    "sampleRate": 48000
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Loops/128 BPM/Groove 128 Am.wav",
+   "sha256": "539adba143d4127bf8efc6d1d61826393e1bb0a211dc09c62f6ac339e9e57ed9",
+   "size": 1080076,
+   "suggestions": [
+    {
+     "confidence": 0.96,
+     "field": "kind",
+     "origin": "folder-name",
+     "reasons": [
+      "folder: Loops",
+      "written in the file: loop",
+      "2 whole bars at 128 bpm"
+     ],
+     "value": "loops"
+    },
+    {
+     "confidence": 0.91,
+     "field": "bpm",
+     "origin": "embedded",
+     "reasons": [
+      "written in the file: 128 bpm",
+      "name: 128",
+      "folder: 128 bpm",
+      "but 156.2",
+      "length is 2 whole bars"
+     ],
+     "value": "128"
+    },
+    {
+     "confidence": 0.6,
+     "field": "key",
+     "origin": "filename",
+     "reasons": [
+      "name: Am",
+      "but as-major"
+     ],
+     "value": "a-minor"
+    }
+   ]
+  },
+  {
+   "analysis": {
+    "analyzedMs": 500,
+    "peaks": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "by": "signature",
+   "crc32": 1453837006,
+   "facts": {
+    "bitDepth": 16,
+    "channels": 1,
+    "durationMs": 500,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "aiff",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "silent_audio",
+     "refused": false
+    }
+   ],
+   "mismatch": false,
+   "path": "Pack/Ambience/Air.aif",
+   "sha256": "ed8d349a8671e840c8436359398d0d5a22c12782958577e9882811493c2cbebf",
+   "size": 44154,
+   "suggestions": [
+    {
+     "confidence": 0.5,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "short: 0.5 s"
+     ],
+     "value": "one-shots"
+    },
+    {
+     "confidence": 0.7,
+     "field": "instrument",
+     "origin": "folder-name",
+     "reasons": [
+      "folder: Ambience"
+     ],
+     "value": "atmosphere"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 2329527148,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 2000,
+    "encoding": "flac",
+    "sampleRate": 48000
+   },
+   "format": "flac",
+   "ignored": false,
+   "issues": [
+    {
+     "code": "audio_does_not_decode",
+     "refused": false
+    }
+   ],
+   "mismatch": false,
+   "path": "Pack/Textures/Room.flac",
+   "sha256": "a06947dfdd72733032888bc4c87bf5eba394c25db93458c2959e74fdec3594e3",
+   "size": 42,
+   "suggestions": [
+    {
+     "confidence": 0.7,
+     "field": "instrument",
+     "origin": "folder-name",
+     "reasons": [
+      "folder: Textures"
+     ],
+     "value": "textures"
+    }
+   ]
+  },
+  {
+   "by": "signature",
+   "crc32": 868343724,
+   "facts": {
+    "durationMs": 16000,
+    "embedded": {
+     "bpm": 120,
+     "key": "d-minor",
+     "timeSignature": "4/4"
+    },
+    "lengthBeats": 32,
+    "midiFormat": 0,
+    "midiNotes": 8,
+    "midiTracks": 1,
+    "ppq": 96
+   },
+   "format": "midi",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/MIDI/Chords Am.mid",
+   "sha256": "4efac7d7df5ba0824b61645efdb2902914a3e576b56aa27985ce82f70f2b4412",
+   "size": 119,
+   "suggestions": [
+    {
+     "confidence": 0.95,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "format: midi"
+     ],
+     "value": "midi"
+    },
+    {
+     "confidence": 0.85,
+     "field": "bpm",
+     "origin": "embedded",
+     "reasons": [
+      "written in the file: 120 bpm"
+     ],
+     "value": "120"
+    },
+    {
+     "confidence": 0.5,
+     "field": "key",
+     "origin": "embedded",
+     "reasons": [
+      "written in the file: d-minor",
+      "but a-minor"
+     ],
+     "value": "d-minor"
+    },
+    {
+     "confidence": 0.6,
+     "field": "midiRole",
+     "origin": "rule",
+     "reasons": [
+      "32 beats long"
+     ],
+     "value": "pattern"
+    }
+   ]
+  },
+  {
+   "by": "extension",
+   "crc32": 1046165705,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Read me.txt",
+   "sha256": "8dc5112efd3eb128f746e718aa04153a0db6eee6c602f680081c236e686738b6",
+   "size": 34,
+   "suggestions": [
+    {
+     "confidence": 0.95,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "format: text"
+     ],
+     "value": "documents"
+    }
+   ]
+  },
+  {
+   "by": "extension",
+   "crc32": 3878696879,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Changelog.txt",
+   "sha256": "b9ff2e251ffafd029c57d711596bebd562078b6b1ec88010cc99e211b7d3aa7f",
+   "size": 50,
+   "suggestions": [
+    {
+     "confidence": 0.95,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "format: text"
+     ],
+     "value": "documents"
+    }
+   ]
+  }
+ ],
+ "folders": [
+  "Pack",
+  "Pack/Ambience",
+  "Pack/Drums",
+  "Pack/Drums/Kicks",
+  "Pack/Loops",
+  "Pack/Loops/128 BPM",
+  "Pack/MIDI",
+  "Pack/Textures"
+ ],
+ "totalSize": 1203931,
+ "zip64": false
+}

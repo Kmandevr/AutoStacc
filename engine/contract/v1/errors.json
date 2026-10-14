@@ -28,7 +28,9 @@
     "corrupt": "Its compressed data is damaged.",
     "content_does_not_match_name": "The bytes are a different kind of file than the name says.",
     "duplicate_name": "Same path as another file (warning).",
-    "case_collision": "Same path as another file except for letter case (warning)."
+    "case_collision": "Same path as another file except for letter case (warning).",
+    "silent_audio": "Nothing louder than -60 dBFS in what was analysed (warning; only when analysis was asked for).",
+    "audio_does_not_decode": "The audio couldn't be decoded for analysis (warning; only when analysis was asked for)."
   },
   "service": {
     "bad_request": "The job isn't valid JSON or misses fields.",

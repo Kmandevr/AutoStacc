@@ -2,7 +2,7 @@
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
 covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
-updated: 2026-10-13
+updated: 2026-10-14
 ---
 
 # Store
@@ -131,7 +131,7 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 `POST /api/downloads {fileId}` checks the requester (account or guest key), finds an active entitlement for the file's product, and returns `/api/downloads/<token>`: an HMAC-SHA256-signed statement (file, entitlement, requester, expiry in 5 minutes, signed with `DOWNLOAD_SIGNING_SECRET`). Redeeming it re-checks everything: signature, expiry, that the person holding the link is the one it was issued to, that the entitlement is still active (refunds revoke even issued links), and that the file belongs to that product. Then the Worker streams the object from the private bucket with `Content-Disposition: attachment` and `Cache-Control: private, no-store`. Storage keys never reach the browser, the bucket has no public URL, and every issue, serve and denial is logged in `download_events` (no IPs).
 
-**Several files at once** (`server/downloads/bundle.js`): `POST /api/downloads/bundle {fileIds}` (up to 2,000 files and 20 GB, files published from Pack Builder only) checks each file against its own product's entitlement and returns a 5-minute link of its own kind (`db1.`, bound to the requester); redeeming re-checks every file and entitlement, logs each file as served and streams a ZIP of the original bytes (stored entries, so nothing is recompressed; `zip.js`). A file a newer Pac version retired reaches only people who had it before, for 30 days (`stillDelivered`, [packs](packs.md)). Feature switch `downloads.bundles` (`server/lib/features.js`).
+**Several files at once** (`server/downloads/bundle.js`): `POST /api/downloads/bundle {fileIds}` (up to 2,000 files and 20 GB, files published from Pack Builder only) checks each file against its own product's entitlement and returns a 5-minute link of its own kind (`db1.`, bound to the requester); redeeming re-checks every file and entitlement, logs each file as served and streams a ZIP of the original bytes (stored entries, so nothing is recompressed; `zip.js`). A file a newer Pac version retired reaches only people who had it before, for 30 days (`stillDelivered`, [packs](packs.md)). Feature switch `downloads.bundles` (`server/lib/features.js`; the Pack Builder's own switches, `packs.*`, are in [packs](packs.md)).
 
 ## Email
 
