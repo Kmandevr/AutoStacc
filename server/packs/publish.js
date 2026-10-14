@@ -1,11 +1,13 @@
 // Publishing a ready version: its manifest becomes the files for this Pac in every product that sells the Pac (server/files/publish-rows.js keeps
 // unchanged files' ids and retires the rest), the previous live version is superseded and the Pac is free for its next
 // version, all in one D1 batch (all or nothing) that runs only while the version is still ready (or held for review).
+// Then each product's contents (server/discovery/contents.js) are worked out again from what is now published.
 import { stmt, newId, now, guardStmt } from "../lib/db.js";
 import { loadManifest } from "./manifest.js";
 import { publishStmts } from "../files/publish-rows.js";
 import { releaseDraftStmt } from "./versions.js";
 import { productsWithPac } from "../catalog/products.js";
+import { refreshContents } from "../discovery/contents.js";
 
 // The file's kind (how Your Stacc groups it): its resolved kind (the creator's, a folder's, or an accepted or sure
 // suggestion); failing that, the engine's best guess from this confidence, only for grouping, never shown as a fact.
@@ -46,5 +48,11 @@ export async function publishVersion(app, version, { reviewedBy = null } = {}) {
     stmt(db, "UPDATE pacs SET live_version_id = ?, updated_at = ? WHERE id = ?", version.id, t, version.pac_id),
     releaseDraftStmt(db, version.pac_id, version.id)
   ]);
+  // What each product now contains, for its page and the store's filters (after the commit: only published files count).
+  // A failure here never undoes or fails the publish (already committed): it's logged, and the next publish, admin file
+  // change or daily sweep (server/maintenance/) works the contents out again.
+  for (const p of products) {
+    await refreshContents(app, p.id).catch((e) => console.error(`contents ${p.id}:`, e && e.message));
+  }
   return { files: entries.length };
 }

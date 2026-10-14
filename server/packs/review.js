@@ -12,10 +12,10 @@ const ext = (path) => (String(path).match(/\.([a-z0-9]{1,12})$/i) || [])[1]?.toL
 
 /**
  * result: the engine's answer; kept / refused: the import's split ({ path, codes } for refused); existingHashes: how many
- * kept files the owner already had stored before this version; previous: the live version's files { sha256: size } or
- * null. Returns { verdict: "pass" | "hold", flags: [{ code, hard, count, examples }] }.
+ * kept files the owner already had stored elsewhere before this version; revision: how much of the live version this
+ * one drops ({ files, bytes, removed, goneBytes }: removed files, and bytes of removed or replaced files) or null. Returns { verdict: "pass" | "hold", flags: [{ code, hard, count, examples }] }.
  */
-export function review({ result, kept, refused, existingHashes = 0, previous = null }) {
+export function review({ result, kept, refused, existingHashes = 0, revision = null }) {
   const flags = [];
   const flag = (code, hard, paths) => paths.length && flags.push({ code, hard, count: paths.length, examples: paths.slice(0, 5) });
   const refusedWith = (set) => refused.filter((r) => r.codes.some((c) => set.has(c))).map((r) => r.path);
@@ -31,15 +31,9 @@ export function review({ result, kept, refused, existingHashes = 0, previous = n
   const unknown = kept.filter((f) => !f.format || f.format === "unknown").map((f) => f.path);
   if (kept.length && unknown.length / kept.length > 0.5) flag("mostly_unknown_formats", false, unknown);
   if (kept.length && existingHashes === kept.length) flag("all_duplicates", false, kept.map((f) => f.path));
-  if (previous) {
-    const before = Object.entries(previous);
-    const now = new Set(kept.map((f) => f.sha256));
-    const removed = before.filter(([sha]) => !now.has(sha));
-    const bytesBefore = before.reduce((n, [, size]) => n + size, 0);
-    const bytesGone = removed.reduce((n, [, size]) => n + size, 0);
-    if (before.length && (removed.length / before.length > 0.25 || (bytesBefore && bytesGone / bytesBefore > 0.5))) {
-      flags.push({ code: "big_revision", hard: false, count: removed.length, examples: [] });
-    }
+  const r = revision;
+  if (r && r.files && (r.removed / r.files > 0.25 || (r.bytes && r.goneBytes / r.bytes > 0.5))) {
+    flags.push({ code: "big_revision", hard: false, count: r.removed, examples: [] });
   }
   return { verdict: flags.length ? "hold" : "pass", flags };
 }

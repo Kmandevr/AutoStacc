@@ -30,6 +30,17 @@
       `<li>${e(FLAGS[f.code] || f.code)} (${f.count})${f.hard ? " · always reviewed by AutoStacc" : ""}${f.examples && f.examples.length ? `: ${f.examples.map((x) => `<code>${e(x)}</code>`).join(", ")}` : ""}</li>`).join("")}</ul></details>`;
   }
 
+  // As a revision of the live version (server/packs/revision.js): what changes for buyers when this is published.
+  function changes(d) {
+    if (!d) return "";
+    const c = d.counts;
+    const removed = d.removed.map((r) => `<li><code>${e(r.folderPath ? `${r.folderPath}/` : "")}${e(r.filename)}</code></li>`).join("");
+    return `<p>Compared with the live version: ${c.same} unchanged, ${c.moved} moved or renamed, ${c.replaced} replaced, ${c.added} new, ${c.removed} removed.
+      Unchanged and moved files keep their values and stay the same files for buyers.</p>
+      ${c.removed + c.replaced ? `<p class="small-print">Buyers who already have this pack keep removed and replaced files for 30 days after you publish, with a notice in Your Stacc.</p>` : ""}
+      ${removed ? `<details><summary>${plural(c.removed, "file")} removed</summary><ul>${removed}</ul>${c.removed > d.removed.length ? `<p class="small-print">and ${c.removed - d.removed.length} more</p>` : ""}</details>` : ""}`;
+  }
+
   function actions(v, admin) {
     const s = v.stats || {};
     if (v.status === "ready") {
@@ -55,6 +66,7 @@
     return `${head}
       <p>${plural(s.files, "file")} kept (${mb(s.bytes || 0)}) in ${plural(s.folders, "folder")}${s.ignored ? `; ${plural(s.ignored, "system file")} ignored` : ""}.</p>
       ${refused ? `<details open><summary>${plural(s.refused.length, "file")} refused (never reach customers)</summary><ul>${refused}</ul></details>` : ""}
+      ${changes(s.diff)}
       ${flags(s.review)}
       ${actions(v, admin)}
       <p class="small-print">Suggestions come from names and the files' own headers; a percentage is how sure the engine is. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>

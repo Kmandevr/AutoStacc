@@ -4,52 +4,18 @@
 // with no way to race past it, and nobody reaches another creator's packs (404) or changes them while impersonating.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import crypto from "node:crypto";
-import { ROOT, sql } from "../support/client.js";
+import { sql } from "../support/client.js";
 import { newBuyer, adminClient, freshAdmin } from "../support/flows.js";
+import * as P from "../support/packs.js";
 
-const caseZip = (name) => fs.readFileSync(path.join(ROOT, "engine/conformance/cases", `${name}.zip`));
-const slug = (tag) => `${tag}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const S = "/api/studio/packs";
+const { caseZip, create, build, S } = P;
 
 export default (ctx) => describe("packs in the Studio", () => {
   const base = () => ctx.mock.url;
   const db = (q) => sql(ctx.mock.stateDir, q);
 
-  async function creatorWithProducts(tag, n = 1) {
-    const { c, user } = await newBuyer(base(), tag);
-    const cr = await c.post("/api/studio/creators", { name: `Packer ${tag}`, slug: slug(tag) });
-    assert.equal(cr.status, 201, JSON.stringify(cr.data));
-    const pr = await c.post(`/api/studio/creators/${cr.data.creator.id}/projects`, { name: "Kits", slug: "kits" });
-    const products = [];
-    for (let i = 0; i < n; i++) {
-      const made = await c.post(`/api/studio/projects/${pr.data.project.id}/products`, { title: `Kit ${i + 1}`, type: "sample-pack", priceCents: 1500, description: "Drums.", includes: ["kicks"] });
-      assert.equal(made.status, 201, JSON.stringify(made.data));
-      products.push(made.data.product);
-    }
-    return { c, user, creator: cr.data.creator, products };
-  }
-
-  const create = (c, productId, zip) => c.post(`${S}/products/${productId}/versions`, { filename: "kit.zip", size: zip.length, idempotencyKey: crypto.randomUUID() });
-
-  async function build(c, productId, zip) {
-    const created = await create(c, productId, zip);
-    assert.equal(created.status, 201, JSON.stringify(created.data));
-    const { version, upload } = created.data;
-    const put = await c.req("PUT", `${S}/uploads/${upload.uploadId}/parts/1`, { raw: zip, headers: { "Content-Type": "application/octet-stream" } });
-    assert.equal(put.status, 200, JSON.stringify(put.data));
-    const done = await c.post(`${S}/uploads/${upload.uploadId}/complete`, {});
-    assert.equal(done.status, 200, JSON.stringify(done.data));
-    let v = done.data.version;
-    for (let i = 0; i < 60 && v.status === "processing"; i++) {
-      await wait(250);
-      v = (await c.get(`${S}/versions/${version.id}`)).data.version;
-    }
-    return { version: v, upload };
-  }
+  const creatorWithProducts = (tag, n) => P.creatorWithProducts(base(), tag, n);
 
   test("a creator's clean pack publishes at once into their own product; its Pac is made on first use", async () => {
     const { c, products: [product] } = await creatorWithProducts("pk-clean");

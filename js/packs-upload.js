@@ -1,9 +1,10 @@
-// Pack Builder (Control Center and Studio): uploads a Pac's ZIP in the parts the store planned, three at a time,
+// Pack Builder (Control Center and Studio): uploads a Pac's ZIP (or, for a revision, a thin copy of only what the store
+// doesn't have yet, js/packs-thin.js) in the parts the store planned, three at a time,
 // skipping parts already there, so a dropped connection or a reload resumes instead of starting over (the same file and
 // target reuse the same version through its idempotency key, kept in this tab's sessionStorage).
-// Sets GS.packUpload.upload({ base, create, body }, file, onProgress) → the version once processing has started: base is
-// the scope's API prefix (/api/admin/packs or /api/studio/packs), create the URL that makes a version, body what else
-// it needs. Loads before js/admin-packs.js and js/studio-packs.js. Needs js/util.js.
+// Sets GS.packUpload.upload({ base, create, body, have }, file, onProgress, onStatus) → the version once processing has
+// started: base is the scope's API prefix (/api/admin/packs or /api/studio/packs), create the URL that makes a version,
+// body what else it needs, have the URL and body asking which files the store has. Loads before js/admin-packs.js and js/studio-packs.js. Needs js/util.js.
 (function () {
   "use strict";
 
@@ -28,11 +29,17 @@
     }
   }
 
-  async function upload({ base, create, body = {} }, file, onProgress) {
-    const memo = keyFor(create, file);
+  // have: the scope's POST …/have ({ url, body }); with it, files the store already has stay out of the upload
+  // (js/packs-thin.js). onStatus(text): what's happening besides the progress bar.
+  async function upload({ base, create, body = {}, have = null }, file, onProgress, onStatus = () => {}) {
+    const thin = have && window.GS.packThin ? await window.GS.packThin.prepare(file, have, onStatus) : null;
+    const original = file;
+    if (thin) file = thin.blob;
+    // The thin copy's size is part of the key: if what the store has changed since, it's a different upload.
+    const memo = `${keyFor(create, original)}:${file.size}`;
     const idempotencyKey = recall(memo) || crypto.randomUUID();
     remember(memo, idempotencyKey);
-    const made = await api(create, { method: "POST", body: { ...body, filename: file.name, size: file.size, idempotencyKey } });
+    const made = await api(create, { method: "POST", body: { ...body, filename: original.name, size: file.size, idempotencyKey, ...(thin ? { carry: thin.carry } : {}) } });
     // Refused (no room, a stopped upload): the next try starts a fresh version. Offline: keep the key to resume.
     if (!made.ok) {
       if (made.status >= 400 && made.status < 500) remember(memo, null);

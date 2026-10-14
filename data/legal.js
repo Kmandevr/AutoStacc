@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-10",
+    updated: "2026-10-13",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -30,7 +30,7 @@ window.LEGAL = [
       { id: "account", heading: "Your account", body: [
         "When you create an account: your name, your email address, and your password, which is stored only as a one-way hash (nobody, including AutoStacc, can read it back). Whether you've confirmed your email, and when the account was made.",
         "When you sign in: a session, so you stay signed in until 30 days after you last use the site (or until you close your browser, if you untick \"Keep me logged in\"). Each session records the IP address and browser it started from; you can see them, and sign any of them out, under [Settings › Security](/settings/security).",
-        "If you follow projects, turn on Auto-Stacc, vote in polls, save products to your wishlist or choose which emails you get, those choices are stored with your account."
+        "If you follow projects, turn on Auto-Stacc, vote in polls, save products to your wishlist, organize Your Stacc with collections, tags and saved searches, or choose which emails you get, those choices are stored with your account. Collections, tags and saved searches are yours alone: nobody else, including the artists, sees them."
       ] },
       { id: "purchases", heading: "Orders and purchases", body: [
         "For every order: the email it was placed with, what was in it, the prices charged, any promo code, its status (paid, refunded and so on) and when. Stripe's reference numbers for the payment are kept so refunds and disputes can be matched to the order.",
@@ -87,7 +87,7 @@ window.LEGAL = [
       ] },
       { id: "keeping", heading: "How long things are kept", body: [
         { list: [
-          "Your account and its choices (including your wishlist): until you delete it.",
+          "Your account and its choices (including your wishlist, collections, tags and saved searches): until you delete it.",
           "The store's history in your browser: at most 90 days, or until you forget it.",
           "Sessions: until you sign out, sign them out, or 30 days pass without you using the site.",
           "Download links: a few minutes. The record that a link was made and used is kept with the order's history; when an account is deleted, it no longer names the account.",
@@ -105,7 +105,7 @@ window.LEGAL = [
           "See and download your data: [Settings › Privacy and data](/settings/privacy).",
           "Correct your name or change your email: [Settings › Profile](/settings/profile). A new email is confirmed by a link sent to it, and the old address is told.",
           "Stop optional emails: [Settings › Emails](/settings/email).",
-          "Delete your account: [Settings › Privacy and data](/settings/privacy). Your sign-ins, follows, wishlist, votes and choices are erased, your library stops downloading, and your orders stay only as anonymous sales records.",
+          "Delete your account: [Settings › Privacy and data](/settings/privacy). Your sign-ins, follows, wishlist, collections, tags, saved searches, votes and choices are erased, your library stops downloading, and your orders stay only as anonymous sales records.",
           "Anything else: {contact}"
         ] },
         "Depending on where you live, data-protection law may give you further rights. Ask, and AutoStacc will help."

@@ -1,0 +1,34 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "crc32": 1046165705,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Read me.txt",
+   "sha256": "8dc5112efd3eb128f746e718aa04153a0db6eee6c602f680081c236e686738b6",
+   "size": 34
+  },
+  {
+   "by": "extension",
+   "crc32": 3878696879,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Pack/Changelog.txt",
+   "sha256": "b9ff2e251ffafd029c57d711596bebd562078b6b1ec88010cc99e211b7d3aa7f",
+   "size": 50
+  }
+ ],
+ "folders": [
+  "Pack"
+ ],
+ "totalSize": 84,
+ "zip64": false
+}
