@@ -8,7 +8,7 @@ import { getProduct } from "../catalog/products.js";
 import { newFileKey, previewKey, putPreview, safeFilename, peekPreview, deletePreview } from "../storage/buckets.js";
 import { putVerifiedFile } from "../files/upload.js";
 import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
-import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
+import { countKept, setStatus, deactivate, unpublishEmptyStudioProducts } from "../files/files.js";
 import { audit } from "../audit/log.js";
 import { refreshContents } from "../discovery/contents.js";
 
@@ -43,7 +43,7 @@ async function uploadFile(app, { productId }) {
   const t = now();
   await run(app.db, `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind, status, status_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?, ?, ?, ?)`, fileId, p.id, key, filename, label, contentType, object.size, t, pacId, kind, status, t);
-  if (replaces && status === "published") await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", replaces);
+  if (replaces && status === "published") await deactivate(app.db, replaces);
   await audit(app, replaces ? "product.file_replaced" : "product.file_added", { targetType: "product", targetId: p.id,
     detail: { fileId, filename, sizeBytes: object.size, status, replaced: status === "published" ? replaces : null } });
   return json({ ok: true, fileId, sizeBytes: object.size, status, replaced: status === "published" ? replaces : null }, 201);
@@ -70,11 +70,13 @@ async function fileStatus(app, { fileId }) {
   return json({ ok: true, status });
 }
 
-// Files are deactivated, not deleted: the object stays in R2 for the record, but no new download can reach it.
+// Files are deactivated: no new download can reach them, the row stays for the record, and the bytes of one that isn't a
+// stored original go a day later (files/retention.js).
 async function removeFile(app, { fileId }) {
   await requireAdmin(app);
-  const res = await run(app.db, "UPDATE product_files SET active = 0 WHERE id = ?", str(fileId, "fileId", { max: 40 }));
-  if (!res.meta.changes) fail(404, "not_found", "No file with that id.");
+  const fid = str(fileId, "fileId", { max: 40 });
+  if (!(await first(app.db, "SELECT id FROM product_files WHERE id = ?", fid))) fail(404, "not_found", "No file with that id.");
+  await deactivate(app.db, fid);
   await unpublishEmptyStudioProducts(app.db);
   await refreshContentsOf(app, fileId);
   await audit(app, "product.file_deactivated", { targetType: "file", targetId: fileId });

@@ -148,8 +148,18 @@ export default (ctx) => describe("usage: the budget guard", () => {
     assert.equal(first.status, 201, JSON.stringify(first.data));
     assert.equal((await c.req("DELETE", `/api/studio/products/${products[0].id}/files/${first.data.file.id}`)).status, 200);
     assert.equal((await put()).data.error.code, "quota_exceeded", "deleting and uploading again can't fill storage");
-    db(`UPDATE product_files SET status_at = '2000-01-01T00:00:00.000Z' WHERE id = '${first.data.file.id}'`);
+    // Not before its day is up; and a file removed before removal times were kept (no removed_at) is never purged.
+    const removed = db(`SELECT removed_at FROM product_files WHERE id = '${first.data.file.id}'`)[0].removed_at;
+    assert.ok(removed);
+    db(`INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, kind, status, status_at)
+      SELECT 'pf_oldremoved', product_id, 'files/old/kept.wav', 'kept.wav', '', content_type, 10, 99, 0, '2000-01-01T00:00:00.000Z', kind, 'deleted', '2000-01-01T00:00:00.000Z'
+      FROM product_files WHERE id = '${first.data.file.id}'`);
+    await sweep();
+    assert.equal(JSON.parse(db(`SELECT meta FROM product_files WHERE id = '${first.data.file.id}'`)[0].meta || "{}").purgedAt, undefined, "kept for its day");
+    db(`UPDATE product_files SET removed_at = '2000-01-01T00:00:00.000Z' WHERE id = '${first.data.file.id}'`);
     assert.ok((await sweep()).purgedFiles >= 1);
+    assert.equal(db("SELECT meta FROM product_files WHERE id = 'pf_oldremoved'")[0].meta, null, "removed before removal times: kept");
+    db("DELETE FROM product_files WHERE id = 'pf_oldremoved'");
     assert.ok(JSON.parse(db(`SELECT meta FROM product_files WHERE id = '${first.data.file.id}'`)[0].meta).purgedAt);
     assert.equal((await put()).status, 201, "the room is back once the bytes are gone");
   });
