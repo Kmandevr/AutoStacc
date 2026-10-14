@@ -59,9 +59,22 @@
     return "";
   }
 
+  // Why a version stopped or waits (server/packs/process.js), in plain words; anything else is shown as it is.
+  const NOTES = {
+    waiting_for_allowance: "waiting: AutoStacc has used this month's processing allowance, so checking starts on the 1st (or sooner if more is added)",
+    storage_full: "AutoStacc's file storage is full for now",
+    quota_exceeded: "the files don't fit in your storage",
+    too_many_files: "more files than one version can hold",
+    timed_out: "checking took too long",
+    not_queued: "checking couldn't start"
+  };
+
   function render(v, { admin = false } = {}) {
     const s = v.stats || {};
-    const head = `<p><strong>Version ${v.number}</strong> · ${e(STATE[v.status] || v.status)}${v.note ? ` (${e(v.note)})` : ""}</p>`;
+    const head = `<p><strong>Version ${v.number}</strong> · ${e(STATE[v.status] || v.status)}${v.note ? ` (${e(NOTES[v.note] || v.note)})` : ""}</p>`;
+    if (v.status === "processing" && v.note === "waiting_for_allowance") {
+      return `${head}<div class="actions"><button class="btn ghost" type="button" data-pack-discard>Discard</button></div>`;
+    }
     if (v.status === "processing") return `${head}<p class="small-print">Checking every file… this page updates by itself.</p>`;
     if (!["ready", "in_review", "published", "superseded"].includes(v.status)) return head;
     const refused = (s.refused || []).map((r) => `<li><code>${e(r.path)}</code>: ${e(r.codes.join(", "))}</li>`).join("");
@@ -71,6 +84,7 @@
       ${changes(s.diff)}
       ${flags(s.review)}
       ${actions(v, admin)}
+      <p><a class="btn ghost small" href="/api/${admin ? "admin" : "studio"}/packs/versions/${e(v.id)}/download" download>Download this version's originals (ZIP)</a></p>
       <p class="small-print">Suggestions come from names, the files' own headers and, marked "heard", listening to the audio; a percentage is how sure the engine is, and what it only heard is never sure enough to count without you. Your own values and folder defaults always win, and nothing suggested is shown to customers as fact.</p>
       ${window.GS.packReview.render(v)}`;
   }

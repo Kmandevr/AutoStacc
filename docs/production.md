@@ -2,7 +2,7 @@
 title: Production requirements
 summary: What makes AutoStacc fit to run as a public store (trust pages, licences, support, privacy, security, accessibility, SEO) and the rules every change must keep.
 covers: [data/legal.js, data/help.js, data/licenses.js, data/product-types.js, data/site.js, scripts/lib/trust-pages.js, scripts/lib/rich-text.js, scripts/seo-test.js, _headers, server/files/policy.js, server/sites/images.js, server/sites/render.js, server/auth/index.js, server/lib/ratelimit.js, server/account/, server/email/preferences.js, server/analytics/routes.js, server/downloads/, server/impersonation/, js/layout.js]
-updated: 2026-10-13
+updated: 2026-10-14
 ---
 
 # Production requirements
@@ -51,7 +51,7 @@ Users can see their data, change their name and password, sign out devices, choo
 - The browser never decides prices, ownership, payment results or admin rights; the server and Stripe do. Every account-owned route checks the session; another person's id answers 404. Admin routes answer 404 to non-admins whatever the page shows.
 - Rate limits: Better Auth limits sign-in, sign-up, resets and password changes; store routes call `limit()` (`server/lib/ratelimit.js`), counted per IP in the `rateLimit` table; counters idle for a day are deleted (about one limited request in a hundred runs the purge), which /privacy promises. Support impersonation can't use Better Auth's endpoints, refuses writes a route hasn't allowed and records every allowed one in the append-only audit log (`server/impersonation/policy.js`).
 - `_headers`: HSTS and a baseline content policy on every page; account and store pages add a strict policy (own scripts only). Creators' Studio pages are served with `script-src 'none'` (`server/sites/render.js`). Public pages don't restrict scripts because the music players come from several services; tightening that needs the player origins checked against the live site first.
-- Downloads: private files, links made per request, bound to the buyer and expiring after 5 minutes (`downloadTtlSeconds`). ZIPs of several files (`POST /api/downloads/bundle`) follow the same rules per file: each checked against its own product's entitlement when the link is made and again when used, names inside the ZIP cleaned so nothing can unpack outside its folder ([packs](packs.md)).
+- Downloads: private files, links made per request, bound to the buyer and expiring after 5 minutes (`downloadTtlSeconds`). ZIPs of several files (`POST /api/downloads/bundle`) follow the same rules per file: each checked against its own product's entitlement when the link is made and again when used, names inside the ZIP cleaned so nothing can unpack outside its folder, and only files whose checksum is on record (Pack Builder files, and older files once the sweep has hashed them) ([packs](packs.md)).
 
 ## Accessibility
 

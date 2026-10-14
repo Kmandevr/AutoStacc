@@ -10,6 +10,8 @@ import { limit } from "../lib/ratelimit.js";
 import { LIMITS, filesQuotaOf } from "../creators/policy.js";
 import { requireOwnProduct } from "../creators/products.js";
 import { storageUsed, inUseSql } from "../creators/storage.js";
+import { storedSql, storedBytes } from "../usage/storage.js";
+import { capBytes, meterStmts, STORAGE_FULL } from "../usage/usage.js";
 import { checkUpload, contentTypeFor, looksLike, extensionOf, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { countKept, setStatus, unpublishEmptyStudioProducts } from "../files/files.js";
 import { putVerifiedFile } from "../files/upload.js";
@@ -31,6 +33,9 @@ async function upload(app, { productId }) {
   const quota = filesQuotaOf(creator);
   const full = () => fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota / 1048576)} MB of file storage. Remove a file first.`);
   if (used + size > quota) full();
+  // All of AutoStacc's storage creators may fill (server/usage/): checked again in the insert below.
+  const cap = await capBytes(app.db);
+  if ((await storedBytes(app.db)) + size > cap) fail(409, "storage_full", STORAGE_FULL);
   const key = newFileKey(product.id, filename);
   const { object, contentType } = await putVerifiedFile(app, key, filename, app.request.body);
   const status = creator.trusted ? "published" : "pending";
@@ -41,12 +46,14 @@ async function upload(app, { productId }) {
   const res = await run(app.db,
     `INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, pac_id, kind, status, status_at)
      SELECT ?2, ?3, ?4, ?5, '', ?6, ?7, 0, 1, ?8, NULL, '', ?9, ?8
-     WHERE ${inUseSql("?1")} + ?7 <= ?10`,
-    creator.id, id, product.id, key, filename, contentType, object.size, t, status, quota);
+     WHERE ${inUseSql("?1")} + ?7 <= ?10 AND ${storedSql()} + ?7 <= ?11`,
+    creator.id, id, product.id, key, filename, contentType, object.size, t, status, quota, cap);
   if (!res.meta.changes) {
     await deleteFile(app.env, key);
+    if ((await storedBytes(app.db)) + object.size > cap) fail(409, "storage_full", STORAGE_FULL);
     full();
   }
+  await app.db.batch(meterStmts(app.db, { class_a: 1 }));
   if (status === "pending") await alertAdmins(app, { key: `file:${id}`, title: "a creator's file is waiting for approval",
     lines: [`${creator.name} (/${creator.slug}) uploaded ${filename} to "${product.title}".`, "Publish or reject it in the Control Center, Products."] });
   await recordEvent(app.db, { productId: product.id, kind: "file_added", actorId: user.id, detail: { filename } });

@@ -84,6 +84,16 @@
   {
    "by": "extension",
    "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Notes.txt",
+   "size": 6840
+  },
+  {
+   "by": "extension",
+   "facts": {},
    "format": "ogg",
    "ignored": false,
    "issues": [],
@@ -95,6 +105,6 @@
  "folders": [
   "Sounds"
  ],
- "totalSize": 1777639,
+ "totalSize": 1784479,
  "zip64": false
 }

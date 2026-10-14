@@ -5,6 +5,7 @@ window.FEATURES = {
  "packs.suggestions": true,
  "packs.analysis": true,
  "downloads.bundles": true,
+ "downloads.deflate": false,
  "library.collections": true,
  "store.derivedFacets": true,
  "product.contentsTree": true

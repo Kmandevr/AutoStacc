@@ -786,6 +786,29 @@
    "size": 44154
   },
   {
+   "by": "extension",
+   "crc32": 722024619,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Notes.txt",
+   "sha256": "b6453e933f437754baed09c3c3a0d5f13fe5531865515bc29765f85c6ac88742",
+   "size": 6840,
+   "suggestions": [
+    {
+     "confidence": 0.95,
+     "field": "kind",
+     "origin": "rule",
+     "reasons": [
+      "format: text"
+     ],
+     "value": "documents"
+    }
+   ]
+  },
+  {
    "by": "signature",
    "crc32": 4213010339,
    "facts": {},
@@ -812,6 +835,6 @@
  "folders": [
   "Sounds"
  ],
- "totalSize": 1777639,
+ "totalSize": 1784479,
  "zip64": false
 }

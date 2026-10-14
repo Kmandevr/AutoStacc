@@ -1,13 +1,13 @@
 ---
 title: Pack Builder and processing engine
-summary: PARTLY BUILT. Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
-covers: [server/packs/, server/blobs/, server/maintenance/, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
+summary: BUILT (Phases 0–9; Phase 10 optional). Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
+covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
 updated: 2026-10-14
 ---
 
 # Pack Builder and processing engine
 
-> **Partly built (2026-10-10).** This note is the approved plan (owner, 2026-10-10); the status of each phase is below and in section F. Today's older file handling is in [store](store.md) and [library](library.md); decisions: [decisions](decisions.md). Work is tracked in issue #101.
+> **Built, Phases 0–9 (2026-10-14).** This note is the approved plan (owner, 2026-10-10) with what was built and where it differs, below and in section F. Phase 10 (previews, fingerprinting) is optional and open (#112); owner decisions and setup steps left: #111; real-material calibration of analysis: #113. Today's older file handling is in [store](store.md) and [library](library.md); decisions: [decisions](decisions.md). Work is tracked in issue #101.
 
 ## What's built
 
@@ -448,7 +448,7 @@ Reviews: `architect` before Phase 3; `security-reviewer` + `backend-reviewer` af
 | Layer | Policy |
 | --- | --- |
 | **Stored originals** | Exactly as uploaded; no at-rest compression. Audio dominates and barely deflates (WAV ~3–10%); FLAC, MP3, OGG, ZIP, `.als` and images are already compressed |
-| **Transport ZIP** | Standard ZIP/ZIP64. **Store** by default (zero CPU, exact Content-Length). **Deflate** only when the measured probe ratio ≤0.8 and size ≤8 MB (MIDI, text, JSON/XML presets), using variants made once by the engine, stored as derived objects and verified by inflate + re-hash. Behind a flag |
+| **Transport ZIP** | Standard ZIP/ZIP64. **Store** by default (zero CPU, exact Content-Length). **Deflate** only when the measured probe ratio ≤0.8 and size ≤8 MB (MIDI, text, JSON/XML presets), using variants made once by the engine, stored as derived objects and verified by inflate + re-hash. Behind a flag. **Built (Phase 9, 2026-10-14)**, switch `downloads.deflate`, off by default: the daily sweep, not the engine, makes them (`server/downloads/variants.js`: MIDI, presets, SFZ/EXS, REAPER projects and text from 64 bytes to 8 MB, published; deflated to 80% or less with the built-in CompressionStream, inflated again and re-hashed before being kept at `variants/<blob>.deflate`; the ratio is recorded either way, `blobs.compress_ratio`/`deflate_bytes`, migration 0022), and bundles carry them deflated with the original's CRC and size. They count toward the storage cap and go with their original |
 | **Previews** | Separate `PREVIEWS` bucket, never replacing originals |
 | **Never** | Transcoding, resampling, bit-depth or channel changes, rewriting MIDI/presets/projects, recompressing archives |
 
@@ -562,6 +562,8 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 - bundle time to first byte <500 ms
 - search p95 within ±20%
 
+> **Measured (Phase 9, 2026-10-14)** with `node test/bench/store-perf.js` (a local store and the real engine, a 2,000-file 17 MB pack; `test/bench/out/store-perf.md`): create a version 67 ms; upload 432 ms; check all 2,000 files and import them 29 s (the engine, with analysis, writing each original through the local storage relay; on Cloudflare the engine Worker answers from R2 instead); load the version for review 139 ms; **publish 282 ms**; a buyer's library 47 ms; a ZIP link for 2,000 files 61 ms, **its first byte 86 ms**, the whole 17 MB 3.7 s; the daily sweep 320 ms. Search with 3,000 products is timed by the discovery API suite (within a few percent of before, Phase 7). Engine throughput and the 1 GB pack: [engine](engine.md).
+
 ---
 
 ## Reality check: what works, what doesn't, limits, best practices, effort
@@ -616,6 +618,16 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
    - At 80% of any allowance: admin alert, and the optional analysis stage is skipped (suggestions only from filenames and tags).
    - At 95%: new processing jobs wait in the queue with "processing resumes on the 1st" shown to the creator, unless the owner presses "allow spending this month" (audited).
    - Cloudflare's own billing notification is set as a backup alert ([store-setup](store-setup.md) step).
+> **Built (Phase 9, 2026-10-14)**, rules 4 and 5, in `server/usage/` (a leaf module the packs and studio code call):
+> - **Meters** (`usage_meters`, UTC months): Container time is each job's recorded time (the engine Worker's `wallMs`) plus 20 s per attempt for its start-up and `sleepAfter` (6 min when no time was recorded); Class A writes are each upload's parts plus two, each single file, and two per stored file plus two per job. They are counted inside the batch that finishes the job or upload (the import's guard, or "only while still running/open"), so a retry or a second look never counts twice. Storage is measured live from what the database knows is stored (`storage.js`: stored originals, delivered files that aren't, archives on their way, creators' images). Estimates, not Cloudflare's bill.
+> - **80%** of any allowance: one admin alert a month per meter and level, and jobs skip the optional audio analysis.
+> - **95%**: a new version waits (job `queued`, version noted `waiting_for_allowance`, shown as "checking starts on the 1st") and can be discarded. The daily sweep sends waiting jobs three at a time, oldest first, once the allowance allows (a new month, or the owner's override); a creator's look sends theirs only when it's first in line. A job's time-out counts from when it's sent (`processing_jobs.sent_at`, migration 0021). Soft: two requests at once can both see 94% and both go ahead.
+> - **Override:** "Allow spending this month" in the Control Center (Usage and storage; setting `usage_override`, audited).
+> - **Storage cap:** creators' uploads stop once AutoStacc would store more than the cap (setting `storage_cap_gb`, default 9 GB of the free 10 GB, set in the same place): checked in the same atomic insert as each creator's quota for a pack archive and a single file, and at import for the unpacked size. AutoStacc's own uploads aren't held. `409 storage_full`.
+> - **Holding room:** an archive upload with no part for 24 hours is dropped by the sweep (a reservation counts at its full size), and a removed single file's bytes are deleted a day after it's removed, counting against its creator's quota until then (`server/files/retention.js`); so neither abandoned reservations nor deleting and uploading again can fill the cap. Storage pauses processing only past the larger of the free 10 GB and the owner's cap (storage the owner chose to pay for). A waiting job whose version ended is cancelled and never blocks the line.
+> - **Older files' checksums** (the plan's "legacy import"): the daily sweep reads up to 512 MB a day of delivered files that aren't stored originals and records their SHA-256 and CRC-32 in `product_files.meta` (`server/files/legacy.js`, streamed), after which they join ZIP downloads; a missing or wrong-sized object is marked and the admins told. They aren't turned into stored originals: their storage and deletion rules stay as they were. Done in the store, not the Container: it's a hash, not a parse, and costs no Container time.
+> - Not built: Cloudflare's own billing notification (an owner step in the Cloudflare dashboard).
+
 6. **Phase 0 measures real cost per GB processed** on `basic`, and the numbers go into `docs/decisions.md` before anything is enabled for creators.
 
 ### Best practices adopted

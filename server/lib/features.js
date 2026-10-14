@@ -1,7 +1,8 @@
 // Feature switches (docs/packs.md, "Replaceability": a feature can be switched off or replaced without breaking
 // uploads, purchases or downloads). Each switch guards its own routes (404 when off) and the browser hides its buttons
 // (data/features.js, generated from FEATURES by scripts/build.js). A deployment can also switch any of them off without
-// a code change: FEATURES_OFF, comma-separated names, in the environment. Uploads of single files, checkout, the
+// a code change: FEATURES_OFF, comma-separated names, in the environment; and one that is off by default on with
+// FEATURES_ON (off wins if a name is in both). Uploads of single files, checkout, the
 // library and single-file downloads never depend on a switch.
 import { fail } from "./http.js";
 
@@ -15,6 +16,9 @@ export const FEATURES = {
   "packs.analysis": { on: true, label: "Tempo and key from listening to audio" },
   // Several files as one ZIP: "Download folder (ZIP)" and /api/downloads/bundle (single downloads always work).
   "downloads.bundles": { on: true, label: "ZIP downloads" },
+  // Small compressible files (MIDI, presets, text) deflated inside ZIP downloads, from copies the daily sweep makes
+  // and checks (server/downloads/variants.js). Off by default (docs/packs.md §8); off, ZIPs are stored as before.
+  "downloads.deflate": { on: false, label: "Smaller ZIPs for MIDI, presets and text" },
   // Your Stacc's personal collections, tags and saved searches (/api/collections, /api/tags, /api/saved-searches; the
   // library itself and every download work without them).
   "library.collections": { on: true, label: "Collections, tags and saved searches" },
@@ -26,9 +30,9 @@ export const FEATURES = {
   "product.contentsTree": { on: true, label: "What's inside on product pages" }
 };
 
-const offIn = (env) => new Set(String((env && env.FEATURES_OFF) || "").split(",").map((s) => s.trim()).filter(Boolean));
+const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));
 
-export const isOn = (app, name) => Boolean(FEATURES[name] && FEATURES[name].on) && !offIn(app.env).has(name);
+export const isOn = (app, name) => Boolean(FEATURES[name]) && (FEATURES[name].on || listIn(app.env, "FEATURES_ON").has(name)) && !listIn(app.env, "FEATURES_OFF").has(name);
 
 /** Ends the request with 404 (like a route that doesn't exist) when the feature is off. */
 export function requireFeature(app, name) {

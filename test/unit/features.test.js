@@ -1,4 +1,5 @@
-// Feature switches (server/lib/features.js): each is on by default, a deployment can switch any off with FEATURES_OFF,
+// Feature switches (server/lib/features.js): each has its default, a deployment can switch any off with FEATURES_OFF
+// (and a default-off one on with FEATURES_ON),
 // a switched-off feature answers 404 like a missing route, and the browser's copy (data/features.js) matches.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -8,8 +9,13 @@ import { FEATURES, isOn, requireFeature } from "../../server/lib/features.js";
 
 const app = (off) => ({ env: off === undefined ? {} : { FEATURES_OFF: off } });
 
-test("on by default; FEATURES_OFF switches named ones off; unknown names are never on", () => {
-  for (const name of Object.keys(FEATURES)) assert.equal(isOn(app(), name), true, name);
+test("each as its default; FEATURES_OFF switches named ones off, FEATURES_ON a default-off one on; unknown names never on", () => {
+  for (const name of Object.keys(FEATURES)) assert.equal(isOn(app(), name), FEATURES[name].on, name);
+  // Only the switches the plan keeps off by default (docs/packs.md §8) are off.
+  assert.deepEqual(Object.keys(FEATURES).filter((n) => !FEATURES[n].on), ["downloads.deflate"]);
+  assert.equal(isOn({ env: { FEATURES_ON: "downloads.deflate" } }, "downloads.deflate"), true);
+  assert.equal(isOn({ env: { FEATURES_ON: "downloads.deflate", FEATURES_OFF: "downloads.deflate" } }, "downloads.deflate"), false, "off wins");
+  assert.equal(isOn({ env: { FEATURES_ON: "made.up" } }, "made.up"), false);
   assert.equal(isOn(app(" downloads.bundles , packs.suggestions"), "downloads.bundles"), false);
   assert.equal(isOn(app("downloads.bundles"), "packs.builder"), true);
   assert.equal(isOn(app(), "made.up"), false);
