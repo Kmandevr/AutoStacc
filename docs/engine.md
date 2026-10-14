@@ -7,7 +7,7 @@ updated: 2026-10-14
 
 # Processing engine
 
-The engine does the CPU-heavy work on creators' files. Plan and the system around it: [packs](packs.md) (mostly PLANNED). It runs the Pack Builder (Phases 0–8 built): the engine core, suggestions and audio analysis, its WebAssembly build and JS loader, the server Container and engine Worker (deployed by CI from main), and the benchmarks below.
+The engine does the CPU-heavy work on creators' files. Plan and the system around it: [packs](packs.md). It runs the Pack Builder (Phases 0–9 built): the engine core, suggestions and audio analysis, its WebAssembly build and JS loader, the server Container and engine Worker (deployed by CI from main), and the benchmarks below.
 
 ## What it does
 

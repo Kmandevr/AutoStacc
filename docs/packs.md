@@ -1,13 +1,13 @@
 ---
 title: Pack Builder and processing engine
-summary: PARTLY BUILT. Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
+summary: BUILT (Phases 0–9; Phase 10 optional). Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
 covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
 updated: 2026-10-14
 ---
 
 # Pack Builder and processing engine
 
-> **Partly built (2026-10-10).** This note is the approved plan (owner, 2026-10-10); the status of each phase is below and in section F. Today's older file handling is in [store](store.md) and [library](library.md); decisions: [decisions](decisions.md). Work is tracked in issue #101.
+> **Built, Phases 0–9 (2026-10-14).** This note is the approved plan (owner, 2026-10-10) with what was built and where it differs, below and in section F. Phase 10 (previews, fingerprinting) is optional and open (#112); owner decisions and setup steps left: #111; real-material calibration of analysis: #113. Today's older file handling is in [store](store.md) and [library](library.md); decisions: [decisions](decisions.md). Work is tracked in issue #101.
 
 ## What's built
 

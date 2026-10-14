@@ -12,7 +12,7 @@ Measured on a 1 GB synthetic pack (918 files; numbers in [engine](engine.md)): l
 
 ## 2026-10-10: Pack Builder, asset engine and selective downloads (planned)
 
-Owner's request and answers; full plan in [packs](packs.md) (PLANNED / NOT IMPLEMENTED).
+Owner's request and answers; full plan in [packs](packs.md) (built through Phase 9 by 2026-10-14).
 
 - **Packs are assets, not ZIPs.** A Pac holds folders and individually identified assets with versions and provenance; an uploaded ZIP is unpacked, every file stored byte for byte and checked by SHA-256, and the ZIP discarded. Originals are never converted, resampled or recompressed.
 - **Who:** the admin and Studio creators, in the first release. Moderation is **automated review**: clean versions publish; flagged ones wait for an admin with reasons.

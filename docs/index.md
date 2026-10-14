@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-10
+updated: 2026-10-14
 ---
 
 # AutoStacc vault
@@ -24,7 +24,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Browsing projects and content](browse.md): the projects browser, /explore, the home hub, dashboard sections, Your Stacc search
 - [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
 - [Processing engine](engine.md): the Rust engine (engine/): safe ZIP reading, hashes, formats and header facts, natively and as WebAssembly; benchmarks
-- [Pack Builder and processing engine](packs.md): PLANNED / NOT IMPLEMENTED: packs as folders of verified assets, the Rust engine in a Cloudflare Container, selective downloads, contents-derived facets
+- [Pack Builder and processing engine](packs.md): BUILT (Phases 0–9): packs as folders of verified assets, the Rust engine in a Cloudflare Container, selective downloads, contents-derived facets
 - [Creator pages](creator-pages.md): PLANNED / NOT IMPLEMENTED: blueprint for sandboxed creator HTML/CSS (later JavaScript) on project pages
 - [Product Studio](studio.md): one workspace per product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared shell the Control Center also uses; names, data ownership, API contracts, built vs planned
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
