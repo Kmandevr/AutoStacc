@@ -10,6 +10,7 @@
 //   both, under each prefix:
 //           PUT  /uploads/:uploadId/parts/:n, POST /uploads/:uploadId/complete
 //           GET  /versions/:versionId, POST /versions/:versionId/publish, POST /versions/:versionId/discard
+//           GET  /versions/:versionId/download, GET /versions/:versionId/files/:assetId (originals.js)
 // Publishing in the Studio follows the automated review: a clean version (or only soft flags for a trusted creator) goes
 // live, anything else waits for an admin, who is alerted. An admin may publish any ready or held version.
 import { json, fail, readJson, str, id, int } from "../lib/http.js";
@@ -25,6 +26,7 @@ import { createVersion, move } from "./versions.js";
 import { limit } from "../lib/ratelimit.js";
 import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
+import { originalRoutes } from "./originals.js";
 import { publishVersion } from "./publish.js";
 import { clearToPublish } from "./review.js";
 import { recordEvent } from "../creators/events.js";
@@ -142,7 +144,8 @@ function shared(scope) {
       await audit(app, "pack.version_discarded", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
       return json({ version: await view(app, v.id) });
     }],
-    ...editRoutes(scope)
+    ...editRoutes(scope),
+    ...originalRoutes(scope)
   ];
 }
 
