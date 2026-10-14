@@ -38,10 +38,15 @@ export const countDeliverable = async (db, productId) => (await first(db, `SELEC
 export const countKept = async (db, productId) =>
   (await first(db, "SELECT COUNT(*) AS n FROM product_files WHERE product_id = ? AND active = 1 AND status IN ('pending', 'published')", productId)).n;
 
-// Moves a file to a new state. Deleted and rejected files stop being active; nothing is removed from storage.
+// Moves a file to a new state. Deleted and rejected files stop being active, and their bytes go a day later
+// (retention.js, from removed_at).
 export const setStatus = (db, fileId, status, note = null) =>
-  run(db, `UPDATE product_files SET status = ?, status_note = ?, status_at = ?, active = CASE WHEN ? IN ('rejected', 'deleted') THEN 0 ELSE active END
-    WHERE id = ? AND status <> 'deleted'`, status, note, now(), status, fileId);
+  run(db, `UPDATE product_files SET status = ?, status_note = ?, status_at = ?, active = CASE WHEN ? IN ('rejected', 'deleted') THEN 0 ELSE active END,
+    removed_at = CASE WHEN ? IN ('rejected', 'deleted') AND active = 1 THEN ? ELSE removed_at END
+    WHERE id = ? AND status <> 'deleted'`, status, note, now(), status, status, now(), fileId);
+
+/** Stops a file reaching anyone (an admin's removal or replacement); its bytes go a day later (retention.js). */
+export const deactivate = (db, fileId) => run(db, "UPDATE product_files SET active = 0, removed_at = ? WHERE id = ? AND active = 1", now(), fileId);
 
 // A product made in the Studio is only on sale while it has a file a buyer could download. Called after any change to a
 // file's state: a product whose last deliverable file was rejected or removed goes back to draft instead of selling nothing.
@@ -57,6 +62,6 @@ export const storageKeyOf = async (db, file) => (file.blob_id ? blobKey(db, file
 // (their stored original is then unused and the blob sweep removes it). Returns how many.
 export async function deactivateExpiredRetired(db, nowMs = Date.now()) {
   const cutoff = new Date(nowMs - RETIRED_KEEP_DAYS * 86400000).toISOString();
-  const res = await run(db, "UPDATE product_files SET active = 0, status_at = ? WHERE active = 1 AND retired_at IS NOT NULL AND retired_at < ?", now(), cutoff);
+  const res = await run(db, "UPDATE product_files SET active = 0, status_at = ?, removed_at = ? WHERE active = 1 AND retired_at IS NOT NULL AND retired_at < ?", now(), now(), cutoff);
   return res.meta.changes || 0;
 }

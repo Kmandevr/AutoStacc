@@ -7,7 +7,7 @@
 // copy is used every time, so a ZIP's length is known before it starts. Made in the store, not the Container: it's a
 // few small files, and CompressionStream is built in. Variants go with their original (blobs/sweep.js).
 import { all, run } from "../lib/db.js";
-import { getFile } from "../storage/buckets.js";
+import { getFile, deleteKeys } from "../storage/buckets.js";
 import { isOn } from "../lib/features.js";
 import { meterStmts } from "../usage/usage.js";
 
@@ -46,9 +46,12 @@ export async function makeVariants(app, { limit = 100, maxBytes = 64 * 1024 * 10
     if (keep) {
       await app.env.FILES.put(variantKey(b.id), packed, { httpMetadata: { contentType: "application/octet-stream" } });
       await app.db.batch(meterStmts(app.db, { class_a: 1 }));
-      made++;
     }
-    await run(app.db, "UPDATE blobs SET compress_ratio = ?, deflate_bytes = ? WHERE id = ?", Math.round(ratio * 1000) / 1000, keep ? packed.length : null, b.id);
+    // Recorded only while the original is still wanted; if a sweep let it go meanwhile, its copy goes too.
+    const res = await run(app.db, "UPDATE blobs SET compress_ratio = ?, deflate_bytes = ? WHERE id = ? AND delete_after IS NULL",
+      Math.round(ratio * 1000) / 1000, keep ? packed.length : null, b.id);
+    if (keep && !res.meta.changes) await deleteKeys(app.env, [variantKey(b.id)]);
+    else if (keep) made++;
   }
   return made;
 }
