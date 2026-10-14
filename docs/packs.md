@@ -1,7 +1,7 @@
 ---
 title: Pack Builder and processing engine
 summary: PARTLY BUILT. Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
-covers: [server/packs/, server/blobs/, server/maintenance/, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
+covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
 updated: 2026-10-14
 ---
 
@@ -616,6 +616,14 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
    - At 80% of any allowance: admin alert, and the optional analysis stage is skipped (suggestions only from filenames and tags).
    - At 95%: new processing jobs wait in the queue with "processing resumes on the 1st" shown to the creator, unless the owner presses "allow spending this month" (audited).
    - Cloudflare's own billing notification is set as a backup alert ([store-setup](store-setup.md) step).
+> **Built (Phase 9, 2026-10-14)**, rules 4 and 5, in `server/usage/` (a leaf module the packs and studio code call):
+> - **Meters** (`usage_meters`, UTC months): Container time is each job's recorded time (the engine Worker's `wallMs`) plus 20 s per attempt for its start-up and `sleepAfter` (6 min when no time was recorded); Class A writes are each upload's parts plus two, each single file, and two per stored file plus two per job. They are counted inside the batch that finishes the job or upload (the import's guard, or "only while still running/open"), so a retry or a second look never counts twice. Storage is measured live from what the database knows is stored (`storage.js`: stored originals, delivered files that aren't, archives on their way, creators' images). Estimates, not Cloudflare's bill.
+> - **80%** of any allowance: one admin alert a month per meter and level, and jobs skip the optional audio analysis.
+> - **95%**: a new version waits (job `queued`, version noted `waiting_for_allowance`, shown as "checking starts on the 1st") and can be discarded. The daily sweep sends waiting jobs three at a time, oldest first, once the allowance allows (a new month, or the owner's override); a creator's look sends theirs only when it's first in line. A job's time-out counts from when it's sent (`processing_jobs.sent_at`, migration 0021). Soft: two requests at once can both see 94% and both go ahead.
+> - **Override:** "Allow spending this month" in the Control Center (Usage and storage; setting `usage_override`, audited).
+> - **Storage cap:** creators' uploads stop once AutoStacc would store more than the cap (setting `storage_cap_gb`, default 9 GB of the free 10 GB, set in the same place): checked in the same atomic insert as each creator's quota for a pack archive and a single file, and at import for the unpacked size. AutoStacc's own uploads aren't held. `409 storage_full`.
+> - Not built: Cloudflare's own billing notification (an owner step in the Cloudflare dashboard).
+
 6. **Phase 0 measures real cost per GB processed** on `basic`, and the numbers go into `docs/decisions.md` before anything is enabled for creators.
 
 ### Best practices adopted
