@@ -4,6 +4,7 @@
 // claimed blobs start with that day already set and are kept once their import commits (claimStmts).
 import { all, stmt } from "../lib/db.js";
 import { deleteKeys } from "../storage/buckets.js";
+import { variantKey } from "../downloads/variants.js";
 
 const IN_USE = `(EXISTS (SELECT 1 FROM product_files f WHERE f.blob_id = blobs.id AND f.active = 1)
   OR EXISTS (SELECT 1 FROM pac_entries e JOIN pac_versions v ON v.id = e.version_id
@@ -26,10 +27,11 @@ export async function sweepBlobs(app, { nowMs = Date.now(), limit = 500 } = {}) 
   const [, deleted] = await app.db.batch([
     stmt(app.db, `UPDATE pac_entries SET blob_id = NULL WHERE blob_id IN (SELECT value FROM json_each(?))
       AND version_id IN (SELECT id FROM pac_versions WHERE status IN ('superseded', 'discarded', 'failed'))`, ids),
-    stmt(app.db, `DELETE FROM blobs WHERE id IN (SELECT value FROM json_each(?)) AND NOT ${IN_USE} RETURNING r2_key`, ids)
+    stmt(app.db, `DELETE FROM blobs WHERE id IN (SELECT value FROM json_each(?)) AND NOT ${IN_USE} RETURNING id, r2_key, deflate_bytes`, ids)
   ]);
   const gone = deleted.results || [];
-  await deleteKeys(app.env, gone.map((b) => b.r2_key));
+  // With each original, its deflated copy for ZIPs if it had one (downloads/variants.js).
+  await deleteKeys(app.env, [...gone.map((b) => b.r2_key), ...gone.filter((b) => b.deflate_bytes).map((b) => variantKey(b.id))]);
   return gone.length;
 }
 

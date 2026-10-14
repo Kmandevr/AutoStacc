@@ -34,7 +34,7 @@
       ${p.artwork ? `<img class="product-art" src="${e(p.artwork)}" alt="" width="480" height="480">` : ""}
       <div class="product-info">
         <p class="small-print">${e(type)}${p.creator ? ` · by <a href="${e(p.projectPath || p.creator.path)}">${e(p.projectName || p.creator.name)}</a>` : ""}${p.verified === false ? ' <span class="tag unverified">Unverified creator</span>' : ""}</p>
-        ${p.verified === false ? `<p class="msg unverified-note" role="note">AutoStacc hasn't verified this creator. Their files are checked for type, not for what's in them, so buy only from creators you trust. <a href="/refunds">Refunds</a> work as usual.</p>` : ""}
+        ${p.verified === false ? `<p class="msg unverified-note" role="note">AutoStacc hasn't verified this creator. Their files are checked automatically to be what their names say, not for quality or who owns the rights, so buy only from creators you trust. <a href="/refunds">Refunds</a> work as usual.</p>` : ""}
         ${p.preview ? `<figure class="preview"><figcaption>Preview</figcaption><audio controls preload="none" src="${e(p.preview)}"${preview ? "" : ` data-preview="${e(p.id)}"`}></audio></figure>` : ""}
         <p class="product-price">${p.priceCents ? e(cents(p.priceCents, p.currency)) : "Free"}${p.sale ? ` <s class="small-print">${e(cents(p.listPriceCents, p.currency))}</s>` : ""}</p>
         ${p.description ? `<p class="product-desc">${e(p.description)}</p>` : ""}

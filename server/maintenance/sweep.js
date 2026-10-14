@@ -9,6 +9,7 @@
 import { deactivateExpiredRetired } from "../files/files.js";
 import { hashLegacyFiles } from "../files/legacy.js";
 import { purgeRemovedFiles } from "../files/retention.js";
+import { makeVariants } from "../downloads/variants.js";
 import { sweepVersions } from "../packs/sweep.js";
 import { drainWaiting } from "../packs/process.js";
 import { checkLevels } from "../usage/usage.js";
@@ -26,6 +27,7 @@ export async function sweep(app, { nowMs = Date.now() } = {}) {
   const contents = await sweepContents(app);
   const waiting = await drainWaiting(app);
   const legacy = await hashLegacyFiles(app);
+  const variants = await makeVariants(app);
   const usage = (await checkLevels(app)).level;
-  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, legacy, usage };
+  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, legacy, variants, usage };
 }
