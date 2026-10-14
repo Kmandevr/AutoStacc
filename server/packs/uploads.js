@@ -2,9 +2,11 @@
 // (the last may be shorter), each streamed with its declared length and never buffered. Parts may arrive in any order
 // and be sent again; R2 can't list them, so each is recorded here as it lands. Deleted once the version is published
 // or discarded (R2 itself aborts unfinished uploads after 7 days).
-import { first, all, run, newId, now, parseJson } from "../lib/db.js";
+import { first, all, run, stmt, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { inUseSql } from "../creators/storage.js";
+import { storedSql, storedBytes } from "../usage/storage.js";
+import { meterStmts, STORAGE_FULL } from "../usage/usage.js";
 import { startMultipart, uploadPart, completeMultipart, abortMultipart, headFile, deleteKeys } from "../storage/buckets.js";
 
 export const PART_BYTES = 64 * 1024 * 1024;
@@ -16,7 +18,8 @@ const partLength = (size, n) => (n < partsOf(size) ? PART_BYTES : size - (partsO
 export const getUpload = (db, id) => first(db, "SELECT * FROM uploads WHERE id = ?", id);
 
 /**
- * quota: { creatorId, bytes } for a creator's upload (null for AutoStacc's own). carry: the files a thin ZIP leaves out,
+ * quota: { creatorId, bytes, capBytes } for a creator's upload (null for AutoStacc's own): their own quota, and all of
+ * AutoStacc's storage that creators may fill (server/usage/). carry: the files a thin ZIP leaves out,
  * already shape-checked (carry.js cleanCarry).
  */
 export async function startZip(app, version, { filename, size, quota = null, carry = [] }) {
@@ -26,10 +29,11 @@ export async function startZip(app, version, { filename, size, quota = null, car
   const mp = await startMultipart(app.env, key);
   const t = now();
   const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at, carry)
-    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8, ?10 WHERE ?9 IS NULL OR ${inUseSql("?1")} + ?7 <= ?9`,
-    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null, JSON.stringify(carry));
+    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8, ?10 WHERE ?9 IS NULL OR (${inUseSql("?1")} + ?7 <= ?9 AND ${storedSql()} + ?7 <= ?11)`,
+    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null, JSON.stringify(carry), quota ? quota.capBytes : null);
   if (!res.meta.changes) {
     await abortMultipart(app.env, key, mp.uploadId).catch(() => {});
+    if ((await storedBytes(app.db)) + size > quota.capBytes) fail(409, "storage_full", STORAGE_FULL);
     fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota.bytes / 1048576)} MB of file storage. Remove files or a draft first.`);
   }
   return { uploadId: id, partBytes: PART_BYTES, parts: partsOf(size) };
@@ -64,7 +68,11 @@ export async function complete(app, upload) {
     const done = await headFile(app.env, upload.r2_key);
     if (!done || done.size !== upload.size_bytes) throw e;
   }
-  await run(app.db, "UPDATE uploads SET status = 'complete', updated_at = ? WHERE id = ? AND status = 'open'", now(), upload.id);
+  // Its storage writes for the budget guard (starting, each part, finishing), counted once: only while still open.
+  await app.db.batch([
+    ...meterStmts(app.db, { class_a: parts.length + 2 }, { when: "EXISTS (SELECT 1 FROM uploads WHERE id = ? AND status = 'open')", params: [upload.id] }),
+    stmt(app.db, "UPDATE uploads SET status = 'complete', updated_at = ? WHERE id = ? AND status = 'open'", now(), upload.id)
+  ]);
   return { complete: true };
 }
 

@@ -10,6 +10,7 @@
 //   both, under each prefix:
 //           PUT  /uploads/:uploadId/parts/:n, POST /uploads/:uploadId/complete
 //           GET  /versions/:versionId, POST /versions/:versionId/publish, POST /versions/:versionId/discard
+//           GET  /versions/:versionId/download, GET /versions/:versionId/files/:assetId (originals.js)
 // Publishing in the Studio follows the automated review: a clean version (or only soft flags for a trusted creator) goes
 // live, anything else waits for an admin, who is alerted. An admin may publish any ready or held version.
 import { json, fail, readJson, str, id, int } from "../lib/http.js";
@@ -20,10 +21,12 @@ import { audit } from "../audit/log.js";
 import { alertAdmins } from "../email/alerts.js";
 import { filesQuotaOf } from "../creators/policy.js";
 import { storageUsed } from "../creators/storage.js";
+import { capBytes } from "../usage/usage.js";
 import { createVersion, move } from "./versions.js";
 import { limit } from "../lib/ratelimit.js";
 import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
+import { originalRoutes } from "./originals.js";
 import { publishVersion } from "./publish.js";
 import { clearToPublish } from "./review.js";
 import { recordEvent } from "../creators/events.js";
@@ -62,7 +65,7 @@ async function createFor(app, actor, { pac, product, creator, body }) {
   // The same key after the version ended (refused for room, discarded, failed): a new upload needs a new key.
   if (!["draft", "uploading"].includes(version.status)) fail(409, "version_closed", "That upload was stopped. Choose the file again to start over.");
   let upload = await first(app.db, "SELECT id FROM uploads WHERE version_id = ? AND kind = 'zip'", version.id);
-  const quota = creator ? { creatorId: creator.id, bytes: filesQuotaOf(creator) } : null;
+  const quota = creator ? { creatorId: creator.id, bytes: filesQuotaOf(creator), capBytes: await capBytes(app.db) } : null;
   let plan = null;
   if (!upload) {
     try {
@@ -137,11 +140,12 @@ function shared(scope) {
     ["POST", `${P}/versions/:versionId/discard`, async (app, { versionId }) => {
       const actor = await scope.actor(app);
       const v = await scope.version(app, actor, versionId);
-      if (!(await discard(app, v))) fail(409, "cannot_discard", "Only an unpublished version that isn't being processed can be discarded.");
+      if (!(await discard(app, v))) fail(409, "cannot_discard", "Only an unpublished version that isn't being checked can be discarded.");
       await audit(app, "pack.version_discarded", { targetType: "pac", targetId: v.pac_id, detail: { versionId: v.id } });
       return json({ version: await view(app, v.id) });
     }],
-    ...editRoutes(scope)
+    ...editRoutes(scope),
+    ...originalRoutes(scope)
   ];
 }
 

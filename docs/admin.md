@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-13
+updated: 2026-10-14
 ---
 
 # Control Center
@@ -86,6 +86,10 @@ Not recorded here: news and events, which are edited in `data/` and published by
 ## Creators
 
 Every creator (first-party and Studio) with its address, live and draft projects, storage used, quota and platform fee ([creators](creators.md)). **Trust** lets search engines index a creator's pages (new creators are noindex) and publishes their file uploads without review, **Suspend** takes its pages and images offline at once and stops it publishing, and a quota (MB) or fee (basis points, 100 = 1%) set here overrides the platform default; empty means the default. Every change is audited (`creator.updated`). Above the list, **Creator purchases** pauses or allows buying creators' products store-wide (`/api/admin/creator-sales`, audited as `settings.creator_sales_paused` / `_opened`). While paused, or until the marketplace Stripe key is set, carts keep creators' products but checkout refuses them; AutoStacc's own products still sell ([studio](studio.md#creator-purchases-switch-built)). The Overview's **Creators** statistics show sites, image storage, and paid sales split into platform fees and creators' shares.
+
+## Usage and storage
+
+The budget guard ([packs](packs.md#staying-inside-the-5-workers-paid-plan-owner-try-not-to-charge-me-v-amounts-r-design)): this month's Container time, storage writes (Class A) and storage against Cloudflare's free allowance, with how many Pac versions wait for it. From 80% the admins get an email and pack processing stops listening to audio; from 95% new processing waits for next month. **Allow spending this month** lets it go on past the allowance until the month ends (paid at Cloudflare's rates; audited `usage.spending_allowed`, taken back with `usage.spending_stopped`). **Storage for creators** sets how much AutoStacc may store before creators' uploads are refused (default 9 GB; audited `usage.storage_cap_set`). `GET|PUT /api/admin/usage` (`server/admin/usage.js`, `js/admin-usage.js`). The meters are the store's own estimates; Cloudflare's billing is the record.
 
 ## Payouts
 

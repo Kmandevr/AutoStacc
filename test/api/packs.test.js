@@ -9,9 +9,13 @@ import packsStudio from "./packs-studio.suite.js";
 import packsRevisions from "./packs-revisions.suite.js";
 import packsStore from "./packs-store.suite.js";
 import packsAnalysis from "./packs-analysis.suite.js";
+import usage from "./usage.suite.js";
+import legacy from "./legacy.suite.js";
+import originals from "./originals.suite.js";
+import variants from "./variants.suite.js";
 
 const STORE = 8808;
 const engine = await startMockEngine(8818, { storage: `http://localhost:${STORE}/api/internal/engine-storage` });
 after(() => engine.close());
 
-runGroup({ name: "packs", ports: { mock: STORE }, stripe: false, vars: { ENGINE_URL: engine.url, SWEEP_TOKEN } }, [packs, packsStudio, packsRevisions, packsStore, packsAnalysis]);
+runGroup({ name: "packs", ports: { mock: STORE }, stripe: false, vars: { ENGINE_URL: engine.url, SWEEP_TOKEN, FEATURES_ON: "downloads.deflate" } }, [packs, packsStudio, packsRevisions, packsStore, packsAnalysis, usage, legacy, originals, variants]);

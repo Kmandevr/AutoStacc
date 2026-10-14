@@ -46,6 +46,7 @@ Plain settings are `[vars]` in `wrangler.toml` (per environment: top level = loc
 | `BREVO_NEWSLETTER_LISTS` | secret, optional | Each project's Brevo newsletter list, `project-id:list-id` comma-separated (`glitches-and-stitches:3`); a project without one says "coming soon". Development and tests treat every project as open and contact nobody |
 | `ADMIN_EMAILS` | secret | Admin emails, comma-separated (optional: `role = admin` in the user table works too) |
 | `FEATURES_OFF` | var, optional | Comma-separated feature switches to turn off in this deployment without a code change (`packs.builder`, `packs.suggestions`, `packs.analysis`, `downloads.bundles`, `library.collections`, `store.derivedFacets`, `product.contentsTree`; `server/lib/features.js`). A switched-off feature's routes answer 404 |
+| `FEATURES_ON` | var, optional | Comma-separated switches that are off by default to turn on (today only `downloads.deflate`); `FEATURES_OFF` wins |
 | `SWEEP_TOKEN` | secret, optional | 32+ chars. The engine Worker's daily cron sends it to `POST /api/internal/sweep` to run the retention sweep ([packs](packs.md)); the same GitHub secret goes to the store and the engine Worker. Without it the sweep is off |
 | `STRIPE_API_BASE` | var | Tests only: points the Stripe SDK at the fake Stripe server (ignored outside development/test) |
 | `ENGINE_URL` | var, optional | Development and tests only: the Pack Builder sends jobs straight to this engine service (`test/mock-engine/server.js`, or the real binary: `R2_ENDPOINT=http://localhost:8788/api/internal/engine-storage R2_BUCKETS=autostacc-files engine/target/release/autostacc-engine serve 127.0.0.1:8095`) instead of the queue; the engine reads and writes the local `FILES` bucket through the store's stand-in relay (`server/packs/engine-storage.js`). Ignored in production |
@@ -54,7 +55,7 @@ Bindings: `DB` (D1), `FILES` (private R2), `PREVIEWS` (R2 for preview clips), an
 
 ## Database
 
-Schema changes are new files in `db/migrations/` with the next number after the highest (today `0012_discovery.sql`, so `0013_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
+Schema changes are new files in `db/migrations/` with the next number after the highest (today `0021_usage_guard.sql`, so `0022_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
 
 ## Tests
 
