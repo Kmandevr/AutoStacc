@@ -9,6 +9,8 @@ import { revisionOf } from "./revision.js";
 import { keptFiles } from "./accept.js";
 import { inUseSql } from "../creators/storage.js";
 import { claimStmts, addPeaksStmt, blobsByHash } from "../blobs/blobs.js";
+import { meterStmts, jobCost, capBytes } from "../usage/usage.js";
+import { storedSql, storedBytes } from "../usage/storage.js";
 import { jobObjects } from "./engine-client.js";
 import { moveStmt } from "./versions.js";
 import { deleteKeys } from "../storage/buckets.js";
@@ -29,6 +31,14 @@ export async function importResult(app, version, job, state) {
   // For the automated review: how many of these the owner already had. As a revision of the live version
   // (revision.js): which files are the live version's files, and which folders its folders.
   const already = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
+  // A creator's files also have to fit in what AutoStacc lets creators fill (server/usage/): the originals not stored
+  // yet, beside everything stored, less the archive they came in (deleted after this). Checked again in the batch.
+  const cap = room ? await capBytes(app.db) : null;
+  if (room) {
+    const fresh = new Map(kept.filter((f) => !f.carried && !already[f.sha256]).map((f) => [f.sha256, f.size]));
+    const adding = [...fresh.values()].reduce((n, b) => n + b, 0);
+    if ((await storedBytes(app.db)) - room.archive + adding > cap) throw Object.assign(new Error("storage full"), { code: "storage_full" });
+  }
   const rev = await revisionOf(app.db, version, kept);
 
   // 1. One stored original per owner and hash: claim, then learn which key each hash ended up with. Carried files
@@ -89,7 +99,8 @@ export async function importResult(app, version, job, state) {
     // If either of these fails, nothing is written and the version stays processing: the next look re-imports it and
     // fails it with the reason (missing_files, quota_exceeded).
     ...(carriedIds.length ? [guardStmt(db, "(SELECT COUNT(*) FROM blobs WHERE id IN (SELECT value FROM json_each(?))) = ?", JSON.stringify(carriedIds), carriedIds.length)] : []),
-    ...(room ? [guardStmt(db, `${inUseSql("?1")} - ?2 + ?3 <= ?4`, owner, room.archive, room.bytes, room.quota)] : []),
+    ...(room ? [guardStmt(db, `${inUseSql("?1")} - ?2 + ?3 <= ?4`, owner, room.archive, room.bytes, room.quota),
+      guardStmt(db, `${storedSql()} - ?1 <= ?2`, room.archive, cap)] : []),
     // The originals this version uses are wanted now (newly claimed ones expire otherwise, see claimStmts).
     ...chunks(entries).map((json) => stmt(db, "UPDATE blobs SET delete_after = NULL WHERE id IN (SELECT j.value->>'blob' FROM json_each(?) j)", json)),
     // New assets only: a file matched to the live version keeps its asset, and the values said about it.
@@ -109,7 +120,9 @@ export async function importResult(app, version, job, state) {
         engine_version = excluded.engine_version, updated_at = excluded.updated_at`, result.engineVersion || null, t, json)),
     stmt(db, "UPDATE pac_versions SET stats = ?, engine_version = ?, base_version_id = ? WHERE id = ? AND status = 'processing'", JSON.stringify(stats), result.engineVersion || null, rev.liveId, version.id),
     moveStmt(db, version.id, "processing", "ready"),
-    stmt(db, "UPDATE processing_jobs SET status = 'done', attempt_used = ?, updated_at = ? WHERE id = ?", attempt, t, job.id)
+    stmt(db, "UPDATE processing_jobs SET status = 'done', attempt_used = ?, updated_at = ? WHERE id = ?", attempt, t, job.id),
+    // What the job used, for the budget guard: counted once, with the import (the guard above rolls back a second one).
+    ...meterStmts(db, jobCost({ wallMs: state.wallMs, attempts: attempt, files: (result.files || []).length }))
   ];
   await db.batch(batch);
 

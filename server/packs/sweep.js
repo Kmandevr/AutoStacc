@@ -10,7 +10,9 @@ export const ABANDONED_DAYS = 30;
 
 export async function sweepVersions(app, { nowMs = Date.now(), limit = 50 } = {}) {
   const out = { refreshed: 0, discarded: 0, archives: 0 };
-  for (const v of await all(app.db, "SELECT * FROM pac_versions WHERE status = 'processing' ORDER BY updated_at LIMIT ?", limit)) {
+  // Not versions waiting for the processing allowance: process.js drainWaiting sends those, a few at a time.
+  for (const v of await all(app.db, `SELECT * FROM pac_versions WHERE status = 'processing'
+    AND id NOT IN (SELECT version_id FROM processing_jobs WHERE status = 'queued') ORDER BY updated_at LIMIT ?`, limit)) {
     await refresh(app, v);
     out.refreshed++;
   }

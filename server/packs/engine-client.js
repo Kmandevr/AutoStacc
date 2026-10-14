@@ -14,11 +14,12 @@ export const FILES_BUCKET = "autostacc-files";
 
 const direct = (app) => !app.config.production && app.env.ENGINE_URL;
 
-/** Queues a `process` job: check the archive at `key`, store each accepted file for `ownerScope`, suggest values. */
-export async function queueProcess(app, { jobId, key, ownerScope }) {
+/** Queues a `process` job: check the archive at `key`, store each accepted file for `ownerScope`, suggest values.
+ * analyze: false leaves the optional analysis out (the caller's budget says so). */
+export async function queueProcess(app, { jobId, key, ownerScope, analyze = true }) {
   // Without suggestions switched on, the engine gets no vocabulary and suggests nothing; analysis comes with them.
   const suggest = isOn(app, "packs.suggestions");
-  const extra = suggest ? { vocabulary: engineVocabulary(), ...(isOn(app, "packs.analysis") ? { analyze: true } : {}) } : {};
+  const extra = suggest ? { vocabulary: engineVocabulary(), ...(analyze && isOn(app, "packs.analysis") ? { analyze: true } : {}) } : {};
   const job = checkJob({ jobId, op: "process", bucket: FILES_BUCKET, key, ownerScope, ...extra }, [FILES_BUCKET]);
   if (!direct(app)) {
     if (!app.env.JOBS) fail(503, "engine_unavailable", "File processing isn't set up here yet.");
@@ -45,10 +46,11 @@ async function runDirect(app, job) {
   }
 }
 
-/** Where a job stands: { state: "pending" } | { state: "failed" } | { state: "done", status, result, attempt }. */
+/** Where a job stands: { state: "pending" } | { state: "failed" } | { state: "done", status, result, attempt, wallMs }
+ * (wallMs: how long the engine's last attempt took, when recorded). */
 export async function jobState(app, jobId) {
   const done = await getJson(app.env, resultKey(jobId));
-  if (done) return { state: "done", status: Number(done.meta.status || 200), result: done.value, attempt: Number(done.meta.attempts || 1) };
+  if (done) return { state: "done", status: Number(done.meta.status || 200), result: done.value, attempt: Number(done.meta.attempts || 1), wallMs: Number(done.meta.wallMs) || null };
   return (await headFile(app.env, failedKey(jobId))) ? { state: "failed" } : { state: "pending" };
 }
 

@@ -35,6 +35,7 @@ window.WORKSPACES = {
       ] },
       { label: "Tools", items: [
         { key: "tests", label: "Test purchases" },
+        { key: "usage", label: "Usage and storage" },
         { key: "audit", label: "Audit log" }
       ] }
     ]
