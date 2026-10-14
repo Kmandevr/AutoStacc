@@ -1,12 +1,15 @@
 // Retention sweep of Pac versions (part of the daily sweep, server/maintenance/sweep.js): versions still processing
-// are brought up to date (which times out a job silent for too long), versions left unfinished for ABANDONED_DAYS are
-// discarded (freeing their Pac), and uploaded archives no longer needed (the version was imported, published, failed
+// are brought up to date (which times out a job silent for too long), versions left unfinished for ABANDONED_DAYS (or
+// an upload with no part for STALE_UPLOAD_HOURS) are discarded (freeing their Pac), and uploaded archives no longer needed (the version was imported, published, failed
 // or discarded, but a crash skipped the cleanup) are deleted. A few per run, so a run stays well inside its limits.
 import { all, run, now } from "../lib/db.js";
 import { refresh, discard } from "./process.js";
 import { deleteKeys } from "../storage/buckets.js";
 
 export const ABANDONED_DAYS = 30;
+// An upload with no part for this long is dropped: its reservation counts against the creator's quota and AutoStacc's
+// storage cap at its full size, so an abandoned one mustn't hold that room for a month.
+export const STALE_UPLOAD_HOURS = 24;
 
 export async function sweepVersions(app, { nowMs = Date.now(), limit = 50 } = {}) {
   const out = { refreshed: 0, discarded: 0, archives: 0 };
@@ -18,6 +21,11 @@ export async function sweepVersions(app, { nowMs = Date.now(), limit = 50 } = {}
   }
   const cutoff = new Date(nowMs - ABANDONED_DAYS * 86400000).toISOString();
   for (const v of await all(app.db, "SELECT * FROM pac_versions WHERE status IN ('draft', 'uploading', 'ready', 'failed') AND updated_at < ? LIMIT ?", cutoff, limit)) {
+    if (await discard(app, v)) out.discarded++;
+  }
+  const quiet = new Date(nowMs - STALE_UPLOAD_HOURS * 3600000).toISOString();
+  for (const v of await all(app.db, `SELECT v.* FROM pac_versions v JOIN uploads u ON u.version_id = v.id
+    WHERE v.status = 'uploading' AND u.status = 'open' AND u.updated_at < ? LIMIT ?`, quiet, limit)) {
     if (await discard(app, v)) out.discarded++;
   }
   const stale = await all(app.db, `SELECT u.id, u.r2_key FROM uploads u JOIN pac_versions v ON v.id = u.version_id

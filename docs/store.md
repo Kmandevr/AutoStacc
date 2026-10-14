@@ -57,7 +57,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `packs/` | the Pack Builder: Pac versions, resumable ZIP uploads, processing by the engine, import, publish ([packs](packs.md)) | `/api/admin/packs/*` (admin only) |
 | `blobs/` | stored originals, one per owner and SHA-256, and their retention | (used by packs, files, downloads) |
 | `usage/` | the budget guard: monthly meters of processing and storage against the free allowance, the storage cap creators' uploads stop at ([packs](packs.md)) | (used by packs and studio; admin: `/api/admin/usage`) |
-| `maintenance/` | the daily retention sweep, asked for by the engine Worker's cron with `SWEEP_TOKEN` | `POST /api/internal/sweep` |
+| `maintenance/` | the daily retention sweep (also: removed files' bytes, older files' checksums, waiting processing jobs), asked for by the engine Worker's cron with `SWEEP_TOKEN` | `POST /api/internal/sweep` |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |
 

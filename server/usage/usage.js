@@ -51,10 +51,14 @@ export async function budget(app) {
   const rows = await all(app.db, "SELECT meter, amount FROM usage_meters WHERE month = ?", month);
   const used = Object.fromEntries(rows.map((r) => [r.meter, r.amount]));
   used.r2_bytes = await storedBytes(app.db);
-  const meters = Object.fromEntries(Object.entries(ALLOWANCE).map(([m, allowance]) => [m, { used: used[m] || 0, allowance, share: (used[m] || 0) / allowance }]));
+  // Storage the owner chose to pay for (a cap above the free 10 GB) is the storage allowance; creators' uploads stop at
+  // the cap, so storage alone pauses processing only when AutoStacc's own files fill it.
+  const cap = await capBytes(app.db);
+  const allowances = { ...ALLOWANCE, r2_bytes: Math.max(ALLOWANCE.r2_bytes, cap) };
+  const meters = Object.fromEntries(Object.entries(allowances).map(([m, allowance]) => [m, { used: used[m] || 0, allowance, share: (used[m] || 0) / allowance }]));
   const top = Math.max(...Object.values(meters).map((m) => m.share));
   const allowed = (await getSetting(app.db, "usage_override")) === month;
-  return { month, meters, level: top >= PAUSE ? "pause" : top >= ALERT ? "alert" : "ok", allowed, capBytes: await capBytes(app.db) };
+  return { month, meters, level: top >= PAUSE ? "pause" : top >= ALERT ? "alert" : "ok", allowed, capBytes: cap };
 }
 
 /** Whether new processing may start now, and whether it should skip analysis (from ALERT on). */

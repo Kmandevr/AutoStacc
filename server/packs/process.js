@@ -41,8 +41,14 @@ export async function startProcess(app, version, upload) {
   // The job exists before the version says "processing", so a crash in between can't leave one without the other.
   await run(app.db, `INSERT INTO processing_jobs (id, version_id, kind, contract_version, status, sent_at, created_at, updated_at)
     VALUES (?, ?, 'process', 1, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`, jobId, version.id, go.start ? "running" : "queued", go.start ? t : null, t, t);
-  if (!(await move(app.db, version.id, ["uploading"], "processing", go.start ? {} : { review_note: WAITING }))) return getVersion(app.db, version.id);
-  if (go.start) await send(app, version, jobId, upload, go.analyze);
+  if (!(await move(app.db, version.id, ["uploading"], "processing"))) return getVersion(app.db, version.id);
+  // The job row may be older than this request (a crash between its insert and the move): follow what it says.
+  const job = await first(app.db, "SELECT * FROM processing_jobs WHERE id = ?", jobId);
+  if (job.status === "running") await send(app, version, jobId, upload, go.analyze);
+  else if (job.status === "queued") {
+    await run(app.db, "UPDATE pac_versions SET review_note = ? WHERE id = ?", WAITING, version.id);
+    await sendWaiting(app, version, job);
+  }
   return getVersion(app.db, version.id);
 }
 
@@ -59,10 +65,14 @@ async function send(app, version, jobId, upload, analyze) {
 
 // Sends a waiting job if the budget allows now and it's first in line (oldest waiting); the claim is a compare-and-set,
 // so two requests can't both send it.
+// Waiting jobs in line: only those whose version still waits (an orphan, left by a discard racing the start, never
+// blocks the line; drainWaiting cancels it).
+const HEAD = "processing_jobs j JOIN pac_versions v ON v.id = j.version_id WHERE j.status = 'queued' AND v.status = 'processing' ORDER BY j.created_at, j.id";
+
 async function sendWaiting(app, version, job) {
   const go = await processingAllowed(app);
   if (!go.start) return;
-  const next = await first(app.db, "SELECT id FROM processing_jobs WHERE status = 'queued' ORDER BY created_at, id LIMIT 1");
+  const next = await first(app.db, `SELECT j.id FROM ${HEAD} LIMIT 1`);
   if (!next || next.id !== job.id) return;
   const t = now();
   const claimed = await run(app.db, "UPDATE processing_jobs SET status = 'running', sent_at = ?, updated_at = ? WHERE id = ? AND status = 'queued'", t, t, job.id);
@@ -73,13 +83,17 @@ async function sendWaiting(app, version, job) {
   await send(app, version, job.id, upload, go.analyze).catch(() => {});
 }
 
+/** How many versions wait for the processing allowance (for the Control Center). */
+export const countWaiting = async (db) => (await first(db, `SELECT COUNT(*) AS n FROM ${HEAD}`)).n;
+
 /** From the daily sweep: sends up to `limit` waiting jobs, oldest first, while the budget allows (a few a day, so
  * jobs sent together don't time out waiting behind each other in the engine's queue). */
 export async function drainWaiting(app, { limit = 3 } = {}) {
+  await run(app.db, `UPDATE processing_jobs SET status = 'cancelled', updated_at = ? WHERE status = 'queued'
+    AND version_id NOT IN (SELECT id FROM pac_versions WHERE status = 'processing')`, now());
   let sent = 0;
-  for (const j of await all(app.db, "SELECT * FROM processing_jobs WHERE status = 'queued' ORDER BY created_at, id LIMIT ?", limit)) {
+  for (const j of await all(app.db, `SELECT j.* FROM ${HEAD} LIMIT ?`, limit)) {
     const version = await getVersion(app.db, j.version_id);
-    if (!version || version.status !== "processing") continue;
     await sendWaiting(app, version, j);
     if ((await first(app.db, "SELECT status FROM processing_jobs WHERE id = ?", j.id)).status !== "queued") sent++;
     else break;
