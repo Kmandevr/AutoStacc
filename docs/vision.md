@@ -1,7 +1,7 @@
 ---
 title: Vision and product principles
 summary: Owner-written vision for AutoStacc as a connected creative ecosystem: identity hierarchy, builder, store, collaboration, purchase permanence, licences, trust and safety, programs, and the open-questions register. Guides decisions; not a spec.
-updated: 2026-10-10
+updated: 2026-10-14
 ---
 
 # AutoStacc vision, product principles and working direction
@@ -612,5 +612,5 @@ Checked against the vault on 2026-10-10. The vision above is the direction; thes
 - **Platform fee (§9):** the vision calls fees open; the owner has already set a 20% default fee per creator sale (decision 2026-10-09, [creators](creators.md)).
 - **Sales and promotions (§4):** built as admin-created promotions ([admin](admin.md)); the creator-facing transparency side is not.
 - **Discovery (§4):** search, filters and recommendations exist for the store ([discovery](discovery.md), [browse](browse.md)); creator, collaboration and community discovery do not.
-- **Product contents, file integrity and portability (§4, §6, §7.2, §10):** the processing engine's Phase 0 is built (safe archive reading, SHA-256 per file, formats and facts from file contents; [engine](engine.md)) but not yet used by the site; the Pack Builder, folder-level downloads and contents-derived store details are planned in [packs](packs.md), which lists how it follows this vision. On §6 the owner decided: buyers keep what they downloaded, removed or replaced files in a revision stay downloadable for 30 days, and files are stored once, git-style ([decisions](decisions.md)).
-- **Not built:** collaboration and contributor roles (§5), purchase-time licence/terms versioning (§6), reporting, disputes and appeals (§7), community and founding programs (§8), creator export (§10).
+- **Product contents, file integrity and portability (§4, §6, §7.2, §10):** the Pack Builder is built ([packs](packs.md), Phases 0–9): the processing engine checks every file (safe archive reading, SHA-256 per file, formats and facts from file contents, audio tempo and key as suggestions; [engine](engine.md)), buyers download folders and selections as ZIPs, the store's filters use what packs contain, and creators can download their own originals (§10). On §6 the owner decided: buyers keep what they downloaded, removed or replaced files in a revision stay downloadable for 30 days, and files are stored once, git-style ([decisions](decisions.md)).
+- **Not built:** collaboration and contributor roles (§5), purchase-time licence/terms versioning (§6), reporting, disputes and appeals (§7), community and founding programs (§8), creator export beyond their own originals (§10: metadata and records).
