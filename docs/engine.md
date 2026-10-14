@@ -77,6 +77,7 @@ node test/bench/engine-bench.js <pack.zip>          # native and WebAssembly in 
 node test/bench/browser-bench.js <pack.zip>         # WebAssembly in headless Chromium, 1, 2 and 4 Web Workers
 node test/bench/delta-bench.js                       # how much of a revised WAV a delta store could reuse (decisions)
 node test/bench/analysis-set.js                      # analysis accuracy on 183 labelled synthetic files (above)
+node test/bench/store-perf.js [files]               # the store with a 2,000-file pack and the real engine (needs dist/; docs/packs.md §13)
 ```
 
 ## Analysis (Phase 8, 2026-10-14)
