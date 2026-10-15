@@ -80,7 +80,7 @@
         draft: { url: `${BASE}/${encodeURIComponent(pacId)}/drafts`, get body() { return { productId: $("#pack-product", el).value }; } },
         upload: { create: `${BASE}/${encodeURIComponent(pacId)}/versions`, get body() { return { productId: $("#pack-product", el).value }; },
           get have() { return { url: `${BASE}/${encodeURIComponent(pacId)}/have`, body: { productId: $("#pack-product", el).value } }; } },
-        onOpen: (id) => showVersion(id) });
+        onOpen: () => showPac() });
     }
     const current = pac.draftVersionId || pac.liveVersionId;
     if (current) showVersion(current);

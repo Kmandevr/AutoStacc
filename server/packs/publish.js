@@ -56,7 +56,8 @@ export async function publishVersion(app, version, { reviewedBy = null } = {}) {
   const products = await productsWithPac(db, version.pac_id);
   await db.batch([
     // Only while the version is still ready (not discarded or published meanwhile); otherwise all of it rolls back.
-    guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status IN ('ready', 'in_review'))", version.id),
+    // Unchanged since its stats were read (a removal or addition rewrites them): what was reviewed is what goes live.
+    guardStmt(db, "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status IN ('ready', 'in_review') AND stats IS ?)", version.id, version.stats),
     stmt(db, "UPDATE pac_versions SET status = 'published', published_at = ?, reviewed_by = ?, updated_at = ? WHERE id = ? AND status IN ('ready', 'in_review')",
       t, reviewedBy || null, t, version.id),
     ...products.flatMap((p) => publishStmts(db, { productId: p.id, pacId: version.pac_id, versionId: version.id, entries: entries.map((e) => ({ ...e, fileId: newId("pf") })), t })),

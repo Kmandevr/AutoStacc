@@ -5,7 +5,7 @@
 // copied from the live version. A ZIP that becomes the whole Pac (into an empty Pac, or replacing it) goes up as a new
 // version (js/packs-upload.js: listed in the browser first, and on a revision only the files that changed upload), and
 // opens in the builder once checked. GS.pacDrop.mount(box, { base, draft: { url, body }, upload: { create, body, have }
-// (js/packs-upload.js), info: () => GS.api(the Pac's own url: { pac, versions }), onOpen(versionId) });
+// (js/packs-upload.js), info: () => GS.api(the Pac's own url: { pac, versions }), onOpen(versionId|null: reload) });
 // GS.pacDrop.read(dataTransfer) → [{ name, blob }] (folders kept). Needs js/util.js and js/pac-add.js
 // (js/packs-upload.js and js/packs-preview.js for whole ZIPs; without them a ZIP is added like any files).
 (function () {
@@ -13,6 +13,7 @@
 
   const { $, api } = window.GS;
   const isZip = (f) => /\.zip$/i.test(f.name);
+  const notes = new Map(); // the last word per Pac, kept when the page redraws the zone after a drop
 
   // Every file of a drop, with its path inside what was dropped (directory entries read in full, in batches).
   async function read(dt) {
@@ -25,7 +26,6 @@
       for (let batch; (batch = await new Promise((ok, no) => reader.readEntries(ok, no))).length;) for (const x of batch) await walk(x, `${at}${entry.name}/`);
     };
     for (const x of entries) await walk(x, "");
-    out.folders = entries.filter((x) => x.isDirectory).length;
     return out;
   }
 
@@ -48,15 +48,22 @@
     box.innerHTML = `<div class="pd" data-pd>
         <p class="pd-title">Drop files, a folder or a whole Pac (ZIP) here</p>
         <p class="small-print">It all opens in the builder, where you can arrange it. Nothing reaches buyers until you publish.</p>
-        <div class="actions"><label class="btn small studio-upload">Choose files<input type="file" multiple hidden data-pd-files></label>
-          <label class="btn ghost small studio-upload">Choose a folder<input type="file" webkitdirectory multiple hidden data-pd-folder></label></div>
+        <div class="actions"><button class="btn small" type="button" data-pd-pick="files">Choose files</button>
+          <button class="btn ghost small" type="button" data-pd-pick="folder">Choose a folder</button>
+          <input type="file" multiple hidden data-pd-files><input type="file" webkitdirectory multiple hidden data-pd-folder></div>
         <div class="pd-ask" data-pd-ask hidden></div>
         <div class="small-print" data-pd-preview aria-live="polite"></div>
-        <progress max="1" value="0" hidden data-pd-progress></progress>
-        <p class="msg" role="status" data-pd-status></p></div>`;
+        <progress max="1" value="0" hidden aria-label="Upload progress" data-pd-progress></progress>
+        <p class="msg" role="status" tabindex="-1" data-pd-status></p></div>`;
     const zone = $("[data-pd]", box);
-    const say = (t, error) => { const m = $("[data-pd-status]", box); m.textContent = t; m.classList.toggle("error", Boolean(error)); };
-    const inputs = () => box.querySelectorAll("input[type=file]");
+    const say = (t, error) => {
+      const m = $("[data-pd-status]", box);
+      notes.set(opts.draft.url, { t, error });
+      if (m) { m.textContent = t; m.classList.toggle("error", Boolean(error)); }
+    };
+    const last = notes.get(opts.draft.url);
+    if (last) say(last.t, last.error);
+    const inputs = () => box.querySelectorAll("input[type=file], [data-pd-pick]");
     let busy = false;
 
     // Replace or add, asked in the zone itself. → "replace" | "add" | null (cancelled).
@@ -69,13 +76,15 @@
           <button class="link-btn" type="button" data-pd-choice="">Cancel</button></div>
         <p class="small-print">Replacing starts a new version from this drop alone (an unpublished draft is discarded). Files with the same bytes stay the same files for buyers.</p>`;
       $("[data-pd-choice]", el).focus();
-      el.onclick = (ev) => {
-        const b = ev.target.closest("[data-pd-choice]");
-        if (!b) return;
+      const answer = (choice) => {
         el.hidden = true;
         el.innerHTML = "";
-        done(b.dataset.pdChoice || null);
+        el.onclick = el.onkeydown = null;
+        $("[data-pd-status]", box).focus();
+        done(choice);
       };
+      el.onclick = (ev) => { const b = ev.target.closest("[data-pd-choice]"); if (b) answer(b.dataset.pdChoice || null); };
+      el.onkeydown = (ev) => { if (ev.key === "Escape") answer(null); };
     });
 
     async function start(empty) {
@@ -84,31 +93,33 @@
       return d.data.version.id;
     }
 
-    // A whole ZIP as a new version: what's inside listed first (nothing uploads if it can't be read), then uploaded.
-    async function version(zip) {
-      const list = window.GS.packPreview ? await window.GS.packPreview.list(zip) : {};
-      const r = list.result;
+    // A whole ZIP's contents, listed in the browser; throws (before anything changes) if it can't be read.
+    async function list(zip) {
+      const r = window.GS.packPreview ? (await window.GS.packPreview.list(zip)).result : null;
       if (r && r.error) throw new Error("This isn't a ZIP AutoStacc can read. Choose another file.");
       if (r) {
         const kept = r.files.filter((f) => !f.ignored), refused = kept.filter((f) => f.issues.some((i) => i.refused)).length;
         $("[data-pd-preview]", box).textContent = `${kept.length} file${kept.length === 1 ? "" : "s"} in ${r.folders.length} folder${r.folders.length === 1 ? "" : "s"}${refused ? `; ${refused} would be refused` : ""}.`;
       }
+    }
+
+    // A whole ZIP as a new version (the progress bar shows the bytes; the status says only each stage).
+    async function version(zip) {
       const bar = $("[data-pd-progress]", box);
       bar.hidden = false;
-      let note = "";
       try {
-        const v = await window.GS.packUpload.upload({ base: opts.base, ...opts.upload }, zip,
-          (x) => { bar.value = x; say(`${note} Uploading… ${Math.round(x * 100)}%`.trim()); }, (t) => { note = t; say(t); });
+        const v = await window.GS.packUpload.upload({ base: opts.base, ...opts.upload }, zip, (x) => { bar.value = x; }, (t) => say(t));
         return v.id;
       } finally { bar.hidden = true; }
     }
 
     async function take(files) {
-      if (busy || !files.length) return;
+      if (busy) return say("Still working on the last drop…");
+      if (!files.length) return;
       busy = true;
       inputs().forEach((x) => (x.disabled = true));
       $("[data-pd-preview]", box).textContent = "";
-      let versionId = null;
+      let versionId = null, discarded = false;
       try {
         const s = shape(files);
         const res = await opts.info();
@@ -121,25 +132,30 @@
         if (!choice) return say("");
         if (draft && draft.status !== "ready") throw new Error("A version of this Pac is still being checked or reviewed: wait for it, or discard it, first.");
         const whole = s.zip && opts.upload && window.GS.packUpload && (choice === "replace" || !has);
+        // Checked before the draft goes: a ZIP that can't be read changes nothing.
+        if (s.zip) await list(s.zip);
         if (draft && (choice === "replace" || whole)) {
           const gone = await api(`${opts.base}/versions/${encodeURIComponent(draft.id)}/discard`, { method: "POST", body: {} });
           if (!gone.ok) throw new Error(gone.error.message);
+          discarded = true;
         }
         if (whole) {
           versionId = await version(s.zip);
           return say("Uploaded. Checking every file… it opens below when it's done.");
         }
         versionId = choice === "replace" ? await start(true) : draft ? draft.id : await start(false);
-        const out = await window.GS.pacAdd.add({ base: opts.base, versionId, files: s.files || [], zip: s.zip || null, onStatus: (t) => say(t) });
-        const st = out.addition.stats || {};
-        const refused = (st.refused || []).map((r) => `${r.path} (${r.codes.join(", ")})`);
-        say(`${st.files || 0} file${st.files === 1 ? "" : "s"} added. Arrange them below, then publish.${refused.length ? ` Not added: ${refused.slice(0, 5).join("; ")}${refused.length > 5 ? "…" : ""}.` : ""}`, refused.length > 0);
+        // Added as dropped: a folder keeps its name (only replacing makes its contents the whole Pac).
+        const add = choice === "replace" ? s : { files: s.zip ? [] : files, zip: s.zip };
+        const out = await window.GS.pacAdd.add({ base: opts.base, versionId, files: add.files || [], zip: add.zip || null, onStatus: (t) => say(t) });
+        const refused = window.GS.pacAdd.refusedText(out.addition.stats);
+        const n = (out.addition.stats || {}).files || 0;
+        say(`${n} file${n === 1 ? "" : "s"} added. Arrange them below, then publish.${refused}`, Boolean(refused));
       } catch (err) {
         say(err.message, true);
       } finally {
         busy = false;
         inputs().forEach((x) => { x.disabled = false; x.value = ""; });
-        if (versionId) opts.onOpen(versionId);
+        if (versionId || discarded) opts.onOpen(versionId);
       }
     }
 
@@ -149,6 +165,10 @@
       ev.preventDefault();
       zone.classList.remove("over");
       take(await read(ev.dataTransfer));
+    });
+    box.addEventListener("click", (ev) => {
+      const b = ev.target.closest("[data-pd-pick]");
+      if (b) $(b.dataset.pdPick === "folder" ? "[data-pd-folder]" : "[data-pd-files]", box).click();
     });
     box.addEventListener("change", (ev) => {
       const input = ev.target.closest("[data-pd-files], [data-pd-folder]");

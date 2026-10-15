@@ -5,6 +5,7 @@
 //   POST   …/versions/:versionId/additions {filename, size, folderId, idempotencyKey}  files to add, sent as a ZIP
 //   POST   …/additions/:additionId/complete   once its parts are up (PUT …/uploads/:uploadId/parts/:n, routes.js)
 //   GET    …/additions/:additionId            its state (merged into the version when checked)
+//   DELETE …/additions/:additionId            given up while still uploading (its upload stopped), so the next can start
 //   POST   …/versions/:versionId/folders {parentId, name}   a new folder
 //   DELETE …/versions/:versionId/folders/:folderId            a folder and everything in it
 //   POST   …/versions/:versionId/remove {assetIds}            files out of the version
@@ -20,7 +21,7 @@ import { capBytes } from "../usage/usage.js";
 import { safeFilename } from "../storage/buckets.js";
 import { ADMIN, STUDIO, ownerOf, ensureStudioPac } from "./access.js";
 import { startDraft } from "./copy.js";
-import { startAddition, sendAddition, refreshAddition, getAddition, additionView } from "./additions.js";
+import { startAddition, sendAddition, refreshAddition, getAddition, additionView, failAddition } from "./additions.js";
 import { getUpload, complete, PART_BYTES } from "./uploads.js";
 import { newFolder, removeFiles, removeFolder, writeReadme } from "./tree-edits.js";
 import { versionView } from "./view.js";
@@ -83,6 +84,16 @@ function shared(scope) {
     ["GET", `${P}/additions/:additionId`, async (app, { additionId }) => {
       const actor = await actorOf(app);
       const a = await refreshAddition(app, await addition(app, actor, additionId));
+      return json({ addition: additionView(a), version: await versionView(app.db, a.version_id) });
+    }],
+    ["DELETE", `${P}/additions/:additionId`, async (app, { additionId }) => {
+      const actor = await actorOf(app);
+      let a = await addition(app, actor, additionId);
+      if (a.status === "uploading") {
+        await failAddition(app, a, "cancelled");
+        await audit(app, "pack.addition_cancelled", { targetType: "pac", targetId: (await first(app.db, "SELECT pac_id FROM pac_versions WHERE id = ?", a.version_id)).pac_id, detail: { additionId: a.id } });
+        a = await getAddition(app.db, a.id);
+      }
       return json({ addition: additionView(a), version: await versionView(app.db, a.version_id) });
     }],
     ["POST", `${P}/versions/:versionId/folders`, change("folder_created", async (app, v, b) => {

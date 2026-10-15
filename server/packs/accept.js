@@ -9,6 +9,7 @@ import { ALLOWED_EXTENSIONS, extensionOf } from "../files/policy.js";
 import { LIMITS, filesQuotaOf } from "../creators/policy.js";
 import { storageUsed } from "../creators/storage.js";
 import { resolveCarry } from "./carry.js";
+import { blobsByHash } from "../blobs/blobs.js";
 import { jobWrites } from "./engine-client.js";
 
 const refusedOf = (f) => (f.issues || []).filter((i) => i.refused).map((i) => i.code);
@@ -78,7 +79,10 @@ export async function keptFiles(app, version, job, { result, attempt }, { upload
   const creator = await first(app.db, "SELECT * FROM creators WHERE id = ?", owner);
   let room = null;
   if (creator) {
-    const bytes = kept.reduce((n, f) => n + f.size, 0);
+    // Bytes this owner already stores (a carried file, a file the live version has) count once, already in storageUsed.
+    const stored = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256).filter(Boolean))]);
+    const fresh = new Map(kept.filter((f) => !stored[f.sha256]).map((f) => [f.sha256, f.size]));
+    const bytes = [...fresh.values()].reduce((n, x) => n + x, 0);
     const archive = only ? only.size_bytes : (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ? AND addition_id IS NULL", version.id)).n;
     if ((await storageUsed(app.db, owner)) - archive + bytes > filesQuotaOf(creator)) throw Object.assign(new Error("over quota"), { code: "quota_exceeded" });
     // Checked again inside the import's batch (two imports at once can't both squeeze in): import.js.

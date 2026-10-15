@@ -115,7 +115,12 @@ export async function moveFolder(app, version, { folderId, parentId }) {
   const clash = await all(app.db, "SELECT 1 FROM pac_folders WHERE version_id = ? AND IFNULL(parent_id, '') = IFNULL(?, '') AND lower(name) = lower(?) AND id <> ?",
     version.id, parentId, f.name, f.id);
   if (clash.length) fail(409, "name_taken", "A folder with that name is already there.");
-  await run(app, version, [stmt(app.db, "UPDATE pac_folders SET parent_id = ? WHERE version_id = ? AND id = ?", parentId, version.id, f.id)]);
+  await run(app, version, [
+    // Checked again in the batch: two moves at once (A into B, B into A) can't make a loop.
+    ...(parentId === null ? [] : [guardStmt(app.db, `NOT EXISTS (WITH RECURSIVE up(id) AS (SELECT ? UNION SELECT f.parent_id FROM pac_folders f JOIN up ON f.id = up.id
+      WHERE f.version_id = ? AND f.parent_id IS NOT NULL) SELECT 1 FROM up WHERE id = ?)`, parentId, version.id, f.id)]),
+    stmt(app.db, "UPDATE pac_folders SET parent_id = ? WHERE version_id = ? AND id = ?", parentId, version.id, f.id)
+  ]);
 }
 
 export async function renameFolder(app, version, { folderId, name }) {

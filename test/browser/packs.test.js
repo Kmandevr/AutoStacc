@@ -145,7 +145,7 @@ test("one drop zone: a single file opens in the builder and waits for Publish; a
   // Dragging a card onto a folder moves it there.
   await page.evaluate(() => {
     const from = [...document.querySelectorAll(".pe-file")].find((x) => x.innerText.includes("Snare 02.wav"));
-    const to = [...document.querySelectorAll(".pe-folder > details > summary")].find((x) => x.innerText.includes("Extras"));
+    const to = [...document.querySelectorAll(".pe-folder > .pe-fhead")].find((x) => x.innerText.includes("Extras"));
     const dt = new DataTransfer();
     from.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: dt }));
     to.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: dt }));

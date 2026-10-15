@@ -83,7 +83,10 @@
 .pe-tree ul.pe-level { list-style: none; margin: 0; padding: 0 0 0 16px; border-left: 1px solid var(--line); }
 .pe-tree > ul.pe-level { padding-left: 0; border-left: 0; }
 .pe-tree li { margin: 4px 0; }
-.pe-tree summary { cursor: pointer; font-weight: 600; }
+.pe-fhead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; border-radius: var(--radius); }
+.pe-toggle { display: inline-flex; gap: 6px; align-items: center; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; cursor: pointer; padding: 6px 2px; min-height: 40px; }
+.pe-toggle[aria-expanded="false"] .pe-caret { display: inline-block; transform: rotate(-90deg); }
+.pe-toggle:focus-visible, .pe-play:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* The one drop zone (js/pac-drop.js) and the builder's file cards (js/pac-tree.js). */
 .pd { border: 2px dashed var(--line); border-radius: var(--radius); padding: 18px; margin: 0 0 14px; text-align: center; }
 .pd.over, .pe-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
@@ -93,14 +96,14 @@
 .pe-move { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
 .pe-file { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center;
   padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.pe-file[draggable="true"], .pe-tree summary[draggable="true"] { cursor: grab; }
+.pe-file[draggable="true"], .pe-fhead[draggable="true"] { cursor: grab; }
 .pe-folder { border-radius: var(--radius); }
 .pe-icon { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; background: var(--line); color: var(--text); font-size: 15px; }
 .pe-icon[data-kind="loops"] { background: color-mix(in srgb, var(--lime) 30%, transparent); }
 .pe-icon[data-kind="one-shots"] { background: color-mix(in srgb, var(--coral) 30%, transparent); }
 .pe-icon[data-kind="midi"], .pe-icon[data-kind="stems"] { background: color-mix(in srgb, var(--amber) 30%, transparent); }
-.pe-tree summary .pe-icon { width: auto; height: auto; background: none; margin-right: 4px; }
-.pe-play { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; font-size: 12px; }
+.pe-play { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; font-size: 12px; }
+.pe-play:hover { border-color: var(--accent); }
 .pe-play[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .pe-file:not(:has(.pe-play)) .pe-main { grid-column: 2 / 4; }
 .pe-main { display: grid; gap: 4px; min-width: 0; }

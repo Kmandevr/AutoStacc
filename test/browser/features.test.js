@@ -6,6 +6,8 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { sql, unique } from "../support/client.js";
 import { browserStore, PHONE, DESK } from "../support/browser.js";
+import path from "node:path";
+const ROOT = path.resolve(import.meta.dirname, "../..");
 
 const t = browserStore({ name: "features", port: 8806 });
 const { open, ordersFor, toMockPay, signUp, startImpersonating } = t;
@@ -218,9 +220,12 @@ describe("features in the browser", () => {
     sql(t.stateDir, "UPDATE creators SET trusted = 1");
     await page.click("[data-ws-open]");
     await page.click('[data-ws-item="pacs"]');
-    const zip = Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.alloc(60, 1)]);
-    await page.setInputFiles("[data-spc-upload]", { name: "kit.zip", mimeType: "application/zip", buffer: zip });
-    await page.waitForSelector("text=Uploaded kit.zip");
+    // The one drop zone: a whole Pac (the conformance case the mock engine knows) opens in the builder, then Publish.
+    await page.setInputFiles("[data-pd-files]", path.join(ROOT, "engine/conformance/cases/editor-file.zip"));
+    await page.waitForSelector("[data-pack-publish]", { timeout: 60000 });
+    page.once("dialog", (d) => d.accept());
+    await page.click("[data-pack-publish]");
+    await page.waitForSelector("[data-pack-version] >> text=Published");
     await page.click("[data-ws-open]");
     await page.click('[data-ws-item="release"]');
     await page.click("[data-sw-release=publish]");
