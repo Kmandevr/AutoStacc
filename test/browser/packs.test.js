@@ -154,8 +154,9 @@ test("one drop zone: a single file opens in the builder and waits for Publish; a
   await page.waitForSelector(".pe-folder:has-text('Extras') .pe-file:has-text('Snare 02.wav')");
   await page.click("[data-pe-readme]");
   await page.fill("#pe-readme-text", "One kick, tuned to C.");
-  await page.click("[data-pe-readme-form] button[type=submit]");
-  await page.waitForSelector(".pe-tree >> text=Read me.txt");
+  const [saved] = await Promise.all([page.waitForResponse((r) => r.url().endsWith("/readme") && r.request().method() === "PUT"), page.click("[data-pe-readme-form] button[type=submit]")]);
+  assert.equal(saved.status(), 200, await saved.text());
+  await page.waitForSelector("[data-pe-readme-form]", { state: "hidden" });
   page.once("dialog", (d) => d.accept());
   await page.click(".pe-file:has-text('Kick 07.wav') [data-pe-rmfile]");
   await page.waitForFunction(() => !document.querySelector(".pe-tree").innerText.includes("Kick 07.wav"));

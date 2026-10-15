@@ -7,9 +7,14 @@ import assert from "node:assert/strict";
 import { sql, unique } from "../support/client.js";
 import { browserStore, PHONE, DESK } from "../support/browser.js";
 import path from "node:path";
+import { after } from "node:test";
+import { startMockEngine } from "../mock-engine/server.js";
 const ROOT = path.resolve(import.meta.dirname, "../..");
+// The mock engine checks what the Product Studio's drop zone sends (the Pack Builder's flow, test/browser/packs.test.js).
+const engine = await startMockEngine(8827, { storage: "http://localhost:8806/api/internal/engine-storage" });
+after(() => engine.close());
 
-const t = browserStore({ name: "features", port: 8806 });
+const t = browserStore({ name: "features", port: 8806, vars: { ENGINE_URL: engine.url } });
 const { open, ordersFor, toMockPay, signUp, startImpersonating } = t;
 
 describe("features in the browser", () => {
