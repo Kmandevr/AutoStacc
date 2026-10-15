@@ -33,8 +33,11 @@
       let first = true;
       try { first = !sessionStorage.getItem("gs:done:" + o.id); sessionStorage.setItem("gs:done:" + o.id, "1"); } catch {}
       if (first) track("purchase_complete");
+      // A split cart (AutoStacc's and creators' items) is paid one group at a time: say what's still waiting.
+      const left = cart.items().length;
+      const rest = left ? `<p class="msg" role="status">${left === 1 ? "1 item is" : `${left} items are`} still in your cart and need${left === 1 ? "s" : ""} their own checkout. <a href="/cart">Go to your cart</a></p>` : "";
       root.innerHTML = state("Payment confirmed", false, `<p>Stacc'd. Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
-        ${lines(o)}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>
+        ${lines(o)}${rest}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>
         <div data-refund-slot></div>`);
       refundOption(o);
     } else if (o.status === "failed") {
@@ -50,6 +53,14 @@
     if (big) { big.tabIndex = -1; big.focus(); }
   }
 
+  // Why a paid order can't be refunded here, by the store's reason code (server/orders/refunds.js).
+  const NO_REFUND = {
+    expired: "The 14-day refund window for this order has closed.",
+    free: "This order can't be refunded here.",
+    downloaded: "Files from this order were downloaded, so it can't be refunded here.",
+    disputed: "This order is in a payment dispute with your bank, so it can't be refunded here."
+  };
+
   // Signed in or a guest with this order's key: a paid order can be refunded here within 14 days if nothing from it was
   // downloaded. The store decides (the status route says whether it is eligible); this only offers the button.
   async function refundOption(o) {
@@ -59,7 +70,12 @@
       r = res.ok ? res.data.order.refund : null;
     }
     const slot = $("[data-refund-slot]", root);
-    if (!slot || !r || !r.eligible) return;
+    if (!slot || !r) return;
+    // Not refundable here: say why (the store's reason) and where to go instead.
+    if (!r.eligible) {
+      if (NO_REFUND[r.reason]) slot.innerHTML = `<p class="small-print">${NO_REFUND[r.reason]} Something wrong? <a href="/contact">Contact us</a>.</p>`;
+      return;
+    }
     slot.innerHTML = `<p class="small-print">Bought the wrong thing? <button class="link-btn" type="button" data-refund="${escapeHTML(o.id)}">Refund this order</button>
       until ${escapeHTML(fmtDate(r.until.slice(0, 10)))}, if you haven't downloaded anything from it.</p><p class="msg error" role="alert" hidden></p>`;
   }
@@ -78,7 +94,18 @@
     $("[data-slow]", root).hidden = !slow;
   }
 
+  // One check at a time: "Check again" while a check runs does nothing.
+  let polling = false;
   async function poll() {
+    if (polling) return;
+    polling = true;
+    try { await pollOnce(); } finally { polling = false; }
+  }
+
+  // Never takes the return address as proof: only the store's answer moves the page on. If the store can't answer at
+  // all, the page says so and offers another check instead of waiting forever.
+  async function pollOnce() {
+    let seen = null;
     for (let i = 0; i < 20; i++) {
       // After a few seconds without a webhook, ask the store to check with the payment provider directly.
       const res = i === 3
@@ -92,6 +119,7 @@
       if (res.ok) {
         const o = res.data.order;
         if (o.status !== "pending") return show(o);
+        seen = o;
         waiting(o, false);
       } else if (res.status === 0 && i > 2) {
         root.innerHTML = `<p class="msg error">We couldn't reach the store to check your order. Your payment is safe either way. <button class="link-btn" type="button" data-recheck>Check again</button></p>`;
@@ -101,7 +129,11 @@
     }
     const last = await api(`/api/orders/${encodeURIComponent(orderId)}/reconcile`, { method: "POST", body: {} });
     if (last.ok && last.data.order.status !== "pending") return show(last.data.order);
-    if (last.ok) waiting(last.data.order, true);
+    if (last.ok || seen) return waiting(last.ok ? last.data.order : seen, true);
+    root.innerHTML = state("We couldn't confirm your payment yet", true, `<p class="msg error" role="alert">The store didn't answer just now. Your order is safe either way, and nothing is charged twice if you check again. If the payment went through, your receipt email is on its way.</p>
+      <div class="actions"><button class="btn ghost" type="button" data-recheck>Check again</button></div>`);
+    const big = $(".big", root);
+    if (big) { big.tabIndex = -1; big.focus(); }
   }
 
   // Local test mode only: the store says it runs the mock provider, so offer the outcomes Stripe could report.
@@ -116,7 +148,14 @@
   }
 
   root.addEventListener("click", async (e) => {
-    if (e.target.closest("[data-recheck]")) return poll();
+    const recheck = e.target.closest("[data-recheck]");
+    if (recheck) {
+      if (recheck.disabled) return;
+      recheck.disabled = true;
+      await poll();
+      recheck.disabled = false;
+      return;
+    }
     const refund = e.target.closest("[data-refund]");
     if (refund) {
       if (refund.disabled || !confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
