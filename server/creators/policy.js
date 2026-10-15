@@ -3,6 +3,8 @@
 // Paid plans, when they exist, will be rows that raise these, not new code paths.
 export const LIMITS = {
   creatorsPerAccount: 1,
+  // People on a creator's team, the owner and pending invitations included (docs/builder.md, phase 7).
+  membersPerCreator: 10,
   projectsPerCreator: 10,
   pagesPerSite: 12,
   // The visual builder's grid (docs/builder.md): sections per page, elements per page, rows per section (24px each).

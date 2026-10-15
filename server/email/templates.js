@@ -29,6 +29,14 @@ export const templates = {
       button(url, "Confirm sign-up") + para("The link works for 7 days. Didn't sign up? Ignore this mail and nothing happens. Every newsletter has an unsubscribe link."))
   }),
 
+  // An invitation to join a creator's team (server/creators/team.js). Accepted only by the account with this address.
+  "creator-invite": ({ url, creator, role, inviter }) => ({
+    subject: `${inviter} invited you to ${creator} on AutoStacc`,
+    text: `${inviter} invited you to join ${creator} in the AutoStacc Studio as ${role}.\nAccept: ${url}\n\nSign in (or create an account) with this email address to accept. The link works for 7 days. Not expecting this? Ignore it and nothing happens.`,
+    html: layout(`Join ${creator} on AutoStacc`, para(`${inviter} invited you to join ${creator} in the AutoStacc Studio as ${role}.`) + button(url, "Accept the invitation") +
+      para("Sign in (or create an account) with this email address to accept. The link works for 7 days. Not expecting this? Ignore it and nothing happens."))
+  }),
+
   "verify-email": ({ url }) => ({
     subject: "Confirm your email — AutoStacc",
     text: `Confirm your email to finish creating your account:\n${url}\n\nThe link works for 24 hours.\nDidn't sign up? Don't click: confirming gives that account anything bought with this email. Ignore this mail and nothing happens.`,

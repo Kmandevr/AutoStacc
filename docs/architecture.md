@@ -40,7 +40,7 @@ Every link is stored once, on the child, as an id. Everything else is derived: a
 
 | Concept | Is | Lives in | Notes |
 | --- | --- | --- | --- |
-| Creator | who owns projects and sells | `data/creators.js` (first-party) or the Studio → D1 `creators` | [creators](creators.md) |
+| Creator | who owns projects and sells, with a team of members in roles | `data/creators.js` (first-party) or the Studio → D1 `creators`, `creator_members`, `creator_roles` | [creators](creators.md) |
 | Project | creative work of a creator | `data/projects.js` (or the Studio) → D1 `projects` | `creator`; `features` lists which platform features it uses |
 | Stacclet | a collection of related Pacs | `data/stacclets.js` | not a folder; never holds files directly |
 | Pac | a container of content | `data/pacs.js` | sold through products; its files are assets |

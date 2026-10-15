@@ -58,6 +58,17 @@
 .studio .btn.danger { color: var(--coral); border-color: var(--coral); background: transparent; }
 .studio .btn.danger:hover { color: var(--on-accent); background: var(--coral); }
 
+/* ---------- the team (js/studio-team.js) ---------- */
+.studio-team-panel { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.studio-team { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.studio-team li { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.studio-team li > span:first-child { display: grid; margin-right: auto; }
+.studio-team small { color: var(--muted); }
+.studio-team select { min-height: 36px; }
+.studio-team-new { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.studio-team-new .field { flex: 1 1 200px; margin: 0; }
+.studio-team-new .small-print { flex-basis: 100%; }
+
 /* earnings: the same figure cards as the Control Center, styled here because admin.css isn't loaded */
 .studio-earnings { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
 .studio-earnings h3 { margin: 0 0 12px; }

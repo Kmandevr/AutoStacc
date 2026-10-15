@@ -81,7 +81,7 @@ test("CSS stays inside the page: scoped, rebuilt, and refused when it could reac
     ".a{& .b{c:d}}", ".a{background:image-set('x.png' 1x)}", "@keyframes cs-spin{from{a:b}}", ".a{color:red", "@namespace x url(y);",
     // Found in review: brackets that read differently in the browser, and switching off the page area's containment.
     ":is(.a ,{}) , .cs-footer{color:red}", ":is(.a ,{}) , .cs-strip{display:none}", ".cs-site{contain:none;position:fixed;inset:0;z-index:9}",
-    ":not(.cs-site) .x{a:b}", ".a)(.b{x:y}", ".a{b:(} .cs-footer{color:red}", ".a{content:\"x\n}", "@media (min-width:1px{.a{b:c}}"]) {
+    ":not(.cs-site) .x{a:b}", ".bx-h{display:none}", ".a)(.b{x:y}", ".a{b:(} .cs-footer{color:red}", ".a{content:\"x\n}", "@media (min-width:1px{.a{b:c}}"]) {
     const r = checkCss(evil);
     assert.ok(r.problems.length, evil);
     assert.equal(r.css, "", evil);

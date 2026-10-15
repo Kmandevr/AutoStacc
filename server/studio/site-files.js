@@ -1,6 +1,7 @@
 // Studio API, site files: the images and fonts a creator uploads for their sites (server/sites/images.js checks their
 // bytes and the creator's one storage quota). Raw upload: PUT the file's bytes with ?filename=... . Deleting a file a
-// published site or a kept version still uses hides it until nothing does.
+// published site or a kept version still uses hides it until nothing does. Any member of the creator may upload and
+// delete (sites and product pages both use these files).
 import { json, fail, str } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";

@@ -4,7 +4,9 @@
 // (js/studio-products.js; #products=<id>), one product in the Product Studio (js/studio-workspace.js;
 // #product=<id>&section=<key>) and see earnings (js/studio-earnings.js). All checks
 // (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js (and the
-// modules it needs), js/studio-products.js, js/studio-workspace.js and js/studio-earnings.js.
+// modules it needs), js/studio-team.js (the Team panel; #invite=<token> opens an emailed invitation), js/studio-products.js,
+// js/studio-workspace.js and js/studio-earnings.js. What each member's role allows (capabilities from the API) decides
+// which actions show; the server checks again.
 (function () {
   "use strict";
 
@@ -35,6 +37,7 @@
         </ol></div>`;
       return;
     }
+    const may = (c, cap) => (c.capabilities || []).includes(cap);
     root.innerHTML = data.creators.map((c) => `
       <section class="panel wide studio-creator">
         <div class="studio-creator-head">
@@ -49,28 +52,30 @@
             <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>
         </ul>
         <div class="studio-profile"><div><h3 class="studio-sub">Your profile</h3><p class="small-print">Your home at ${e(location.host + c.path)}: who you are, your music, your projects.</p></div>
-          <button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button></div>
+          ${may(c, "site.edit") ? `<button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button>` : ""}</div>
         <h3 class="studio-sub">Projects</h3>
         <ul class="studio-projects">${c.projects.map((p) => `<li class="studio-project">
           <div class="studio-project-head"><strong>${e(p.name)}</strong> <span class="studio-state" data-live="${p.published}">${p.published ? "Live" : "Draft"}</span></div>
           <a class="studio-path" href="${e(p.path)}" target="_blank" rel="noopener">${e(p.path)}<span class="sr-only"> (opens in a new tab)</span></a>
           <div class="studio-project-actions">
-            <button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>
-            <button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>
+            ${may(c, "site.edit") ? `<button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>` : ""}
+            ${may(c, "products") ? `<button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>` : ""}
           </div>
-          <details><summary>Rename or delete</summary>
+          ${may(c, "projects") ? `<details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
               <button class="btn ghost small" type="submit">Save</button></form>
             <form class="studio-danger" data-form="project-delete" data-id="${e(p.id)}"><div class="field"><label for="pd-${e(p.id)}">Type ${e(p.slug)} to delete</label><input id="pd-${e(p.id)}" name="confirm" required autocomplete="off"></div>
               <button class="btn ghost small danger" type="submit">Delete project</button></form>
-          </details></li>`).join("") || `<li class="studio-empty">No projects yet. Name your first one below: it opens in the editor straight away.</li>`}</ul>
-        ${c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
+          </details>` : ""}</li>`).join("") || `<li class="studio-empty">No projects yet. Name your first one below: it opens in the editor straight away.</li>`}</ul>
+        ${may(c, "projects") && c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
         ${c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
+        <div class="studio-team-panel" data-team="${e(c.id)}"></div>
         ${c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
         <p class="msg" role="status" hidden></p>
       </section>`).join("");
     root.querySelectorAll("[data-earnings]").forEach((el) => window.GS.studioEarnings.draw(el, el.dataset.earnings));
+    root.querySelectorAll("[data-team]").forEach((el) => window.GS.studioTeam.draw(el, el.dataset.team));
   }
 
   async function load() {
@@ -78,6 +83,7 @@
     const ws = window.GS.studioWorkspace;
     if (ws) ws.leave(); // a Product Studio section saves what's pending before another view replaces it
     if (hash.get("product") && ws) return ws.open(root, hash.get("product"), hash.get("section"));
+    if (hash.get("invite")) return window.GS.studioTeam.invite(root, hash.get("invite"), back);
     if (hash.get("project")) return window.GS.builder.open(root, { kind: "project", id: hash.get("project") }, back);
     if (hash.get("profile")) return window.GS.builder.open(root, { kind: "profile", id: hash.get("profile") }, back);
     if (hash.get("products")) return window.GS.studioProducts.open(root, hash.get("products"), back);

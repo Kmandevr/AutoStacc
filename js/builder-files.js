@@ -24,14 +24,14 @@
       <ul class="bx-files">${items || "<li>No files yet.</li>"}</ul>`;
   }
 
-  function historyPanel(data, versions) {
+  function historyPanel(data, versions, mayPublish = true) {
     const sched = data.site.scheduledAt;
     const list = versions === null ? '<p class="msg pending">Loading…</p>' : versions.length ? `<ol class="bx-versions">${versions.map((v) => `<li><span>Version ${v.version}<small>${e(when(v.publishedAt))}${v.scheduled ? " · scheduled" : v.byYou ? "" : " · by a teammate"}</small></span>
       <button class="btn ghost small" type="button" data-action="restore" data-version="${v.version}">Restore</button></li>`).join("")}</ol>` : "<p>Nothing published yet.</p>";
     return `<div class="bx-head"><h3>History</h3></div>
-      <h4 class="bx-sub">Publish later</h4>
+      ${mayPublish ? `<h4 class="bx-sub">Publish later</h4>
       ${sched ? `<p>Your saved draft goes live <strong>${e(when(sched))}</strong>. Changes after scheduling stay in the draft.</p><button class="btn ghost small" type="button" data-action="unschedule">Cancel the schedule</button>`
-        : `<div class="field"><label for="bx-when">Date and time (your time)</label><input id="bx-when" type="datetime-local"></div><button class="btn small" type="button" data-action="schedule">Schedule the saved draft</button>`}
+        : `<div class="field"><label for="bx-when">Date and time (your time)</label><input id="bx-when" type="datetime-local"></div><button class="btn small" type="button" data-action="schedule">Schedule the saved draft</button>`}` : ""}
       <h4 class="bx-sub">Published versions</h4>
       <p class="small-print">The last ${data.options.limits.versionsPerSite} publishes. Restoring puts that version in your draft; publish to make it live.</p>
       ${list}`;

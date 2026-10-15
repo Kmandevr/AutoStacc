@@ -141,7 +141,7 @@
       const sel = raw.trim().replace(/\s+/g, " ");
       if (!sel) { problems.push(`${where}: an empty selector.`); return null; }
       if (sel.length > 300 || !SELECTOR_CHARS.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" uses characters selectors can't have here (no &, @, \\ or /).`); return null; }
-      if (OUTSIDE.test(sel) || /cs-site/i.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page (html, body, :root and .cs-site itself aren't allowed; style .cs-main or a section for the whole page).`); return null; }
+      if (OUTSIDE.test(sel) || /cs-site|bx-/i.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page (html, body, :root, .cs-site itself and the editor's bx- marks aren't allowed; style .cs-main or a section for the whole page).`); return null; }
       if (/^[>+~]/.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page.`); return null; }
       out.push(`${SCOPE} ${sel}`);
     }
