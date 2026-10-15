@@ -59,7 +59,8 @@ export async function keptFiles(app, version, job, { result, attempt }, { upload
   accepted.refused.push(...carried.refused);
   const refused = accepted.refused;
   // Only kinds of files the store sells (server/files/policy.js, the same list as single uploads): nothing else reaches customers.
-  const kept = accepted.kept.filter((f) => ALLOWED_EXTENSIONS.has(extensionOf(f.path)) || (refused.push({ path: f.path, codes: ["unsupported_type"] }), false));
+  const kept = accepted.kept.filter((f) => ALLOWED_EXTENSIONS.has(extensionOf(f.path)) || (refused.push({ path: f.path, codes: ["unsupported_type"] }), false))
+    .filter((f) => f.size <= LIMITS.pacFileMaxBytes || (refused.push({ path: f.path, codes: ["file_too_large"] }), false));
 
   // One name per folder ignoring case (Windows and macOS would merge them); the engine already warned about these.
   const allPaths = logicalPaths(kept.map((f) => f.path));

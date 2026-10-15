@@ -1,14 +1,17 @@
-# Store tests on every pull request and push to main: unit tests, the API security suite (two local stores: mock
-# payments, and Stripe mode against a fake Stripe API with really signed webhooks) and the browser chaos suite.
-# Nothing here touches Cloudflare, Stripe or Brevo; everything runs locally in test mode.
+# Store tests on every pull request: unit tests, the API security suite (two local stores: mock payments, and Stripe
+# mode against a fake Stripe API with really signed webhooks) and the browser chaos suite. Nothing here touches
+# Cloudflare, Stripe or Brevo; everything runs locally in test mode. Not again on the push to main that merges a PR: the
+# PR already ran them, and the deploy runs the unit tests before publishing (CI minutes are limited; docs/decisions.md).
+# A newer push to the same PR cancels the run it replaces.
 name: Store tests
 on:
   pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: store-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   # Decides whether the store can be affected: a change to docs or Claude's config only (docs/, .claude/, *.md) can't,
   # so the test jobs are skipped (a skipped job still counts as passed for required checks). Pushes to main always test.
@@ -22,7 +25,7 @@ jobs:
           fetch-depth: 0
       - id: diff
         run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "store=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "store=true" >> "$GITHUB_OUTPUT"; exit 0; fi # by hand: always
           changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
           if echo "$changed" | grep -qvE '^(docs/|\.claude/)|\.md$'; then echo "store=true"; else echo "store=false"; fi >> "$GITHUB_OUTPUT"
   # Two jobs side by side; inside each, the suite's groups run in parallel with their own stores (API: accounts,

@@ -42,7 +42,8 @@
     const readme = v.files.find((f) => !f.folderId && /^read[ _-]?me\b.*\.txt$/i.test(f.filename));
     const fileUrl = (asset) => `${opts.base}/versions/${encodeURIComponent(v.id)}/files/${encodeURIComponent(asset)}`;
     box.innerHTML = `<section class="panel pe" aria-labelledby="pe-h"><h3 id="pe-h">Builder</h3>
-      <p class="small-print">Drag files and folders onto a folder to arrange them (or use Move), or drop files from your computer onto one to add them there.</p>
+      <p class="small-print">Drag files and folders onto a folder to arrange them (or use Move), or drop files from your computer onto one to add them there. Up to 2,000 files, each under 4 GB.</p>
+      <p class="small-print">Values you set on a file below (kind, tempo, key…) are saved on the file at once: discarding this draft keeps them. Buyers see them only after you publish.</p>
       <div class="pe-tools">
         <button class="btn ghost small" type="button" data-pe-newfolder>New folder</button>
         <button class="btn ghost small" type="button" data-pe-readme>${readme ? "Edit the read me" : "Write a read me"}</button>

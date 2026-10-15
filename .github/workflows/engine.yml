@@ -1,7 +1,9 @@
 # The processing engine (engine/, docs/engine.md) and its Worker (workers/engine/). On every change to them: Rust
 # format, lints (native and WebAssembly), tests, a parity check that the native and WebAssembly builds give identical
-# results on a generated pack, and a build of the Container image with a health check. On main (or by hand) it then
-# deploys the engine Worker and its Container, which runs nothing until a job is queued.
+# results on a generated pack, and a build of the Container image with a health check, on each pull request. On the
+# push to main that merges it, only the deploy of the engine Worker and its Container runs (the PR already passed the
+# checks; CI minutes are limited, docs/decisions.md); by hand, the checks and then the deploy. The Container runs
+# nothing until a job is queued.
 #
 # Deploy secrets: CLOUDFLARE_API_TOKEN (also needs Workers Scripts: Edit, Queues: Edit, Containers: Edit, Account Settings: Read),
 # CLOUDFLARE_ACCOUNT_ID, optional ENGINE_ADMIN_TOKEN (at least 32 characters; turns on the smoke-test routes) and
@@ -10,6 +12,7 @@
 name: Engine
 on:
   push:
+    branches: [main]
     paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/mock-engine/**", "test/unit/engine-worker.test.js", "test/unit/mock-engine.test.js", "scripts/engine-*.js", "scripts/lib/json-schema.js", ".github/workflows/engine.yml"]
   pull_request:
     paths: ["engine/**", "workers/engine/**", "js/engine/**", "test/bench/**", "test/mock-engine/**", "test/unit/engine-worker.test.js", "test/unit/mock-engine.test.js", "scripts/engine-*.js", "scripts/lib/json-schema.js", ".github/workflows/engine.yml"]
@@ -21,6 +24,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -70,6 +74,7 @@ jobs:
         run: node --test test/unit/engine-worker.test.js test/unit/mock-engine.test.js
 
   image:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +88,8 @@ jobs:
 
   deploy:
     needs: [test, image]
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # Skipped checks (on the push to main) don't block it; failed or cancelled ones do.
+    if: ${{ !failure() && !cancelled() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
     runs-on: ubuntu-latest
     concurrency:
       group: engine-deploy

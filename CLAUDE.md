@@ -25,19 +25,17 @@ Static HTML, CSS and JS with no framework, hosted on Cloudflare Pages, plus the 
 
 ## Read in layers
 
-Don't read every file. Go deeper only when the layer above doesn't answer the question, and never re-read a file already in context.
+Don't read every file. Go deeper only when the layer above doesn't answer, and never re-read a file already in context.
 
 1. **Map:** the session-start hook prints the top level. `.claude/tools/tree.sh <dir>` lists one directory's files with their purposes.
 2. **Skill:** for a repeatable task use its skill (`add-product`, `add-news`, `add-release`, `verify-site`, `seo-check`, `store-check`, `accessibility-review`, `release-check`, `code-nav`). Skills name the files; don't re-derive them.
-3. **Graphify** for orientation across files (the `code-nav` skill has the procedure and a self-test; use it before changing code you haven't seen this session): `.claude/tools/graph.sh query "<keywords>"`, `explain "<name>"`, `affected "<name>"`.
-4. **Serena** for symbols in JS, CSS and HTML: `get_symbols_overview`, `find_symbol` (with `include_body`), `find_referencing_symbols`, symbol-level edits. Use it instead of reading a whole file. See `.claude/README.md`.
+3. **Graphify** for orientation across files (procedure and self-test: the `code-nav` skill, before changing code unseen this session): `.claude/tools/graph.sh query "<keywords>"`, `explain "<name>"`, `affected "<name>"`.
+4. **Serena** for symbols in JS, CSS and HTML (overview, find with body, references, symbol edits) instead of reading a whole file; see `.claude/README.md`.
 5. **File:** open only what the layers above named, with Grep or Read `offset`/`limit`.
-
-Preserve module boundaries: edit only the files a change needs, and leave unrelated modules alone.
 
 ## Workflow
 
-One-file changes: just do them. Modularity applies to every file (scripts, styles, pages, server modules, tests, notes, Claude config): one purpose per file, change only what the task needs. Independent review or testing goes to an agent in `.claude/agents/` (`architect` before structural changes, the reviewers and testers after), asking for findings only. Changes across areas: the saved workflow `change` (plan, build in parallel on disjoint files, verify, update docs; never commits; `.claude/README.md`).
+One-file changes: just do them. Modularity applies to every file (code, styles, pages, tests, notes, Claude config): one purpose per file; change only the files the task needs and leave unrelated modules alone. Independent review or testing goes to an agent in `.claude/agents/` (`architect` before structural changes, the reviewers and testers after), asking for findings only. Changes across areas: the saved workflow `change` (plan, build in parallel on disjoint files, verify, update docs; never commits; `.claude/README.md`).
 
 **Parallel by default.** Independent tool calls go in one message; checks that don't depend on each other run together (`npm run test:store` for the store suites; never `test:api` beside `test:browser`, each rebuilds `dist/`). Spawn subagents only for several sizeable independent parts or an independent review; small or single-area work is done inline, to keep usage down. Parallel subagents work on disjoint files, each in a worktree from the current branch (`git worktree add -b <name> .claude/worktrees/<name> HEAD`; automatic worktrees can start from a stale commit), briefed with what you already know (changed files, diff range, findings, checks run and their results) so they don't re-explore.
 

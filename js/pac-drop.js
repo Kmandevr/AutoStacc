@@ -13,6 +13,9 @@
 
   const { $, api } = window.GS;
   const isZip = (f) => /\.zip$/i.test(f.name);
+  // The store's own limits (server/creators/policy.js LIMITS), checked here first so nothing uploads in vain.
+  const MAX_FILES = 2000, MAX_FILE = 4 * 1024 ** 3;
+  const mb = (n) => `${Math.round(n / 1048576).toLocaleString()} MB`;
   const notes = new Map(); // the last word per Pac, kept when the page redraws the zone after a drop
 
   // Every file of a drop, with its path inside what was dropped (directory entries read in full, in batches).
@@ -122,9 +125,17 @@
       let versionId = null, discarded = false;
       try {
         const s = shape(files);
+        const loose = s.zip ? [] : files;
+        if (loose.length > MAX_FILES) throw new Error(`That's ${loose.length.toLocaleString()} files; a Pac holds up to ${MAX_FILES.toLocaleString()}. Split it into more than one Pac.`);
+        const big = (s.zip ? [] : files).filter((f) => f.blob.size > MAX_FILE);
+        if (big.length) throw new Error(`Files over 4 GB can't go into a Pac yet: ${big.slice(0, 3).map((f) => f.name).join(", ")}${big.length > 3 ? "…" : ""}.`);
         const res = await opts.info();
         if (!res.ok) throw new Error(res.error.message);
-        const { pac, versions = [] } = res.data;
+        const { pac, versions = [], storage } = res.data;
+        // A creator's storage: a warning, not a refusal (files the store already has, and replaced ones, count once).
+        const size = s.zip ? s.zip.size : files.reduce((n, f) => n + f.blob.size, 0);
+        if (storage && storage.quotaBytes && size > storage.quotaBytes - storage.usedBytes
+          && !confirm(`This drop is ${mb(size)} and your file storage has ${mb(Math.max(0, storage.quotaBytes - storage.usedBytes))} free. Files AutoStacc already has count once, so it may still fit. Try anyway?`)) return say("");
         const byId = (id) => id && versions.find((v) => v.id === id);
         const draft = pac && byId(pac.draftVersionId), live = pac && byId(pac.liveVersionId);
         const has = [draft, live].some((v) => v && v.stats && v.stats.files > 0);

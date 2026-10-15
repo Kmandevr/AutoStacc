@@ -12,10 +12,10 @@ SKIP='(^|/)\.|^(CLAUDE|README)\.md$|package-lock\.json$'
 purpose() {
   case "$1" in
     *package.json) sed -n 's|^ *"description": *"\(.*\)",*$|\1|p' "$1" | head -1 ;;
-    *.js|*.cjs|*.mjs|*.ts|*.json) sed -n '1s|^// *||p' "$1" ;;
+    *.js|*.cjs|*.mjs|*.ts|*.json|*.jsonc|*.rs) sed -n '1s|^//!* *||p' "$1" ;;
     *.sql)  sed -n '1s|^-- *||p' "$1" ;;
-    *.toml|*.yml|*.sh) sed -n '1{/^#!/d;}; s|^# *||p' "$1" | head -1 ;;
-    *.css)  sed -n '1s|^/\* *||; 1s| *\*/$||p' "$1" ;;
+    *.toml|*.yml|*.sh|*Dockerfile) sed -n '1{/^#!/d;}; s|^# *||p' "$1" | head -1 ;;
+    *.css)  sed -n '1{s|^/\* *||; s| *\*/$||; /^\/\*/!p;}' "$1" | head -1 ;;
     *.html) { sed -n 's|.*<meta name="description" content="\([^"]*\)".*|\1|p' "$1"; sed -n 's|^<!-- *||p' "$1"; } | head -1 ;;
     *.md)   sed -n 's|^summary: *||p' "$1" | head -1 ;;
     _redirects|_headers|*.txt) sed -n '1s|^# *||p' "$1" ;;
@@ -24,9 +24,20 @@ purpose() {
   esac
 }
 
+# A file that can't carry its own line (a generated lockfile, a binary, a JSON fixture) takes its folder's: the nearest
+# `.purpose` above it.
+inherited() {
+  local d; d=$(dirname "$1")
+  while [ "$d" != . ]; do
+    [ -f "$d/.purpose" ] && { echo "Part of $d/: $(head -1 "$d/.purpose")"; return; }
+    d=$(dirname "$d")
+  done
+}
+purposeOf() { local p; p=$(purpose "$1"); [ -n "$p" ] && echo "$p" || inherited "$1"; }
+
 # grep exits 1 on a dotfile-only directory; under pipefail that would end the map early.
 files() { git ls-files "$@" | { grep -Ev "$SKIP" || true; } | sort; }
-show()  { while read -r f; do printf '%-22s %s\n' "$f" "$(purpose "$f")"; done; }
+show()  { while read -r f; do printf '%-22s %s\n' "$f" "$(purposeOf "$f")"; done; }
 
 case "${1:-}" in
   --all) files | show ;;
