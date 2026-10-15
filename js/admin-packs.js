@@ -3,7 +3,8 @@
 // names and headers) and publish it, or discard it. Publishing replaces this Pac's files in the product; files whose
 // bytes didn't change keep their id. Also the queue of creators' versions held by the automated review, to approve or
 // reject. Talks to /api/admin/packs; uploads through js/packs-upload.js, draws a version with js/packs-version.js and
-// its review with js/packs-review.js. Starts on "gs:admin". Needs js/util.js and data/pacs.js.
+// its review with js/packs-review.js; the Pac editor (js/pac-editor.js, js/pac-previews.js) builds it one file at a time.
+// Starts on "gs:admin". Needs js/util.js and data/pacs.js.
 (function () {
   "use strict";
 
@@ -32,6 +33,21 @@
     box.dataset.id = v.id;
     box.__version = v;
     box.innerHTML = window.GS.packVersion.render(v, { admin: true });
+    editor(v);
+  }
+
+  // The Pac as a file manager (js/pac-editor.js) and its preview clips (js/pac-previews.js), when a Pac is chosen.
+  function editor(v) {
+    const box = $("[data-pac-editor]", el);
+    if (!box || !window.GS.pacEditor || !pacId) return;
+    const productId = (($("#pack-product", el) || {}).value) || null;
+    window.GS.pacEditor.attach(box, v, { base: BASE, draft: { url: `${BASE}/${encodeURIComponent(pacId)}/drafts`, body: { productId } },
+      onChanged: draw, reload: async (id) => { await showPac(); showVersion(id); } });
+    const pp = $("[data-pac-previews]", el);
+    if (pp && window.GS.pacPreviews && !pp.dataset.mounted) {
+      pp.dataset.mounted = "1";
+      window.GS.pacPreviews.mount(pp, { url: `${BASE}/${encodeURIComponent(pacId)}/previews`, base: BASE, version: () => $("[data-pack-version]", el).__version || null });
+    } else if (pp && pp.refresh) pp.refresh();
   }
 
   async function showPac() {
@@ -49,11 +65,14 @@
         <div class="actions"><button class="btn" type="submit"${pac.draftVersionId ? " disabled data-locked" : ""}>Upload and check</button></div>
         <progress max="1" value="0" hidden></progress><p class="msg" role="status">${pac.draftVersionId ? "A version is in progress below: publish or discard it first." : ""}</p>
       </form>` : `<p class="msg">No product includes this Pac yet (a product's <code>pacs</code> in data/products.js).</p>`}
+      ${products.length ? "<div data-pac-editor></div>" : ""}
       <div data-pack-version></div>
+      <div data-pac-previews></div>
       ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
         · ${e(v.status)}${v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}</li>`).join("")}</ul>` : ""}`;
     const current = pac.draftVersionId || pac.liveVersionId;
     if (current) showVersion(current);
+    else editor(null);
   }
 
   // What the engine would find, listed in the browser as soon as a file is chosen (nothing uploads yet).

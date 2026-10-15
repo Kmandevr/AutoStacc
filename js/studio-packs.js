@@ -2,7 +2,8 @@
 // product's contents as one ZIP, sees what the checks kept, refused and flagged, reviews the suggested kinds,
 // instruments, tempos and keys, and publishes. A clean version goes live at once; a flagged one waits for AutoStacc's
 // review (the server decides, this only shows its answer). Shows the creator's file storage. Talks to
-// /api/studio/packs; uses js/packs-upload.js, js/packs-preview.js, js/packs-version.js and js/packs-review.js.
+// /api/studio/packs; uses js/packs-upload.js, js/packs-preview.js, js/packs-version.js, js/packs-review.js, and the
+// Pac editor (js/pac-editor.js, js/pac-previews.js) to build it one file at a time.
 // Needs js/util.js.
 (function () {
   "use strict";
@@ -30,6 +31,19 @@
       box.dataset.id = v.id;
       box.__version = v;
       box.innerHTML = window.GS.packVersion.render(v);
+      editor(v);
+    }
+
+    // The Pac as a file manager (js/pac-editor.js) above the version, and its preview clips (js/pac-previews.js).
+    function editor(v) {
+      if (!window.GS.pacEditor) return;
+      window.GS.pacEditor.attach($("[data-pac-editor]", el), v, { base: BASE, draft: { url: `${url}/drafts`, body: {} },
+        onChanged: draw, reload: async (id) => { await show(); showVersion(id); } });
+      const pp = $("[data-pac-previews]", el);
+      if (pp && window.GS.pacPreviews && !pp.dataset.mounted) {
+        pp.dataset.mounted = "1";
+        window.GS.pacPreviews.mount(pp, { url: `${url}/previews`, base: BASE, version: () => $("[data-pack-version]", el).__version || null });
+      } else if (pp && pp.refresh) pp.refresh();
     }
 
     async function showVersion(id) {
@@ -58,11 +72,14 @@
           <div class="actions"><button class="btn" type="submit"${busy ? " disabled data-locked" : ""}>Upload and check</button></div>
           <progress max="1" value="0" hidden></progress><p class="msg" role="status">${busy ? "A version is in progress below: publish or discard it first." : ""}</p>
         </form>
+        <div data-pac-editor></div>
         <div data-pack-version></div>
+        <div data-pac-previews></div>
         ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link-btn" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
           · ${e(STATE[v.status] || v.status)}${pac && v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${v.note ? ` · ${e(v.note)}` : ""}</li>`).join("")}</ul>` : ""}`;
       const current = pac && (pac.draftVersionId || pac.liveVersionId);
       if (current) showVersion(current);
+      else editor(null);
     }
 
     el.addEventListener("change", async (ev) => {

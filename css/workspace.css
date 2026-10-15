@@ -73,3 +73,23 @@
 /* Pack review (js/packs-review.js): a file's waveform from the engine's analysis, beside its format. */
 .pack-wave { display: inline-block; width: 80px; height: 14px; vertical-align: middle; }
 .pack-wave path { stroke: var(--muted); stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }
+
+/* Pac editor (js/pac-editor.js, js/pac-tree.js, js/pac-previews.js): the Pac as a file manager, and its preview clips. */
+.pe-tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin: 0 0 10px; }
+.pe-tools .field { margin: 0; min-width: 200px; }
+.pe-tools label.btn { cursor: pointer; }
+.pe-readme { display: grid; gap: 8px; margin: 0 0 12px; }
+.pe-readme textarea { width: 100%; font: inherit; }
+.pe-tree ul.pe-level { list-style: none; margin: 0; padding: 0 0 0 16px; border-left: 1px solid var(--line); }
+.pe-tree > ul.pe-level { padding-left: 0; border-left: 0; }
+.pe-tree li { margin: 4px 0; }
+.pe-tree summary { cursor: pointer; font-weight: 600; }
+.pe-file { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.pe-name { overflow-wrap: anywhere; }
+.pe-actions { display: inline-flex; gap: 8px; margin-left: 6px; font-weight: 400; }
+.pe-empty { margin: 4px 0 4px 16px; }
+.pp-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; margin: 0 0 10px; }
+.pp-list audio { grid-column: 1 / -1; width: 100%; }
+.pp-add { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; }
+.pp-add .field { margin: 0; min-width: 200px; }
+@media (max-width: 600px) { .pe-tools .field, .pp-add .field { min-width: 100%; } }
