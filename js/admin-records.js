@@ -1,5 +1,6 @@
 // Admin records: orders (with payment events, entitlements and a resend-receipt button), customers (each with a
 // Preview button that js/admin-customer.js answers) and entitlements (grant manual/promo/replacement access, revoke).
+// Order details link their customer (preview) and products (the Products tab); the summary's alerts open order details.
 // Starts when js/admin.js fires "gs:admin" after the access check. Needs js/util.js.
 (function () {
   "use strict";
@@ -19,18 +20,27 @@
         <td><button class="link-btn" type="button" data-order="${escapeHTML(o.id)}">details</button></td></tr>`)) + `<div id="order-detail"></div>`;
   }
 
+  // The details open under up to 200 order rows, so they are scrolled to and their heading takes focus (on a phone the
+  // tap otherwise seems to do nothing). The email opens the customer preview and product ids the product in Products,
+  // through the existing tabs (the links' #hash switches the tab; js/admin-customer.js and js/admin.js answer them).
+  const showProduct = (pid) => `<a href="#products" data-show-product="${escapeHTML(pid)}">${escapeHTML(pid)}</a>`;
   async function orderDetail(id) {
     const el = $("#order-detail");
+    el.innerHTML = `<p class="msg pending" role="status">Loading ${escapeHTML(id)}…</p>`;
+    el.scrollIntoView({ block: "nearest" });
     const res = await api(`/api/admin/orders/${encodeURIComponent(id)}`);
     if (!res.ok) return fail(el, res);
     const { order: o, events, entitlements, emails } = res.data;
-    el.innerHTML = `<div class="panel wide"><h2>${escapeHTML(o.id)}</h2>
-      <p>${escapeHTML(o.email)} · ${escapeHTML(o.status)} · ${cents(o.totalCents, o.currency)} · ${escapeHTML(o.provider)} ${escapeHTML(o.providerPaymentId || "")}</p>
-      <ul>${o.items.map((i) => `<li>${escapeHTML(i.title)} ×${i.quantity} — ${cents(i.lineTotalCents, o.currency)}</li>`).join("")}</ul>
+    el.innerHTML = `<div class="panel wide"><h2 tabindex="-1" data-order-heading>${escapeHTML(o.id)}</h2>
+      <p>${o.userId ? `<a href="#customers" data-preview="${escapeHTML(o.userId)}">${escapeHTML(o.email)}</a>` : `${escapeHTML(o.email)} <span class="small-print">(guest)</span>`} · ${escapeHTML(o.status)} · ${cents(o.totalCents, o.currency)} · ${escapeHTML(o.provider)} ${escapeHTML(o.providerPaymentId || "")}</p>
+      <ul>${o.items.map((i) => `<li>${escapeHTML(i.title)} (${showProduct(i.productId)}) ×${i.quantity} — ${cents(i.lineTotalCents, o.currency)}</li>`).join("")}</ul>
       <h3>Payment events</h3><ul>${events.map((e) => `<li>${escapeHTML(e.received_at)} ${escapeHTML(e.type)} → ${escapeHTML(e.outcome)} ${escapeHTML(e.detail || "")}</li>`).join("") || "<li>none</li>"}</ul>
-      <h3>Entitlements</h3><ul>${entitlements.map((e) => `<li>${escapeHTML(e.product_id)}: ${escapeHTML(e.status)}${e.revoke_reason ? ` (${escapeHTML(e.revoke_reason)})` : ""}</li>`).join("") || "<li>none</li>"}</ul>
+      <h3>Entitlements</h3><ul>${entitlements.map((e) => `<li>${showProduct(e.product_id)}: ${escapeHTML(e.status)}${e.revoke_reason ? ` (${escapeHTML(e.revoke_reason)})` : ""}</li>`).join("") || "<li>none</li>"}</ul>
       <h3>Emails</h3><ul>${emails.map((m) => `<li>${escapeHTML(m.created_at)} ${escapeHTML(m.kind)}: ${escapeHTML(m.status)} ${escapeHTML(m.error || "")}</li>`).join("") || "<li>none</li>"}</ul>
       ${o.status === "paid" ? `<div class="actions"><button class="btn ghost" type="button" data-resend="${escapeHTML(o.id)}">Resend receipt</button><span class="msg" role="status"></span></div>` : ""}</div>`;
+    const h = $("[data-order-heading]", el);
+    h.scrollIntoView({ block: "start" });
+    h.focus({ preventScroll: true });
   }
 
   async function customers(q = "") {
@@ -71,10 +81,16 @@
         return;
       }
       const v = e.target.closest("[data-revoke]");
-      if (v && confirm("Revoke this access?")) {
+      // A refused revoke says why beside its button instead of silently redrawing.
+      if (v && !v.disabled && confirm("Revoke this access?")) {
         const reason = prompt("Reason (shown in the record):", "revoked by admin") || "revoked by admin";
-        await api(`/api/admin/entitlements/${encodeURIComponent(v.dataset.revoke)}/revoke`, { method: "POST", body: { reason } });
-        entitlements();
+        v.disabled = true;
+        const res = await api(`/api/admin/entitlements/${encodeURIComponent(v.dataset.revoke)}/revoke`, { method: "POST", body: { reason } });
+        if (res.ok) return entitlements();
+        v.disabled = false;
+        let msg = v.parentElement.querySelector(".admin-row-error");
+        if (!msg) { msg = document.createElement("span"); msg.className = "msg error admin-row-error"; msg.setAttribute("role", "alert"); v.after(msg); }
+        msg.textContent = res.error.message;
       }
     });
     root.addEventListener("submit", async (e) => {
