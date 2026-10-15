@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Decisions
@@ -400,3 +400,12 @@ The cost rules decided on 2026-10-10 (alert at 80%, pause at 95%, owner override
 - **Older files are hashed, not imported as stored originals** (the plan's "legacy import job"): the sweep records SHA-256 and CRC-32 in `product_files.meta`, which lets them join ZIP downloads, while their storage and deletion rules stay as they were. Turning them into stored originals would hand their deletion to the originals' sweep, a risk to files buyers rely on, for no benefit customers see.
 - **Removed single files' bytes are deleted a day later** (`server/files/retention.js`), where before they stayed in R2 forever ("by design", with a reconciliation job planned). The budget guard's review showed keeping them let a creator fill AutoStacc's storage by deleting and uploading again; they now count against the creator's quota until deleted. Rows stay, for orders and the audit trail.
 - **Creators download their originals** from any checked version of their Pac, one file or a ZIP (vision §10). Full creator export (metadata, records) stays open in the vision.
+
+## 2026-10-15: A Pac is built one thing at a time; single files are checked like packs (owner)
+
+The owner asked for a small system that lets a creator build a whole Pac one thing at a time, and answered:
+- **Who sees a Pac's view:** the creator, as a file manager in the Studio (add files into a folder, make folders, rename, move and remove, edit each file's details, then publish), and customers in Your Stacc (the Pac's folders as a tree, with its read me and previews).
+- **Single files:** checked automatically by the engine like packs; a clean one goes live, only a flagged one waits for an admin (settles that question in #111).
+- **Read me:** both, text written in the Studio that ships in the Pac as a file, or any document the creator uploads.
+- **Previews:** 0 to 3 per Pac that customers can play, each either an uploaded clip or picked from the Pac's own audio files and cut short.
+How it's built: [packs](packs.md).
