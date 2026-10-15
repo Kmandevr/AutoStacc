@@ -1,10 +1,11 @@
-# Weekly fuzzing of the processing engine (engine/fuzz/, docs/engine.md): random archives, file headers and names must
-# never crash or hang it. Five minutes per target on Mondays, or by hand; a crash fails the run and its input is kept as
-# an artifact (reproduce with: cargo +nightly fuzz run <target> <file>, from engine/).
+# Monthly fuzzing of the processing engine (engine/fuzz/, docs/engine.md): random archives, file headers and names must
+# never crash or hang it. Five minutes per target on the 1st of each month, or by hand; a crash fails the run
+# and its input is kept as an artifact (reproduce with: cargo +nightly fuzz run <target> <file>, from engine/). Monthly,
+# with cargo-fuzz kept between runs, because CI minutes are limited (docs/decisions.md); longer runs happen locally.
 name: Engine fuzzing
 on:
   schedule:
-    - cron: "17 4 * * 1"
+    - cron: "17 4 1 * *"
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,8 +22,15 @@ jobs:
         working-directory: engine
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/cargo-fuzz
+            ~/.cargo/registry
+            engine/fuzz/target
+          key: fuzz-${{ matrix.target }}-${{ hashFiles('engine/Cargo.lock', 'engine/fuzz/Cargo.lock') }}
       - name: Nightly Rust and cargo-fuzz
-        run: rustup toolchain install nightly --profile minimal && cargo install cargo-fuzz --locked
+        run: rustup toolchain install nightly --profile minimal && (command -v cargo-fuzz || cargo install cargo-fuzz --locked)
       - name: Seed the archive fuzzer with the conformance cases
         run: mkdir -p fuzz/corpus/zip && cp conformance/cases/*.zip fuzz/corpus/zip/
       - name: Fuzz ${{ matrix.target }} for five minutes
