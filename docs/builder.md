@@ -1,12 +1,13 @@
 ---
 title: Visual builder
-summary: PLANNED (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
+summary: Phases 1–7 BUILT, 8–9 planned (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
+covers: [js/builder*.js, js/site-*.js, css/builder.css, css/builder-canvas.css, css/creator-site.css, server/sites/, server/studio/sites.js, server/studio/site-files.js, server/creators/storage.js, db/migrations/0025_visual_builder.sql, test/unit/builder.test.js, test/api/builder.suite.js, test/browser/builder.test.js]
 updated: 2026-10-15
 ---
 
 # Visual builder
 
-> **PLANNED.** The owner's answers of 2026-10-15, turned into a build plan. It replaces the Studio's form-based block editor ([creators](creators.md#the-studio-studio)) with one visual editor. Each phase is marked as it is built; nothing below exists until its phase says **Built**. Decisions: [decisions](decisions.md#2026-10-15-the-visual-builder).
+> **Phases 1–7 BUILT (2026-10-15); 8–9 PLANNED.** The owner's answers of 2026-10-15, turned into a build plan. The visual editor replaced the Studio's form-based block editor ([creators](creators.md#the-studio-studio)). Each phase below is marked; what isn't marked **Built** doesn't exist yet. Decisions: [decisions](decisions.md#2026-10-15-the-visual-builder).
 
 ## What the owner asked for
 
@@ -48,33 +49,48 @@ updated: 2026-10-15
 The rules in [creators](creators.md#how-creator-pages-stay-safe) still hold; these are the changes:
 
 - **Still no creator HTML or JavaScript.** A site is still a JSON document that the server checks and renders itself. The grid adds positions (`x`, `y`, `w`, `h` in grid units), section backgrounds, class names and settings for the trusted pieces, all checked values.
-- **CSS is parsed and rebuilt, never pasted.** The server's checker (a new module, server/sites/css.js) reads the stylesheet into rules and declarations and writes a new one. Every selector is put under the page area (`.cs-site …`), so `body`, `html`, `:root`, the AutoStacc strip and the footer can't be reached. Refused: `@import`, `@font-face`, `@namespace`, `@charset`, `url()` other than the creator's own images and fonts, `image-set()`, `expression()`, `behavior`, `-moz-binding`, backslash escapes, `<`, nesting (`&`), and anything over the size limit. The page area itself is `contain: paint` and `isolation: isolate`, so even `position: fixed` stays inside it and nothing can be drawn over the strip.
+- **CSS is parsed and rebuilt, never pasted.** The server's checker (a new module, server/sites/css.js) reads the stylesheet into rules and declarations and writes a new one. Every selector becomes a descendant of the page area (`.cs-site …`), and the page area itself can't be named (its containment is what holds everything in; style `.cs-main` or a section instead), so `body`, `html`, `:root`, the AutoStacc strip and the footer can't be reached. Selectors can't name the editor's own `bx-` marks either. Brackets, quotes and braces must balance in every selector, value and condition, so the browser can't read a rule's end anywhere other than where the checker did (both found in the security review, 2026-10-15, and covered by tests). Refused: `@import`, `@font-face`, `@namespace`, `@charset`, `url()` other than the creator's own images and fonts, `image-set()`, `expression()`, `behavior`, `-moz-binding`, backslash escapes, `<`, nesting (`&`), and anything over the size limit. The page area itself is `contain: paint` and `isolation: isolate`, so even `position: fixed` stays inside it and nothing can be drawn over the strip.
 - **One trusted script.** The page's CSP changes from `script-src 'none'` to the address of AutoStacc's runtime (/js/site-runtime.js, new) only. `connect-src`, forms and frames stay as they are. The runtime reads the settings the server wrote into `data-` attributes; it never evaluates anything a creator typed. Every piece works without it (all slides shown, every tab open, plain audio controls).
-- **Fonts are checked by their bytes** (the `wOF2` signature) and served from `/media/sites/<id>` like images, with `font-src` allowing only them and the curated Google Fonts.
+- **Fonts are checked by their bytes** (the WOFF2 header: signature, a known flavor and the file's own length) and served from `/media/sites/<id>` like images, with `font-src` allowing only them and the curated Google Fonts.
 - **Shared and bought pieces** are copied into the buyer's document as data and checked again like anything the buyer typed. Their images stay the seller's, so a document may show its creator's own images **and** images of pieces its creator installed.
 
-## Data
+## Data (built)
 
-- **Site document version 2** (`server/sites/document.js`):
-  `{ version: 2, theme: { preset, accent, font, fontAsset?, logo?, css }, nav: [{ label, page | url }], pages: [{ slug, title, sections: [{ id, height, background, cls, elements: [{ id, type, box: { x, y, w, h }, phone: { hidden, order, h }, cls, effect, …fields }] }] }] }`.
-  A version 1 document (a list of blocks per page) converts to one section per page with the blocks stacked in full-width rows, so a converted site looks as it did.
-- **Shared renderer.** The HTML is written by one pure module shared by the server and the editor (js/site-render.js, new, shared the way `js/pack-diff.js` is), so what the editor shows is what visitors get.
-- **Profile sites**: `creator_sites` (draft, published, version) and `profile_pages`, served at `/<creator>` and `/<creator>/<page>`. A profile page's address and a project's address share one namespace per creator; each refuses a name the other uses.
-- **History**: `site_versions` (the last 20 published documents per site).
-- **Scheduling**: `scheduled_at` with a snapshot of the draft; published by the next visit to the site after that time or by the daily sweep, whichever comes first.
-- **Roles**: `creator_members.role` gains `admin`, `publisher`, `store_manager` (the existing `editor` stays: drafts only); invitations by email, accepted while signed in with that address.
-- **Community library**: `library_pieces` (kind section, element or template; the checked fragment; trusted creators only), `library_installs`, `library_reports`. A paid piece is a store product of kind `template` with no file; owning it allows installing it.
+- **Site document version 2** (`server/sites/document.js`, its parts `elements.js`, `fields.js`, `networks.js`):
+  `{ version: 2, theme: { preset, accent, font, fontAsset, logo, header, css }, nav: { items: [{ label, page | url }] }, pages: [{ slug, title, description, sections: [{ id, rows, full, cls, background: { color, asset, fit, overlay, text }, elements: [{ id, type, box: { x, y, w, h }, phone: { hidden, order, h }, cls, style: { align, color, bg, radius, pad, size, shadow }, effect, hover, …fields }] }] }] }`.
+  A version 1 document (a list of blocks per page) converts when read (`server/sites/convert.js`): one section per page, blocks stacked in full-width rows. The draft is saved as version 2 at the next save; published version 1 sites keep their rendered pages until published again.
+- **Shared modules** in `js/`, used by the server (thin re-exports in `server/sites/`) and the editor, the way `js/pack-diff.js` is: `site-text.js` (escaping, safe links, the text markup), `site-embeds.js`, `site-theme.js` (presets, fonts, header modes), `site-css.js` (the CSS checker), `site-elements.js` (each element's HTML) and `site-render.js` (sections on the grid, phone order, header and menu, the whole page). What the editor shows is what visitors get.
+- **Grid:** 12 columns and rows of 24px that grow to fit their content (`css/creator-site.css`); an element's box is in those units. Phones (under 640px) get one column ordered top to bottom, then left to right, unless an element has its own phone order; phone-hidden elements and empty boxes drop out; a phone height is a minimum.
+- **Profile sites**: `creator_sites` (draft, published, version, `live`) and `profile_pages` (migration `0025_visual_builder.sql`), served by `server/sites/public.js`. A site is a *target* (`server/sites/targets.js`: a project's or a profile's tables, address and titles), so editing, publishing, history and scheduling share one path (`server/sites/publish.js`, `server/studio/sites.js`: the same handlers under `/api/studio/projects/:id/…` and `/api/studio/creators/:id/…`).
+- **History**: `site_versions`, the last 20 publishes per site (`LIMITS.versionsPerSite`); restore copies one into the draft (`server/sites/versions.js`).
+- **Scheduling**: `scheduled_at` and a copy of the saved draft on the site's row; published on the first visit after that time or by the daily sweep (`server/sites/schedule.js`; a compare-and-set takes the copy, so it publishes once). Edits after scheduling stay in the draft.
+- **Files**: `site_assets` holds images and fonts; `hidden_at` marks a deleted file a published page or kept version still uses (still served and counted; released after the next publish that leaves nothing using it; `server/sites/images.js`). Storage: `inUseSql` in `server/creators/storage.js` now adds site files, and `quotaOf` in `server/creators/policy.js` is the one 550 MB cap for every kind of upload.
+- **Templates**: `server/sites/templates.js`, four documents with placeholder words only and no files (`GET /api/studio/templates/:id`).
+- **Roles** (built, phase 7): `creator_roles` beside `creator_members` (its CHECK allows only `owner` and `editor`, and migrations never rebuild tables), invitations in `creator_invites` ([creators](creators.md#teams-built-2026-10-15)). In the editor, members who can't publish see no Publish, Unpublish or schedule; the server refuses them anyway.
+- **Community library** (planned, phase 8): `library_pieces` (kind section, element or template; the checked fragment; trusted creators only), `library_installs`, `library_reports`. A paid piece is a store product of kind `template` with no file; owning it allows installing it.
+
+## The editor (built)
+
+`studio.html` loads the shared modules and the editor: `js/builder.js` (toolbar, tabs, save, publish, preview, files, history, schedule; keyboard: Delete, arrows to nudge, Ctrl/Cmd+D duplicate, Ctrl/Cmd+Z / Shift+Z / Y, Ctrl/Cmd+S, Escape), `builder-canvas.js` (the page in a same-origin iframe drawn by the shared renderer with `css/builder-canvas.css` on top: select, drag to move, also into another section, handles to resize, a section's bottom edge for its height, double-click to type into a heading or button; in phone view, drag to reorder and the bottom handle for a phone height), `builder-edit.js` (every change to the document, recorded for undo), `builder-panel.js` and `builder-fields.js` (the Edit and Site tabs, with a Layers list so everything can be reached by keyboard), `builder-add.js` (elements, section layouts, templates), `builder-files.js` (Files, History), `builder-model.js` (pure: element defaults, layouts, free spots, ids, undo history). Embeds show as placeholders in the editor (the Studio's CSP frames nothing), and the editor never runs the runtime. The Studio overview opens a profile with **Design your profile** (`#profile=<creator id>`) and a project with **Edit site** (`#project=<id>`).
+
+## The trusted runtime (built)
+
+`js/site-runtime.js`, standalone, no dependencies: motion as elements scroll in (`data-fx`; hover effects are CSS), slideshow arrows, keys and autoplay, tabs (ARIA tabs, arrow keys), a lightbox for galleries (drawn outside the contained page area so it can fill the window), countdowns (`data-countdown`, the finished text from `data-done`), and an audio player that draws a live waveform from the page's own `<audio>` with Web Audio while it plays (no network: the engine keeps no waveform for products' preview clips) and seeks on click. It uses `textContent` only and catches its own errors; all of it is off for reduced motion where it moves.
 
 ## Build order
 
-Each phase merges with the feature switch `studio.visualBuilder` off until the editor is complete, so the live Studio keeps working.
+1. **Built.** Document v2 and shared renderer: grid layout, section backgrounds, phone rules, automatic conversion of version 1, profile sites and their addresses.
+2. **Built.** CSS checker and fonts: the stylesheet and class names, font and logo uploads, the combined storage cap.
+3. **Built.** Visual editor: edit on the live page, drag and resize on the grid, undo / redo, phone view, pages and menu, the side panel.
+4. **Built.** Templates: the four starters, offered when a site starts and any time under Add.
+5. **Built.** Trusted library: `js/site-runtime.js` and its pieces (motion, slideshow, tabs, accordion, lightbox, audio player with waveform, countdown, store-link pieces).
+6. **Built.** History and scheduling: last 20 publishes with restore, scheduled publishing.
+7. **Built.** Roles: the four roles across the Studio API (capabilities in `server/creators/roles.js`), invitations by email, the Team panel.
+8. Community library: share, browse, install, report, Control Center takedown; selling pieces as store products.
+9. Finish: `/privacy`, the terms and notes for roles and the library.
 
-1. **Document v2 and shared renderer**: grid layout, section backgrounds, phone rules, automatic conversion of version 1, profile sites and their addresses.
-2. **CSS checker and fonts**: the stylesheet and class names, font and logo uploads, the combined storage cap.
-3. **Visual editor**: edit on the live page, drag and resize on the grid, undo / redo, phone view, pages and menu, the side panel.
-4. **Templates**: the four starters, a template picker for new sites and profiles.
-5. **Trusted library**: js/site-runtime.js and its pieces (motion, slideshow, tabs, accordion, lightbox, audio player with waveform, countdown, store-link pieces).
-6. **History and scheduling**: last 20 publishes with restore, scheduled publishing.
-7. **Roles**: the four roles across the Studio API, invitations.
-8. **Community library**: share, browse, install, report, Control Center takedown; selling pieces as store products.
-9. **Switch on**: remove the old editor, turn `studio.visualBuilder` on, update [creators](creators.md), `/privacy` and the terms.
+Phases 1–6 shipped together in one change, without the feature switch first planned: the new document would have broken the old form editor, so the editor replaced it in the same change.
+
+## Tests
+
+`test/unit/builder.test.js` (document, CSS checker, renderer, templates, fonts), `test/api/builder.suite.js` (profiles, ownership, the address space, history, scheduling, CSS, fonts, storage, kept files, templates) and `test/browser/builder.test.js` (template, edit, type, add, drag, undo / redo, phone view, publish, the public page's only script; CSS; the editor on a phone). `BUILDER_SHOTS=<folder>` saves its screenshots.

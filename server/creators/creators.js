@@ -1,4 +1,5 @@
-// Creators and their members as the store keeps them (D1 creators, creator_members), plus the read side of projects.
+// Creators and their members as the store keeps them (D1 creators, creator_members with each member's role in
+// creator_roles: roles.js), plus the read side of projects.
 // Studio projects are changed in projects.js; renames' slug holds live in holds.js. Slugs are lowercase and unique
 // (creators site-wide, projects within their creator). Catalog creators and projects (data/creators.js,
 // data/projects.js) are read here too, but only the deploy's sync writes them.
@@ -6,6 +7,7 @@ import { all, first, stmt, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { slugProblem } from "../lib/slugs.js";
 import { LIMITS } from "./policy.js";
+import { ROLES } from "./roles.js";
 import { creatorSlugFree, holdStmt, taken, isUnique, holdsOf, MAX_HOLDS, namePosesAsFirstParty } from "./holds.js";
 
 const LIVE = "deleted_at IS NULL";
@@ -17,15 +19,20 @@ export const getProjectBySlug = (db, creatorId, slug) =>
   first(db, `SELECT * FROM projects WHERE creator_id = ? AND slug = ? AND ${LIVE}`, creatorId, String(slug).toLowerCase());
 export const projectsOf = (db, creatorId) => all(db, `SELECT * FROM projects WHERE creator_id = ? AND ${LIVE} ORDER BY name`, creatorId);
 
+// A member's role: the owner, else the team role in creator_roles (a member without one is an editor).
+const ROLE_SQL = "CASE WHEN m.role = 'owner' THEN 'owner' ELSE COALESCE(r.role, m.role) END";
+const WITH_ROLE = "creator_members m LEFT JOIN creator_roles r ON r.creator_id = m.creator_id AND r.user_id = m.user_id";
+
 // The creators an account belongs to, with its role in each.
 export const creatorsOfUser = (db, userId) => all(db,
-  `SELECT c.*, m.role FROM creator_members m JOIN creators c ON c.id = m.creator_id WHERE m.user_id = ? AND c.${LIVE} ORDER BY c.name`, userId);
+  `SELECT c.*, ${ROLE_SQL} AS role FROM ${WITH_ROLE} JOIN creators c ON c.id = m.creator_id WHERE m.user_id = ? AND c.${LIVE} ORDER BY c.name`, userId);
 
 export const roleOf = async (db, creatorId, userId) =>
-  ((await first(db, "SELECT role FROM creator_members WHERE creator_id = ? AND user_id = ?", creatorId, userId)) || {}).role || null;
+  ((await first(db, `SELECT ${ROLE_SQL} AS role FROM ${WITH_ROLE} WHERE m.creator_id = ? AND m.user_id = ?`, creatorId, userId)) || {}).role || null;
 
-// A Studio creator this account may change (owner, or editor when allowed). Anything else looks like nothing there.
-export async function requireCreator(db, creatorId, user, roles = ["owner", "editor"]) {
+// A Studio creator this account may act on with one of these roles (by default, any member; routes pass
+// rolesFor(capability) from roles.js). Anything else looks like nothing there.
+export async function requireCreator(db, creatorId, user, roles = ROLES) {
   // The creator and this account's role in it are read together; nothing is returned until both checks below pass.
   const [creator, memberRole] = typeof creatorId === "string" ? await Promise.all([getCreator(db, creatorId), roleOf(db, creatorId, user.id)]) : [null, null];
   const role = creator && creator.source === "studio" ? memberRole : null;
@@ -113,4 +120,8 @@ export const publicCreator = (c) => ({ id: c.id, slug: c.slug, name: c.name, sta
 export const publicProject = (p) => ({ id: p.id, slug: p.slug, name: p.name, published: Boolean(p.published), source: p.source });
 
 // Account deletion: the account leaves every creator it belongs to. Callers refuse first if it still owns a live one.
-export const leaveAllCreatorsStmt = (db, userId) => stmt(db, "DELETE FROM creator_members WHERE user_id = ?", userId);
+export const leaveAllCreatorsStmts = (db, userId, email) => [
+  stmt(db, "DELETE FROM creator_roles WHERE user_id = ?", userId),
+  stmt(db, "DELETE FROM creator_members WHERE user_id = ?", userId),
+  stmt(db, "DELETE FROM creator_invites WHERE email = ? AND accepted_at IS NULL", String(email || "").toLowerCase())
+];

@@ -2,6 +2,7 @@
 // LIMITS.renameHoldDays, so nobody can take it to pose as them, and its old address answers a 301 to the new one.
 import { all, first, stmt, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
+import { profileSlugs } from "../sites/addresses.js";
 import { LIMITS } from "./policy.js";
 
 export const taken = () => fail(409, "slug_taken", "That name is taken.", { field: "slug" });
@@ -32,11 +33,14 @@ export async function creatorSlugFree(db, slug, creatorId = null) {
 }
 
 export async function projectSlugFree(db, creatorId, slug, projectId = null) {
-  const [row, hold] = await Promise.all([
+  const [row, hold, profile] = await Promise.all([
     first(db, "SELECT id FROM projects WHERE creator_id = ? AND slug = ? AND deleted_at IS NULL", creatorId, slug),
-    heldBy(db, "project", creatorId, slug)
+    heldBy(db, "project", creatorId, slug),
+    profileSlugs(db, creatorId)
   ]);
   if (row && row.id !== projectId) return false;
+  // A page of the creator's profile already answers at /<creator>/<slug> (sites/addresses.js).
+  if (profile.has(slug)) return false;
   return !hold || hold.target_id === projectId;
 }
 

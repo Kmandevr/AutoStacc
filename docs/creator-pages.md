@@ -11,7 +11,7 @@ updated: 2026-10-15
 
 > **Updated 2026-10-08, after this plan:** the owner then chose addresses `/<creator>/<project>[/<page>]` (AutoStacc is the creator `autostacc`, so Glitches & Stitches is at `/autostacc/glitches-and-stitches`), and creator accounts with free, block-only sites now exist ([creators](creators.md)). This note's addresses are updated to match. Its sandbox design remains the plan for creator HTML/CSS and JavaScript: blocks stay the safe default, and custom code would be a further block type or page mode rendered in the sandbox iframe.
 
-> **Superseded for now, 2026-10-15:** the owner chose checked CSS plus a library of trusted interactive pieces written by AutoStacc instead of creator code in a sandbox ([builder](builder.md)). This plan stays as the reference if creator code is ever wanted.
+> **Superseded for now, 2026-10-15:** the owner chose checked CSS plus a library of trusted interactive pieces written by AutoStacc instead of creator code in a sandbox ([builder](builder.md)). This plan stays as the reference if creator code is ever wanted. Creator pages now load AutoStacc's own runtime script (and nothing a creator wrote); everything else below about today's headers still holds.
 
 **Technically isolated, visually integrated.** A project's page looks like one AutoStacc page at `https://autostacc.com/<creator>/<project>`. The parts a creator designs run in an iframe from `https://sandbox.autostacc.com`, with no access to anything AutoStacc owns. AutoStacc draws everything that matters (navigation, the project's name, products, prices, cart, account, footer, and everything search engines read). The creator draws the look.
 

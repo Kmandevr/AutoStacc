@@ -59,9 +59,9 @@ test("a Studio creator uploads their product's pack, a clean pack publishes at o
   await page.waitForSelector('[data-ws-item="overview"][aria-current="page"]');
   await page.click('[data-ws-item="pacs"]');
   await page.waitForSelector("[data-pd-files]", { state: "attached" });
-  await page.waitForSelector(".studio-packs >> text=MB of 500 MB");
+  await page.waitForSelector(".studio-packs >> text=MB of 550 MB");
   assert.equal(await page.locator("[data-pack-back]").isVisible(), false, "inside the Product Studio the sidebar replaces the Pack Builder's own back bar");
-  assert.match(await page.locator(".studio-packs").innerText(), /0\.0 MB of 500 MB/);
+  assert.match(await page.locator(".studio-packs").innerText(), /0\.0 MB of 550 MB/);
   await page.setInputFiles("[data-pd-files]", path.join(ROOT, "engine/conformance/cases/pack-basic.zip"));
   await page.waitForSelector("[data-pack-publish]", { timeout: 60000 });
   assert.match(await page.locator("[data-pack-version]").innerText(), /nothing flagged/);

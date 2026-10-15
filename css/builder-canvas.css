@@ -1,0 +1,24 @@
+/* The visual builder's canvas (js/builder-canvas.js): loaded only inside the editor's iframe, on top of
+   css/creator-site.css. Outlines what can be selected, marks the selection, draws its resize handles and the grid of the
+   section being edited. Never part of a published page. */
+[data-el] { cursor: grab; outline: 1px dashed transparent; outline-offset: 2px; transition: outline-color .15s; }
+[data-el]:hover { outline-color: color-mix(in srgb, #8b5cf6 70%, transparent); }
+.bx-dragging, .bx-dragging [data-el], .bx-dragging .bx-h { cursor: grabbing; user-select: none; }
+.bx-dragging [data-el].bx-sel { opacity: .85; z-index: 5; }
+[data-sec] { outline: 1px dashed transparent; outline-offset: -1px; }
+[data-sec]:hover { outline-color: color-mix(in srgb, #8b5cf6 35%, transparent); }
+[data-el].bx-sel, [data-sec].bx-sel { position: relative; outline: 2px solid #8b5cf6; outline-offset: 2px; z-index: 3; }
+[data-sec].bx-sel { outline-offset: -2px; }
+[data-sec].bx-sel .cs-grid { background-image: repeating-linear-gradient(to right, rgb(139 92 246 / .08) 0 calc((100% - 32px - 176px) / 12), transparent 0 calc((100% - 32px - 176px) / 12 + 16px));
+  background-origin: content-box; background-clip: content-box; }
+.bx-h { position: absolute; width: 14px; height: 14px; border-radius: 4px; background: #8b5cf6; border: 2px solid #fff; z-index: 4; touch-action: none; }
+.bx-h-e { right: -9px; top: calc(50% - 7px); cursor: ew-resize; }
+.bx-h-w { left: -9px; top: calc(50% - 7px); cursor: ew-resize; }
+.bx-h-s { bottom: -9px; left: calc(50% - 7px); cursor: ns-resize; }
+.bx-h-se { right: -9px; bottom: -9px; cursor: nwse-resize; }
+.bx-h-sw { left: -9px; bottom: -9px; cursor: nesw-resize; }
+.bx-h-rows { bottom: -7px; left: calc(50% - 30px); width: 60px; height: 10px; cursor: ns-resize; }
+.cs-empty { font-family: system-ui, sans-serif; }
+.bx-phone .cs-el.cs-ph-hide { display: block; opacity: .35; }
+[contenteditable="plaintext-only"] { outline: 2px solid #22d3ee; cursor: text; }
+[data-el] { touch-action: none; }

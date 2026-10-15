@@ -13,8 +13,10 @@ const PURGE_CHANCE = 0.01;
 export const purgeRateLimits = (db, nowMs = Date.now()) =>
   db.prepare("DELETE FROM rateLimit WHERE lastRequest < ?").bind(nowMs - RETENTION_MS).run();
 
-export async function limit(app, name, max, windowSeconds) {
-  const ip = app.request.headers.get("cf-connecting-ip") || "unknown";
+// by: count per something other than the client (an account or a creator id), for limits that must hold whatever the
+// address (invitation emails, say).
+export async function limit(app, name, max, windowSeconds, { by } = {}) {
+  const ip = by || app.request.headers.get("cf-connecting-ip") || "unknown";
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const row = await app.db.prepare(

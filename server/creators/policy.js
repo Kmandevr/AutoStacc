@@ -3,19 +3,31 @@
 // Paid plans, when they exist, will be rows that raise these, not new code paths.
 export const LIMITS = {
   creatorsPerAccount: 1,
+  // People on a creator's team, the owner and pending invitations included (docs/builder.md, phase 7).
+  membersPerCreator: 10,
   projectsPerCreator: 10,
   pagesPerSite: 12,
-  blocksPerPage: 60,
-  siteDocumentBytes: 200 * 1024,
+  // The visual builder's grid (docs/builder.md): sections per page, elements per page, rows per section (24px each).
+  sectionsPerPage: 30,
+  elementsPerPage: 150,
+  gridRows: 200,
+  siteDocumentBytes: 400 * 1024,
+  // A site's own stylesheet (js/site-css.js checks and rebuilds it).
+  cssBytes: 50 * 1024,
+  // Published versions kept per site, with restore (owner, 2026-10-15).
+  versionsPerSite: 20,
+  // Fonts creators upload (WOFF2 only).
+  fontBytes: 2 * 1024 * 1024,
   imageBytes: 5 * 1024 * 1024,
   imagesPerCreator: 200,
-  storageQuotaBytes: 50 * 1024 * 1024,
   renameHoldDays: 90,
   // Selling: products per creator, paid-file storage (separate from the image storage above), files per product.
   productsPerCreator: 25,
   filesPerProduct: 20,
-  // Paid files (originals for sale), free plan; extra storage will be paid by the creator (owner, 2026-10-10; not built).
-  productFilesQuotaBytes: 500 * 1024 * 1024,
+  // One storage cap for everything a creator stores (owner, 2026-10-15): site images and fonts, paid files, Pac
+  // previews and pieces they share; was 50 MB of images plus 500 MB of paid files. Extra storage will be paid by the
+  // creator (not built). At the cap only new uploads stop; what is live stays live.
+  storageQuotaBytes: 550 * 1024 * 1024,
   // Files in one version of a Pac built with the Pack Builder (docs/packs.md).
   filesPerPacVersion: 2000,
   // One file in a Pac: the largest size checked end to end (downloads, bundles, the engine's checks); the engine itself
@@ -41,6 +53,11 @@ export const SELLING = {
 export const DEFAULT_PLATFORM_FEE_BPS = 2000;
 
 // A creator's paid-file quota: an admin-set one (creators.files_quota_bytes), else the free plan's.
-export const filesQuotaOf = (creator) => (creator && creator.files_quota_bytes != null ? creator.files_quota_bytes : LIMITS.productFilesQuotaBytes);
-export const quotaOf = (creator) => (creator && creator.storage_quota_bytes != null ? creator.storage_quota_bytes : LIMITS.storageQuotaBytes);
+// A creator's one storage quota: the smaller of any quota an admin set (creators.storage_quota_bytes, from the Control
+// Center; files_quota_bytes, an older paid-file one set in the database), else the free plan's.
+export const quotaOf = (creator) => {
+  const set = creator ? [creator.storage_quota_bytes, creator.files_quota_bytes].filter((v) => v !== null && v !== undefined) : [];
+  return set.length ? Math.min(...set) : LIMITS.storageQuotaBytes;
+};
+export const filesQuotaOf = quotaOf;
 export const feeBpsOf = (creator) => (creator && creator.platform_fee_bps != null ? creator.platform_fee_bps : DEFAULT_PLATFORM_FEE_BPS);

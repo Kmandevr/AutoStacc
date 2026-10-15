@@ -23,7 +23,7 @@ export default (ctx) => describe("packs in the Studio", () => {
     assert.equal(first.status, 200, JSON.stringify(first.data));
     assert.equal(first.data.pac, null, "looking makes nothing");
     assert.equal(first.data.storage.usedBytes, 0);
-    assert.equal(first.data.storage.quotaBytes, 500 * 1024 * 1024);
+    assert.equal(first.data.storage.quotaBytes, 550 * 1024 * 1024, "one cap for everything a creator stores");
     assert.equal(db(`SELECT pacs FROM products WHERE id = '${product.id}'`)[0].pacs, "[]");
 
     const { version } = await build(c, product.id, caseZip("pack-basic"));

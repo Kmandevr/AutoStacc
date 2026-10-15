@@ -40,7 +40,7 @@ Every link is stored once, on the child, as an id. Everything else is derived: a
 
 | Concept | Is | Lives in | Notes |
 | --- | --- | --- | --- |
-| Creator | who owns projects and sells | `data/creators.js` (first-party) or the Studio → D1 `creators` | [creators](creators.md) |
+| Creator | who owns projects and sells, with a team of members in roles | `data/creators.js` (first-party) or the Studio → D1 `creators`, `creator_members`, `creator_roles` | [creators](creators.md) |
 | Project | creative work of a creator | `data/projects.js` (or the Studio) → D1 `projects` | `creator`; `features` lists which platform features it uses |
 | Stacclet | a collection of related Pacs | `data/stacclets.js` | not a folder; never holds files directly |
 | Pac | a container of content | `data/pacs.js` | sold through products; its files are assets |
@@ -96,5 +96,5 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 - **Pac-level ownership:** access is per product. Bundles that share Pacs across products need a `product_pacs` table and a Pac-aware access check; the entitlement `bundle` source is reserved.
 - **Notifications:** new-release mail is sent by hand from the Control Center (Products → **Email followers**) to followers who switched new-release emails on, once per person per product (`server/admin/news.js`). Nothing sends it automatically when a product is published.
 - **Licences:** one licence per kind of product (`data/licenses.js`, picked by `license` in `data/product-types.js`), shown on `/license` and each product page; no per-purchase licence records.
-- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own no-code sites and selling from the Studio are built ([creators](creators.md)); the planned design for creator code (sandboxed HTML/CSS, later JavaScript) is in [creator pages](creator-pages.md) (PLANNED / NOT IMPLEMENTED).
+- **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own sites and profiles, designed in the visual builder with checked CSS and AutoStacc's trusted interactive pieces, and selling from the Studio are built ([builder](builder.md), [creators](creators.md)); the earlier design for sandboxed creator code is in [creator pages](creator-pages.md) (not built; superseded for now).
 - (Resolved 2026-10-08: the site is AutoStacc; projects live at `/<creator>/<project>` and creators build free sites in the Studio; see [creators](creators.md) and [decisions](decisions.md).)

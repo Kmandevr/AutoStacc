@@ -16,6 +16,7 @@ import { facetsOf, replaceFacetsStmts } from "../discovery/facets.js";
 import { loadReadiness } from "./readiness.js";
 import { recordEvent } from "./events.js";
 import { changeEvents, recordChanges } from "./product-history.js";
+import { rolesFor } from "./roles.js";
 
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export { productPath };
@@ -72,8 +73,9 @@ export function cleanProductInput(body, { requireAll = false } = {}) {
   return out;
 }
 
-// A product of a Studio project that this account may change. Anything else looks like nothing there.
-export async function requireOwnProduct(db, productId, user, roles) {
+// A product of a Studio project that this account may change (by default, a member who may run products: roles.js).
+// Anything else looks like nothing there.
+export async function requireOwnProduct(db, productId, user, roles = rolesFor("products")) {
   const product = typeof productId === "string" ? await first(db, "SELECT * FROM products WHERE id = ? AND source = 'studio'", productId) : null;
   const project = product && product.project_id ? await getProject(db, product.project_id) : null;
   if (!project) fail(404, "not_found", "Nothing here.");
