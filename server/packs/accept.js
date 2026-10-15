@@ -46,12 +46,13 @@ export function acceptStored(files, writes, prefix) {
  * { kept: [{ ...file, logical }], refused: [{ path, codes }], carried: carried files kept, room: for a creator, the
  * { archive, bytes, quota } its storage check used (null for AutoStacc's own) } for a finished job.
  */
-export async function keptFiles(app, version, job, { result, attempt }) {
+export async function keptFiles(app, version, job, { result, attempt }, { upload: only = null } = {}) {
   const writes = await jobWrites(app, job.id, attempt);
   const owner = version.owner_scope;
   const accepted = acceptStored(result.files, writes, writePrefix(owner, job.id, attempt));
   // A thin ZIP's files the browser left out, from this owner's stored originals (carry.js); refused ones join the rest.
-  const upload = await first(app.db, "SELECT carry FROM uploads WHERE version_id = ? AND kind = 'zip'", version.id);
+  // only: an addition's own upload (append.js), with no carry list and its own size as the archive.
+  const upload = only || (await first(app.db, "SELECT carry FROM uploads WHERE version_id = ? AND kind = 'zip'", version.id));
   const carried = await resolveCarry(app.db, owner, parseJson(upload ? upload.carry : "[]", []));
   accepted.kept.push(...carried.kept);
   accepted.refused.push(...carried.refused);
@@ -78,7 +79,7 @@ export async function keptFiles(app, version, job, { result, attempt }) {
   let room = null;
   if (creator) {
     const bytes = kept.reduce((n, f) => n + f.size, 0);
-    const archive = (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ?", version.id)).n;
+    const archive = only ? only.size_bytes : (await first(app.db, "SELECT COALESCE(SUM(size_bytes), 0) AS n FROM uploads WHERE version_id = ? AND addition_id IS NULL", version.id)).n;
     if ((await storageUsed(app.db, owner)) - archive + bytes > filesQuotaOf(creator)) throw Object.assign(new Error("over quota"), { code: "quota_exceeded" });
     // Checked again inside the import's batch (two imports at once can't both squeeze in): import.js.
     room = { archive, bytes, quota: filesQuotaOf(creator) };

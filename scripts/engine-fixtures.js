@@ -146,6 +146,13 @@ const CASES = {
   ]),
   // How creators name things, for suggestions: kinds, instruments, tempos and keys in folder and file names, a tempo
   // that fits the length and one that doesn't, a name and a header that disagree, MIDI patterns and arrangements.
+  // Files added to a version one step at a time (the Pac editor, server/packs/append.js): a new file, one in a folder
+  // of its own, and a read me whose name the pack already has (refused as a duplicate where it lands).
+  "addition": () => zip([
+    { name: "Snare 02.wav", data: wav({ frames: 9000, seed: 21 }) },
+    { name: "Fills/Fill 01.wav", data: wav({ frames: 30000, seed: 22 }) },
+    { name: "Read me.txt", data: "Added later.\n", store: true }
+  ]),
   "pack-names": () => zip([
     { name: "Glitch Kit/One Shots/Hi Hats/HH Closed 03.wav", data: wav({ frames: 4410, seed: 4 }) },
     { name: "Glitch Kit/One Shots/808s/808 Sub C.wav", data: wav({ frames: 44100, seed: 5 }) },

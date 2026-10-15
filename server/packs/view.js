@@ -6,11 +6,14 @@
 import { parseJson } from "../lib/db.js";
 import { getVersion } from "./versions.js";
 import { loadManifest } from "./manifest.js";
+import { refreshedStats } from "./final-review.js";
 
 export async function versionView(db, versionId) {
   const v = await getVersion(db, versionId);
+  // A ready version may have been built or edited in steps: its diff and revision risk as they stand now (final-review.js).
+  const stats = v.status === "ready" ? await refreshedStats(db, v) : parseJson(v.stats, {});
   const out = { id: v.id, pacId: v.pac_id, productId: v.product_id, number: v.number, status: v.status, note: v.review_note || null,
-    stats: parseJson(v.stats, {}), engineVersion: v.engine_version || null, editable: v.status === "ready" };
+    stats, engineVersion: v.engine_version || null, editable: v.status === "ready" };
   if (["ready", "in_review", "published", "superseded"].includes(v.status)) {
     const m = await loadManifest(db, v.id);
     const diff = out.stats.diff || null;

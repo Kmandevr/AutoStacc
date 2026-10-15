@@ -11,6 +11,10 @@ export const FEATURES = {
   "packs.builder": { on: true, label: "Pack Builder" },
   // Suggested kinds, instruments, tempos and keys from names and headers (the vocabulary sent with engine jobs).
   "packs.suggestions": { on: true, label: "Suggestions from names and headers" },
+  // The Pac editor: building a Pac one thing at a time (add files into folders, new folders, remove, a read me written
+  // in the builder, drafts copied from the live version; server/packs/editor-routes.js). Off, a Pac is built from one
+  // upload as before.
+  "packs.editor": { on: true, label: "Pac editor (one file at a time)" },
   // Listening to audio (engine analysis: tempo, key, a waveform, silent or undecodable files for the automated review).
   // Only with suggestions on; off, jobs run faster and suggestions come from names and headers alone.
   "packs.analysis": { on: true, label: "Tempo and key from listening to audio" },
