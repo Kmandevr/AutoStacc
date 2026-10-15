@@ -21,7 +21,7 @@ test("every top-level name the site uses is reserved, so no creator can take it"
   const names = fs.readdirSync(ROOT);
   let ignored = new Set();
   try { ignored = new Set(execFileSync("git", ["check-ignore", ...names], { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().split("\n")); } catch { /* none ignored, or no git */ }
-  const top = names.filter((f) => !f.startsWith(".") && !ignored.has(f) && !["node_modules", "README.md", "CLAUDE.md", "package.json", "package-lock.json", "wrangler.toml", "test", "docs", "db"].includes(f));
+  const top = names.filter((f) => !f.startsWith(".") && !ignored.has(f) && !["node_modules", "README.md", "CLAUDE.md", "LICENSE", "SECURITY.md", "package.json", "package-lock.json", "wrangler.toml", "test", "docs", "db"].includes(f));
   const fromFunctions = fs.readdirSync(path.join(ROOT, "functions")).filter((f) => !f.startsWith("[") && !f.startsWith(".") && f !== "package.json");
   const creators = new Set(["autostacc", "autostacc.html"]);
   for (const f of [...top, ...fromFunctions].filter((x) => !creators.has(x))) {

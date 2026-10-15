@@ -1,0 +1,15 @@
+# Changes here need the owner's review once the main branch ruleset requires code-owner review (docs/development.md,
+# "Security tooling"): what runs in CI and deploys, the store API, and the instructions Claude sessions follow.
+/.github/       @Kmandevr
+/.claude/       @Kmandevr
+/CLAUDE.md      @Kmandevr
+/server/        @Kmandevr
+/functions/     @Kmandevr
+/db/            @Kmandevr
+/workers/       @Kmandevr
+/engine/        @Kmandevr
+/wrangler.toml  @Kmandevr
+/_headers       @Kmandevr
+/scripts/       @Kmandevr
+/package.json   @Kmandevr
+/package-lock.json @Kmandevr

@@ -8,6 +8,7 @@ updated: 2026-10-15
 
 Newest first.
 
+- 2026-10-15: Before going public: SECURITY.md, LICENSE (all rights reserved), CodeQL, Dependabot, CODEOWNERS, deploy secrets behind the `production` Environment and hidden from installs, no token permissions or addresses in logs, fuzz crashes private only, the `tasks` skill trusts only the owner and collaborators. Notes: decisions, development, engine.
 - 2026-10-15: CI skips files that already passed: each check job fingerprints the files it reads and leaves a marker in the Actions cache once green, so pushes that change only notes, and re-runs, test nothing again (store, site browser checks, engine). Notes: decisions, development.
 - 2026-10-15: CI minutes: checks run once, on pull requests (not again on the merge to main; the deploy keeps its own checks), superseded PR runs cancelled, the SEO and docs checks in one job, fuzzing monthly with cargo-fuzz cached. Notes: decisions, development, engine, seo.
 - 2026-10-15: Limits and warnings: files over 4 GB refused in Pacs until tested (`LIMITS.pacFileMaxBytes`); the drop zone checks file count and size first and warns past free storage; preview cutting up to 200 MB; the builder warns that file values outlive a discarded draft; looking at previews makes no Pac. Repo hygiene: the repo map reads Rust, Dockerfile, JSONC and multi-line CSS headers, and data files take their folder's `.purpose` (`engine/`, `engine/conformance/`, `engine/contract/`); CLAUDE.md back within its word budget; handoff refreshed.

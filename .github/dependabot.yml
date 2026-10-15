@@ -1,0 +1,27 @@
+# Dependency updates (docs/development.md): GitHub opens a pull request when a dependency of the site's tooling and
+# store (npm, root), the engine Worker (npm, workers/engine/), the engine and its fuzz targets (Rust) or a workflow's
+# actions has a newer version. Security fixes come as soon as GitHub knows of them (Dependabot security updates,
+# switched on in the repository's settings); other updates once a month, grouped into one pull request per ecosystem,
+# because each pull request runs the full CI.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: monthly }
+    groups: { npm: { patterns: ["*"] } }
+    open-pull-requests-limit: 3
+  - package-ecosystem: npm
+    directory: /workers/engine
+    schedule: { interval: monthly }
+    groups: { engine-worker: { patterns: ["*"] } }
+    open-pull-requests-limit: 2
+  - package-ecosystem: cargo
+    directories: [/engine, /engine/fuzz]
+    schedule: { interval: monthly }
+    groups: { rust: { patterns: ["*"] } }
+    open-pull-requests-limit: 2
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    groups: { actions: { patterns: ["*"] } }
+    open-pull-requests-limit: 2
