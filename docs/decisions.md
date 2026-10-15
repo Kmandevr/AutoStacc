@@ -17,6 +17,7 @@ Owner's request: turn the Studio's mini web builder into an "account builder", s
 - **Community library**: trusted creators share sections, elements and templates; anyone can report; the Control Center takes pieces down. Pieces can be sold as store products (20% fee); buyers use them on their own sites only.
 - **Roles**: Editor, Publisher, Store manager, Admin; only the owner controls money. **History**: last 20 publishes. **Scheduled publishing.** **Uploaded fonts (WOFF2) and logos.**
 - **Storage: one 550 MB cap** for images, fonts, templates, history and paid files; template images count only against the seller; history counts only images old versions alone still use; at the cap only uploads stop. A deleted template's images stay while sites use them and stop counting against the seller (proposed by Claude).
+- **How phases 1–6 were built (Claude, same day):** shipped together instead of behind a switch (the new document would have broken the old editor); the editor draws the page with the same renderer as the server; the audio player draws its waveform live from the playing audio (products' preview clips have no stored waveform, and creator pages may make no requests); a profile page and a project share `/<creator>/<name>` and each refuses the other's name; a scheduled publish happens at the first visit after its time or the daily sweep, since Pages Functions have no cron of their own.
 
 ## 2026-10-10: Engine Phase 0 measurements confirm Rust, zlib-rs, no SIMD
 

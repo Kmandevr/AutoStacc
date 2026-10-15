@@ -8,6 +8,7 @@ updated: 2026-10-15
 
 Newest first.
 
+- 2026-10-15: Visual builder phases 1–6 built: site document v2 (free 12-column grid, sections, phone settings, menu) converting old sites, shared renderer and CSS checker in `js/site-*.js`, the editor (`js/builder*.js`: edit on the page, drag and resize, undo / redo, phone view), four templates, creator profiles at `/<creator>`, AutoStacc's runtime as the only script on creator pages, uploaded fonts, last 20 versions with restore, scheduled publishing, one 550 MB storage cap; `/privacy` and `/security` updated. Notes: builder, creators, decisions, packs, production, development, architecture, store, seo, creator-pages, payouts-setup.
 - 2026-10-15: Visual builder planned with the owner (Wix-like editor for creator profiles and project sites, free grid, templates, checked CSS, AutoStacc's trusted interactive library, community library with paid pieces, roles, history, scheduling, fonts, one 550 MB storage cap). Notes: builder (new), decisions, creator-pages, creators, index.
 - 2026-10-15: No private tracker (owner): the `tasks` skill tells the owner about private work instead of pointing to `AutoStacc-private`. Notes: decisions, development.
 - 2026-10-15: History of `main` rewritten so commits carry the owner's GitHub no-reply address instead of their personal email (same files, 365 commits); old branches and PR copies left for the owner to clear. Notes: decisions.

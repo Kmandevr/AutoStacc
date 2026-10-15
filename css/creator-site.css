@@ -1,56 +1,128 @@
-/* Creator sites made in the Studio (rendered by server/sites/render.js): one standalone sheet for every creator. */
-/* Creator sites made in the Studio (rendered by server/sites/render.js). Standalone: these pages load no other AutoStacc
-   stylesheet, so element selectors here only ever reach creator pages. Themed by the custom properties each page sets
-   (--bg, --surface, --text, --muted, --accent, --font from server/sites/theme.js). No scripts run on these pages. */
+/* Creator sites made in the Studio's visual builder (rendered by js/site-render.js; docs/builder.md). Standalone: these
+   pages load no other AutoStacc stylesheet, so element selectors here only ever reach creator pages. Themed by the
+   custom properties each page sets (--bg, --surface, --text, --muted, --accent, --font from js/site-theme.js) and by
+   the per-section and per-element ones the renderer writes from checked values. The page area (.cs-site) is contained
+   and isolated: nothing a creator's CSS does inside it can paint over the AutoStacc strip or the footer. */
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 1rem/1.6 var(--font); }
 a { color: var(--accent); }
 img { max-width: 100%; height: auto; display: block; border-radius: 10px; }
 
-.cs-strip { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: center; padding: .4rem 16px; font: .75rem/1.4 system-ui, sans-serif;
-  background: color-mix(in srgb, var(--text) 8%, var(--bg)); color: var(--muted); }
+.cs-strip { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: center; padding: .4rem 16px;
+  font: .75rem/1.4 system-ui, sans-serif; background: color-mix(in srgb, var(--text) 8%, var(--bg)); color: var(--muted); }
 .cs-strip a { color: var(--text); font-weight: 700; text-decoration: none; }
 
-.cs-header, .cs-main, .cs-footer { width: min(100%, 860px); margin: 0 auto; padding-inline: 16px; }
-.cs-header { padding-block: 2.5rem 1rem; }
-.cs-by { margin: 0; color: var(--muted); font-size: .9rem; }
+/* The creator's area: everything they design lives in here and can't escape it. */
+.cs-site { position: relative; z-index: 0; isolation: isolate; contain: paint; overflow: clip; min-height: 60vh; }
+
+.cs-head { width: min(100%, 1120px); margin: 0 auto; padding: 1.25rem 16px; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.5rem; }
+.cs-head-menu { justify-content: flex-end; }
+.cs-by { margin: 0; flex-basis: 100%; color: var(--muted); font-size: .85rem; }
 .cs-by a { color: inherit; }
-.cs-title { margin: .2rem 0 1rem; font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; font-weight: 800; }
-.cs-title a { color: var(--text); text-decoration: none; }
-.cs-nav { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cs-brand { margin: 0 auto 0 0; font-size: 1.5rem; font-weight: 800; line-height: 1.1; }
+.cs-brand a { color: var(--text); text-decoration: none; }
+.cs-logo { max-height: 56px; width: auto; border-radius: 0; }
+.cs-nav { display: flex; flex-wrap: wrap; gap: .4rem; }
 .cs-nav a { padding: .35rem .8rem; border-radius: 999px; background: var(--surface); color: var(--text); text-decoration: none; }
 .cs-nav a[aria-current="page"] { background: var(--accent); color: var(--bg); }
 
-.cs-main { padding-block: 1rem 3rem; display: grid; gap: 1.25rem; }
-.cs-main h2 { margin: 1rem 0 0; font-size: 1.6rem; line-height: 1.2; }
-.cs-main h3 { margin: .5rem 0 0; font-size: 1.25rem; }
+/* Sections: a background band, a 12-column grid inside. */
+.cs-main { display: block; }
+.cs-sec { position: relative; color: var(--sec-text, inherit); background-color: var(--sec-bg, transparent); padding: 1.5rem 0; }
+.cs-sec.cs-has-img { background-image: linear-gradient(rgb(0 0 0 / var(--sec-ov, 0)), rgb(0 0 0 / var(--sec-ov, 0))), var(--sec-img);
+  background-size: auto, var(--sec-fit, cover); background-repeat: no-repeat, var(--sec-repeat, no-repeat); background-position: center; }
+.cs-grid { --row: 24px; width: min(100%, 1120px); margin: 0 auto; padding-inline: 16px; display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), minmax(var(--row), auto)); column-gap: 16px; }
+.cs-full .cs-grid { width: 100%; }
+
+/* Elements: placed on the grid by the renderer, styled by their own checked settings. */
+.cs-el { min-width: 0; font-size: var(--el-fs, inherit); color: var(--el-text, inherit); border-radius: var(--el-radius, 0); padding: var(--el-pad, 0); }
+.cs-el.cs-filled { background: var(--el-bg); }
+.cs-el.cs-shadow { box-shadow: 0 18px 50px -20px rgb(0 0 0 / .55); }
+.cs-el > :first-child { margin-top: 0; }
+.cs-el > :last-child { margin-bottom: 0; }
+.cs-t-spacer.cs-filled { min-height: 100%; }
+.cs-h { margin: 0; line-height: 1.08; font-weight: 800; }
+h1.cs-h { font-size: var(--el-hs, clamp(2.2rem, 7vw, 4.5rem)); }
+h2.cs-h { font-size: var(--el-hs, clamp(1.6rem, 4vw, 2.4rem)); }
+h3.cs-h { font-size: var(--el-hs, 1.3rem); }
 .cs-text p { margin: 0 0 .8rem; }
 .cs-muted { color: var(--muted); }
-.cs-image { margin: 0; }
+.cs-empty { margin: 0; padding: .5rem; border: 1px dashed currentColor; border-radius: 8px; opacity: .5; font: .8rem/1.4 system-ui, sans-serif; }
+.cs-image { margin: 0; height: 100%; }
+.cs-image img { width: 100%; height: 100%; object-fit: cover; }
+.cs-image img.cs-contain { object-fit: contain; }
 .cs-image figcaption { color: var(--muted); font-size: .9rem; margin-top: .4rem; }
-.cs-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: .75rem; }
+.cs-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: .75rem; }
 .cs-gallery figure { margin: 0; }
-.cs-btn { display: inline-block; padding: .6rem 1.2rem; border-radius: 10px; background: var(--accent); color: var(--bg); font-weight: 700; text-decoration: none; }
+.cs-gallery img { aspect-ratio: 1; object-fit: cover; width: 100%; }
+.cs-slides { display: flex; gap: .75rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; border-radius: 12px; }
+.cs-slide { flex: 0 0 100%; margin: 0; scroll-snap-align: center; }
+.cs-slide img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.cs-slide figcaption { color: var(--muted); font-size: .9rem; margin-top: .4rem; }
+.cs-btn { display: inline-block; padding: .6rem 1.2rem; border-radius: 10px; background: var(--accent); color: var(--bg); font-weight: 700; text-decoration: none; border: 2px solid var(--accent); }
+.cs-btn.outline { background: transparent; color: var(--accent); }
 .cs-btn.small { padding: .3rem .7rem; font-size: .85rem; }
 .cs-button { margin: 0; }
 .cs-embed iframe { width: 100%; border: 0; border-radius: 12px; background: var(--surface); }
-.cs-events ul, .cs-socials, .cs-products ul, .cs-projects { list-style: none; margin: 0; padding: 0; }
+.cs-events h2, .cs-products h2, .cs-projects h2 { margin: 0 0 .5rem; font-size: 1.6rem; line-height: 1.2; }
+.cs-events ul, .cs-socials, .cs-products ul, .cs-projects ul, .cs-projects-list { list-style: none; margin: 0; padding: 0; }
 .cs-events li { display: grid; grid-template-columns: minmax(7rem, auto) 1fr auto; gap: .5rem 1rem; align-items: center; padding: .75rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--text) 15%, transparent); }
 .cs-events time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .cs-event-what span { color: var(--muted); }
 .cs-socials { display: flex; flex-wrap: wrap; gap: .5rem; }
 .cs-socials a { display: inline-block; padding: .35rem .8rem; border-radius: 999px; border: 1px solid var(--accent); text-decoration: none; }
-.cs-products ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: .75rem; }
+.cs-products ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: .75rem; }
 .cs-products a { display: grid; gap: .3rem; padding: .75rem; border-radius: 12px; background: var(--surface); color: var(--text); text-decoration: none; }
 .cs-products span { color: var(--accent); font-size: .9rem; }
-.cs-projects { display: grid; gap: .5rem; }
-.cs-projects a { display: block; padding: 1rem; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 1.2rem; font-weight: 700; text-decoration: none; }
+.cs-projects ul, .cs-projects-list { display: grid; gap: .5rem; }
+.cs-projects a, .cs-projects-list a { display: block; padding: 1rem; border-radius: 12px; background: var(--surface); color: var(--text); font-size: 1.2rem; font-weight: 700; text-decoration: none; }
+.cs-main-list { width: min(100%, 860px); margin: 0 auto; padding: 0 16px 3rem; }
+.cs-audio { margin: 0; padding: .75rem; border-radius: 12px; background: var(--surface); }
+.cs-audio figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+.cs-audio audio { width: 100%; }
+.cs-wave { display: block; width: 100%; height: 56px; margin-bottom: .5rem; cursor: pointer; }
+.cs-countdown { text-align: inherit; }
+.cs-countdown-label { margin: 0; color: var(--muted); }
+.cs-countdown-when { margin: 0; font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cs-tab h3 { margin: .5rem 0 .25rem; }
+.cs-tabbar { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+.cs-tabbar button { font: inherit; padding: .35rem .8rem; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--text); cursor: pointer; }
+.cs-tabbar button[aria-selected="true"] { background: var(--accent); color: var(--bg); }
+.cs-accordion details { border-bottom: 1px solid color-mix(in srgb, var(--text) 15%, transparent); padding: .6rem 0; }
+.cs-accordion summary { cursor: pointer; font-weight: 700; }
+.cs-lightbox { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / .85); }
+.cs-lightbox img { max-height: 90vh; width: auto; }
+.cs-lightbox button { position: absolute; top: 12px; right: 12px; font: inherit; padding: .4rem .8rem; border-radius: 8px; border: 0; cursor: pointer; }
+.cs-slide-nav { display: flex; gap: .4rem; justify-content: center; margin-top: .5rem; }
+.cs-slide-nav button { font: inherit; width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 1px solid var(--accent); background: transparent; color: var(--text); cursor: pointer; }
 hr { width: 100%; border: 0; border-top: 1px solid color-mix(in srgb, var(--text) 15%, transparent); }
-.cs-footer { padding-block: 2rem; color: var(--muted); font-size: .85rem; }
+.cs-footer { width: min(100%, 1120px); margin: 0 auto; padding: 2rem 16px; color: var(--muted); font-size: .85rem; }
 .cs-footer a { color: inherit; }
 
-@media (max-width: 560px) {
+/* Motion from AutoStacc's runtime (js/site-runtime.js): it marks the page ready, then each element as it scrolls in.
+   Without the runtime, or for visitors who ask for less motion, everything is simply there. */
+@media (prefers-reduced-motion: no-preference) {
+  .cs-fx-ready [data-fx] { transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1); }
+  .cs-fx-ready [data-fx]:not(.cs-in) { opacity: 0; }
+  .cs-fx-ready [data-fx="rise"]:not(.cs-in) { transform: translateY(32px); }
+  .cs-fx-ready [data-fx="zoom"]:not(.cs-in) { transform: scale(.92); }
+  .cs-fx-ready [data-fx="slide-left"]:not(.cs-in) { transform: translateX(48px); }
+  .cs-fx-ready [data-fx="slide-right"]:not(.cs-in) { transform: translateX(-48px); }
+  [data-hover] { transition: transform .25s ease, box-shadow .25s ease, filter .25s ease; }
+  [data-hover="lift"]:hover { transform: translateY(-6px); box-shadow: 0 18px 40px -18px rgb(0 0 0 / .6); }
+  [data-hover="grow"]:hover { transform: scale(1.04); }
+  [data-hover="glow"]:hover { filter: drop-shadow(0 0 18px var(--accent)); }
+}
+
+/* Phones: one column in reading order (the renderer's --po), each element at least its phone height. */
+@media (max-width: 640px) {
+  .cs-grid { display: flex; flex-direction: column; gap: 12px; }
+  .cs-el { order: var(--po, 0); min-height: var(--ph, auto); }
+  .cs-el.cs-ph-hide { display: none; }
+  .cs-t-spacer:not(.cs-filled) { display: none; }
+  .cs-image img { height: auto; }
   .cs-events li { grid-template-columns: 1fr; }
 }
