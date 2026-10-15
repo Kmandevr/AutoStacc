@@ -92,7 +92,7 @@ window.HELP = [
         "Your library: everything you've Stacc'd, sorted by project, Stacclet, Pac and kind, with downloads. It's at [Your Stacc](/library)."
       ] },
       { id: "free", q: "How do free releases work?", a: [
-        "Free products are claimed with an account and then live in Your Stacc like anything you bought. With Auto-Stacc on for a project you follow, its free releases arrive by themselves and are marked \"auto-stacc'd\". Auto-Stacc is off until you switch it on, project by project."
+        "Free products are claimed with an account and then live in Your Stacc like anything you bought. With Auto-Stacc on for a project you follow, its free releases arrive by themselves and are marked \"added by Auto-Stacc\". Auto-Stacc is off until you switch it on, project by project."
       ] },
       { id: "notifications", q: "Will I get emails about new releases?", a: [
         "Only if you ask: switch them on in [Settings › Emails](/settings/email). New-release emails go out when AutoStacc announces a release from a project you follow; publishing alone doesn't send one. Receipts and account emails always come."

@@ -95,6 +95,8 @@ export default (ctx) => describe("packs in the Studio", () => {
     assert.equal(no.data.version.status, "failed");
     const after = await c.get(`${S}/products/${product.id}`);
     assert.equal(after.data.versions.find((v) => v.id === version.id).note, "Please label the drums.", "the creator sees why");
+    assert.equal(after.data.versions.find((v) => v.id === version.id).rejected, true, "told apart from a processing failure");
+    assert.equal((await c.get(`${S}/versions/${version.id}`)).data.version.rejected, true);
     assert.equal(after.data.pac.draftVersionId, null, "the Pac is free again");
     assert.equal(db(`SELECT COUNT(*) AS n FROM uploads WHERE version_id = '${version.id}' AND status <> 'aborted'`)[0].n, 0);
     assert.equal((await admin.post(`/api/admin/packs/versions/${version.id}/reject`, {})).status, 409, "only once");

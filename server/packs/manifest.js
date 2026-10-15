@@ -9,8 +9,10 @@ export async function loadManifest(db, versionId) {
     all(db, `SELECT e.asset_id, e.blob_id, e.filename, e.folder_id, e.original_path, e.sort, b.size_bytes, b.format, b.sha256, b.facts
       FROM pac_entries e JOIN blobs b ON b.id = e.blob_id WHERE e.version_id = ? AND e.state = 'verified' ORDER BY e.sort LIMIT 5000`, versionId),
     all(db, "SELECT id, parent_id, name FROM pac_folders WHERE version_id = ? ORDER BY sort", versionId),
+    // An unreviewed suggestion made from other bytes (a replaced file in a discarded or newer upload) is stale for this
+    // version's file, so it can't be resolved into what buyers get. Creator values and decisions stay with the asset.
     all(db, `SELECT v.asset_id, v.field, v.value, v.origin, v.confidence, v.status FROM asset_values v JOIN pac_entries e ON e.asset_id = v.asset_id
-      WHERE e.version_id = ?`, versionId),
+      WHERE e.version_id = ? AND NOT (v.status = 'suggested' AND v.basis_blob_id IS NOT NULL AND v.basis_blob_id <> e.blob_id)`, versionId),
     all(db, "SELECT folder_id, field, value FROM pac_folder_values WHERE version_id = ?", versionId)
   ]);
   const byId = new Map(folders.map((f) => [f.id, f]));

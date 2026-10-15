@@ -47,10 +47,10 @@ const uploadView = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes:
   partsDone: [...new Set(parseJson(u.parts, []).map((p) => p.part))].sort((a, b) => a - b) });
 
 async function pacSummary(app, pac) {
-  const versions = await all(app.db, "SELECT id, number, status, stats, review_note, published_at, created_at FROM pac_versions WHERE pac_id = ? ORDER BY number DESC LIMIT 20", pac.id);
+  const versions = await all(app.db, "SELECT id, number, status, stats, review_note, reviewed_by, published_at, created_at FROM pac_versions WHERE pac_id = ? ORDER BY number DESC LIMIT 20", pac.id);
   return {
     pac: { id: pac.id, title: pac.title, stacclet: pac.stacclet_id, liveVersionId: pac.live_version_id, draftVersionId: pac.draft_version_id },
-    versions: versions.map((v) => ({ id: v.id, number: v.number, status: v.status, stats: parseJson(v.stats, {}), note: v.review_note || null,
+    versions: versions.map((v) => ({ id: v.id, number: v.number, status: v.status, stats: parseJson(v.stats, {}), note: v.review_note || null, rejected: v.status === "failed" && Boolean(v.reviewed_by),
       publishedAt: v.published_at, createdAt: v.created_at }))
   };
 }
@@ -113,7 +113,7 @@ function shared(scope) {
       const actor = await scope.actor(app);
       let v = await scope.version(app, actor, versionId);
       const allowed = actor.admin ? ["ready", "in_review"] : ["ready"];
-      if (!allowed.includes(v.status)) fail(409, "not_ready", v.status === "published" ? "Already published." : v.status === "in_review" ? "It's waiting for AutoStacc's review." : "Only a checked, ready version can be published.");
+      if (!allowed.includes(v.status)) fail(409, "not_ready", v.status === "published" ? "Already published: this version is live." : v.status === "in_review" ? "It's waiting for AutoStacc's review." : "Only a checked, ready version can be published.");
       if (await openAddition(app.db, v.id)) fail(409, "addition_open", "Files are still being added. Wait for them first.");
       // Built in steps or edited since it was checked: its diff and revision risk are taken again first (final-review.js).
       await app.db.batch([saveStatsStmt(app.db, v.id, await refreshedStats(app.db, v))]);

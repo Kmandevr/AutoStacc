@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { sql } from "../support/client.js";
 import * as P from "../support/packs.js";
+import { SWEEP_TOKEN } from "./packs.suite.js";
 
 const { S, caseZip } = P;
 const key = () => crypto.randomUUID();
@@ -141,6 +142,37 @@ export default (ctx) => describe("packs: the Pac editor", () => {
     assert.equal(retry.data.addition.status, "failed");
     assert.equal(db(`SELECT status FROM processing_jobs WHERE addition_id = '${open.addition.id}' AND status NOT IN ('failed', 'cancelled')`).length, 0);
     assert.deepEqual(db(`SELECT id, asset_id FROM product_files WHERE product_id = '${pid}' AND active = 1`), liveIds);
+  });
+
+  test("a draft only being tagged isn't swept as abandoned; a stale suggestion never resolves into a version", async () => {
+    const { c, products } = await P.creatorWithProducts(base(), "ed-safe");
+    const pid = products[0].id;
+    const { version: live } = await P.build(c, pid, caseZip("pack-basic"));
+    assert.equal((await c.post(`${S}/versions/${live.id}/publish`, {})).status, 200);
+    const v = (await c.post(`${S}/products/${pid}/drafts`, { idempotencyKey: key() })).data.version;
+    // A month without additions or removals, but the creator tags a file today: the draft is in use.
+    db(`UPDATE pac_versions SET updated_at = '2000-01-01T00:00:00.000Z' WHERE id = '${v.id}'`);
+    const file = v.files[0];
+    const tagged = await c.send("PUT", `${S}/versions/${v.id}/values`, { body: { assetIds: [file.assetId], field: "kind", value: "loops" } });
+    assert.equal(tagged.status, 200, JSON.stringify(tagged.data));
+    const swept = await fetch(`${base()}/api/internal/sweep`, { method: "POST", headers: { Authorization: `Bearer ${SWEEP_TOKEN}` } });
+    assert.equal(swept.status, 200);
+    assert.equal(db(`SELECT status FROM pac_versions WHERE id = '${v.id}'`)[0].status, "ready", "kept: it was edited today");
+    assert.equal((await c.post(`${S}/versions/${v.id}/discard`, {})).status, 200);
+
+    // A sure suggestion made from other bytes (say, a replaced file in a discarded upload) is stale for the live file.
+    const other = live.files.find((f) => f.assetId !== file.assetId) || live.files[0];
+    const now = (await c.get(`${S}/versions/${live.id}`)).data.version.files.find((f) => f.assetId === other.assetId);
+    const wrong = (now.resolved.kind || {}).value === "presets" ? "midi" : "presets";
+    db(`INSERT INTO asset_values (asset_id, field, value, origin, confidence, status, basis_blob_id, updated_at)
+      VALUES ('${other.assetId}', 'kind', '${wrong}', 'rule', 0.999, 'suggested', 'bl_somewhereelse', '2026-01-01T00:00:00.000Z')`);
+    let seen = (await c.get(`${S}/versions/${live.id}`)).data.version.files.find((f) => f.assetId === other.assetId);
+    assert.notEqual((seen.resolved.kind || {}).value, wrong, "made from other bytes: ignored");
+    // The same suggestion made from this file's own bytes counts as usual.
+    db(`UPDATE asset_values SET basis_blob_id = (SELECT blob_id FROM pac_entries WHERE version_id = '${live.id}' AND asset_id = '${other.assetId}')
+      WHERE asset_id = '${other.assetId}' AND value = '${wrong}' AND origin = 'rule'`);
+    seen = (await c.get(`${S}/versions/${live.id}`)).data.version.files.find((f) => f.assetId === other.assetId);
+    if (!(now.resolved.kind && now.resolved.kind.source === "creator")) assert.equal(seen.resolved.kind.value, wrong);
   });
 
   test("what the steps change is reviewed at publish: removing most of the live version waits for an admin", async () => {

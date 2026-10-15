@@ -1,4 +1,4 @@
-// Studio Pack Builder (GS.studioPacks, for js/studio-products.js; docs/packs.md, Phase 5): a creator drops their
+// Studio Pac Builder (GS.studioPacks, for js/studio-products.js; docs/packs.md, Phase 5): a creator drops their
 // product's contents in (with the Pac editor on, one drop zone for a file, a folder or a whole ZIP, js/pac-drop.js, that
 // opens in the visual builder, js/pac-editor.js; otherwise one ZIP), sees what the checks kept, refused and flagged, reviews the suggested kinds,
 // instruments, tempos and keys, and publishes. A clean version goes live at once; a flagged one waits for AutoStacc's
@@ -12,8 +12,10 @@
   const { $, escapeHTML: e, api } = window.GS;
   const BASE = "/api/studio/packs";
   const mb = (n) => `${(n / 1048576).toFixed(n < 10485760 ? 1 : 0)} MB`;
-  const STATE = { ready: "checked", in_review: "waiting for review", published: "published", superseded: "replaced", failed: "failed", discarded: "discarded",
+  const STATE = { ready: "draft, ready to publish", in_review: "waiting for review", published: "published", superseded: "replaced", failed: "failed", discarded: "discarded",
     processing: "checking", uploading: "uploading", draft: "draft" };
+  const stateOf = (v) => (v.status === "failed" && v.rejected ? "not accepted by review" : STATE[v.status] || v.status);
+  const noteOf = (v) => (v.rejected ? v.note : window.GS.packVersion.noteText(v.note));
 
   // The one drop zone and the visual builder (js/pac-drop.js) replace the ZIP form when the Pac editor is on.
   const dropping = () => Boolean(window.FEATURES && window.FEATURES["packs.editor"] && window.GS.pacDrop && window.GS.pacEditor);
@@ -24,7 +26,7 @@
     // This view replaces the products list: its handlers on root must not see our events.
     root.onclick = root.onchange = root.onsubmit = null;
     root.innerHTML = `<div class="studio-packs">
-        <div class="studio-bar"><button class="btn ghost" type="button" data-pack-back>&larr; Products</button><h2>Pack Builder</h2></div>
+        <div class="studio-bar"><button class="btn ghost" type="button" data-pack-back>&larr; Products</button><h2>Pac Builder</h2></div>
         ${dropping() ? "<div data-pac-drop></div>" : ""}
         <div data-pack-body><p class="msg pending">Loading…</p></div></div>`;
     const el = $(".studio-packs", root);
@@ -74,7 +76,7 @@
         : "";
       body.innerHTML = dropping() ? `${intro}
         <p class="small-print">File storage: ${mb(storage.usedBytes)} of ${mb(storage.quotaBytes)} used.</p>` : `
-        <p class="small-print"><strong>${e(product.title)}</strong>. Upload everything buyers get as one ZIP, in the folders you want them to see. AutoStacc checks every file (type, damage, unsafe names), keeps the originals byte for byte and suggests kinds, instruments, tempos and keys. Clean packs publish right away; anything flagged waits for AutoStacc's review.</p>
+        <p class="small-print"><strong>${e(product.title)}</strong>. Upload everything buyers get as one ZIP, in the folders you want them to see. AutoStacc checks every file (type, damage, unsafe names), keeps the originals byte for byte and suggests kinds, instruments, tempos and keys. A clean Pac goes live right away; anything flagged waits for AutoStacc's review.</p>
         <p class="small-print">File storage: ${mb(storage.usedBytes)} of ${mb(storage.quotaBytes)} used.</p>
         <form class="panel" data-pack-form>
           <div class="field"><label for="spk-file">The contents as one ZIP</label><input id="spk-file" name="file" type="file" accept=".zip,application/zip" required data-pack-file></div>
@@ -82,12 +84,20 @@
           <div class="actions"><button class="btn" type="submit"${busy ? " disabled data-locked" : ""}>Upload and check</button></div>
           <progress max="1" value="0" hidden></progress><p class="msg" role="status">${busy ? "A version is in progress below: publish or discard it first." : ""}</p>
         </form>`;
+      // A version that failed after the live one stays visible: show() otherwise falls back to the live version.
+      const last = versions[0];
+      const failedNote = last && last.status === "failed" && !(pac && last.id === pac.liveVersionId)
+        ? `<p class="msg error" role="status">Version ${last.number} ${last.rejected ? "wasn't accepted by AutoStacc's review" : "failed"}${noteOf(last) ? `: ${e(noteOf(last))}` : ""}.
+            Nothing changed for buyers. <button class="link-btn" type="button" data-pack-open="${e(last.id)}">See what to do</button></p>` : "";
+      const held = last && last.status === "in_review"
+        ? `<p class="msg" role="status">Version ${last.number} is with AutoStacc for review. Buyers keep the live version until it's approved; you'll see the result here.</p>` : "";
+      body.insertAdjacentHTML("afterbegin", failedNote + held);
       body.innerHTML += `
         <div data-pac-editor></div>
         <div data-pack-version></div>
         <div data-pac-previews></div>
         ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link-btn" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
-          · ${e(STATE[v.status] || v.status)}${pac && v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${v.note ? ` · ${e(v.note)}` : ""}</li>`).join("")}</ul>` : ""}`;
+          · ${e(stateOf(v))}${pac && v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${noteOf(v) ? ` · ${e(noteOf(v))}` : ""}</li>`).join("")}</ul>` : ""}`;
       const current = pac && (pac.draftVersionId || pac.liveVersionId);
       if (current) showVersion(current);
       else editor(null);
@@ -147,8 +157,8 @@
       if (!act) return;
       const id = $("[data-pack-version]", el).dataset.id;
       const publishing = act.hasAttribute("data-pack-publish");
-      if (publishing && !confirm("Publish this version? Buyers get its files once it's live; files you changed or removed are replaced.")) return;
-      if (!publishing && !confirm("Discard this version? Its upload is deleted; the live version stays as it is.")) return;
+      if (publishing && !confirm("Publish this version? It becomes the files buyers download. People who already bought keep files you removed or replaced for 30 days.")) return;
+      if (!publishing && !confirm("Discard this draft version? Its upload, arrangement, renames, removals, added files, folders, folder defaults and read me are lost. Values you set on files and your ✓/✕ on suggestions stay with the files. The live version buyers have stays as it is.")) return;
       act.disabled = true;
       const res = await api(`${BASE}/versions/${encodeURIComponent(id)}/${publishing ? "publish" : "discard"}`, { method: "POST", body: {} });
       if (!res.ok) {
@@ -156,11 +166,8 @@
         act.closest(".actions").insertAdjacentHTML("afterend", `<p class="msg error" role="alert">${e(res.error.message)}</p>`);
         return;
       }
+      // A version held for review (202) is announced by show() itself, in builder mode too.
       await show();
-      if (res.status === 202) {
-        const m = $("[data-pack-form] [role=status]", el);
-        if (m) m.textContent = "Sent to AutoStacc for review. You'll see the result here.";
-      }
     });
 
     window.GS.packReview.bind(el, draw, BASE);

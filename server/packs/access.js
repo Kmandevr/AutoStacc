@@ -22,7 +22,7 @@ const notFound = () => fail(404, "not_found", "Nothing here.");
 export async function ownerOf(db, product) {
   const p = product.project_id ? await first(db, "SELECT creator_id FROM projects WHERE id = ?", product.project_id) : null;
   if (!p || !p.creator_id) return "autostacc";
-  if (!OWNER.test(p.creator_id)) fail(409, "unsupported_owner", "This product's creator can't store pack files yet.");
+  if (!OWNER.test(p.creator_id)) fail(409, "unsupported_owner", "This product's creator can't store Pac files yet.");
   return p.creator_id;
 }
 

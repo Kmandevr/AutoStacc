@@ -14,7 +14,10 @@ const READY = "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'rea
 
 export async function run(app, version, statements) {
   try {
-    await app.db.batch([guardStmt(app.db, READY, version.id), ...statements]);
+    // Every edit marks the draft as worked on, so the daily sweep (sweep.js, ABANDONED_DAYS) never discards a draft that
+    // is only being tagged or arranged.
+    await app.db.batch([guardStmt(app.db, READY, version.id), ...statements,
+      stmt(app.db, "UPDATE pac_versions SET updated_at = ? WHERE id = ?", now(), version.id)]);
   } catch (e) {
     if (isGuardFailure(e)) fail(409, "not_editable", "Only a checked version that isn't published yet can be changed.");
     if (/UNIQUE constraint failed: pac_entries/i.test(String(e.message))) fail(409, "name_taken", "A file with that name is already in that folder.");
