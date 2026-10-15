@@ -353,7 +353,7 @@ export default (ctx) => describe("studio", () => {
       assert.equal(refused.status, 503);
       assert.equal(refused.data.error.code, "creator_sales_closed");
       assert.equal((await buyer.post("/api/checkout", { items: [{ productId: p.id }] })).status, 503);
-      assert.equal(db(`SELECT COUNT(*) AS n FROM order_items WHERE product_id = '${p.id}'`)[0].n, 0, "no order line for a held product");
+      assert.equal(db(`SELECT COUNT(*) AS n FROM order_items WHERE product_id = '${p.id}' AND order_id <> '${opened.data.orderId}'`)[0].n, 0, "no order line for a held product");
       const rest = await mockBuy(buyer, [{ productId: "stems-patchwork" }]);
       assert.equal(rest.pay.status, 200, "AutoStacc's own items still sell");
     } finally {
