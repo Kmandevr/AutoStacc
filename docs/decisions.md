@@ -445,3 +445,10 @@ The owner asked for a way to keep information and bugs private, "so that it's ha
 - **Other private work** (operational notes, incidents, owner-only decisions, bugs that reveal how the live setup runs): issues in a private repository, `Kmandevr/AutoStacc-private`, which the owner creates (a Claude session can't). The `tasks` skill says what goes where.
 - **Logs:** Actions logs are public too. The deploy no longer prints the database's id, and reports failed emails only as a count by kind. The reasons are read with a query run on the owner's computer (`docs/store-setup.md`).
 - **Not hidden:** how the code works. Hiding it would add little, because every check runs on the server and secrets live only in GitHub and Cloudflare settings. It would also cost the free code scanning and CI minutes the public repository brings.
+
+## 2026-10-15: Retired files count against storage; pausing closes open checkouts; the docs reminder is on (owner)
+
+The owner approved closing three gaps the pre-public review named:
+- **Storage:** files a Pac revision replaced or removed stay downloadable for buyers for 30 days. They now count against the creator's file storage for that time too (`server/creators/storage.js`), so a creator can't stack revisions to hold more than the quota (#111).
+- **Creator purchases switch:** pausing now also closes the payment pages already open for creators' products. Each is expired at Stripe, and its order is cancelled. Before, a page opened before the pause could still be paid until it expired (#107). A page Stripe won't close, because it was just paid, is left to its webhook.
+- **Docs reminder:** `.claude/hooks/docs-reminder.sh` is registered as the `Stop` hook, so a session is asked to check stale notes before it finishes. CI's `--strict` check is the backstop.

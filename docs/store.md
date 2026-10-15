@@ -42,7 +42,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits; the allowed file types match the vocabulary's `FORMATS` ([discovery](discovery.md)) | (used by downloads, library, admin) |
 | `storage/` | R2 keys and access | (used by downloads, admin, previews) |
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
-| `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), payout requests (`payouts.js`), creator purchases switch (`creator-sales.js`), AutoStacc news and release mail (`news.js`), usage (`usage.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
+| `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), payout requests (`payouts.js`), creator purchases switch (`creator-sales.js`; pausing expires open creator payment pages through the provider's `expireCheckout`), AutoStacc news and release mail (`news.js`), usage (`usage.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
 | `analytics/` | daily counters | `POST /api/events` |
 | `settings/` | store-wide switches in `store_settings` (creator purchases, the budget guard's spending month and storage cap) | (used by payments, usage, admin) |
 | `stats/` | admin statistics: sections of typed metrics | `GET /api/admin/stats`, `/api/admin/stats/:section` |

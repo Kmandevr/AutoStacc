@@ -17,6 +17,9 @@ export const mockProvider = {
     return { id: "mock_re" };
   },
 
+  // The mock's payment page is the site's own: nothing remote to close.
+  async expireCheckout() {},
+
   async retrieveCheckout(app, sessionId) {
     // The mock has no remote state: whatever the test buttons did is already in the database.
     return { type: "pending", sessionId };

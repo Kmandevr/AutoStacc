@@ -46,6 +46,11 @@ export const orderItems = (db, orderId) =>
   all(db, `SELECT i.product_id, i.title, i.unit_price_cents, i.quantity, i.line_total_cents, p.source FROM order_items i
     LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ? ORDER BY i.title`, orderId);
 
+// Open payment pages that include a Studio creator's product (closed when the owner pauses creator purchases).
+export const pendingWithCreatorProducts = (db, limit = 500) => all(db,
+  `SELECT * FROM orders o WHERE o.status = 'pending' AND o.provider_session_id IS NOT NULL AND EXISTS (SELECT 1 FROM order_items i
+    JOIN products p ON p.id = i.product_id WHERE i.order_id = o.id AND p.source = 'studio') ORDER BY o.created_at LIMIT ?`, limit);
+
 export const attachCheckout = (db, id, sessionId, url) =>
   run(db, "UPDATE orders SET provider_session_id = ?, checkout_url = ?, updated_at = ? WHERE id = ? AND status = 'pending'", sessionId, url, now(), id);
 
