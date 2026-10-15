@@ -164,3 +164,12 @@
 .contents-folder summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 .contents-files { list-style: none; margin: 0 0 8px; padding: 0 0 0 16px; }
 .contents-files li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 4px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+/* "What's inside": the Pacs' preview clips and folded read me, above the folders */
+.contents-section .pac-previews { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.contents-section .pac-previews li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.contents-section .pac-preview-title { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
+.contents-section audio { flex: 1 1 260px; max-width: 100%; min-height: 40px; }
+.contents-section .pac-readme { margin-top: 12px; }
+.contents-section .pac-readme summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
+.contents-section .pac-readme pre { margin: 6px 0 0; padding: 10px 12px; max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: .85rem; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+@media (max-width: 600px) { .contents-section audio { flex-basis: 100%; width: 100%; } }
