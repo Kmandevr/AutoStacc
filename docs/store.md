@@ -34,7 +34,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `wishlist/` | a signed-in person's saved products | `GET /api/wishlist`, `PUT`/`DELETE /api/wishlist/:id` |
 | `collections/` | Your Stacc's personal organization: collections of owned files, tags on files, saved searches ([library](library.md); switch `library.collections`) | `GET`/`POST /api/collections`, `PATCH`/`DELETE /api/collections/:id`, `POST …/:id/items` (+ `/remove`), `POST /api/tags` (+ `/remove`), `POST /api/saved-searches`, `DELETE /api/saved-searches/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
-| `checkout/` | cart → pending order → hosted payment page | `POST /api/checkout` |
+| `checkout/` | cart → pending order → hosted payment page (if the provider refuses: 503 `payment_unavailable`, with its reason in the logs, and in the answer only outside production) | `POST /api/checkout` |
 | `payments/` | providers (Stripe, mock), which Stripe account takes a product's money (`accounts.js`), Connect payout accounts and transfers (`connect.js`), tax codes per product type (`tax-codes.js`), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/webhooks/stripe-marketplace`, `POST /api/dev/mock-payment` |
 | `orders/` | orders, status machine, fulfilment, guest keys, customer refunds (`refunds.js`) | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/orders/:id/refund`, `POST /api/guest/key` |
 | `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
