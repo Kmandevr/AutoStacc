@@ -21,8 +21,8 @@ jobs:
       run:
         working-directory: engine
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/bin/cargo-fuzz
@@ -42,7 +42,7 @@ jobs:
         run: ls -l fuzz/artifacts/*/ || true
       - name: Keep the crashing input
         if: failure() && github.event.repository.private
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-${{ matrix.target }}
           path: engine/fuzz/artifacts/

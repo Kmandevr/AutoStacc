@@ -30,14 +30,14 @@ jobs:
       run:
         working-directory: engine
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Skipped when it already passed on exactly these files (everything this workflow watches, by content): a marker
       # in the Actions cache, as in store.yml.
       - id: key
         working-directory: .
         run: echo "key=$(git ls-files -s -- engine workers/engine js/engine test/bench test/mock-engine test/unit/engine-worker.test.js test/unit/mock-engine.test.js 'scripts/engine-*.js' scripts/lib/json-schema.js .github/workflows/engine.yml | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
       - id: passed
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .ci-passed
           key: engine-test-passed-${{ steps.key.outputs.key }}
@@ -48,7 +48,7 @@ jobs:
       - name: Rust with the WebAssembly target
         if: steps.passed.outputs.cache-hit != 'true'
         run: rustup update stable --no-self-update && rustup default stable && rustup target add wasm32-unknown-unknown && rustup component add rustfmt clippy
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         if: steps.passed.outputs.cache-hit != 'true'
         with:
           path: |
@@ -68,7 +68,7 @@ jobs:
       - name: Release builds (native binary and WebAssembly)
         if: steps.passed.outputs.cache-hit != 'true'
         run: cargo build --release && cargo build --release --lib --target wasm32-unknown-unknown
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.passed.outputs.cache-hit != 'true'
         with:
           node-version: 22
@@ -101,7 +101,7 @@ jobs:
         if: steps.passed.outputs.cache-hit != 'true'
         working-directory: .
         run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: steps.passed.outputs.cache-hit != 'true'
         with:
           path: .ci-passed
@@ -111,14 +111,14 @@ jobs:
     if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Skipped when it already passed on exactly these files (everything this workflow watches, by content): a marker
       # in the Actions cache, as in store.yml.
       - id: key
         working-directory: .
         run: echo "key=$(git ls-files -s -- engine workers/engine js/engine test/bench test/mock-engine test/unit/engine-worker.test.js test/unit/mock-engine.test.js 'scripts/engine-*.js' scripts/lib/json-schema.js .github/workflows/engine.yml | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
       - id: passed
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .ci-passed
           key: engine-image-passed-${{ steps.key.outputs.key }}
@@ -139,7 +139,7 @@ jobs:
         if: steps.passed.outputs.cache-hit != 'true'
         working-directory: .
         run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: steps.passed.outputs.cache-hit != 'true'
         with:
           path: .ci-passed
@@ -163,8 +163,8 @@ jobs:
       run:
         working-directory: workers/engine
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Skip without the Cloudflare API token

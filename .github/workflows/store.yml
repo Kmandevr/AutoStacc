@@ -28,7 +28,7 @@ jobs:
       api_passed: ${{ steps.api.outputs.cache-hit }}
       browser_passed: ${{ steps.browser.outputs.cache-hit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: diff
@@ -39,13 +39,13 @@ jobs:
       - id: key
         run: echo "key=$(git ls-files -s -- . ':!docs' ':!.claude' ':!*.md' | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
       - id: api
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .ci-passed
           key: store-api-passed-${{ steps.key.outputs.key }}
           lookup-only: true
       - id: browser
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .ci-passed
           key: store-browser-passed-${{ steps.key.outputs.key }}
@@ -59,8 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -71,7 +71,7 @@ jobs:
         run: npm run test:api
       - name: Passed on these files (a marker, so the same files aren't tested again)
         run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         with:
           path: .ci-passed
           key: store-api-passed-${{ needs.changes.outputs.key }}
@@ -81,8 +81,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -91,7 +91,7 @@ jobs:
         id: pw
         run: npm install -g playwright@1 && echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
       # Chromium is kept between runs per Playwright version; the system libraries it needs are still installed each time.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ steps.pw.outputs.version }}-${{ runner.os }}
@@ -101,7 +101,7 @@ jobs:
         run: npm run test:browser
       - name: Passed on these files (a marker, so the same files aren't tested again)
         run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         with:
           path: .ci-passed
           key: store-browser-passed-${{ needs.changes.outputs.key }}
