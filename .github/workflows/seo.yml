@@ -1,27 +1,19 @@
-# Search-visibility guard on every pull request and push: generated files must match data/, the SEO regression tests
-# must pass, and the site is checked in a real browser (rendered <head>, structured data, crawl for orphan pages).
-# The docs check fails on broken facts in the notes and warns about notes whose covered code changed in this PR.
+# Search-visibility guard on every pull request: generated files must match data/, the SEO regression tests must pass,
+# and the site is checked in a real browser (rendered <head>, structured data, crawl for orphan pages). The docs check
+# fails on broken facts in the notes and warns about notes whose covered code changed in this PR. Not again on the push
+# to main that merges a PR: the deploy runs the build check and the SEO tests itself before publishing. The quick checks
+# share one job (each job is billed at least a minute; CI minutes are limited, docs/decisions.md).
 name: SEO and site checks
 on:
   pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: seo-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   seo:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Generated files are up to date (else run node scripts/build.js and commit)
-        run: node scripts/build.js --check
-      - name: SEO regression tests
-        run: node scripts/seo-test.js
-  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +22,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Generated files are up to date (else run node scripts/build.js and commit)
+        run: node scripts/build.js --check
+      - name: SEO regression tests
+        run: node scripts/seo-test.js
       - name: Docs match the repository (stale-note warnings show as annotations)
         run: |
           node scripts/docs-test.js | tee docs-test.txt; code=${PIPESTATUS[0]}

@@ -410,6 +410,15 @@ The owner asked for a small system that lets a creator build a whole Pac one thi
 - **Previews:** 0 to 3 per Pac that customers can play, each either an uploaded clip or picked from the Pac's own audio files and cut short.
 How it's built: [packs](packs.md).
 
+## 2026-10-15: CI runs each check once (owner: about 200 Actions minutes left this month)
+
+The repository is private, so every job counts against the monthly Actions minutes, rounded up to a whole minute per job. A PR and its merge cost about 40–60 minutes, because the merge re-ran everything the PR had just passed, and weekly fuzzing about 30 minutes a week. Now:
+- **Checks run on pull requests only.** Store tests, SEO and site checks, and the engine's checks don't run again on the push to `main` that merges a PR. The deploy still runs the build check, the SEO tests and the unit tests before publishing, and the engine's merge only deploys.
+- **A newer push to a PR cancels the run it replaces.** The engine workflow no longer runs a second time for branch pushes alongside the PR.
+- **The SEO and docs checks share one job.**
+- **Fuzzing is monthly**, with cargo-fuzz cached; longer runs happen locally.
+- **Trade-off:** if `main` moves between a PR's checks and its merge, the merged result isn't tested as a whole; the deploy's checks and requiring PRs to be up to date before merging cover most of that.
+
 ## 2026-10-15: One drop zone; everything opens in the builder (owner)
 
 The owner asked for the upload to be one thing, easy and visual: drop one file or a whole pack in the same place, and AutoStacc sets it up in the visual builder. Answers:
