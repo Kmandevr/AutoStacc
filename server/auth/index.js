@@ -7,9 +7,12 @@ import { claimGuestPurchases, verifyByReset } from "../entitlements/claim.js";
 import { isAdmin } from "./roles.js";
 import { userById } from "../impersonation/sessions.js";
 import { auditAs } from "../audit/log.js";
+import { twoFactorPlugins, twoFactorOn, notASignIn, TWO_FACTOR_UNUSED_PATHS, TWO_FACTOR_RATE_LIMITS } from "./two-factor.js";
 
-// Every new session of an admin account is an "admin signed in" entry in the audit log (customers' sign-ins aren't).
-async function recordAdminSignIn(app, session) {
+// Every new session of an admin account is an "admin signed in" entry in the audit log (customers' sign-ins aren't),
+// except the sessions two-step sign-in creates and replaces on the way (server/auth/two-factor.js).
+async function recordAdminSignIn(app, session, context) {
+  if (await notASignIn(app, session, context)) return;
   const user = await userById(app.env.DB, session.userId);
   if (isAdmin(app, user)) await auditAs(app.env.DB, { userId: user.id, label: user.email }, "admin.signed_in", { targetType: "user", targetId: user.id, subjectUserId: null });
 }
@@ -17,7 +20,9 @@ async function recordAdminSignIn(app, session) {
 export function createAuth(app) {
   const { config, env, ctx } = app;
   const later = (promise) => (ctx && ctx.waitUntil ? ctx.waitUntil(promise) : promise);
-  return betterAuth({
+  // Two-step sign-in for admins (feature switch auth.adminTwoFactor, off by default): with it off, none of it loads.
+  const twoStep = twoFactorOn(app);
+  const auth = betterAuth({
     appName: "AutoStacc",
     baseURL: config.siteUrl,
     basePath: "/api/auth",
@@ -28,7 +33,7 @@ export function createAuth(app) {
     // mail at sign-up and password reset (which also verifies) cover every real need.
     // /list-sessions would hand every session's token to the browser; Settings lists devices without them
     // (server/account/settings.js).
-    disabledPaths: ["/send-verification-email", "/list-sessions"],
+    disabledPaths: ["/send-verification-email", "/list-sessions", ...(twoStep ? TWO_FACTOR_UNUSED_PATHS : [])],
     emailAndPassword: {
       enabled: true,
       // Purchases attach to an account by email, so the email must be proven before anything is linked.
@@ -61,7 +66,7 @@ export function createAuth(app) {
     },
     session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
     databaseHooks: {
-      session: { create: { after: (session) => recordAdminSignIn(app, session).catch((e) => console.error("audit: admin sign-in", e && e.message)) } }
+      session: { create: { after: (session, context) => recordAdminSignIn(app, session, context).catch((e) => console.error("audit: admin sign-in", e && e.message)) } }
     },
     rateLimit: {
       enabled: true,
@@ -74,7 +79,8 @@ export function createAuth(app) {
         "/request-password-reset": { window: 300, max: 5 },
         "/send-verification-email": { window: 300, max: 5 },
         "/reset-password": { window: 300, max: 10 },
-        "/change-password": { window: 300, max: 10 }
+        "/change-password": { window: 300, max: 10 },
+        ...(twoStep ? TWO_FACTOR_RATE_LIMITS : {})
       }
     },
     advanced: {
@@ -82,6 +88,8 @@ export function createAuth(app) {
       useSecureCookies: config.secure,
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
       backgroundTasks: { handler: later }
-    }
+    },
+    plugins: twoFactorPlugins(app, () => auth)
   });
+  return auth;
 }

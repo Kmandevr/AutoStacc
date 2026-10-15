@@ -9,5 +9,6 @@ window.FEATURES = {
  "downloads.deflate": false,
  "library.collections": true,
  "store.derivedFacets": true,
- "product.contentsTree": true
+ "product.contentsTree": true,
+ "auth.adminTwoFactor": false
 };
