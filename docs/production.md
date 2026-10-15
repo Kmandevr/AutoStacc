@@ -28,7 +28,7 @@ updated: 2026-10-15
 
 ## Licences
 
-Each kind of product in `data/product-types.js` names its licence (`license: "sounds" | "stems" | "music" | "visuals"`), defined once in `data/licenses.js`. Product pages show a licence box (summary, "You can", "You can't", link to `/license#<key>`). A new kind of product picks an existing licence or gets a new one there; never write licence text on a product.
+Each kind of product in `data/product-types.js` names its licence (`license: "sounds" | "stems" | "music" | "visuals" | "templates"`; the last for site templates from the community library: own sites only, never reshared or resold), defined once in `data/licenses.js`. Product pages show a licence box (summary, "You can", "You can't", link to `/license#<key>`). A new kind of product picks an existing licence or gets a new one there; never write licence text on a product.
 
 ## Support and contact
 
