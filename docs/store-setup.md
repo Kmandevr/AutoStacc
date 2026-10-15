@@ -51,7 +51,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 2. Developers → Webhooks → Add endpoint: `https://autostacc.com/api/webhooks/stripe`, events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`.
    Copy its signing secret into `STRIPE_WEBHOOK_SECRET`.
-3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above. The code expects this account to sell through Stripe's Managed Payments: each Checkout line carries a digital-goods tax code per product type (`server/payments/tax-codes.js`, to confirm with your tax adviser), and the store checks the total before tax.
+3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above. The code expects this account to sell through Stripe's Managed Payments: each Checkout line carries a digital-goods tax code per product type (`server/payments/tax-codes.js`, to confirm with your tax adviser; site templates use the general code), and the store checks the total before tax.
 4. Customers can refund an order themselves within 14 days if they haven't downloaded anything from it (Settings › Orders, or the order's checkout result page for a guest holding its key); other refunds are done in the Stripe dashboard. Either way the webhook revokes access automatically. A chargeback suspends access until it's resolved. If the store ever refuses a paid event (it should not), every `ADMIN_EMAILS` address gets a "Store alert" mail and `/admin` shows it at the top.
 
 ## 4. Brevo

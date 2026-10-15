@@ -57,7 +57,7 @@ All sections read and write the same D1 rows. No section keeps its own copy of p
 | Store Page | title, description, highlights ("what's inside"), cover art, preview clip, kind, tags, store details | `products`, `product_facets` (server/creators/products.js) |
 | Pricing | base price, the creator's sales | `products.price_cents`, `promotions` rows with `creator_id` (server/promotions) |
 | Insights | reads orders, order lines, refunds, downloads and per-day view counters; stores nothing | `order_items`, `orders`, `download_events`, `analytics_daily` |
-| Release | readiness rules, publish state, release history | `products.published`/`sales_paused`/`deleted_at`, `product_events` |
+| Release | readiness rules (a site template's deliverable is its community library piece, not a file: `server/library/links.js`), publish state, release history | `products.published`/`sales_paused`/`deleted_at`, `product_events` |
 
 - **Store Page reuses the Pac's facts.** The "included content" summary on the store page is counted from the published files (how many of each kind and format, and the total size), never typed in again. Store details suggested from the product's own words stay suggestions until the creator accepts them.
 - **Typing is never lost to a redraw.** Pricing draws at once and again when the server's numbers arrive; that second draw keeps anything already typed (and the cursor), unless it follows a save.

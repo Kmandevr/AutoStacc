@@ -6,6 +6,7 @@ import { first, parseJson } from "../lib/db.js";
 import { SELLING } from "./policy.js";
 import { DELIVERABLE } from "../files/files.js";
 import { facetsOf } from "../discovery/facets.js";
+import { pieceOfProduct } from "../library/links.js";
 
 const MIN_DESCRIPTION = 80;
 const item = (code, message, section) => ({ code, message, section });
@@ -16,7 +17,9 @@ export function readiness({ product, deliverable, inReview, creator, facets }) {
   const meta = parseJson(product.metadata, {});
   const price = product.price_cents;
   if (!String(product.title || "").trim()) blocking.push(item("no_title", "Give the product a title.", "store"));
-  if (!deliverable) {
+  if (!deliverable && product.type === "template") {
+    blocking.push(item("needs_piece", "A site template is sold from the visual builder: share a piece to the library with a price.", "release"));
+  } else if (!deliverable) {
     blocking.push(inReview
       ? item("pac_in_review", "Your Pac is waiting for AutoStacc's review. It can go on sale once it is approved.", "pacs")
       : item("needs_file", "Add a file and have it approved before putting this on sale.", "pacs"));
@@ -37,8 +40,10 @@ export function readiness({ product, deliverable, inReview, creator, facets }) {
 
 /** The readiness of one product row as stored (or as it would be with `overrides` applied to the row). */
 export async function loadReadiness(db, product, creator, overrides = {}) {
+  // A site template's deliverable is its library piece, still listed; anything else needs a delivered file.
   const [deliverable, inReview, facets] = await Promise.all([
-    first(db, `SELECT 1 FROM product_files WHERE product_id = ? AND ${DELIVERABLE} LIMIT 1`, product.id),
+    product.type === "template" ? pieceOfProduct(db, product.id).then((p) => (p && p.status === "active" ? p : null))
+      : first(db, `SELECT 1 FROM product_files WHERE product_id = ? AND ${DELIVERABLE} LIMIT 1`, product.id),
     first(db, "SELECT 1 FROM pac_versions WHERE product_id = ? AND status = 'in_review' LIMIT 1", product.id),
     facetsOf(db, [product.id], { creatorOnly: true })
   ]);

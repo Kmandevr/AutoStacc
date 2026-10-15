@@ -68,18 +68,20 @@ export async function uploadImage(app, creator, user, filename) {
   return { id, src: imageSrc(id), contentType: kind.type, sizeBytes: bytes.length, filename };
 }
 
-// Whether any kept version, draft or published document of the creator's sites still names this file.
-async function stillUsed(db, creatorId, id) {
+// Whether any kept version, draft or published document of the creator's sites, or a piece they share in the
+// community library (server/library/), still names this file.
+export async function stillUsed(db, creatorId, id) {
   const like = `%${id}%`;
   const row = await first(db, `SELECT
     EXISTS (SELECT 1 FROM site_versions v JOIN projects p ON v.kind = 'project' AND p.id = v.site_id WHERE p.creator_id = ?1 AND v.doc LIKE ?2)
     OR EXISTS (SELECT 1 FROM site_versions WHERE kind = 'profile' AND site_id = ?1 AND doc LIKE ?2)
     OR EXISTS (SELECT 1 FROM project_sites s JOIN projects p ON p.id = s.project_id WHERE p.creator_id = ?1 AND p.deleted_at IS NULL AND (s.published LIKE ?2 OR s.scheduled_draft LIKE ?2))
-    OR EXISTS (SELECT 1 FROM creator_sites WHERE creator_id = ?1 AND (published LIKE ?2 OR scheduled_draft LIKE ?2)) AS used`, creatorId, like);
+    OR EXISTS (SELECT 1 FROM creator_sites WHERE creator_id = ?1 AND (published LIKE ?2 OR scheduled_draft LIKE ?2))
+    OR EXISTS (SELECT 1 FROM library_pieces WHERE creator_id = ?1 AND status = 'active' AND assets LIKE ?2) AS used`, creatorId, like);
   return Boolean(row && row.used);
 }
 
-async function purge(app, id, key) {
+export async function purge(app, id, key) {
   await run(app.db, "UPDATE site_assets SET status = 'deleted', deleted_at = ? WHERE id = ?", now(), id);
   await app.env.PREVIEWS.delete(key);
 }
@@ -97,7 +99,11 @@ export async function deleteImage(app, creatorId, id) {
   return { kept: false };
 }
 
+// A file of a deleted library piece that other creators' sites still use: no longer the creator's to see or count
+// (creators/storage.js skips released files), kept until no site uses it (library/sweep.js).
+export const releaseFile = (db, id) => run(db, "UPDATE site_assets SET released_at = ?, hidden_at = COALESCE(hidden_at, ?) WHERE id = ?", now(), now(), id);
+
 export async function releaseHidden(app, creatorId) {
-  const hidden = await all(app.db, "SELECT id, r2_key FROM site_assets WHERE creator_id = ? AND status = 'active' AND hidden_at IS NOT NULL", creatorId);
+  const hidden = await all(app.db, "SELECT id, r2_key FROM site_assets WHERE creator_id = ? AND status = 'active' AND hidden_at IS NOT NULL AND released_at IS NULL", creatorId);
   for (const h of hidden) if (!(await stillUsed(app.db, creatorId, h.id))) await purge(app, h.id, h.r2_key);
 }
