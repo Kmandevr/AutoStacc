@@ -53,7 +53,7 @@ jobs:
           node-version: 22
       - name: Install Playwright with Chromium
         if: steps.passed.outputs.cache-hit != 'true'
-        run: npm install -g playwright@1 && npx playwright install --with-deps chromium
+        run: npm install -g playwright@1.56.1 && npx playwright install --with-deps chromium
       - name: Browser checks (verify-site)
         if: steps.passed.outputs.cache-hit != 'true'
         run: NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js && mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
