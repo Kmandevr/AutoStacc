@@ -1,6 +1,6 @@
 // Creators' own CSS for their sites (docs/builder.md, "How it stays safe"): read into rules and declarations and written
-// out again, never passed through. Every selector is put under the page area (.cs-site), so the AutoStacc strip, the
-// footer, body, html and :root can't be reached; the page area is contain: paint and isolation: isolate
+// out again, never passed through. Every selector becomes a descendant of the page area (.cs-site), which itself can't
+// be named, and brackets must balance, so the AutoStacc strip, the footer, body, html and :root can't be reached; the page area is contain: paint and isolation: isolate
 // (css/creator-site.css), so even position: fixed stays inside it. Refused: other at-rules than @media, @supports,
 // @container and @keyframes; url() other than the creator's own files (/media/sites/<id>); image-set(), expression(),
 // behavior, -moz-binding; backslash escapes and "<" anywhere; nesting (&). check(css) returns { css, assets, problems }:
@@ -101,7 +101,7 @@
       if (!/^(--[a-z0-9_-]{1,60}|-?[a-z][a-z0-9-]{0,60})$/.test(prop)) { problems.push(`${where}: "${prop}" isn't a property name.`); continue; }
       if (BAD_PROPS.has(prop)) { problems.push(`${where}: ${prop} isn't allowed.`); continue; }
       if (!value || value.length > 2000) { problems.push(`${where}: ${prop} needs a value (under 2000 characters).`); continue; }
-      if (/[{}]/.test(value.replace(/(["'])(?:(?!\1).)*\1/g, ""))) { problems.push(`${where}: ${prop} has a stray brace.`); continue; }
+      if (!balanced(value)) { problems.push(`${where}: ${prop} has brackets, braces or quotes that don't match.`); continue; }
       if (BAD_VALUE.test(value)) { problems.push(`${where}: ${prop} uses something that isn't allowed (expression, image-set, src or @).`); continue; }
       let bad = false;
       value = value.replace(URL, (m, quote, address) => {
@@ -117,30 +117,33 @@
     return out.join(";");
   }
 
-  // The first combinator at the top level of a selector (" ", ">", "+" or "~"), or "" when it has none.
-  function firstCombinator(sel) {
-    const s = sel.replace(/\s*([>+~])\s*/g, "$1");
-    let depth = 0, q = null;
-    for (const c of s) {
-      if (q) { if (c === q) q = null; continue; }
+  // Brackets in a selector must open and close in order, outside strings, with no braces anywhere: otherwise the
+  // browser could read the selector differently from this checker (and end a rule somewhere else).
+  function balanced(sel) {
+    const open = [];
+    let q = null;
+    for (const c of sel) {
+      if (q) { if (c === "\n") return false; if (c === q) q = null; continue; }
       if (c === '"' || c === "'") q = c;
-      else if (c === "(" || c === "[") depth++;
-      else if (c === ")" || c === "]") depth--;
-      else if (depth === 0 && " >+~".includes(c)) return c;
+      else if (c === "(" || c === "[") open.push(c);
+      else if (c === ")" || c === "]") { if (open.pop() !== (c === ")" ? "(" : "[")) return false; }
+      else if (c === "{" || c === "}" || c === ";") return false;
     }
-    return "";
+    return !q && !open.length;
   }
 
+  // Every selector becomes a descendant of the page area. The page area itself can't be named (its containment is
+  // what keeps creators' styles inside it), so style .cs-main or a section for the whole page.
   function selectors(text, where, problems) {
+    if (!balanced(text)) { problems.push(`${where}: brackets or quotes in this selector don't match.`); return null; }
     const out = [];
     for (const raw of split(text, ",")) {
       const sel = raw.trim().replace(/\s+/g, " ");
       if (!sel) { problems.push(`${where}: an empty selector.`); return null; }
       if (sel.length > 300 || !SELECTOR_CHARS.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" uses characters selectors can't have here (no &, @, \\ or /).`); return null; }
-      if (OUTSIDE.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page (html, body, :root and the like aren't allowed; style .cs-site for the whole page).`); return null; }
-      // Leading combinators, or a sibling of the page area itself, would step outside it.
-      if (/^[>+~]/.test(sel) || (sel.startsWith(SCOPE) && firstCombinator(sel) && "+~".includes(firstCombinator(sel)))) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page.`); return null; }
-      out.push(sel === SCOPE || sel.startsWith(SCOPE + ":") || sel.startsWith(SCOPE + ".") ? sel : sel.startsWith(SCOPE + " ") ? sel : `${SCOPE} ${sel}`);
+      if (OUTSIDE.test(sel) || /cs-site/i.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page (html, body, :root and .cs-site itself aren't allowed; style .cs-main or a section for the whole page).`); return null; }
+      if (/^[>+~]/.test(sel)) { problems.push(`${where}: "${sel.slice(0, 60)}" reaches outside your page.`); return null; }
+      out.push(`${SCOPE} ${sel}`);
     }
     return out.join(",");
   }
@@ -164,7 +167,7 @@
           out.push(`@keyframes ${r.prelude}{${frames.join("")}}`);
           continue;
         }
-        if (!r.prelude || r.prelude.length > 300 || !PRELUDE_CHARS.test(r.prelude)) { problems.push(`${where}: "${r.prelude.slice(0, 60)}" can't be read.`); continue; }
+        if (!r.prelude || r.prelude.length > 300 || !PRELUDE_CHARS.test(r.prelude) || !balanced(r.prelude)) { problems.push(`${where}: "${r.prelude.slice(0, 60)}" can't be read.`); continue; }
         out.push(`@${r.at} ${r.prelude.replace(/\s+/g, " ")}{${rules(parse(r.block, problems), problems, assets, depth + 1, count)}}`);
         continue;
       }

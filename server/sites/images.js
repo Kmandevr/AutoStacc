@@ -14,7 +14,11 @@ const TYPES = [
   { type: "image/jpeg", ext: "jpg", test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
   { type: "image/gif", ext: "gif", test: (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38 && (b[4] === 0x37 || b[4] === 0x39) && b[5] === 0x61 },
   { type: "image/webp", ext: "webp", test: (b) => String.fromCharCode(...b.slice(0, 4)) === "RIFF" && String.fromCharCode(...b.slice(8, 12)) === "WEBP" },
-  { type: "font/woff2", ext: "woff2", font: true, test: (b) => b[0] === 0x77 && b[1] === 0x4f && b[2] === 0x46 && b[3] === 0x32 }
+  // WOFF2: its signature, a known flavor (TrueType, CFF or Apple "true") and a header whose length is the file's.
+  { type: "font/woff2", ext: "woff2", font: true, test: (b) => {
+    const u32 = (i) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
+    return b.length >= 48 && u32(0) === 0x774f4632 && [0x00010000, 0x4f54544f, 0x74727565].includes(u32(4)) && u32(8) === b.length;
+  } }
 ];
 
 export const sniffImage = (bytes) => TYPES.find((t) => !t.font && bytes.length >= 12 && t.test(bytes)) || null;

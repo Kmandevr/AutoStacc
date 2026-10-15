@@ -78,7 +78,10 @@ test("CSS stays inside the page: scoped, rebuilt, and refused when it could reac
   for (const evil of ["body{display:none}", ":root{--bg:red}", "html .x{a:b}", "~ .cs-footer{display:none}", ".cs-site:hover ~ .cs-footer{x:y}", "+ .x{a:b}",
     ".a{background:url(https://evil.example/x.png)}", "@import url(x.css);", "@font-face{font-family:x}", ".a{width:expression(alert(1))}",
     ".a{behavior:url(x.htc)}", ".a{-moz-binding:url(x)}", ".a{color:red}</style><script>alert(1)</script>", ".a{b:\\75 rl(x)}",
-    ".a{& .b{c:d}}", ".a{background:image-set('x.png' 1x)}", "@keyframes cs-spin{from{a:b}}", ".a{color:red", "@namespace x url(y);"]) {
+    ".a{& .b{c:d}}", ".a{background:image-set('x.png' 1x)}", "@keyframes cs-spin{from{a:b}}", ".a{color:red", "@namespace x url(y);",
+    // Found in review: brackets that read differently in the browser, and switching off the page area's containment.
+    ":is(.a ,{}) , .cs-footer{color:red}", ":is(.a ,{}) , .cs-strip{display:none}", ".cs-site{contain:none;position:fixed;inset:0;z-index:9}",
+    ":not(.cs-site) .x{a:b}", ".a)(.b{x:y}", ".a{b:(} .cs-footer{color:red}", ".a{content:\"x\n}", "@media (min-width:1px{.a{b:c}}"]) {
     const r = checkCss(evil);
     assert.ok(r.problems.length, evil);
     assert.equal(r.css, "", evil);
@@ -123,9 +126,14 @@ test("the templates and starters are valid documents with placeholder words and 
   assert.equal(starterDocument("Me", { profile: true }).pages[0].sections[0].elements[1].type, "projects");
 });
 
-test("fonts are recognised by their bytes (WOFF2 only) and never pass as images", () => {
-  const woff2 = Uint8Array.from([0x77, 0x4f, 0x46, 0x32, 0, 1, 0, 0, 0, 0, 0, 0]);
+test("fonts are recognised by their bytes (a whole WOFF2 header) and never pass as images", () => {
+  const woff2 = new Uint8Array(64);
+  woff2.set([0x77, 0x4f, 0x46, 0x32, 0, 1, 0, 0, 0, 0, 0, 64]);
   assert.equal(sniffFile(woff2).type, "font/woff2");
+  assert.equal(sniffFile(Uint8Array.from([0x77, 0x4f, 0x46, 0x32, 0, 1, 0, 0, 0, 0, 0, 0])), null, "a bare signature isn't a font");
+  const lying = woff2.slice();
+  lying[11] = 99;
+  assert.equal(sniffFile(lying), null, "the header's length must be the file's");
   assert.equal(sniffImage(woff2), null);
   assert.equal(sniffFile(new TextEncoder().encode("wOFF........")), null, "WOFF 1 isn't accepted");
 });

@@ -9,7 +9,8 @@ import { Client, sql } from "../support/client.js";
 import { newBuyer } from "../support/flows.js";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
-const WOFF2 = Buffer.concat([Buffer.from("wOF2"), Buffer.alloc(60, 1)]);
+// A WOFF2 header: signature, TrueType flavor, and the file's length (64 bytes).
+const WOFF2 = Buffer.concat([Buffer.from("wOF2"), Buffer.from([0, 1, 0, 0, 0, 0, 0, 64]), Buffer.alloc(52, 1)]);
 const slug = (tag) => `${tag}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const v2 = (pages, theme = {}) => ({ document: { version: 2, theme, nav: { items: [] }, pages } });
 const page = (slug, title, elements) => ({ slug, title, sections: [{ id: "s1", rows: 8, elements }] });
@@ -122,7 +123,7 @@ export default (ctx) => describe("visual builder", () => {
   test("CSS that reaches outside the page is refused; good CSS is scoped to it", async () => {
     const { c, creator: cr } = await creator(ctx.mock.url, "css");
     const api = `/api/studio/creators/${cr.id}`;
-    for (const css of ["body{display:none}", ".cs-site ~ .cs-footer{display:none}", ".a{background:url(https://evil.example/x)}", "@import url(x.css);", ".a{color:red}</style><script>alert(1)</script>"]) {
+    for (const css of ["body{display:none}", ".cs-site ~ .cs-footer{display:none}", ":is(.a ,{}) , .cs-footer{color:red}", ".cs-site{contain:none}", ".a{background:url(https://evil.example/x)}", "@import url(x.css);", ".a{color:red}</style><script>alert(1)</script>"]) {
       const r = await c.req("PUT", `${api}/site`, { body: v2([page("", "Home", [])], { css }) });
       assert.equal(r.status, 400, css);
       assert.equal(r.data.error.code, "invalid_site");
