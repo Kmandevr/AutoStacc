@@ -32,6 +32,8 @@ Both live in D1 `creators`. Projects point at their creator (`projects.creator_i
 
 ## The Studio (`/studio`)
 
+> The form-based site editor below is being replaced by the visual builder ([builder](builder.md), planned 2026-10-15).
+
 Signed-in accounts with a confirmed email (the page is gated like `/dashboard`):
 
 1. **Claim a creator name.** It's free with no plan or card, one creator per account for now.

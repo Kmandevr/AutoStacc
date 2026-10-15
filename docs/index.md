@@ -25,6 +25,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
 - [Processing engine](engine.md): the Rust engine (engine/): safe ZIP reading, hashes, formats, header facts, suggestions and native audio analysis (tempo, key, waveform), in a Cloudflare Container behind the engine Worker and as WebAssembly in the Pack Builder; CI and benchmarks
 - [Pack Builder and processing engine](packs.md): BUILT (Phases 0–9 and the Pac editor; Phase 10 optional): packs as folders of verified assets with versions and provenance, the Rust engine in a Cloudflare Container, selective downloads, contents-derived facets, staying inside the Workers Paid plan
+- [Visual builder](builder.md): PLANNED: one Wix-like editor for creator profiles and project sites (free grid, templates, checked CSS, trusted interactive library, community library, roles, history, scheduling) and its build order
 - [Creator pages](creator-pages.md): PLANNED / NOT IMPLEMENTED: blueprint for sandboxed creator HTML/CSS (later JavaScript) on project pages
 - [Product Studio](studio.md): one workspace per product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared shell the Control Center also uses; names, data ownership, API contracts, built vs planned
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
