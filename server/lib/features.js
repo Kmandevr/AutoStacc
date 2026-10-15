@@ -31,7 +31,11 @@ export const FEATURES = {
   // next daily sweep (or the next publish); products keep their creators' own details. On again, the sweep restores them.
   "store.derivedFacets": { on: true, label: "Store filters from file contents" },
   // A product page's "What's inside" (GET /api/products/:id/contents): its folders and files, before purchase.
-  "product.contentsTree": { on: true, label: "What's inside on product pages" }
+  "product.contentsTree": { on: true, label: "What's inside on product pages" },
+  // Two-step sign-in for admin accounts: authenticator-app codes (TOTP) and one-time backup codes, through Better
+  // Auth's twoFactor plugin (server/auth/two-factor.js). Built but off by default (owner, 2026-10-15); off, the plugin
+  // isn't loaded, so /api/auth/two-factor/* doesn't exist and sign-in is password only, exactly as before.
+  "auth.adminTwoFactor": { on: false, label: "Two-step sign-in for admins" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

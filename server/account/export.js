@@ -13,12 +13,15 @@ import { listCollections, itemsOf, tagsOf, searchesOf } from "../collections/col
 import { votesOfUser } from "../polls/polls.js";
 import { creatorsOfUser } from "../creators/creators.js";
 import { limit } from "../lib/ratelimit.js";
+import { twoFactorEnabled } from "../auth/two-factor-state.js";
+import { twoFactorOn } from "../auth/two-factor.js";
 
 export async function collect(app, user) {
   const db = app.db;
   const email = String(user.email).toLowerCase();
   // Every section reads only its own tables, so they are read together.
-  const [emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches] = await Promise.all([
+  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches] = await Promise.all([
+    twoFactorEnabled(db, user.id),
     getPreferences(db, user.id),
     listDevices(db, user.id),
     ordersOfPerson(db, user.id, email).then((list) => Promise.all(list.map(async (o) => ({ ...publicOrder(o, await orderItems(db, o.id)), promoCode: o.promo_code || null })))),
@@ -35,7 +38,9 @@ export async function collect(app, user) {
   ]);
   return {
     exportedAt: new Date().toISOString(),
-    account: { id: user.id, name: user.name, email, emailVerified: Boolean(user.emailVerified), createdAt: iso(user.createdAt) },
+    account: { id: user.id, name: user.name, email, emailVerified: Boolean(user.emailVerified), createdAt: iso(user.createdAt),
+      // Whether two-step sign-in is on (only where it exists); never its secret or backup codes (they'd hand over the account).
+      ...((twoStep || twoFactorOn(app)) && { twoStepSignIn: twoStep }) },
     emailPreferences,
     devices: devices.map(({ id, ...d }) => d),
     orders,

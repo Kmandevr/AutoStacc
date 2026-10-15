@@ -28,7 +28,7 @@ Before the repository goes public (and from then on), keep these in the `product
 | --- | --- | --- |
 | `BETTER_AUTH_SECRET` | Signs sessions | Make one: `openssl rand -hex 32` |
 | `DOWNLOAD_SIGNING_SECRET` | Signs download links (must differ from the one above) | `openssl rand -hex 32` |
-| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with write access to Checkout Sessions and Refunds is better: customers' own refunds go through it) | Stripe → Developers → API keys |
+| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with write access to Checkout Sessions and Refunds is better: customers' own refunds go through it, and closing an open payment page is a Checkout Sessions write) | Stripe → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` of the webhook endpoint in step 3 | Stripe → Developers → Webhooks → the endpoint → Signing secret |
 | `BREVO_API_KEY` | API key `xkeysib-...` (not the SMTP key `xsmtpsib-...`; the deploy refuses that) | Brevo → SMTP & API → API keys |
 | `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified (optional to the deploy, but without it nobody can open `/admin`) | You |
@@ -68,6 +68,16 @@ If mail doesn't arrive: each deploy warns how many sends failed in the last 7 da
 1. Create an account at `https://autostacc.com/login#signup` with an email listed in `ADMIN_EMAILS`, confirm it, then open `/admin`.
 2. For each real product: set the real title, price, description and type in `data/products.js` and remove `draft: true` (the `add-product` skill does this), push, let it deploy. Then in `/admin` upload its paid file(s) and, if wanted, a preview clip (and set `preview: { file: "..." }` on the product); a product that delivers a Pac gets its files in the Packs tab instead ([packs](packs.md)).
 3. Buy one yourself with a real card and refund it from Stripe: you should get the receipt, see it in your library, download it, then lose access after the refund.
+
+## Switching on two-step sign-in
+
+Built but off (owner, 2026-10-15). It adds a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, Aegis and the like) after the password, for admin accounts only. When you have an app:
+
+1. In `wrangler.toml`, under `[env.production.vars]`, add `FEATURES_ON = "auth.adminTwoFactor"` (if `FEATURES_ON` is already there, add the name after a comma), push to `main` and let it deploy. (Production's variables come from that file, not the Cloudflare dashboard.)
+2. Sign in to your admin account, open **Settings › Security**, and under **Two-step sign-in** type your password. Add the key it shows to your app (type it, or on the phone tap the link), save the ten backup codes somewhere safe (they're shown once), then type the app's code to switch it on.
+3. Log out and in again to check it asks for the code.
+
+Lost the phone: sign in with a backup code, then switch it off and set it up again. Lost the codes too: remove `auth.adminTwoFactor` from `FEATURES_ON` in `wrangler.toml` and deploy: sign-in is password only again until it's switched back on. Nobody else is ever asked to use it.
 
 ## Previews and test mode
 

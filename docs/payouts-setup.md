@@ -37,4 +37,4 @@ Keep the marketplace account's balance funded: transfers come out of it, and cha
 
 Tax forms for creators (Stripe's connected-account onboarding handles identity; whether you must file forms for US creators is a question for your tax adviser), payouts to creators outside the regions above (Global Payouts), and a webhook for account changes (the Studio asks Stripe for the account's state whenever it opens the payout section).
 
-**After adding the keys:** creator purchases open on the next deploy. If you paused them in the Control Center (Creators, Creator purchases), press **Allow creator purchases** too; both must be in place.
+**After adding the keys:** creator purchases open on the next deploy. If you paused them in the Control Center (Creators, Creator purchases), press **Allow creator purchases** too; both must be in place. Pausing closes payment pages already open for creators' products, which uses the key's write access to Checkout Sessions.

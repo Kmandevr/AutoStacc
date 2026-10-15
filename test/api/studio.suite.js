@@ -316,7 +316,7 @@ export default (ctx) => describe("studio", () => {
     assert.equal((await admin.post("/api/impersonation/exit", {})).status, 200);
   });
 
-  test("the owner's creator purchases switch: held in the cart, refused at checkout, the rest still sells", async () => {
+  test("the owner's creator purchases switch: open payment pages closed, held in the cart, refused at checkout, the rest still sells", async () => {
     const s = await seller("ps-switch", { trusted: true });
     const p = await onSale(s);
     const admin = await freshAdmin(base());
@@ -326,10 +326,16 @@ export default (ctx) => describe("studio", () => {
     assert.equal((await admin.req("PUT", "/api/admin/creator-sales", { body: { open: "no" } })).status, 400);
     const open = await admin.get("/api/admin/creator-sales");
     assert.deepEqual(open.data.creatorSales, { open: true, keyReady: true, paused: false, reason: null }, "the mock store needs no marketplace key");
+    // A payment page opened before the pause is closed by it, so it can't be paid afterwards.
+    const { c: early } = await newBuyer(base(), "ps-switch-early");
+    const opened = await early.post("/api/checkout", { items: [{ productId: p.id }] });
+    assert.equal(opened.status, 201, JSON.stringify(opened.data));
     try {
       const paused = await admin.req("PUT", "/api/admin/creator-sales", { body: { open: false } });
       assert.equal(paused.status, 200);
       assert.equal(paused.data.creatorSales.reason, "paused");
+      assert.ok(paused.data.closedCheckouts >= 1, "the open payment page was closed");
+      assert.equal(db(`SELECT status FROM orders WHERE id = '${opened.data.orderId}'`)[0].status, "cancelled");
       assert.deepEqual((await s.c.get(`/api/studio/products/${p.id}`)).data.checkout, { open: false, reason: "paused" }, "the creator sees checkout is closed");
       assert.equal(db("SELECT COUNT(*) AS n FROM admin_audit WHERE action = 'settings.creator_sales_paused'")[0].n >= 1, true);
 
@@ -347,7 +353,7 @@ export default (ctx) => describe("studio", () => {
       assert.equal(refused.status, 503);
       assert.equal(refused.data.error.code, "creator_sales_closed");
       assert.equal((await buyer.post("/api/checkout", { items: [{ productId: p.id }] })).status, 503);
-      assert.equal(db(`SELECT COUNT(*) AS n FROM order_items WHERE product_id = '${p.id}'`)[0].n, 0, "no order line for a held product");
+      assert.equal(db(`SELECT COUNT(*) AS n FROM order_items WHERE product_id = '${p.id}' AND order_id <> '${opened.data.orderId}'`)[0].n, 0, "no order line for a held product");
       const rest = await mockBuy(buyer, [{ productId: "stems-patchwork" }]);
       assert.equal(rest.pay.status, 200, "AutoStacc's own items still sell");
     } finally {
