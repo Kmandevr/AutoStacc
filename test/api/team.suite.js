@@ -23,7 +23,7 @@ async function join(base, o, role, tag) {
   const sent = await o.c.post(`/api/studio/creators/${o.creator.id}/invites`, { email: m.user.email, role });
   assert.equal(sent.status, 201, JSON.stringify(sent.data));
   const token = new URL(linkIn((await outbox(base, m.user.email)).find((x) => x.kind === "creator-invite"))).hash.replace("#invite=", "");
-  const ok = await m.c.post(`/api/studio/invites/${token}/accept`, {});
+  const ok = await m.c.post("/api/studio/invites/accept", { token });
   assert.equal(ok.status, 200, JSON.stringify(ok.data));
   return m;
 }
@@ -38,14 +38,14 @@ export default (ctx) => describe("creator teams", () => {
     const mail = (await outbox(ctx.mock.url, user.email)).find((x) => x.kind === "creator-invite");
     const token = new URL(linkIn(mail)).hash.replace("#invite=", "");
     assert.equal(sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM creator_invites WHERE token_hash = '${token}'`)[0].n, 0, "the token itself isn't stored");
-    assert.equal((await new Client(ctx.mock.url).post(`/api/studio/invites/${token}/accept`, {})).status, 401);
-    const look = await other.get(`/api/studio/invites/${token}`);
+    assert.equal((await new Client(ctx.mock.url).post("/api/studio/invites/accept", { token })).status, 401);
+    const look = await other.post("/api/studio/invites/look", { token });
     assert.equal(look.data.forYou, false);
     assert.equal(look.data.email, undefined, "the invited address isn't shown to whoever holds the link");
-    assert.equal((await other.post(`/api/studio/invites/${token}/accept`, {})).data.error.code, "wrong_account");
-    assert.equal((await invitee.get(`/api/studio/invites/${token}`)).data.forYou, true);
-    assert.equal((await invitee.post(`/api/studio/invites/${token}/accept`, {})).status, 200);
-    assert.equal((await invitee.post(`/api/studio/invites/${token}/accept`, {})).status, 404, "used once");
+    assert.equal((await other.post("/api/studio/invites/accept", { token })).data.error.code, "wrong_account");
+    assert.equal((await invitee.post("/api/studio/invites/look", { token })).data.forYou, true);
+    assert.equal((await invitee.post("/api/studio/invites/accept", { token })).status, 200);
+    assert.equal((await invitee.post("/api/studio/invites/accept", { token })).status, 404, "used once");
     const team = (await o.c.get(`/api/studio/creators/${o.creator.id}/team`)).data;
     assert.deepEqual(team.members.map((m) => m.role), ["owner", "publisher"]);
     assert.equal((await o.c.post(`/api/studio/creators/${o.creator.id}/invites`, { email: user.email, role: "editor" })).data.error.code, "already_member");
@@ -54,7 +54,7 @@ export default (ctx) => describe("creator teams", () => {
     await o.c.post(`/api/studio/creators/${o.creator.id}/invites`, { email: late.email, role: "editor" });
     sql(ctx.mock.stateDir, `UPDATE creator_invites SET expires_at = '2000-01-01T00:00:00.000Z' WHERE email = '${late.email}'`);
     const lateToken = new URL(linkIn((await outbox(ctx.mock.url, late.email)).find((x) => x.kind === "creator-invite"))).hash.replace("#invite=", "");
-    assert.equal((await other.get(`/api/studio/invites/${lateToken}`)).status, 404);
+    assert.equal((await other.post("/api/studio/invites/look", { token: lateToken })).status, 404);
   });
 
   test("roles: editors change drafts only; publishers publish; store managers run products; only the owner sees money", async () => {
@@ -90,6 +90,11 @@ export default (ctx) => describe("creator teams", () => {
     const { user: someone } = await newBuyer(ctx.mock.url, "a-new");
     assert.equal((await admin.c.post(`${base}/invites`, { email: someone.email, role: "admin" })).status, 403, "only the owner makes admins");
     assert.equal((await admin.c.post(`${base}/invites`, { email: someone.email, role: "publisher" })).status, 201);
+    // An admin can't withdraw the owner's admin invitation.
+    const { user: other } = await newBuyer(ctx.mock.url, "a-adminvite");
+    assert.equal((await o.c.post(`${base}/invites`, { email: other.email, role: "admin" })).status, 201);
+    const adminInvite = (await o.c.get(`${base}/team`)).data.invites.find((i) => i.email === other.email);
+    assert.equal((await admin.c.req("DELETE", `${base}/invites/${adminInvite.id}`, { body: {} })).status, 403);
     assert.equal((await admin.c.req("PATCH", `${base}/members/${editor.user.id}`, { body: { role: "publisher" } })).status, 200);
     assert.equal((await admin.c.req("PATCH", `${base}/members/${editor.user.id}`, { body: { role: "admin" } })).status, 403);
     assert.equal((await admin.c.req("PATCH", `${base}/members/${o.user.id}`, { body: { role: "editor" } })).status, 403, "the owner's role never changes");
@@ -98,6 +103,7 @@ export default (ctx) => describe("creator teams", () => {
     assert.equal((await admin.c.post(`/api/studio/projects/${o.project.id}/publish`, {})).status, 409, "an admin may publish (nothing saved yet)");
     // The owner can change and remove an admin; a member can leave; the owner can't.
     assert.equal((await o.c.req("PATCH", `${base}/members/${admin.user.id}`, { body: { role: "editor" } })).status, 200);
+    assert.ok(!(await o.c.get(`${base}/team`)).data.invites.some((i) => i.email === someone.email), "a demoted admin's pending invitations go");
     assert.equal((await editor.c.req("DELETE", `${base}/members/${editor.user.id}`, { body: {} })).status, 200);
     assert.equal((await editor.c.get(`${base}/team`)).status, 404, "gone after leaving");
     assert.equal((await o.c.req("DELETE", `${base}/members/${o.user.id}`, { body: {} })).status, 403);

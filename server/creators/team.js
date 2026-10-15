@@ -31,9 +31,14 @@ export async function createInvite(db, creator, inviter, { email, role }) {
   const t = now();
   await db.batch([
     stmt(db, "DELETE FROM creator_invites WHERE creator_id = ? AND email = ? AND accepted_at IS NULL", creator.id, email),
-    stmt(db, `INSERT INTO creator_invites (id, creator_id, email, role, token_hash, invited_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      newId("inv"), creator.id, email, role, await sha256(token), inviter.id, t, new Date(Date.now() + 7 * DAY).toISOString())
+    // The cap holds inside the insert too, so invitations sent at the same moment can't pass it.
+    stmt(db, `INSERT INTO creator_invites (id, creator_id, email, role, token_hash, invited_by, created_at, expires_at) SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8
+      WHERE (SELECT COUNT(*) FROM creator_members WHERE creator_id = ?2) + (SELECT COUNT(*) FROM creator_invites WHERE creator_id = ?2 AND accepted_at IS NULL) < ?9`,
+      newId("inv"), creator.id, email, role, await sha256(token), inviter.id, t, new Date(Date.now() + 7 * DAY).toISOString(), LIMITS.membersPerCreator)
   ]);
+  if (!(await first(db, "SELECT 1 FROM creator_invites WHERE creator_id = ? AND email = ? AND accepted_at IS NULL", creator.id, email))) {
+    fail(409, "limit_reached", `A team can have up to ${LIMITS.membersPerCreator} people, invitations included.`);
+  }
   return token;
 }
 
@@ -67,14 +72,20 @@ export async function acceptInvite(db, user, token) {
   return { creatorId: inv.creator_id, role: inv.role };
 }
 
-// A member's role (never the owner's: the routes check who may change whom).
-export const setRole = (db, creatorId, userId, role) => run(db,
-  `INSERT INTO creator_roles (creator_id, user_id, role, created_at, updated_at) SELECT ?, ?, ?, ?, ?
+// Invitations a member sent that nobody accepted yet: they go when the member stops being one who may invite.
+const dropInvitesStmt = (db, creatorId, userId) => stmt(db, "DELETE FROM creator_invites WHERE creator_id = ? AND invited_by = ? AND accepted_at IS NULL", creatorId, userId);
+
+// A member's role (never the owner's: the routes check who may change whom). dropInvites: an admin losing the role.
+export const setRole = (db, creatorId, userId, role, { dropInvites = false } = {}) => db.batch([
+  stmt(db, `INSERT INTO creator_roles (creator_id, user_id, role, created_at, updated_at) SELECT ?, ?, ?, ?, ?
    WHERE EXISTS (SELECT 1 FROM creator_members WHERE creator_id = ? AND user_id = ? AND role <> 'owner')
    ON CONFLICT(creator_id, user_id) DO UPDATE SET role = excluded.role, updated_at = excluded.updated_at`,
-  creatorId, userId, role, now(), now(), creatorId, userId);
+  creatorId, userId, role, now(), now(), creatorId, userId),
+  ...(dropInvites ? [dropInvitesStmt(db, creatorId, userId)] : [])
+]);
 
 export const removeMember = (db, creatorId, userId) => db.batch([
+  dropInvitesStmt(db, creatorId, userId),
   stmt(db, "DELETE FROM creator_roles WHERE creator_id = ? AND user_id = ?", creatorId, userId),
   stmt(db, "DELETE FROM creator_members WHERE creator_id = ? AND user_id = ? AND role <> 'owner'", creatorId, userId)
 ]);

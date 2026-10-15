@@ -69,7 +69,7 @@
 
   async function invite(root, token, onDone) {
     root.innerHTML = '<p class="msg pending">Opening the invitation…</p>';
-    const res = await api(`/api/studio/invites/${encodeURIComponent(token)}`);
+    const res = await api("/api/studio/invites/look", { method: "POST", body: { token } });
     if (!res.ok) { root.innerHTML = `<div class="panel"><h2>Invitation</h2><p class="msg error">${e(res.error.message)}</p><button class="btn ghost" type="button" data-done>To the Studio</button></div>`; root.querySelector("[data-done]").onclick = onDone; return; }
     const i = res.data;
     root.innerHTML = `<div class="panel"><h2>Join ${e(i.creator.name)}</h2>
@@ -80,7 +80,7 @@
     const btn = root.querySelector("[data-accept]");
     if (btn) btn.onclick = async () => {
       btn.disabled = true;
-      const r = await api(`/api/studio/invites/${encodeURIComponent(token)}/accept`, { method: "POST", body: {} });
+      const r = await api("/api/studio/invites/accept", { method: "POST", body: { token } });
       if (r.ok) return onDone();
       btn.disabled = false;
       const m = root.querySelector(".msg[role=status]");
