@@ -13,6 +13,7 @@ import { grant, revokeById } from "../entitlements/grants.js";
 import { verifiedUserIdForEmail } from "../entitlements/claim.js";
 import { audit } from "../audit/log.js";
 import { paymentProvider } from "../payments/index.js";
+import { paymentAlerts } from "./alerts.js";
 
 const like = (q) => `%${String(q || "").replace(/[%_]/g, "")}%`;
 
@@ -23,11 +24,11 @@ async function summary(app) {
     first(app.db, 'SELECT COUNT(*) AS n FROM "user"'),
     first(app.db, "SELECT COUNT(*) AS n FROM entitlements WHERE status = 'active'"),
     first(app.db, "SELECT COUNT(*) AS n FROM products WHERE deleted_at IS NULL"),
-    // Payment events the store refused, errored on, or is holding (a refund waiting for its payment).
+    // Payment events the store refused, errored on, or is holding (a refund waiting for its payment), ranked in admin/alerts.js.
     all(app.db, `SELECT id, type, order_id, outcome, detail, received_at FROM payment_events
       WHERE outcome IN ('rejected', 'error') OR outcome LIKE '%waiting for payment' ORDER BY received_at DESC LIMIT 20`)
   ]);
-  return json({ orders, customers: customers.n, activeEntitlements: entitlements.n, products: products.n, alerts, environment: app.config.appEnv,
+  return json({ orders, customers: customers.n, activeEntitlements: entitlements.n, products: products.n, alerts: paymentAlerts(alerts), environment: app.config.appEnv,
     paymentProvider: app.config.paymentProvider, livePayments: paymentProvider(app).livemode(app.config) });
 }
 

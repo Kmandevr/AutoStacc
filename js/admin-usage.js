@@ -13,8 +13,8 @@
     : meter === "r2_bytes" ? `${(n / 1e9).toFixed(2)} GB` : n.toLocaleString("en");
   const LEVEL = {
     ok: "Inside the free allowance.",
-    alert: "Over 80% of the free allowance: pack processing skips listening to audio until next month.",
-    pause: "Over 95% of the free allowance: new pack processing waits for next month."
+    alert: "Over 80% of the free allowance: Pac processing skips listening to audio until next month.",
+    pause: "Over 95% of the free allowance: new Pac processing waits for next month."
   };
 
   function draw(panel, u, message) {
