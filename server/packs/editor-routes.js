@@ -1,7 +1,7 @@
 // The Pac editor's routes (docs/packs.md, "Pac editor"; owner, 2026-10-15), under each scope's prefix (access.js: the
 // admin's on any Pac, a creator's on their own products' only; anyone else gets 404). Switch packs.editor.
 //   POST   /api/admin/packs/:pacId/drafts {productId, idempotencyKey}      a draft copied from the live version
-//   POST   /api/studio/packs/products/:productId/drafts {idempotencyKey}   (or empty when there is none)
+//   POST   /api/studio/packs/products/:productId/drafts {idempotencyKey}   (or empty when there is none, or empty: true)
 //   POST   …/versions/:versionId/additions {filename, size, folderId, idempotencyKey}  files to add, sent as a ZIP
 //   POST   …/additions/:additionId/complete   once its parts are up (PUT …/uploads/:uploadId/parts/:n, routes.js)
 //   GET    …/additions/:additionId            its state (merged into the version when checked)
@@ -30,8 +30,8 @@ const folderParam = (v) => (v === null || v === undefined ? null : str(v, "folde
 const plan = (u) => ({ uploadId: u.id, sizeBytes: u.size_bytes, partBytes: PART_BYTES, parts: Math.max(1, Math.ceil(u.size_bytes / PART_BYTES)) });
 
 async function draftFor(app, actor, { pac, product, body }) {
-  const v = await startDraft(app, { pac, product, ownerScope: await ownerOf(app.db, product), idempotencyKey: str(body.idempotencyKey, "idempotencyKey", KEY), createdBy: actor.user.id });
-  await audit(app, "pack.draft_started", { targetType: "pac", targetId: pac.id, detail: { versionId: v.id, from: v.base_version_id || null } });
+  const v = await startDraft(app, { pac, product, ownerScope: await ownerOf(app.db, product), idempotencyKey: str(body.idempotencyKey, "idempotencyKey", KEY), createdBy: actor.user.id, empty: body.empty === true });
+  await audit(app, "pack.draft_started", { targetType: "pac", targetId: pac.id, detail: { versionId: v.id, from: v.base_version_id || null, empty: body.empty === true } });
   return json({ version: await versionView(app.db, v.id) }, 201);
 }
 

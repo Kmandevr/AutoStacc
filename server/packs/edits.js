@@ -104,6 +104,20 @@ export async function renameEntry(app, version, { assetId, filename }) {
   await run(app, version, [stmt(app.db, "UPDATE pac_entries SET filename = ? WHERE version_id = ? AND asset_id IN (SELECT value FROM json_each(?))", name, version.id, ids)]);
 }
 
+/** Moves a folder (with everything in it) under parentId (null: the top); never into itself or a folder inside it. */
+export async function moveFolder(app, version, { folderId, parentId }) {
+  const f = await folderOf(app, version, folderId);
+  if (parentId !== null) {
+    const parents = new Map((await all(app.db, "SELECT id, parent_id FROM pac_folders WHERE version_id = ?", version.id)).map((x) => [x.id, x.parent_id]));
+    if (!parents.has(parentId)) fail(404, "not_found", "No such folder in this version.");
+    for (let at = parentId; at; at = parents.get(at)) if (at === f.id) fail(400, "invalid_move", "A folder can't go inside itself.");
+  }
+  const clash = await all(app.db, "SELECT 1 FROM pac_folders WHERE version_id = ? AND IFNULL(parent_id, '') = IFNULL(?, '') AND lower(name) = lower(?) AND id <> ?",
+    version.id, parentId, f.name, f.id);
+  if (clash.length) fail(409, "name_taken", "A folder with that name is already there.");
+  await run(app, version, [stmt(app.db, "UPDATE pac_folders SET parent_id = ? WHERE version_id = ? AND id = ?", parentId, version.id, f.id)]);
+}
+
 export async function renameFolder(app, version, { folderId, name }) {
   const f = await folderOf(app, version, folderId);
   const n = cleanName(name);

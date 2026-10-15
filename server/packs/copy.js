@@ -1,20 +1,22 @@
 // Editing a Pac in the builder (docs/packs.md, "Pac editor"): a new version that starts as a copy of the live one, its
 // folders (same ids), folder defaults and files (same assets, so their values and published file ids carry over),
 // checked already because nothing new is in it, so it's ready at once with no engine job. With no live version it
-// starts empty. Files are then added, moved, removed or written (additions.js, tree-edits.js, edits.js) and the
+// starts empty, and so does one asked for empty (a whole Pac dropped in to replace it, owner 2026-10-15: its files are
+// matched to the live ones by their bytes when added, so unchanged files stay the same files for buyers). Files are then added, moved, removed or written (additions.js, tree-edits.js, edits.js) and the
 // version is published like any other (the automated review sees what it changes, final-review.js).
 import { first, stmt, now } from "../lib/db.js";
 import { createVersion } from "./versions.js";
 import { restatStmt } from "./stats.js";
 
-export async function startDraft(app, { pac, product, ownerScope, idempotencyKey, createdBy }) {
+export async function startDraft(app, { pac, product, ownerScope, idempotencyKey, createdBy, empty = false }) {
   const live = pac.live_version_id ? await first(app.db, "SELECT * FROM pac_versions WHERE id = ?", pac.live_version_id) : null;
+  const copy = live && !empty;
   const v = await createVersion(app.db, { pacId: pac.id, productId: product.id, ownerScope, origin: live ? "revision" : "files", idempotencyKey, createdBy });
   if (v.status !== "draft") return v; // the same key again
   const t = now();
   const stats = { files: 0, bytes: 0, folders: 0, refused: [], review: { verdict: "pass", flags: [] }, edited: true };
   await app.db.batch([
-    ...(live ? [
+    ...(copy ? [
       stmt(app.db, `INSERT INTO pac_folders (id, version_id, parent_id, name, sort, original_path)
         SELECT id, ?, parent_id, name, sort, original_path FROM pac_folders WHERE version_id = ?`, v.id, live.id),
       stmt(app.db, `INSERT INTO pac_folder_values (version_id, folder_id, field, value, set_by, set_at)

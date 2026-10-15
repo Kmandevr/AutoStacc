@@ -71,6 +71,36 @@ export default (ctx) => describe("packs: the Pac editor", () => {
     assert.deepEqual(rows.map((r) => `${r.folder_path ? `${r.folder_path}/` : ""}${r.filename}`).sort(), ["Extras/Snare 02.wav", "Read me.txt"]);
   });
 
+  test("replacing the Pac with a drop: an empty draft whose files match the live ones by bytes; folders move, never into themselves", async () => {
+    const { c, products } = await P.creatorWithProducts(base(), "ed-replace");
+    const pid = products[0].id;
+    let v = (await c.post(`${S}/products/${pid}/drafts`, { idempotencyKey: key() })).data.version;
+    const live = (await add(c, v.id, "addition")).version;
+    assert.equal((await c.post(`${S}/versions/${live.id}/publish`, {})).status, 200);
+    const d = await c.post(`${S}/products/${pid}/drafts`, { idempotencyKey: key(), empty: true });
+    assert.equal(d.status, 201, JSON.stringify(d.data));
+    assert.deepEqual(d.data.version.files, [], "nothing copied");
+    const added = await add(c, d.data.version.id, "addition");
+    assert.deepEqual(added.addition.stats.refused, []);
+    v = added.version;
+    assert.deepEqual(v.files.map((f) => f.assetId).sort(), live.files.map((f) => f.assetId).sort(), "the same files for buyers");
+    assert.deepEqual(v.stats.diff.counts, { same: 3, moved: 0, replaced: 0, added: 0, removed: 0 });
+    // Folders move under another folder or to the top, never into themselves or below themselves.
+    const mk = async (name) => (await c.post(`${S}/versions/${v.id}/folders`, { name })).data.version.folders.find((f) => f.name === name);
+    const a = await mk("A"), b = await mk("B");
+    const moved = await c.req("PATCH", `${S}/versions/${v.id}/folders/${b.id}`, { body: { parentId: a.id } });
+    assert.equal(moved.status, 200, JSON.stringify(moved.data));
+    assert.equal(moved.data.version.folders.find((f) => f.id === b.id).parentId, a.id);
+    assert.equal((await c.req("PATCH", `${S}/versions/${v.id}/folders/${a.id}`, { body: { parentId: b.id } })).data.error.code, "invalid_move");
+    assert.equal((await c.req("PATCH", `${S}/versions/${v.id}/folders/${a.id}`, { body: { parentId: a.id } })).data.error.code, "invalid_move");
+    assert.equal((await c.req("PATCH", `${S}/versions/${v.id}/folders/${a.id}`, { body: { parentId: "fo_nope" } })).status, 404);
+    const fills = v.folders.find((f) => f.name === "Fills");
+    assert.equal((await c.req("PATCH", `${S}/versions/${v.id}/folders/${fills.id}`, { body: { parentId: b.id } })).status, 200);
+    const back = await c.req("PATCH", `${S}/versions/${v.id}/folders/${b.id}`, { body: { parentId: null } });
+    assert.equal(back.data.version.folders.find((f) => f.id === b.id).parentId, null);
+    assert.ok(names(back.data.version).includes("B/Fills/Fill 01.wav"));
+  });
+
   test("a draft copied from the live version: same files and ids; taken names refused; one addition at a time", async () => {
     const { c, products } = await P.creatorWithProducts(base(), "ed-copy");
     const pid = products[0].id;
