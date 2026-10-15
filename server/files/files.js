@@ -25,6 +25,16 @@ export const deliverableFiles = (db, productIds) => (productIds.length
       WHERE ${DELIVERABLE} AND product_id IN (${productIds.map(() => "?").join(",")}) ORDER BY sort, filename`, ...productIds)
   : Promise.resolve([]));
 
+// Each product's read me text (kept with its published details, server/packs/publish.js): { productId: text }.
+export async function readmesOf(db, productIds) {
+  if (!productIds.length) return {};
+  const rows = await all(db, `SELECT product_id, json_extract(meta, '$.readme') AS text FROM product_files WHERE ${DELIVERABLE} AND retired_at IS NULL
+    AND IFNULL(folder_path, '') = '' AND json_extract(meta, '$.readme') IS NOT NULL AND product_id IN (SELECT value FROM json_each(?)) ORDER BY sort`, JSON.stringify(productIds));
+  const out = {};
+  for (const r of rows) out[r.product_id] ??= r.text;
+  return out;
+}
+
 // What a buyer would download per product (published, active files only): { productId: { files, bytes } }.
 export const downloadSizes = async (db, productIds) => (productIds.length
   ? Object.fromEntries((await all(db, `SELECT product_id, COUNT(*) AS files, COALESCE(SUM(size_bytes), 0) AS bytes FROM product_files

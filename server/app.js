@@ -51,11 +51,12 @@ import { routes as wishlist } from "./wishlist/routes.js";
 import { routes as collections } from "./collections/routes.js";
 import { routes as packs } from "./packs/routes.js";
 import { routes as packEditor } from "./packs/editor-routes.js";
+import { routes as packPreviews } from "./packs/previews.js";
 import { routes as maintenance } from "./maintenance/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, maintenance, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

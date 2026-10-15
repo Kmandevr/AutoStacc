@@ -9,10 +9,11 @@ import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
 import { getProduct, getProducts, isFree, isVisible, productPath } from "../catalog/products.js";
 import { limit } from "../lib/ratelimit.js";
-import { deliverableFiles, stillDelivered, RETIRED_KEEP_DAYS } from "../files/files.js";
+import { deliverableFiles, readmesOf, stillDelivered, RETIRED_KEEP_DAYS } from "../files/files.js";
 import { isOn } from "../lib/features.js";
 import { autoStacc, AUTO_NOTE } from "./autostacc.js";
 import { projectNames } from "../creators/creators.js";
+import { previewsOf } from "../packs/previews.js";
 
 async function library(app) {
   const access = await requireAccess(app);
@@ -24,6 +25,9 @@ async function library(app) {
   const products = new Map(rows.map((p) => [p.id, p]));
   // Studio projects aren't in data/projects.js, so the page gets their names from here.
   const names = new Map((await projectNames(app.db, [...new Set(rows.map((p) => p.project_id).filter(Boolean))])).map((r) => [r.id, r.name]));
+  // Each Pac's preview clips (public anyway, server/packs/previews.js) and read me (its text kept at publishing).
+  const clips = await previewsOf(app.db, [...new Set(rows.flatMap((p) => parseJson(p.pacs, [])))]);
+  const readmes = await readmesOf(app.db, productIds);
   const items = productIds.filter((pid) => products.has(pid)).map((pid) => {
     const p = products.get(pid);
     const mine = ents.filter((e) => e.product_id === pid);
@@ -35,6 +39,8 @@ async function library(app) {
       projectName: names.get(p.project_id) || null,
       path: productPath(p),
       pacs: parseJson(p.pacs, []),
+      previews: parseJson(p.pacs, []).flatMap((id) => (clips[id] || []).map(({ title, url }) => ({ pacId: id, title, url }))),
+      readme: readmes[pid] || null,
       artwork: p.artwork,
       metadata: parseJson(p.metadata, {}),
       // Downloads go through this entitlement (the earliest active one).
