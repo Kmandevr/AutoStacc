@@ -11,7 +11,7 @@ import { limit } from "../lib/ratelimit.js";
 import { requireFeature } from "../lib/features.js";
 import { extensionOf, contentTypeFor, looksLike, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { putPreview, peekPreview, deletePreview } from "../storage/buckets.js";
-import { ADMIN, STUDIO, ensureStudioPac } from "./access.js";
+import { ADMIN, STUDIO, ensureStudioPac, studioPacOf } from "./access.js";
 import { inUseSql } from "../creators/storage.js";
 import { filesQuotaOf } from "../creators/policy.js";
 import { storedSql } from "../usage/storage.js";
@@ -94,18 +94,26 @@ const adminPac = async (app, pacId) => {
   if (!pac) fail(404, "not_found", "No such Pac.");
   return { pac, user: actor.user };
 };
-const studioPac = async (app, productId) => {
+// Looking makes nothing (a GET answers no clips while the product has no Pac yet); adding makes the Pac.
+const studioPac = async (app, productId, { make = true } = {}) => {
   requireFeature(app, "packs.editor");
   const actor = await STUDIO.actor(app);
   const { product, creator } = await STUDIO.product(app, actor, productId);
-  return { pac: await ensureStudioPac(app.db, product), user: actor.user, creator };
+  return { pac: make ? await ensureStudioPac(app.db, product) : await studioPacOf(app.db, product), user: actor.user, creator };
 };
 
 export const routes = [
   ["GET", "/api/admin/packs/:pacId/previews", async (app, p) => list(app, (await adminPac(app, p.pacId)).pac)],
   ["POST", "/api/admin/packs/:pacId/previews", async (app, p) => { const { pac, user } = await adminPac(app, p.pacId); return add(app, pac, user); }],
   ["DELETE", "/api/admin/packs/:pacId/previews/:previewId", async (app, p) => remove(app, (await adminPac(app, p.pacId)).pac, p.previewId)],
-  ["GET", "/api/studio/packs/products/:productId/previews", async (app, p) => list(app, (await studioPac(app, p.productId)).pac)],
+  ["GET", "/api/studio/packs/products/:productId/previews", async (app, p) => {
+    const { pac } = await studioPac(app, p.productId, { make: false });
+    return pac ? list(app, pac) : json({ previews: [], max: PREVIEWS_PER_PAC });
+  }],
   ["POST", "/api/studio/packs/products/:productId/previews", async (app, p) => { const { pac, user, creator } = await studioPac(app, p.productId); return add(app, pac, user, creator); }],
-  ["DELETE", "/api/studio/packs/products/:productId/previews/:previewId", async (app, p) => remove(app, (await studioPac(app, p.productId)).pac, p.previewId)]
+  ["DELETE", "/api/studio/packs/products/:productId/previews/:previewId", async (app, p) => {
+    const { pac } = await studioPac(app, p.productId, { make: false });
+    if (!pac) fail(404, "not_found", "No such preview.");
+    return remove(app, pac, p.previewId);
+  }]
 ];

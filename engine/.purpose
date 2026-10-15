@@ -1,0 +1,1 @@
+The processing engine (Rust): reads creators' archives and files, natively in the Container and as WebAssembly in the Pack Builder (docs/engine.md).

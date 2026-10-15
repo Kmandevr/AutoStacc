@@ -171,6 +171,10 @@ export default (ctx) => describe("packs: the Pac editor", () => {
   test("previews: up to three clips, only this Pac's files as sources; public with the read me once on sale", async () => {
     const { c, products } = await P.creatorWithProducts(base(), "ed-previews");
     const pid = products[0].id;
+    // Looking makes nothing: no Pac exists until something is added.
+    const look = await c.get(`${S}/products/${pid}/previews`);
+    assert.deepEqual(look.data.previews, []);
+    assert.equal(db(`SELECT pacs FROM products WHERE id = '${pid}'`)[0].pacs || "[]", "[]");
     const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVE"), Buffer.alloc(3000)]);
     const clip = (title, extra = "") => c.req("POST", `${S}/products/${pid}/previews?filename=clip.wav&title=${encodeURIComponent(title)}${extra}`, { raw: wav, headers: { "Content-Type": "audio/wav" } });
     // Built with a read me, then published and put on sale.

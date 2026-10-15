@@ -8,6 +8,8 @@
 
   const { $, escapeHTML: e, api } = window.GS;
   const SECONDS = 30, RATE = 44100;
+  // Cutting decodes the whole file in the browser's memory: past this, upload a clip instead (a phone can run out).
+  const CUT_MAX = 200 * 1024 * 1024;
   const AUDIO = /\.(wav|wave|aif|aiff|flac|mp3|ogg|oga|m4a)$/i;
 
   // 16-bit PCM WAV of an AudioBuffer.
@@ -55,7 +57,7 @@
         ${previews.length < max ? `<div class="pp-add">
           <div class="field"><label for="pp-title">Title (optional)</label><input id="pp-title" maxlength="80" data-pp-title></div>
           <button class="btn ghost small" type="button" data-pp-choose>Upload a clip</button><input type="file" accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,.mp3,.m4a,.ogg,.wav" hidden data-pp-upload>
-          ${audio.length ? `<div class="field"><label for="pp-pick">Or cut one from</label><select id="pp-pick" data-pp-pick><option value="">Choose a file…</option>
+          ${audio.length ? `<div class="field"><label for="pp-pick">Or cut one from (files up to ${CUT_MAX / 1048576} MB)</label><select id="pp-pick" data-pp-pick><option value="">Choose a file…</option>
             ${audio.map((f) => `<option value="${e(f.assetId)}">${e(f.folderPath ? `${f.folderPath}/` : "")}${e(f.filename)}</option>`).join("")}</select></div>` : ""}
         </div>` : ""}
         <p class="msg" role="status" data-pp-status></p></section>`;
@@ -85,6 +87,11 @@
       const pick = ev.target.closest("[data-pp-pick]");
       if (!pick || !pick.value) return;
       const v = opts.version();
+      const f = v && v.files.find((x) => x.assetId === pick.value);
+      if (f && f.sizeBytes > CUT_MAX) {
+        pick.value = "";
+        return say(`That file is too big to cut here (over ${CUT_MAX / 1048576} MB). Upload a short clip instead.`, true);
+      }
       pick.disabled = true;
       say("Cutting the first 30 seconds…");
       try {
