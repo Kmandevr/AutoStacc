@@ -2,7 +2,7 @@
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
 covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Product Studio and the workspace shell
@@ -36,7 +36,7 @@ updated: 2026-10-14
 
 ## Layout (shared shell: `js/workspace.js`, `css/workspace.css`)
 
-`css/workspace.css` also styles the Pack Builder's review table where Studio and the Control Center share it (the waveform beside each file, from the engine's analysis; [packs](packs.md)).
+`css/workspace.css` also styles the Pack Builder's review table and the Pac editor where Studio and the Control Center share them (the waveform beside each file, the folder tree, the previews panel; [packs](packs.md#pac-editor-built-2026-10-15)). In the Pac Builder section, the one drop zone (`js/pac-drop.js`) takes a single file too and opens it in the builder; older single files are listed with Remove (`js/studio-section-pacs.js`).
 
 - **Desktop:** a persistent sidebar of sections on the left, with the open section in the central workspace. Sections can be grouped; the Control Center uses groups.
 - **Compact header:** the item's name, its status (Draft, On sale, Paused, Removed for a product; LIVE or TEST for the Control Center), a save status ("All changes saved", "Saving…", "Unsaved changes", "Couldn't save"), a **Preview** action and a settings menu.
@@ -75,7 +75,7 @@ Cover art, name, status and the project it belongs to. A readiness checklist: bl
 The product's files, in one of two ways:
 
 - **Pac (ZIP).** The creator Pack Builder from Phase 5 ([packs](packs.md)), shown inside the workspace (`js/studio-packs.js` through `js/studio-section-pacs.js`). It offers a resumable upload, an in-browser preview of the ZIP, the engine's findings and the automated review, review of values and folders, versions, publish and discard. The product gets its own Stacclet and Pac with its first upload. A clean version goes live at once. A flagged one waits in the Control Center's review queue, where an admin approves it or rejects it with a note the creator sees. Uploads count against the creator's file storage (500 MB free).
-- **Single files.** The existing per-file upload (held for approval unless the creator is trusted).
+- **Single files.** With the Pac editor on, through the drop zone into the Pac (checked by the engine, waiting for Publish). Without it, the existing per-file upload (held for approval unless the creator is trusted).
 
 Only the product's owners and editors can use it; anyone else gets a 404. With the `packs.builder` switch off, the section shows only single files.
 

@@ -1,0 +1,26 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "signature",
+   "crc32": 3916108298,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 136,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Kick 07.wav",
+   "sha256": "5a2c1501ee6a31765d57be669dc53d2f4038942ce24461a6437d38c4c879a609",
+   "size": 36044
+  }
+ ],
+ "folders": [],
+ "totalSize": 36044,
+ "zip64": false
+}

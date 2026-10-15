@@ -2,7 +2,7 @@
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
 covers: [data/site.js, data/creators.js, data/projects.js, data/stacclets.js, data/pacs.js, data/content-types.js, data/product-types.js, data/polls.js, data/relationships.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/relations.js, db/migrations/0003_platform.sql, server/projects/, server/polls/, server/entitlements/autostacc.js, server/app.js, js/stacc-model.js, js/projects.js, js/polls.js]
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Architecture
@@ -86,7 +86,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | a kind of product | one entry in `data/product-types.js` |
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |
-| a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` (a module with no routes of its own, like `server/usage/`, is called by the modules that need it) |
+| a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` (a module with no routes of its own, like `server/usage/`, is called by the modules that need it; one area may wire more than one route table, like `server/packs/`) |
 | a store-wide switch the owner flips | a key in `SETTINGS` (`server/settings/settings.js`) |
 | a section of the Product Studio or Control Center | an entry in `data/workspaces.js` and a section module ([studio](studio.md)) |
 

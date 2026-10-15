@@ -1,4 +1,5 @@
-// Your Stacc's HTML templates (docs/library.md): the view switch and filters, the project → Stacclet → Pac tree, the
+// Your Stacc's HTML templates (docs/library.md): the view switch and filters, the project → Stacclet → Pac tree (with
+// each Pac's previews, read me and nested folders), the
 // content-type view, asset rows with checkboxes, and the "from projects you follow" list. Pure string builders over
 // GS.stacc output; js/library.js owns state, events and downloads. Sets GS.libraryView. Needs js/util.js.
 (function () {
@@ -26,29 +27,58 @@
   }
 
   // A labelled group of assets with a "select all" box for exactly those assets.
-  // bundle: offer the group's files as one ZIP (js/library-bundle.js), for the files that can be bundled.
-  function group(title, list, ctx, { showSource = false, level = 3, bundle = false } = {}) {
+  function group(title, list, ctx, { showSource = false, level = 3 } = {}) {
     const ids = list.map((a) => a.id);
     const all = ids.every((id) => ctx.selected.has(id));
-    const zip = bundle ? list.filter((a) => a.bundleable).map((a) => a.id) : [];
     return `<div class="stacc-group">
       <div class="stacc-group-head"><h${level}>${e(title)} <span class="stacc-count">${list.length}</span></h${level}>
-        <label class="stacc-all"><input type="checkbox" data-select-group="${e(ids.join(" "))}"${all ? " checked" : ""}> Select all</label>
-        ${zip.length > 1 ? `<button class="btn ghost" type="button" data-bundle="${e(zip.join(" "))}">Download folder (ZIP)</button>` : ""}</div>
+        <label class="stacc-all"><input type="checkbox" data-select-group="${e(ids.join(" "))}"${all ? " checked" : ""}> Select all</label></div>
       <ul class="stacc-assets">${list.map((a) => asset(a, ctx, showSource)).join("")}</ul>
     </div>`;
   }
 
   const kinds = (list, ctx) => list.map((k) => group(k.label, k.assets, ctx, { level: 4 })).join("");
-  const folders = (list, ctx) => list.map((f) => group(f.label.split("/").join(" › "), f.assets, ctx, { level: 4, bundle: true })).join("");
+
+  // A creator's folders (GS.stacc foldersOf): folders inside folders, each a <details> with its own files, and "Select
+  // all" and one ZIP (the bundleable files in it and below, up to the store's 2,000) for everything inside.
+  const BUNDLE_MAX = 2000;
+  const within = (n) => [...n.assets, ...n.folders.flatMap(within)];
+  function folderTools(n, ctx, label) {
+    const list = within(n), ids = list.map((a) => a.id);
+    const zip = list.filter((a) => a.bundleable).map((a) => a.id);
+    // .stacc-group-head: js/library-bundle.js puts a failed ZIP's message there.
+    return `<div class="stacc-group-head stacc-folder-tools">
+        <label class="stacc-all"><input type="checkbox" data-select-group="${e(ids.join(" "))}"${ids.every((id) => ctx.selected.has(id)) ? " checked" : ""}> Select all</label>
+        ${zip.length > 1 && zip.length <= BUNDLE_MAX ? `<button class="btn ghost" type="button" data-bundle="${e(zip.join(" "))}">${label}</button>` : ""}</div>`;
+  }
+  const folderBody = (n, ctx, depth) => `${n.assets.length ? `<ul class="stacc-assets">${n.assets.map((a) => asset(a, ctx, false)).join("")}</ul>` : ""}
+      ${n.folders.map((f) => folder(f, ctx, depth + 1)).join("")}`;
+  // Open near the top, or when small enough to read at a glance; deeper, bigger folders start folded.
+  const folder = (n, ctx, depth) => `<details class="stacc-folder"${depth === 0 || n.count <= 20 ? " open" : ""}>
+      <summary><span class="stacc-folder-name">${e(n.name)}</span> <span class="stacc-count">${files(n.count)}</span></summary>
+      <div class="stacc-folder-body">${folderTools(n, ctx, "Download folder (ZIP)")}${folderBody(n, ctx, depth)}</div>
+    </details>`;
+  const folders = (root, ctx) => `<div class="stacc-folders">${folderTools(root, ctx, "Download all (ZIP)")}${folderBody(root, ctx, -1)}</div>`;
+
+  // A Pac's or product's preview clips (public, at most 3 per Pac) and its read me, folded, as plain text.
+  function extras(x) {
+    const clips = (x.previews || []).filter((c) => c && /^\/media\//.test(c.url));
+    if (!clips.length && !x.readme) return "";
+    return `<div class="stacc-extras">
+      ${clips.length ? `<ul class="pac-previews">${clips.map((c) => `<li><span class="pac-preview-title">${e(c.title)}</span>
+        <audio controls preload="none" src="${e(c.url)}" aria-label="${e(`Preview: ${c.title}`)}"></audio></li>`).join("")}</ul>` : ""}
+      ${x.readme ? `<details class="pac-readme"><summary>Read me</summary><pre>${e(x.readme)}</pre></details>` : ""}
+    </div>`;
+  }
+  const contents = (x, ctx) => extras(x) + (x.folders ? folders(x.folders, ctx) : kinds(x.kinds, ctx));
 
   function treeView(tree, ctx) {
     return tree.map((p) => `<section class="stacc-project">
       <h2>${e(p.name)} <span class="stacc-count">${items(p.count)}</span></h2>
       ${p.stacclets.map((s) => `<details class="stacc-stacclet" open><summary><span class="stacc-kind">Stacclet</span> ${e(s.title)} <span class="stacc-count">${items(s.count)}</span></summary>
-        ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span>${pac.updated ? ` ${UPDATED}` : ""}</summary>${pac.folders ? folders(pac.folders, ctx) : kinds(pac.kinds, ctx)}</details>`).join("")}
+        ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span>${pac.updated ? ` ${UPDATED}` : ""}</summary>${contents(pac, ctx)}</details>`).join("")}
       </details>`).join("")}
-      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span>${x.updated ? ` ${UPDATED}` : ""}</summary>${x.folders ? folders(x.folders, ctx) : kinds(x.kinds, ctx)}</details>`).join("")}
+      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span>${x.updated ? ` ${UPDATED}` : ""}</summary>${contents(x, ctx)}</details>`).join("")}
     </section>`).join("");
   }
 

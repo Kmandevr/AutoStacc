@@ -6,8 +6,15 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { sql, unique } from "../support/client.js";
 import { browserStore, PHONE, DESK } from "../support/browser.js";
+import path from "node:path";
+import { after } from "node:test";
+import { startMockEngine } from "../mock-engine/server.js";
+const ROOT = path.resolve(import.meta.dirname, "../..");
+// The mock engine checks what the Product Studio's drop zone sends (the Pack Builder's flow, test/browser/packs.test.js).
+const engine = await startMockEngine(8827, { storage: "http://localhost:8806/api/internal/engine-storage" });
+after(() => engine.close());
 
-const t = browserStore({ name: "features", port: 8806 });
+const t = browserStore({ name: "features", port: 8806, vars: { ENGINE_URL: engine.url } });
 const { open, ordersFor, toMockPay, signUp, startImpersonating } = t;
 
 describe("features in the browser", () => {
@@ -218,9 +225,12 @@ describe("features in the browser", () => {
     sql(t.stateDir, "UPDATE creators SET trusted = 1");
     await page.click("[data-ws-open]");
     await page.click('[data-ws-item="pacs"]');
-    const zip = Buffer.concat([Buffer.from("PK\x03\x04"), Buffer.alloc(60, 1)]);
-    await page.setInputFiles("[data-spc-upload]", { name: "kit.zip", mimeType: "application/zip", buffer: zip });
-    await page.waitForSelector("text=Uploaded kit.zip");
+    // The one drop zone: a whole Pac (the conformance case the mock engine knows) opens in the builder, then Publish.
+    await page.setInputFiles("[data-pd-files]", path.join(ROOT, "engine/conformance/cases/editor-file.zip"));
+    await page.waitForSelector("[data-pack-publish]", { timeout: 60000 });
+    page.once("dialog", (d) => d.accept());
+    await page.click("[data-pack-publish]");
+    await page.waitForSelector("[data-pack-version] >> text=Published");
     await page.click("[data-ws-open]");
     await page.click('[data-ws-item="release"]');
     await page.click("[data-sw-release=publish]");
@@ -494,5 +504,26 @@ describe("features in the browser", () => {
     assert.equal(await calm.page.evaluate(() => document.querySelector(".daw-stage").getAnimations({ subtree: true }).length), 0, "no motion when asked for less");
     assert.ok(await calm.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll on a phone");
     await calm.ctx.close();
+  });
+  test("Your Stacc on a phone: a Pac's nested folders, its previews and read me, with no sideways scroll", async () => {
+    const { ctx, page } = await open(PHONE);
+    const f = (id, folderPath) => ({ id, filename: `${id}.wav`, label: "", sizeBytes: 2048, pacId: "pc_t", kind: "", folderPath, bundleable: true });
+    const library = { signedIn: false, items: [{ productId: "sp_tree", title: "Tree Kit", projectId: null, projectName: null, path: "/shop/sp_tree", pacs: ["pc_t"], sources: ["purchase"],
+      readme: "<b>Thanks</b> for buying.\nA very-long-unbroken-line-".concat("x".repeat(200)), previews: [{ pacId: "pc_t", title: "Groove <i>", url: "/media/previews/t.mp3" }],
+      files: [f("pf_top", ""), f("pf_k1", "Drums/Kicks"), f("pf_k2", "Drums/Kicks"), f("pf_c", "Drums")] }] };
+    await page.route((url) => url.pathname === "/api/library", (route) => route.fulfill({ json: library }));
+    await page.goto("/library");
+    await page.waitForSelector(".stacc-folder");
+    assert.equal(await page.locator(".stacc-folder .stacc-folder .stacc-asset").count(), 2, "Kicks sits inside Drums");
+    assert.equal(await page.locator(".stacc-folder").first().locator("[data-bundle]").first().getAttribute("data-bundle"), "pf_c pf_k1 pf_k2", "a folder's ZIP covers its subfolders");
+    assert.equal(await page.locator(".pac-previews audio[preload=none][controls]").count(), 1);
+    assert.equal(await page.locator(".pac-preview-title").innerText(), "Groove <i>", "titles are text");
+    assert.equal(await page.locator(".pac-readme").getAttribute("open"), null, "the read me starts folded");
+    await page.click(".pac-readme summary");
+    await page.locator(".pac-readme pre").waitFor();
+    assert.match(await page.locator(".pac-readme pre").textContent(), /^<b>Thanks<\/b> for buying\./, "the read me is plain text");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll on a phone");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
   });
 });

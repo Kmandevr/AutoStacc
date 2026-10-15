@@ -1,0 +1,40 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Snare 02.wav",
+   "size": 54044
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Fills/Fill 01.wav",
+   "size": 180044
+  },
+  {
+   "by": "extension",
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Read me.txt",
+   "size": 13
+  }
+ ],
+ "folders": [
+  "Fills"
+ ],
+ "totalSize": 234101,
+ "zip64": false
+}

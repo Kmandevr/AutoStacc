@@ -53,3 +53,23 @@
 .stacc-asset .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: .78rem; border: 1px solid var(--line); border-radius: 999px; }
 .stacc-asset .chip .link { min-width: 24px; min-height: 24px; }
 @media (max-width: 600px) { .stacc-personal-form { flex: 1 1 100%; } .stacc-personal-form input { flex: 1 1 140px; } }
+/* A Pac's previews and read me, then its creator's folders nested (js/library-view.js folders()). */
+.stacc-extras { display: grid; gap: 10px; margin: 4px 0 12px; }
+.stacc-extras .pac-previews { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.stacc-extras .pac-previews li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.stacc-extras .pac-preview-title { flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: .9rem; }
+.stacc-extras audio { flex: 1 1 260px; max-width: 100%; min-height: 40px; }
+.stacc-extras .pac-readme summary { cursor: pointer; padding: 6px 0; color: var(--accent); }
+.stacc-extras .pac-readme pre { margin: 6px 0 0; padding: 10px 12px; max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: .85rem; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
+.stacc-folders { margin: 4px 0 12px; }
+.stacc-folder-tools { justify-content: flex-start; padding-bottom: 4px; }
+.stacc-folder-tools .msg { flex: 1 1 100%; margin: 4px 0; }
+.stacc-folder { margin: 6px 0 0; }
+.stacc-folder > summary { cursor: pointer; padding: 8px 0; font-weight: 600; overflow-wrap: anywhere; }
+.stacc-folder-name { color: var(--heading); }
+.stacc-folder-body { border-left: 1px solid var(--line); margin-left: 6px; padding-left: 12px; min-width: 0; }
+@media (max-width: 600px) {
+  .stacc-extras audio { flex-basis: 100%; width: 100%; }
+  .stacc-folder-body { margin-left: 2px; padding-left: 8px; }
+  .stacc-folder-tools .btn { flex: 1 1 100%; text-align: center; }
+}

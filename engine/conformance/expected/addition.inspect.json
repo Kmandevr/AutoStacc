@@ -1,0 +1,58 @@
+{
+ "contractVersion": 1,
+ "files": [
+  {
+   "by": "signature",
+   "crc32": 2331692910,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 204,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Snare 02.wav",
+   "sha256": "e6984e708a23cac5f7e9657b7c226ce35442aa0dd77e39b9768f932cdfc81108",
+   "size": 54044
+  },
+  {
+   "by": "signature",
+   "crc32": 967304849,
+   "facts": {
+    "bitDepth": 24,
+    "channels": 2,
+    "durationMs": 680,
+    "encoding": "pcm",
+    "sampleRate": 44100
+   },
+   "format": "wav",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Fills/Fill 01.wav",
+   "sha256": "02b6a947020dd0b149872bba105416dd1568fb0aa71874e17f85c225abfe0e07",
+   "size": 180044
+  },
+  {
+   "by": "extension",
+   "crc32": 1488070391,
+   "facts": {},
+   "format": "text",
+   "ignored": false,
+   "issues": [],
+   "mismatch": false,
+   "path": "Read me.txt",
+   "sha256": "91948b5fdd6d7127d7e05e4e6e2c39868396f41742561e86771638a1db97ba74",
+   "size": 13
+  }
+ ],
+ "folders": [
+  "Fills"
+ ],
+ "totalSize": 234101,
+ "zip64": false
+}

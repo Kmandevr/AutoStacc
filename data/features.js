@@ -3,6 +3,7 @@
 window.FEATURES = {
  "packs.builder": true,
  "packs.suggestions": true,
+ "packs.editor": true,
  "packs.analysis": true,
  "downloads.bundles": true,
  "downloads.deflate": false,

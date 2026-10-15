@@ -1,8 +1,10 @@
 // Product Studio, Pac Builder (GS.studioSections.pacs, drawn by js/studio-workspace.js): the files buyers get. With the
-// Pack Builder switched on (data/features.js) the product's Pac as one ZIP through js/studio-packs.js, drawn inside this
-// section (its own back bar is hidden by css/studio-sections.css); always the single files: PUT
-// /api/studio/products/:id/files?filename= with the raw file, DELETE .../files/:fileId. The server checks every file and
-// holds a new creator's for AutoStacc's approval. Needs js/util.js and js/studio-kit.js.
+// Pack Builder switched on (data/features.js) the product's Pac through js/studio-packs.js, drawn inside this section
+// (its own back bar is hidden by css/studio-sections.css). With the Pac editor on, its one drop zone takes a single file
+// too (owner, 2026-10-15: one place to drop anything, and it all opens in the builder), so there's no upload here, only
+// the older single files with Remove. Without the editor: PUT /api/studio/products/:id/files?filename= as before (held
+// for AutoStacc's approval for a new creator), and Remove (DELETE .../files/:fileId).
+// Needs js/util.js and js/studio-kit.js.
 (function () {
   "use strict";
 
@@ -15,12 +17,15 @@
       const K = window.GS.studioKit;
       const id = (ctx.product.product || {}).id;
       const packs = window.GS.studioPacks && window.GS.studioPacks.enabled();
+      const editor = Boolean(packs && window.FEATURES["packs.editor"] && window.GS.pacDrop);
+      const older = ((ctx.product.product || {}).files || []).length > 0;
       el.innerHTML = `
         ${packs ? '<div class="spc-pack" data-spc-pack></div>' : ""}
-        <section class="spc-files" aria-labelledby="spc-files-h">
-          <h3 id="spc-files-h">${packs ? "Single files" : "Files buyers get"}</h3>
+        <section class="spc-files" aria-labelledby="spc-files-h"${editor && !older ? " hidden" : ""}>
+          <h3 id="spc-files-h">${editor ? "Older single files" : packs ? "Single files" : "Files buyers get"}</h3>
+          ${editor ? '<p class="small-print">Files added before the Pac builder. New files go in by dropping them in above.</p>' : ""}
           <div data-spc-list></div>
-          <label class="btn ghost small studio-upload">Add a file<input type="file" data-spc-upload hidden></label>
+          ${editor ? "" : '<label class="btn ghost small studio-upload">Add a file<input type="file" data-spc-upload hidden></label>'}
           <p class="msg" role="status"></p>
         </section>`;
       const filesBox = $(".spc-files", el);
@@ -45,7 +50,7 @@
         box.addEventListener("click", (ev) => { if (ev.target.closest("[data-pack-publish], [data-pack-discard]")) setTimeout(() => refresh(), 1500); });
       }
 
-      $("[data-spc-upload]", el).addEventListener("change", async (ev) => {
+      if (!editor) $("[data-spc-upload]", el).addEventListener("change", async (ev) => {
         const input = ev.target, file = input.files[0];
         if (!file) return;
         input.disabled = true;

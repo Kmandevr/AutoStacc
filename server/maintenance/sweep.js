@@ -12,6 +12,7 @@ import { purgeRemovedFiles } from "../files/retention.js";
 import { makeVariants } from "../downloads/variants.js";
 import { sweepVersions } from "../packs/sweep.js";
 import { drainWaiting } from "../packs/process.js";
+import { sweepAdditions } from "../packs/additions.js";
 import { checkLevels } from "../usage/usage.js";
 import { sweepBlobs } from "../blobs/sweep.js";
 import { deleteExpiredBundles } from "../downloads/bundle.js";
@@ -26,8 +27,9 @@ export async function sweep(app, { nowMs = Date.now() } = {}) {
   // Last: what products contain, after the files above may have changed (and following the store.derivedFacets switch).
   const contents = await sweepContents(app);
   const waiting = await drainWaiting(app);
+  const additions = await sweepAdditions(app, { nowMs });
   const legacy = await hashLegacyFiles(app);
   const variants = await makeVariants(app);
   const usage = (await checkLevels(app)).level;
-  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, legacy, variants, usage };
+  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, usage };
 }
