@@ -1,0 +1,1 @@
+Conformance suite: test archives (cases/) and each engine command's expected answer (expected/); any engine must match them (scripts/engine-conformance.js).

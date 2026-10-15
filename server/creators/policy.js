@@ -17,7 +17,10 @@ export const LIMITS = {
   // Paid files (originals for sale), free plan; extra storage will be paid by the creator (owner, 2026-10-10; not built).
   productFilesQuotaBytes: 500 * 1024 * 1024,
   // Files in one version of a Pac built with the Pack Builder (docs/packs.md).
-  filesPerPacVersion: 2000
+  filesPerPacVersion: 2000,
+  // One file in a Pac: the largest size checked end to end (downloads, bundles, the engine's checks); the engine itself
+  // reads up to 20 GB, but bigger files stay out until they've been tested (docs/packs.md).
+  pacFileMaxBytes: 4 * 1024 ** 3
 };
 
 // Selling rules (docs/creators.md). Prices are whole cents: free, or between the card processor's practical minimum
