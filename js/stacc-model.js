@@ -95,8 +95,37 @@
   // Content types across everything: MIDI (n), One-shots (n), ...
   const byKind = (assets, catalog, f) => kindGroups(filter(assets, f), catalog);
 
-  // Project → Stacclet → Pac → content type → assets; files without a Pac sit under their product.
-  function tree(assets, catalog, f) {
+  // What each owned product says about itself beside its files (GET /api/library): its read me (the text of the Pac's
+  // top-level "Read me….txt", or null) and its public preview clips ({ pacId, title, url }, at most 3 per Pac; only
+  // root-relative /media/ addresses are kept). { productId: { readme, previews } }.
+  const CLIPS_PER_PAC = 3;
+  const okClip = (c) => c && typeof c.url === "string" && /^\/media\/[^\s"'<>]+$/.test(c.url);
+  function extrasFrom(items) {
+    const out = {};
+    for (const item of items || []) {
+      const per = new Map();
+      const previews = (Array.isArray(item.previews) ? item.previews : []).filter(okClip).filter((c) => {
+        const n = per.get(c.pacId || "") || 0;
+        per.set(c.pacId || "", n + 1);
+        return n < CLIPS_PER_PAC;
+      }).map((c) => ({ pacId: c.pacId || null, title: String(c.title || "Preview"), url: c.url }));
+      out[item.productId] = { readme: typeof item.readme === "string" && item.readme.trim() ? item.readme : null, previews };
+    }
+    return out;
+  }
+
+  // A Pac's read me and clips: the clips are that Pac's own; the read me is its product's (a Pack Builder product has one Pac).
+  function extrasOf(list, extras, pacId) {
+    const products = [...new Set(list.map((a) => a.productId))].map((id) => (extras || {})[id]).filter(Boolean);
+    const seen = new Set();
+    const previews = products.flatMap((x) => x.previews).filter((c) => (pacId === undefined || c.pacId === pacId) && !seen.has(c.url) && seen.add(c.url));
+    const readme = products.map((x) => x.readme).find(Boolean) || null;
+    return { readme, previews: pacId === undefined ? previews : previews.slice(0, CLIPS_PER_PAC) };
+  }
+
+  // Project → Stacclet → Pac → content type (or the creator's folders) → assets; files without a Pac sit under their
+  // product. extras: extrasFrom(items), for each Pac's and product's read me and previews.
+  function tree(assets, catalog, f, extras) {
     const projects = byId(catalog.projects), stacclets = byId(catalog.stacclets), pacs = byId(catalog.pacs);
     const list = filter(assets, f);
     return groupBy(list, (a) => a.projectId, (catalog.projects || []).map((p) => p.id)).map(([projectId, inProject]) => ({
@@ -113,7 +142,8 @@
           count: inPac.length,
           kinds: kindGroups(inPac, catalog),
           folders: foldersOf(inPac),
-          updated: inPac.some((a) => a.availableUntil)
+          updated: inPac.some((a) => a.availableUntil),
+          ...extrasOf(inPac, extras, pid)
         }))
       })),
       products: groupBy(inProject.filter((a) => !a.staccletId), (a) => a.productId, []).map(([productId, inProduct]) => ({
@@ -122,14 +152,41 @@
         count: inProduct.length,
         kinds: kindGroups(inProduct, catalog),
         folders: foldersOf(inProduct),
-        updated: inProduct.some((a) => a.availableUntil)
+        updated: inProduct.some((a) => a.availableUntil),
+        ...extrasOf(inProduct, extras)
       }))
     }));
   }
 
   // Files published from the Pack Builder keep their creator's folders: shown instead of content types when present
-  // (a Studio product's Pac isn't in the catalog, so its files sit under the product, folders and all).
-  const foldersOf = (list) => (list.some((a) => a.folder) ? groupBy(list, (a) => a.folder, []).map(([path, inFolder]) => ({ path, label: path || "Top level", assets: inFolder })) : null);
+  // (a Studio product's Pac isn't in the catalog, so its files sit under the product, folders and all). A nested tree:
+  // { name, path, assets (the files directly in it, in their order), folders (sorted by name), count (files in it and
+  // below) }; the root has name and path "". null when no file has a folder.
+  function foldersOf(list) {
+    if (!list.some((a) => a.folder)) return null;
+    const node = (name, path) => ({ name, path, assets: [], folders: [], count: 0, kids: new Map() });
+    const root = node("", "");
+    for (const a of list) {
+      let at = root;
+      root.count++;
+      for (const part of String(a.folder || "").split("/").filter(Boolean)) {
+        if (!at.kids.has(part)) {
+          const kid = node(part, at.path ? `${at.path}/${part}` : part);
+          at.kids.set(part, kid);
+          at.folders.push(kid);
+        }
+        at = at.kids.get(part);
+        at.count++;
+      }
+      at.assets.push(a);
+    }
+    const tidy = (n) => {
+      delete n.kids;
+      n.folders.sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : 0)).forEach(tidy);
+      return n;
+    };
+    return tidy(root);
+  }
 
   // Values present in the assets, for the filter menus: [[value, count]].
   function facets(assets) {
@@ -144,15 +201,16 @@
     if (msg.type === "build") {
       memo.catalog = msg.catalog || {};
       memo.assets = assetsFrom(msg.items, memo.catalog, msg.personal || null);
+      memo.extras = extrasFrom(msg.items);
       return { assets: memo.assets };
     }
     if (msg.type !== "view") throw new Error(`Unknown Stacc request: ${msg.type}`);
     const assets = memo.assets || [], catalog = memo.catalog || {};
-    const groups = msg.view === "kinds" ? byKind(assets, catalog, msg.filter) : tree(assets, catalog, msg.filter);
+    const groups = msg.view === "kinds" ? byKind(assets, catalog, msg.filter) : tree(assets, catalog, msg.filter, memo.extras);
     return { view: msg.view, groups, facets: facets(assets), count: filter(assets, msg.filter).length, total: assets.length };
   }
 
-  const api = { assetsFrom, kindOf, formatOf, filter, byKind, tree, facets, answer };
+  const api = { assetsFrom, extrasFrom, kindOf, formatOf, filter, byKind, tree, foldersOf, facets, answer };
   if (typeof module === "object" && module.exports) module.exports = api;
   else (root.GS = root.GS || {}).stacc = api;
 })(typeof self !== "undefined" ? self : globalThis);
