@@ -53,7 +53,7 @@ All sections read and write the same D1 rows. No section keeps its own copy of p
 | Owner | Owns | Stored in |
 | --- | --- | --- |
 | Overview | nothing of its own: it summarizes the others | — |
-| Pac Builder | files buyers get, Pac structure, per-file details | `product_files`, `pacs`, `pac_versions`, `assets` (server/packs, server/files) |
+| Pac Builder | files buyers get, Pac structure, per-file details | `product_files`, `pacs`, `pac_versions`, `assets`, `pac_additions`, `pac_previews` (server/packs, server/files) |
 | Store Page | title, description, highlights ("what's inside"), cover art, preview clip, kind, tags, store details | `products`, `product_facets` (server/creators/products.js) |
 | Pricing | base price, the creator's sales | `products.price_cents`, `promotions` rows with `creator_id` (server/promotions) |
 | Insights | reads orders, order lines, refunds, downloads and per-day view counters; stores nothing | `order_items`, `orders`, `download_events`, `analytics_daily` |
@@ -75,6 +75,7 @@ Cover art, name, status and the project it belongs to. A readiness checklist: bl
 The product's files, in one of two ways:
 
 - **Pac (ZIP).** The creator Pack Builder from Phase 5 ([packs](packs.md)), shown inside the workspace (`js/studio-packs.js` through `js/studio-section-pacs.js`). It offers a resumable upload, an in-browser preview of the ZIP, the engine's findings and the automated review, review of values and folders, versions, publish and discard. The product gets its own Stacclet and Pac with its first upload. A clean version goes live at once. A flagged one waits in the Control Center's review queue, where an admin approves it or rejects it with a note the creator sees. Uploads count against the creator's file storage (500 MB free).
+- **Pac editor** (switch `packs.editor`, [packs](packs.md#pac-editor-built-2026-10-15)): one drop zone (`js/pac-drop.js`) for a file, a folder or a whole ZIP, and a visual builder that works like a file manager (`js/pac-editor.js`: folders of file cards with waveforms and play buttons, drag and drop, new folders, rename, move and remove, a read me) plus up to three preview clips (`js/pac-previews.js`). Everything waits for Publish.
 - **Single files.** With the Pac editor on, through the drop zone into the Pac (checked by the engine, waiting for Publish). Without it, the existing per-file upload (held for approval unless the creator is trusted).
 
 Only the product's owners and editors can use it; anyone else gets a 404. With the `packs.builder` switch off, the section shows only single files.
@@ -104,7 +105,7 @@ Not tracked: traffic sources. The section says "not tracked yet" instead of show
 
 - **Readiness** in two lists. *Blocking:* no title; no file buyers can get yet; a Pac version waiting for review (`in_review`) with no other deliverable file; a paid price outside the allowed range; the creator suspended. *Recommended:* a description shorter than 80 characters, no cover art, no preview clip, no tags, no store details, no "what's inside" lines.
 - **Controls:** Publish (put on sale), Back to draft, Pause and resume sales, and Remove (buyers keep their files). Saved edits to a published product are live as soon as they are saved, and the history records them.
-- **Release history:** every publish, unpublish, pause, resume, removal, price change, sale start or end, Pac version submitted, approved, refused or published, and file added or removed, with who did it and when (`product_events`).
+- **Release history:** every publish, unpublish, pause, resume, removal, price change, sale start or end, store preview clip added or removed, Pac version submitted, approved, refused or published, and file added or removed, with who did it and when (`product_events`).
 - **Rollback:** not supported yet. A superseded Pac version can't be restored; upload it again. Removed or replaced files stay delivered to earlier buyers for 30 days ([packs](packs.md)).
 
 ### Creator purchases switch (Built)
@@ -122,17 +123,17 @@ All routes need a signed-in member of the product's creator (owner or editor; ea
 - `GET /api/studio/products/:id` returns `{ product, project, creator, role, readiness: { ready, blocking[], recommended[] }, activity[], summary, limits, features }`. Each readiness item is `{ code, message, section }`.
 - `PATCH /api/studio/products/:id`: the existing edit route. `published: true` now refuses with `409 not_ready` and the blocking list when readiness fails, and every change records a product event.
 - `GET /api/studio/products/:id/activity?limit=` returns the release history, newest first.
-- `GET /api/studio/products/:id/pricing` returns `{ priceCents, currency, feeBps, estimate: { list, sale }, sales[], storeSale, limits }`.
+- `GET /api/studio/products/:id/pricing` returns `{ priceCents, currency, feeBps, effectivePriceCents, estimate: { list, sale }, sales[], storeSale, limits }` (`feeBps` and the estimate's fee and share are owner-only).
 - `POST /api/studio/products/:id/sales` with `{ percentOff | amountOffCents, startsAt?, endsAt? }`; `DELETE /api/studio/products/:id/sales/:saleId` ends a sale now, or deletes one that hasn't started.
 - `GET /api/studio/products/:id/insights?days=30|90|365` returns `{ range, totals, previous, daily[], sales[], tracked }`; with `&format=csv` it returns `text/csv`.
 - Pac Builder: Phase 5's `/api/studio/packs/…` routes (`server/packs/access.js`, [packs](packs.md)).
 - Readiness codes. Blocking: `no_title`, `needs_file`, `pac_in_review`, `price_out_of_range`, `creator_suspended`. Recommended: `short_description`, `no_artwork`, `no_preview`, `no_tags`, `no_store_details`, `no_includes`. Publishing with only the file missing answers `409 needs_file`; otherwise `409 not_ready`. Either way the error carries `blocking`.
-- History: the same person's plain edits within 15 minutes are merged into one "edited" event (`recordEdit`), so autosave doesn't flood it. A product taken off sale automatically when its last file goes isn't recorded yet.
+- History: the same person's plain edits within 15 minutes are merged into one "edited" event (`recordEdit`), so autosave doesn't flood it. A product taken off sale automatically when its last file goes isn't recorded yet, nor is a discarded Pac version (`pac_created` and `pac_version_discarded` are allowed kinds nothing records).
 - The workspace payload also carries `checkout: { open, reason }` (see the creator purchases switch).
 
 ## Control Center version
 
-The same shell with these groups: **Store** (Overview, Products, Packs, Promotions, News), **People** (Orders, Customers, Entitlements, Creators, Payouts) and **Tools** (Test purchases, Audit log). The header shows LIVE or TEST and the environment. Every panel keeps its id (`#admin-<key>`), so each tab's own script is unchanged.
+The same shell with these groups: **Store** (Overview, Products, Packs, Promotions, News), **People** (Orders, Customers, Entitlements, Creators, Payouts) and **Tools** (Test purchases, Usage and storage, Audit log). The header shows LIVE or TEST and the environment. Every panel keeps its id (`#admin-<key>`), so each tab's own script is unchanged.
 
 ## Implementation order (from the brief) and where it stands
 

@@ -1,6 +1,6 @@
 // The profile page of each first-party creator (data/creators.js): /<creator>, listing its published projects as
 // cards, with the same card markup as the /projects directory (js/projects.js upgrades it, js/follow.js adds the follow controls).
-// Creators made in the Studio get their profile from the store instead (server/sites/profile.js), in the same layout.
+// Creators made in the Studio get their profile from the store instead (`renderProfile` in server/sites/render.js), in the same layout.
 const { abs, projectPath } = require("./data");
 const H = require("./head");
 const { shell, hero, clip } = require("./pages");

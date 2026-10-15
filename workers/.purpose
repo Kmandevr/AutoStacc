@@ -1,0 +1,1 @@
+The engine Worker (JavaScript): runs the Rust engine in a Cloudflare Container, takes jobs from a Queue and reports results to the store (docs/engine.md).

@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}"
 
-SKIP='(^|/)\.|^(CLAUDE|README)\.md$|package-lock\.json$'
+SKIP='(^|/)\.|^(CLAUDE|README|SECURITY)\.md$|^LICENSE$|package-lock\.json$'
 
 purpose() {
   case "$1" in
