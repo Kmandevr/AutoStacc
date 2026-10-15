@@ -36,3 +36,8 @@ CREATE TABLE pac_previews (
   created_at TEXT NOT NULL,
   UNIQUE (pac_id, sort)
 );
+
+-- Archives already unpacked (their versions are past checking) no longer hold storage: from now on the import marks
+-- them so itself (server/packs/import.js), and the creator's storage stops counting them (creators/storage.js).
+UPDATE uploads SET status = 'aborted', updated_at = created_at
+  WHERE status = 'complete' AND version_id IN (SELECT id FROM pac_versions WHERE status NOT IN ('draft', 'uploading', 'processing'));

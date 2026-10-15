@@ -11,7 +11,10 @@ import { queueProcess, jobState, jobObjects } from "./engine-client.js";
 import { appendResult } from "./append.js";
 import { processingAllowed, meterStmts, jobCost } from "../usage/usage.js";
 import { deleteKeys } from "../storage/buckets.js";
-import { JOB_TIMEOUT_MS } from "./process.js";
+import { abortMultipart } from "../storage/buckets.js";
+
+// Same as a version's (process.js): a job silent this long has failed.
+const JOB_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
 const jobIdOf = (addition) => `pj_${addition.id.slice(3)}`;
 // An addition still uploading after this long is given up (its upload holds room in the creator's storage).
@@ -70,8 +73,9 @@ export async function sendAddition(app, addition, upload) {
   return getAddition(app.db, addition.id);
 }
 
-// cost: what the job used, metered only while it was still running (so two requests failing it count it once).
-async function failAddition(app, addition, error, cost = null) {
+/** Fails an addition (and only it): its job and upload end, what it left in storage goes. cost: what the job used,
+ * metered only while it was still running (so two requests failing it count it once). */
+export async function failAddition(app, addition, error, cost = null) {
   const jobId = jobIdOf(addition);
   const version = await first(app.db, "SELECT owner_scope FROM pac_versions WHERE id = ?", addition.version_id);
   await app.db.batch([
@@ -82,7 +86,8 @@ async function failAddition(app, addition, error, cost = null) {
   // Nothing of it is kept, except objects a stored-original row points to (another version may use one).
   const left = version ? await jobObjects(app, version.owner_scope, jobId) : [];
   const claimed = new Set((await all(app.db, "SELECT r2_key FROM blobs WHERE r2_key IN (SELECT value FROM json_each(?))", JSON.stringify(left))).map((b) => b.r2_key));
-  const ups = await all(app.db, "SELECT id, r2_key FROM uploads WHERE addition_id = ?", addition.id);
+  const ups = await all(app.db, "SELECT id, r2_key, upload_id, status FROM uploads WHERE addition_id = ?", addition.id);
+  for (const u of ups.filter((x) => x.status === "open" && x.upload_id)) await abortMultipart(app.env, u.r2_key, u.upload_id).catch(() => {});
   await deleteKeys(app.env, [...left.filter((k) => !claimed.has(k)), ...ups.map((u) => u.r2_key)]);
   await run(app.db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE addition_id = ?", now(), addition.id);
 }

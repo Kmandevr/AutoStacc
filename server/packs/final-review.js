@@ -52,9 +52,13 @@ const big = (r) => r && r.files && (r.removed / r.files > 0.25 || (r.bytes && r.
 export async function refreshedStats(db, version) {
   const stats = parseJson(version.stats, {});
   const now = await currentDiff(db, version);
-  const flags = ((stats.review && stats.review.flags) || []).filter((f) => f.code !== "big_revision");
-  if (now && big(now.risk)) flags.push({ code: "big_revision", hard: false, count: now.risk.removed, examples: [] });
-  const out = { ...stats, review: { verdict: flags.length ? "hold" : "pass", flags } };
+  const out = { ...stats };
+  // A version checked before reviews existed has none, and is held for that (review.js clearToPublish): it stays so.
+  if (stats.review) {
+    const flags = (stats.review.flags || []).filter((f) => f.code !== "big_revision");
+    if (now && big(now.risk)) flags.push({ code: "big_revision", hard: false, count: now.risk.removed, examples: [] });
+    out.review = { verdict: flags.length ? "hold" : "pass", flags };
+  }
   if (now) out.diff = now.diff;
   else delete out.diff;
   return out;

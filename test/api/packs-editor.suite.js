@@ -96,6 +96,11 @@ export default (ctx) => describe("packs: the Pac editor", () => {
     // Discarding the draft ends it, and the live version is untouched.
     assert.equal((await c.post(`${S}/versions/${v.id}/discard`, {})).status, 200);
     assert.equal(db(`SELECT status FROM pac_additions WHERE id = '${open.addition.id}'`)[0].status, "failed");
+    // A retry of its complete answers its state, never a server error.
+    const retry = await c.post(`${S}/additions/${open.addition.id}/complete`, {});
+    assert.equal(retry.status, 200, JSON.stringify(retry.data));
+    assert.equal(retry.data.addition.status, "failed");
+    assert.equal(db(`SELECT status FROM processing_jobs WHERE addition_id = '${open.addition.id}' AND status NOT IN ('failed', 'cancelled')`).length, 0);
     assert.deepEqual(db(`SELECT id, asset_id FROM product_files WHERE product_id = '${pid}' AND active = 1`), liveIds);
   });
 

@@ -41,6 +41,7 @@ function shared(scope) {
   // A version change: checked through the scope, audited, answered with the version.
   const change = (action, run) => async (app, params) => {
     const actor = await actorOf(app);
+    if (!actor.admin) await limit(app, "studio-pack-edit", 600, 3600);
     const v = await scope.version(app, actor, params.versionId);
     const body = app.request.method === "DELETE" ? {} : await readJson(app.request, 96 * 1024);
     const detail = await run(app, v, body, params, actor);
@@ -64,12 +65,16 @@ function shared(scope) {
       const quota = creator ? { creatorId: creator.id, bytes: filesQuotaOf(creator), capBytes: await capBytes(app.db) } : null;
       const { addition: a, upload } = await startAddition(app, v, { folderId: folderParam(body.folderId), filename: safeFilename(str(body.filename, "filename", { max: 160, pattern: /\.zip$/i })),
         size: int(body.size, "size", { min: 22 }), idempotencyKey: str(body.idempotencyKey, "idempotencyKey", KEY), createdBy: actor.user.id, quota });
+      if (!upload || a.status === "failed") fail(409, "addition_failed", "Those files couldn't be added. Try again.");
       return json({ addition: additionView(a), upload: plan(upload) }, 201);
     }],
     ["POST", `${P}/additions/:additionId/complete`, async (app, { additionId }) => {
       const actor = await actorOf(app);
       const a = await addition(app, actor, additionId);
-      const u = await getUpload(app.db, (await first(app.db, "SELECT id FROM uploads WHERE addition_id = ?", a.id)).id);
+      const row = await first(app.db, "SELECT id FROM uploads WHERE addition_id = ?", a.id);
+      if (!row) fail(404, "not_found", "Not found.");
+      if (a.status !== "uploading") return json({ addition: additionView(a), version: await versionView(app.db, a.version_id) });
+      const u = await getUpload(app.db, row.id);
       const done = await complete(app, u);
       if (!done.complete) return json(done, 409);
       const next = await sendAddition(app, a, await getUpload(app.db, u.id));

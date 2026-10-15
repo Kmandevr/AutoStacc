@@ -83,7 +83,7 @@ export async function writeReadme(app, version, { text, filename = "Read me.txt"
   const sha256 = hex(await crypto.subtle.digest("SHA-256", bytes));
   const key = `blobs/${owner}/readme/${randomToken(12)}.txt`;
   await app.env.FILES.put(key, bytes, { httpMetadata: { contentType: "text/plain; charset=utf-8" }, sha256 });
-  await app.db.batch(claimStmts(app.db, owner, [{ key, sha256, size: bytes.length, crc32: crc32(bytes), format: "text", facts: {}, engineVersion: null }]));
+  await app.db.batch(claimStmts(app.db, owner, [{ key, sha256, size: bytes.length, crc32: crc32(bytes), format: "text", facts: { writtenHere: true }, engineVersion: null }]));
   const blob = (await blobsByHash(app.db, owner, [sha256]))[sha256];
   if (blob.key !== key) await deleteKeys(app.env, [key]); // the same text was stored already
   const was = await first(app.db, "SELECT asset_id FROM pac_entries WHERE version_id = ? AND IFNULL(folder_id, '') = IFNULL(?, '') AND lower(filename) = lower(?)", version.id, folderId, name);
