@@ -11,7 +11,7 @@ Owner decision 2026-10-09 ([decisions](decisions.md)): projects get their own br
 
 ## Projects (`/projects`)
 
-Every visible project: AutoStacc's own and published Studio projects of active creators. A Studio project is marked **Unverified creator** until AutoStacc trusts its creator. Anyone can follow it and switch on Auto-Stacc, verified or not.
+Every visible project: AutoStacc's own and published Studio projects of active creators. A Studio project is marked **Unverified creator** until AutoStacc trusts its creator. Anyone can follow it and switch on Auto-Stacc, verified or not. The follow control says what each does: following lists new releases (paid ones still need buying); Auto-Stacc, off until switched on, adds the project's free items to Your Stacc.
 
 - **API:** `GET /api/projects/browse` (`server/projects/browse.js`).
   - Parameters: `q`, `genre`, `style`, `makes` (comma lists of lowercase words), `active=1`, `followed=0|1` (signed in only; ignored otherwise), `sort=active|name|newest|items`, `page`.
