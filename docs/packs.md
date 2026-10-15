@@ -1,8 +1,8 @@
 ---
 title: Pack Builder and processing engine
 summary: BUILT (Phases 0–9; Phase 10 optional). Approved plan and status of the Pack Builder, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
-covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
-updated: 2026-10-14
+covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, db/migrations/0023_pac_editor.sql, js/pac-*.js, js/zip-make.js, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
+updated: 2026-10-15
 ---
 
 # Pack Builder and processing engine
@@ -49,6 +49,20 @@ updated: 2026-10-14
 > Main branch unchanged since rev. 3 (f2e0ae3) [V].
 
 Labels: **[V]** verified in the repo or in Cloudflare's docs this session · **[R]** recommendation · **[A]** assumption, checked in Phase 0 · **[O]** open (section H).
+
+## Pac editor (built 2026-10-15)
+
+The owner asked for a small system that lets a creator build a whole Pac one thing at a time ([decisions](decisions.md#2026-10-15-a-pac-is-built-one-thing-at-a-time-single-files-are-checked-like-packs-owner)). In the Studio's Pack Builder and the Control Center's Packs tab (switch `packs.editor`):
+
+- **A draft:** "Edit this Pac" starts a version copied from the live one (same folders, files and asset ids, so values and published file ids carry over), or "Build it file by file" an empty one; no engine job (`server/packs/copy.js`, `POST …/drafts`).
+- **The file manager** (`js/pac-editor.js`, `js/pac-tree.js`): the version as a folder tree. Add files, or a whole folder of them, into the folder chosen; make folders; rename and remove files and folders (`server/packs/tree-edits.js`); write a read me here, which ships in the Pac as `Read me.txt` (or any document uploaded like other files). Values and folder defaults are edited in the review table below, as before.
+- **Adding files:** the browser wraps what's picked in a small stored ZIP (`js/zip-make.js`) and sends it as an **addition** (`pac_additions`, migration 0023; `server/packs/additions.js`): its own upload and engine job, so the version stays ready and editable the whole time and an addition that fails fails alone. When checked, `append.js` merges what the engine kept into the folder (folders inside the archive under it; a name already taken is refused; a live file added back keeps its asset). One addition per version at a time; none while the budget guard has paused processing (it answers `processing_paused`); the sweep gives up an addition left uploading for a day.
+- **Publishing** waits for an open addition, then takes the diff and revision risk again from the two manifests (`server/packs/final-review.js`), so what the steps changed is reviewed: a large removal holds the version like any revision; each addition's own flags are merged into the version's review.
+- **Single files** (owner): the Product Studio's "Add a file" puts the file into the product's Pac through the same path, so the engine checks it. If that upload started the draft it's published at once and the automated review holds it only if something is flagged; with a draft already open the file joins it and waits for Publish. Older single files stay as they were.
+- **Previews:** up to three per Pac (`pac_previews`, `server/packs/previews.js`, `js/pac-previews.js`), public on the product page and in Your Stacc: each uploaded (MP3, M4A, OGG or WAV, under 20 MB, bytes matching the name) or cut from one of the Pac's own audio files in the creator's browser (it decodes their original and keeps the first 30 seconds as a WAV; the store keeps only the clip, and checks the named source is this Pac's). A clip is public by nature: 30 seconds of a paid file the creator chose to show.
+- **Read me for customers:** publishing keeps a top-level `Read me….txt`'s text (up to 16 KB) with its published details, which "What's inside" and Your Stacc show.
+- **Storage:** a creator's storage counts each stored original once: a draft copied from the live version adds only what's new (`server/creators/storage.js`).
+- **Known limits:** a file's own values belong to its asset, not to a version, so a value changed in a draft is saved on the asset at once (customers see it only after the next publish, because published details are a snapshot; discarding the draft doesn't undo it). Tests: `test/api/packs-editor.suite.js`, the editor browser test in `test/browser/packs.test.js`, `test/unit/zip-make.test.js`.
 
 ## How this plan follows the vision
 

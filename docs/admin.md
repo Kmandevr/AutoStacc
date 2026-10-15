@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Control Center
@@ -100,6 +100,8 @@ Creators' payout requests (`GET`/`PATCH /api/admin/payouts`, `server/admin/payou
 Pick a Pac, choose one of the products that sell it and upload the Pac's contents as one ZIP (`js/admin-packs.js`, `js/packs-upload.js`). The upload goes in 64 MiB parts and resumes where it stopped if the same file is chosen again. The processing engine then checks every file: what it kept, what it refused and why, and its suggested kinds, instruments, tempos and keys (with how sure it is) appear in the tab. Before publishing, review it: files that need a decision come first, every value shows where it comes from (yours, a folder's default, a suggestion you accepted, or one the engine is sure of), unsure suggestions have ✓ and ✕, and the tools above the table set a value on the selected files or as a default for a folder (everything below it inherits it), send files back to inheriting, or move them (the tab says first which inherited values would change; your own values move with the file). For a Pac that already has a live version, the tab first says what changes (unchanged, moved, replaced, new, removed; replaced and new files come first in the table), and only the files the store doesn't have yet are uploaded (the browser checks the ZIP first). **Publish** replaces the Pac's files in every product that sells it (unchanged and moved files keep their id and values; replaced and removed ones stay with earlier buyers for 30 days, marked in their Your Stacc); **Discard** drops the version. Publishing and discarding are in the audit log. How it works: [packs](packs.md). Feature switch `packs.builder`.
 
 Creators build their own products' packs in the Studio the same way. A clean version goes live when they publish it; one the automated review flags (unsafe or damaged entries, files that aren't what their names say, programs, password-protected files; and, unless the creator is trusted, unsupported types, mostly unknown formats, nothing new, or a revision that removes much of the live one) waits in **Waiting for review** at the top of this tab, and the admins get an email. Open it to see the flags with examples, then **Approve and publish** (audited as an override, with the flags) or **Reject…** with a note the creator sees (the upload is deleted and the creator can upload again). In the Creators tab, **Review every pack** holds all of a creator's versions, clean or not.
+
+The Packs tab also has the Pac editor ([packs](packs.md#pac-editor-built-2026-10-15)): "Edit this Pac" for a draft copied from the live version, then files added into folders, folders made, renamed or removed, a read me written there, and up to three preview clips for the Pac.
 
 ## Paid files: hold back, then publish
 
