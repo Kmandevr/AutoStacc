@@ -15,10 +15,18 @@ concurrency:
 jobs:
   # Decides whether the store can be affected: a change to docs or Claude's config only (docs/, .claude/, *.md) can't,
   # so the test jobs are skipped (a skipped job still counts as passed for required checks). Pushes to main always test.
+  #
+  # It also skips a job that already passed on exactly these files: `key` is a fingerprint of every file the suites can
+  # read (all but docs/, .claude/ and *.md, by their content), and each job, once green, leaves a small marker in the
+  # Actions cache under it. A push that changes only notes, or a re-run of the same files, finds the marker and doesn't
+  # test again (CI minutes are limited; docs/decisions.md). A marker only says "passed"; nothing is restored from it.
   changes:
     runs-on: ubuntu-latest
     outputs:
       store: ${{ steps.diff.outputs.store }}
+      key: ${{ steps.key.outputs.key }}
+      api_passed: ${{ steps.api.outputs.cache-hit }}
+      browser_passed: ${{ steps.browser.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,12 +36,26 @@ jobs:
           if [ "${{ github.event_name }}" != "pull_request" ]; then echo "store=true" >> "$GITHUB_OUTPUT"; exit 0; fi # by hand: always
           changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
           if echo "$changed" | grep -qvE '^(docs/|\.claude/)|\.md$'; then echo "store=true"; else echo "store=false"; fi >> "$GITHUB_OUTPUT"
+      - id: key
+        run: echo "key=$(git ls-files -s -- . ':!docs' ':!.claude' ':!*.md' | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
+      - id: api
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-passed
+          key: store-api-passed-${{ steps.key.outputs.key }}
+          lookup-only: true
+      - id: browser
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-passed
+          key: store-browser-passed-${{ steps.key.outputs.key }}
+          lookup-only: true
   # Two jobs side by side; inside each, the suite's groups run in parallel with their own stores (API: accounts,
   # payments; browser: flows, layout, features). Two machines instead of one per group: the repository's CI minutes are
   # limited, and each machine repeats the setup. The job named `store` keeps its name for anything that requires it.
   store:
     needs: changes
-    if: needs.changes.outputs.store == 'true'
+    if: needs.changes.outputs.store == 'true' && needs.changes.outputs.api_passed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -47,9 +69,15 @@ jobs:
         run: npm test
       - name: API security tests
         run: npm run test:api
+      - name: Passed on these files (a marker, so the same files aren't tested again)
+        run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
+      - uses: actions/cache/save@v4
+        with:
+          path: .ci-passed
+          key: store-api-passed-${{ needs.changes.outputs.key }}
   store-browser:
     needs: changes
-    if: needs.changes.outputs.store == 'true'
+    if: needs.changes.outputs.store == 'true' && needs.changes.outputs.browser_passed != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -71,3 +99,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser and chaos tests
         run: npm run test:browser
+      - name: Passed on these files (a marker, so the same files aren't tested again)
+        run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
+      - uses: actions/cache/save@v4
+        with:
+          path: .ci-passed
+          key: store-browser-passed-${{ needs.changes.outputs.key }}

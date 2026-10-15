@@ -31,9 +31,25 @@ jobs:
         working-directory: engine
     steps:
       - uses: actions/checkout@v4
+      # Skipped when it already passed on exactly these files (everything this workflow watches, by content): a marker
+      # in the Actions cache, as in store.yml.
+      - id: key
+        working-directory: .
+        run: echo "key=$(git ls-files -s -- engine workers/engine js/engine test/bench test/mock-engine test/unit/engine-worker.test.js test/unit/mock-engine.test.js 'scripts/engine-*.js' scripts/lib/json-schema.js .github/workflows/engine.yml | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
+      - id: passed
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-passed
+          key: engine-test-passed-${{ steps.key.outputs.key }}
+          lookup-only: true
+      - if: steps.passed.outputs.cache-hit == 'true'
+        working-directory: .
+        run: echo "Already passed on these files; not checked again."
       - name: Rust with the WebAssembly target
+        if: steps.passed.outputs.cache-hit != 'true'
         run: rustup update stable --no-self-update && rustup default stable && rustup target add wasm32-unknown-unknown && rustup component add rustfmt clippy
       - uses: actions/cache@v4
+        if: steps.passed.outputs.cache-hit != 'true'
         with:
           path: |
             ~/.cargo/registry
@@ -41,23 +57,31 @@ jobs:
             engine/target
           key: engine-${{ hashFiles('engine/Cargo.lock') }}
       - name: Format
+        if: steps.passed.outputs.cache-hit != 'true'
         run: cargo fmt --check
       - name: Lints (native and WebAssembly)
+        if: steps.passed.outputs.cache-hit != 'true'
         run: cargo clippy --all-targets -- -D warnings && cargo clippy --release --lib --target wasm32-unknown-unknown -- -D warnings
       - name: Tests
+        if: steps.passed.outputs.cache-hit != 'true'
         run: cargo test
       - name: Release builds (native binary and WebAssembly)
+        if: steps.passed.outputs.cache-hit != 'true'
         run: cargo build --release && cargo build --release --lib --target wasm32-unknown-unknown
       - uses: actions/setup-node@v4
+        if: steps.passed.outputs.cache-hit != 'true'
         with:
           node-version: 22
       - name: Native and WebAssembly give identical results on a generated pack
+        if: steps.passed.outputs.cache-hit != 'true'
         working-directory: .
         run: node test/bench/make-pack.js --mb 48 && node test/bench/engine-bench.js test/bench/out/pack-48mb.zip
       - name: Contract conformance (native and WebAssembly builds)
+        if: steps.passed.outputs.cache-hit != 'true'
         working-directory: .
         run: node scripts/engine-conformance.js && node scripts/engine-conformance.js --wasm engine/target/wasm32-unknown-unknown/release/autostacc_engine.wasm
       - name: The site's copy of the WebAssembly build (js/engine/, run node scripts/engine-wasm.js after engine changes)
+        if: steps.passed.outputs.cache-hit != 'true'
         working-directory: .
         run: |
           node scripts/engine-conformance.js --wasm js/engine/autostacc_engine.wasm
@@ -70,21 +94,56 @@ jobs:
               console.log(`js/engine/autostacc_engine.wasm is engine ${v}`);
             });'
       - name: Engine Worker and mock engine unit tests
+        if: steps.passed.outputs.cache-hit != 'true'
         working-directory: .
         run: node --test test/unit/engine-worker.test.js test/unit/mock-engine.test.js
+      - name: Passed on these files (a marker, so the same files aren't checked again)
+        if: steps.passed.outputs.cache-hit != 'true'
+        working-directory: .
+        run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
+      - uses: actions/cache/save@v4
+        if: steps.passed.outputs.cache-hit != 'true'
+        with:
+          path: .ci-passed
+          key: engine-test-passed-${{ steps.key.outputs.key }}
 
   image:
     if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Skipped when it already passed on exactly these files (everything this workflow watches, by content): a marker
+      # in the Actions cache, as in store.yml.
+      - id: key
+        working-directory: .
+        run: echo "key=$(git ls-files -s -- engine workers/engine js/engine test/bench test/mock-engine test/unit/engine-worker.test.js test/unit/mock-engine.test.js 'scripts/engine-*.js' scripts/lib/json-schema.js .github/workflows/engine.yml | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
+      - id: passed
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-passed
+          key: engine-image-passed-${{ steps.key.outputs.key }}
+          lookup-only: true
+      - if: steps.passed.outputs.cache-hit == 'true'
+        working-directory: .
+        run: echo "Already passed on these files; not checked again."
       - name: Build the Container image
+        if: steps.passed.outputs.cache-hit != 'true'
         run: docker build -t autostacc-engine:ci engine
       - name: It starts and answers its health check
+        if: steps.passed.outputs.cache-hit != 'true'
         run: |
           docker run -d --name engine -p 8080:8080 autostacc-engine:ci
           for i in $(seq 50); do curl -sf localhost:8080/healthz && exit 0; sleep 0.2; done
           docker logs engine; exit 1
+      - name: Passed on these files (a marker, so the same files aren't checked again)
+        if: steps.passed.outputs.cache-hit != 'true'
+        working-directory: .
+        run: mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
+      - uses: actions/cache/save@v4
+        if: steps.passed.outputs.cache-hit != 'true'
+        with:
+          path: .ci-passed
+          key: engine-image-passed-${{ steps.key.outputs.key }}
 
   deploy:
     needs: [test, image]

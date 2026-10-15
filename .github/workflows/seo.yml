@@ -31,14 +31,34 @@ jobs:
           node scripts/docs-test.js | tee docs-test.txt; code=${PIPESTATUS[0]}
           sed -n 's/^WARN \(.*\)$/::warning title=docs::\1/p' docs-test.txt
           exit $code
+  # Skipped when it already passed on exactly these files (the site and its checker, by content; notes aside): a marker
+  # in the Actions cache, as in store.yml.
   browser:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: key
+        run: echo "key=$({ git ls-files -s -- . ':!docs' ':!.claude' ':!*.md'; git ls-files -s .claude/skills/verify-site; } | sha256sum | cut -c1-40)" >> "$GITHUB_OUTPUT"
+      - id: passed
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-passed
+          key: site-browser-passed-${{ steps.key.outputs.key }}
+          lookup-only: true
+      - if: steps.passed.outputs.cache-hit == 'true'
+        run: echo "Already passed on these files; not checked again."
+      - if: steps.passed.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Install Playwright with Chromium
+        if: steps.passed.outputs.cache-hit != 'true'
         run: npm install -g playwright@1 && npx playwright install --with-deps chromium
       - name: Browser checks (verify-site)
-        run: NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js
+        if: steps.passed.outputs.cache-hit != 'true'
+        run: NODE_PATH=$(npm root -g) node .claude/skills/verify-site/check.js && mkdir -p .ci-passed && echo "${{ github.sha }}" > .ci-passed/sha
+      - if: steps.passed.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-passed
+          key: site-browser-passed-${{ steps.key.outputs.key }}
