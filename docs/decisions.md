@@ -417,6 +417,7 @@ The repository is private, so every job counts against the monthly Actions minut
 - **A newer push to a PR cancels the run it replaces.** The engine workflow no longer runs a second time for branch pushes alongside the PR.
 - **The SEO and docs checks share one job.**
 - **Fuzzing is monthly**, with cargo-fuzz cached; longer runs happen locally.
+- **Files that already passed aren't tested again** (owner, same day: "avoid running the tests multiple times when possible"). Each check job fingerprints the files it reads, by content: everything but notes for the store suites, the site and its checker for the browser checks, and the engine's own paths for the engine. Once green, it leaves a small marker under that fingerprint in the Actions cache. A later push with the same files skips the job, as do a push that changes only notes and a re-run. A marker only says "passed"; nothing is restored from it, and any change to a file the job reads, the workflow included, tests again. Markers live in a PR's own branch scope and expire after a week unused.
 - **Trade-off:** if `main` moves between a PR's checks and its merge, the merged result isn't tested as a whole; the deploy's checks and requiring PRs to be up to date before merging cover most of that.
 
 ## 2026-10-15: One drop zone; everything opens in the builder (owner)
