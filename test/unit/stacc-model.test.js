@@ -137,7 +137,11 @@ test("a Pac published from Pack Builder shows its own folders; others keep conte
   const list = stacc.assetsFrom(withFolders, catalog);
   const pacs = stacc.tree(list, catalog)[0].stacclets[0].pacs;
   const samples = pacs.find((p) => p.id === "fs-samples");
-  assert.deepEqual(samples.folders.map((f) => [f.path, f.label, ids(f.assets)]), [["", "Top level", ["pf_r"]], ["Drums/Kicks", "Drums/Kicks", ["pf_k1", "pf_k2"]]]);
+  assert.deepEqual(ids(samples.folders.assets), ["pf_r"], "top-level files sit at the root");
+  assert.equal(samples.folders.count, 3);
+  const [drums] = samples.folders.folders;
+  assert.deepEqual([drums.name, drums.path, drums.count, ids(drums.assets)], ["Drums", "Drums", 2, []]);
+  assert.deepEqual(drums.folders.map((f) => [f.name, f.path, f.count, ids(f.assets), f.folders.length]), [["Kicks", "Drums/Kicks", 2, ["pf_k1", "pf_k2"], 0]]);
   assert.equal(pacs.find((p) => p.id === "fs-midi").folders, null);
   assert.deepEqual(ids(stacc.filter(list, { q: "kicks" })), ["pf_k1", "pf_k2"], "search finds folder names");
 });
@@ -149,7 +153,8 @@ test("a Studio product's pack (its Pac isn't in the catalog) keeps its folders u
   ] }];
   const product = stacc.tree(stacc.assetsFrom(studio, catalog), catalog)[0].products[0];
   assert.equal(product.id, "sp_1");
-  assert.deepEqual(product.folders.map((f) => [f.path, ids(f.assets)]), [["", ["pf_s2"]], ["Drums", ["pf_s1"]]]);
+  assert.deepEqual(ids(product.folders.assets), ["pf_s2"]);
+  assert.deepEqual(product.folders.folders.map((f) => [f.path, ids(f.assets)]), [["Drums", ["pf_s1"]]]);
   assert.equal(stacc.tree(stacc.assetsFrom(items, catalog), catalog)[0].products[0].folders, null, "loose files keep content types");
 });
 
@@ -176,4 +181,50 @@ test("a person's own collections and tags: by item key (the asset across version
   assert.deepEqual(ids(stacc.filter(list, { q: "punchy" })), ["pf_a", "pf_b"], "search finds your tags");
   assert.deepEqual(stacc.facets(list).tags, [["dark", 1], ["punchy", 2]]);
   assert.deepEqual(stacc.assetsFrom(owned, catalog).map((a) => a.tags), [[], []], "no personal data: nothing personal");
+});
+
+test("folders nest as a tree: folders inside folders, files at every level, sorted folder names, file order kept", () => {
+  const list = stacc.assetsFrom([{ productId: "sp_2", title: "Big Kit", projectId: "pj_x", pacs: ["pc_x"], files: [
+    file("pf_1", "Snare 02.wav", { pacId: "pc_x", folderPath: "Drums/Snares" }),
+    file("pf_2", "Snare 01.wav", { pacId: "pc_x", folderPath: "Drums/Snares" }),
+    file("pf_3", "Crash.wav", { pacId: "pc_x", folderPath: "Drums" }),
+    file("pf_4", "Kick.wav", { pacId: "pc_x", folderPath: "Drums/Kicks/Hard" }),
+    file("pf_5", "Bass.mid", { pacId: "pc_x", folderPath: "Bass" }),
+    file("pf_6", "Odd.wav", { pacId: "pc_x", folderPath: "/Drums//Snares/" })
+  ] }], catalog);
+  const root = stacc.foldersOf(list);
+  assert.deepEqual([root.name, root.path, root.count, ids(root.assets)], ["", "", 6, []]);
+  assert.deepEqual(root.folders.map((f) => [f.name, f.count]), [["Bass", 1], ["Drums", 5]]);
+  const drums = root.folders[1];
+  assert.deepEqual(ids(drums.assets), ["pf_3"]);
+  assert.deepEqual(drums.folders.map((f) => [f.path, f.count, ids(f.assets)]), [["Drums/Kicks", 1, []], ["Drums/Snares", 3, ["pf_1", "pf_2", "pf_6"]]]);
+  assert.deepEqual(drums.folders[0].folders.map((f) => [f.path, ids(f.assets)]), [["Drums/Kicks/Hard", ["pf_4"]]]);
+  assert.ok(root.folders.every((f) => !("kids" in f)), "no working maps left behind (the tree is posted from the worker)");
+  assert.equal(JSON.stringify(JSON.parse(JSON.stringify(root))), JSON.stringify(root), "plain data");
+  assert.equal(stacc.foldersOf(stacc.assetsFrom(items, catalog)), null);
+});
+
+test("each Pac carries its own previews (at most 3) and its product's read me; loose products carry theirs", () => {
+  const owned = [
+    { productId: "fs-pack", title: "Frayed Signals Pack", projectId: "gs", pacs: ["fs-midi", "fs-samples"], readme: "Thanks!\nUse freely.",
+      previews: [1, 2, 3, 4].map((n) => ({ pacId: "fs-samples", title: `Clip ${n}`, url: `/media/previews/c${n}.mp3` }))
+        .concat([{ pacId: "fs-midi", title: "Bad", url: "javascript:alert(1)" }, { pacId: "fs-midi", title: "Elsewhere", url: "https://evil.test/a.mp3" }, { pacId: "fs-midi", title: "Midi", url: "/media/previews/m.mp3" }]),
+      files: [file("pf_m", "Bass.mid", { pacId: "fs-midi" }), file("pf_k", "Kick.wav", { pacId: "fs-samples" })] },
+    { productId: "sp_1", title: "Drum Kit", projectId: "pj_studio", pacs: ["pc_s"], readme: "   ", previews: [{ pacId: "pc_s", title: "Loop", url: "/media/previews/l.mp3" }],
+      files: [file("pf_s", "Snare.wav", { pacId: "pc_s", folderPath: "Drums" })] },
+    { productId: "kit", title: "Kit", projectId: "two", pacs: ["kit-presets"], files: [file("pf_p", "Pad.fxp", { pacId: "kit-presets" })] }
+  ];
+  const memo = {};
+  stacc.answer(memo, { type: "build", items: owned, catalog });
+  const view = stacc.answer(memo, { type: "view", view: "projects", filter: {} });
+  const pacs = view.groups[0].stacclets[0].pacs;
+  const samples = pacs.find((p) => p.id === "fs-samples"), midi = pacs.find((p) => p.id === "fs-midi");
+  assert.deepEqual(samples.previews.map((c) => c.title), ["Clip 1", "Clip 2", "Clip 3"], "three per Pac");
+  assert.deepEqual(midi.previews.map((c) => c.url), ["/media/previews/m.mp3"], "only the Pac's own, only /media/ addresses");
+  assert.equal(samples.readme, "Thanks!\nUse freely.");
+  const studio = view.groups.find((p) => p.id === "pj_studio").products[0];
+  assert.deepEqual([studio.readme, studio.previews.map((c) => c.title)], [null, ["Loop"]], "a blank read me counts as none");
+  const kit = view.groups.find((p) => p.id === "two").stacclets[0].pacs[0];
+  assert.deepEqual([kit.readme, kit.previews], [null, []]);
+  assert.deepEqual(stacc.tree(stacc.assetsFrom(owned, catalog), catalog)[0].stacclets[0].pacs[0].previews, [], "no extras given: none shown");
 });
