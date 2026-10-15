@@ -2,7 +2,7 @@
 title: Modules
 summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
 covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/news.js, js/shows.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, data/shows.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
-updated: 2026-10-13
+updated: 2026-10-15
 ---
 
 # Modules
@@ -24,6 +24,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`; each card opens the product's own page |
 | The store page (`js/store-browse.js`, `js/store-filters.js`, `js/store-suggest.js`, `js/store-sections.js`) | `[data-browse]`, `[data-store-sections]` | none: one per page, state in the address ([discovery](discovery.md)); sections elsewhere take `data-sections`, `data-brief`, `data-fallback` |
 | Wishlist hearts (`js/wishlist.js`) | `[data-wish]` | the product id |
+| What's inside (`js/product-contents.js`) | `[data-product-contents]` | the product id (else `?p=` in the address); hidden unless its files came from the Pack Builder ([discovery](discovery.md)) |
 | Similar products (`js/similar.js`) | `[data-similar]` | the product id (else `?p=` in the address) |
 | Buy buttons, live prices, status (`js/store.js`) | `[data-buy]`, `[data-price]`, `[data-status]` | the product id |
 | Projects rack (`js/projects.js`) | `[data-project-list]` | `data-creator` (only that creator's projects, on its profile) |
@@ -50,4 +51,4 @@ Store items wear their project's look in the store, the new releases feed (home 
 
 ## Single-use by nature
 
-The store and app pages keep one root each, because a page has one cart, one checkout and one form: cart (`#cart-app`), checkout (`#checkout-app`), login (`#auth-app`), settings (`#settings-app`), the creators' product page (`#product-app`), Studio (`#studio-app`), admin, and the dashboard's greeting (`[data-dashboard-hello]`, `js/dashboard.js`, which also sends an ended session to log in). Their parts (order list, cart lines) can still become modules when another page needs them. Every other feature is a drop-in (#52).
+The store and app pages keep one root each, because a page has one cart, one checkout and one form: cart (`#cart-app`), checkout (`#checkout-app`), login (`#auth-app`), settings (`#settings-app`), the creators' product page (`#product-app`), Studio (`#studio-app`), admin (`#admin-app`), and the dashboard's greeting (`[data-dashboard-hello]`, `js/dashboard.js`, which also sends an ended session to log in). Their parts (order list, cart lines) can still become modules when another page needs them. Every other feature is a drop-in (#52).

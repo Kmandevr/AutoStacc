@@ -1,1 +1,9 @@
+# Issues here are public. Security problems and anything private go elsewhere (SECURITY.md).
 blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem (private)
+    url: https://github.com/Kmandevr/AutoStacc/security/advisories/new
+    about: Only the maintainers see it. Please don't open a public issue for anything that could be misused.
+  - name: Help with an order, download or account
+    url: https://autostacc.com/contact
+    about: Order numbers, emails and payment details never belong in a public issue.

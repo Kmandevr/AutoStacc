@@ -73,7 +73,8 @@ async function store() {
 async function database(toml) {
   const [db] = await Promise.all([d1(), buckets()]);
   fs.writeFileSync(TOML, toml.replace(PROD.placeholder, db.uuid));
-  console.log(`cloudflare: D1 ${PROD.db} = ${db.uuid}; buckets ${PROD.buckets.join(", ")}`);
+  // The log is public once the repository is: names only, never the database's id.
+  console.log(`cloudflare: D1 ${PROD.db} ready; buckets ${PROD.buckets.join(", ")}`);
 
   await wrangler(["d1", "migrations", "apply", "DB", "--remote", "--env", "production"], false);
   await wrangler(["d1", "execute", "DB", "--remote", "--env", "production", "--file", "db/catalog.sql"], false);
@@ -120,16 +121,15 @@ async function secrets(toml) {
   await checkSecrets(toml, present);
 }
 
-// Mail that the store couldn't send is recorded with the provider's reason. Show the latest in the deploy log
-// (kind, time and reason only, never addresses), so a broken sender or key is visible without the database console.
+// Mail that the store couldn't send is recorded with the provider's reason. The deploy log is public, so it shows only
+// how many failed recently and of which kinds; the reasons stay in the database (the query is in docs/store-setup.md).
 async function recentEmailFailures() {
   try {
     const out = await wrangler(["d1", "execute", "DB", "--remote", "--env", "production", "--json", "--command",
-      "SELECT kind, error, created_at FROM email_events WHERE status = 'failed' ORDER BY created_at DESC LIMIT 5"]);
+      "SELECT kind FROM email_events WHERE status = 'failed' AND created_at > datetime('now', '-7 days')"]);
     const rows = JSON.parse(out)[0]?.results || [];
-    // The provider's text can quote the recipient: any address in it is blanked, and it's cut short.
-    const reason = (t) => String(t || "").replace(/[^\s@<>"']+@[^\s@<>"']+/g, "[address]").slice(0, 160);
-    for (const r of rows) console.log(`::warning::Email not sent (${r.kind}, ${r.created_at}): ${reason(r.error)}`);
+    const kinds = [...new Set(rows.map((r) => r.kind))].join(", ");
+    if (rows.length) console.log(`::warning::${rows.length} email(s) not sent in the last 7 days (${kinds}); see docs/store-setup.md for why`);
     if (!rows.length) console.log("cloudflare: no failed emails recorded");
   } catch (e) {
     console.log(`cloudflare: couldn't read email failures (${String(e.message || e).split("\n")[0]})`);

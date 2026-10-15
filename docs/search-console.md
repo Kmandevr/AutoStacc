@@ -2,7 +2,7 @@
 title: Search Console
 summary: Step-by-step for the owner: set up Google Search Console for autostacc.com, submit the sitemap, request indexing, and point every official profile back to the site.
 covers: [data/projects.js, data/music.js, robots.txt, _redirects, sitemap.xml]
-updated: 2026-10-09
+updated: 2026-10-15
 ---
 
 # Google Search Console and profile checklist
@@ -65,6 +65,7 @@ When a new release or real product goes live, inspect its page (`/autostacc/glit
 - *Excluded by 'noindex' tag*: the 404 page and placeholder products (marked `draft` in the data). They join search once they're real.
 - *Page with redirect*: old addresses like /home, /shop.html and the pre-2026-10-08 /music, /news and /press pages.
 - *Alternate page with proper canonical tag*: addresses with `?something` on the end.
+- *Blocked by robots.txt*: the signed-in and store pages (dashboard, Your Stacc, settings, Studio, login, cart, checkout, admin) and the store API, which are private on purpose.
 
 Anything else (for example "Crawled – currently not indexed" on the home page or HAIL for more than a few weeks): open a GitHub issue with a screenshot.
 

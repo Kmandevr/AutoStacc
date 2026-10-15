@@ -1,7 +1,7 @@
 ---
 title: Your Stacc
 summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, personal collections, tags and saved searches, follows and Auto-Stacc.
-covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
+covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, js/library-bundle.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
 updated: 2026-10-15
 ---
 
