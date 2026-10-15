@@ -1,6 +1,6 @@
 // A Pac's preview clips (owner, 2026-10-15): up to three short audio clips customers can play on the product page and
 // in Your Stacc, each uploaded by the creator or cut from one of the Pac's own audio files in the creator's browser
-// (js/studio-pac-previews.js; the clip is what's stored, never the original). Public by nature: stored in the PREVIEWS
+// (js/pac-previews.js; the clip is what's stored, never the original). Public by nature: stored in the PREVIEWS
 // bucket under a new name each time (pac id plus a random part, so a replaced clip is never served from a cache),
 // audio whose bytes match its name, under 20 MB. Under each scope (an admin's for any Pac, a creator's for their own
 // product's): GET, POST ?filename=&title=&asset= (the body is the clip), DELETE …/:previewId. Audited.

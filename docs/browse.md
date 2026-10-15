@@ -2,7 +2,7 @@
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects browser and its API, /explore for releases, news and shows, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
 covers: [projects.html, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql]
-updated: 2026-10-09
+updated: 2026-10-15
 ---
 
 # Browsing projects and content
@@ -37,7 +37,7 @@ Every visible project: AutoStacc's own and published Studio projects of active c
 - **News**, filtered by project, topic and year;
 - **Shows**, upcoming only, filtered by project and city.
 
-It reads `data/music.js`, `news.js` and `shows.js`; drafts and past shows never appear. The rules are in `js/explore-items.js` (`GS.exploreItems`, unit-tested) and the page is `js/explore-browse.js`. The address holds the state (`/explore?view=news&project=...`). Only first-party projects have this data today. Studio projects' events blocks live in their site documents and aren't listed.
+Each view also has a search box. It reads `data/music.js`, `news.js` and `shows.js`; drafts and past shows never appear. The rules are in `js/explore-items.js` (`GS.exploreItems`, unit-tested) and the page is `js/explore-browse.js`. The address holds the state (`/explore?view=news&q=&project=...`). Only first-party projects have this data today. Studio projects' events blocks live in their site documents and aren't listed.
 
 ## Home page hub (`/`)
 
@@ -46,9 +46,10 @@ The home page has, in order:
 - the banner: the cover's headline and buttons over a DAW arrange view drawn in code (`js/daw-stage.js`, `css/daw-stage.css`; lanes of clips in the track colours, a playhead the arrangement scrolls past, mixer meters). It takes about 85% of the first screen and is fixed behind the page: every section after it is frosted and slides over it like a curtain, so the studio stays faintly visible to the bottom. It is decorative (`aria-hidden`), always dark in both themes, stops moving once the hero is scrolled away, and never moves for visitors who ask for less motion (owner decision 2026-10-09);
 - a store search and three ways in (Store, Projects, Releases, news and shows);
 - two store sections from the store's recommendations, with the same tune, forget and turn-off controls (`[data-store-sections data-sections="2" data-brief]`). The featured products show instead while the store has no picks;
-- **Projects to follow** (`js/project-picks.js`), ordered by how well their genres match this browser's own history (`js/taste.js`, read on the device and never sent), leaving out projects already followed;
+- **Projects to follow** (`js/project-picks.js`), ordered by how well their genres and styles match this browser's own history (`js/taste.js`, read on the device and never sent), leaving out projects already followed;
 - **Latest from the projects** (`js/latest.js`), with followed projects first;
-- How it works.
+- How it works;
+- a closing call to create an account and follow artists for their free releases.
 
 ## Dashboard
 
@@ -63,7 +64,7 @@ The dashboard has:
 
 ## Your Stacc
 
-Search narrows the files as you type; the box and its count line are drawn once and kept, so focus, the phone keyboard and the screen-reader announcement of the count survive each redraw. Every word must appear in the file's name, its file name or its product title (`js/stacc-model.js`). The count says how many files match, with a button to clear search and filters. On `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&view=kinds`).
+Search narrows the files as you type; the box and its count line are drawn once and kept, so focus, the phone keyboard and the screen-reader announcement of the count survive each redraw. Every word must appear in the file's name, its file name, its product title, its folder or the person's own tags (`js/stacc-model.js`). The count says how many files match, with a button to clear search and filters. On `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&collection=&tag=&view=kinds`); collections, tags and saved searches are the person's own ([library](library.md)).
 
 ## Privacy
 

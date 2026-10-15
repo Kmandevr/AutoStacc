@@ -2,7 +2,7 @@
 title: Projects
 summary: Projects on AutoStacc: the data contract, which features a project uses, Glitches & Stitches as the first project, and how to add another.
 covers: [data/projects.js, data/creators.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/creator-page.js, js/project-frame.js, js/util.js, css/projects/, autostacc/, autostacc.html, data/news.js, data/shows.js]
-updated: 2026-10-10
+updated: 2026-10-15
 ---
 
 # Projects
@@ -31,11 +31,11 @@ A project is creative work owned by a creator ([creators](creators.md)), at `/<c
 
 This contract is for first-party projects in `data/`. Projects made in the Studio exist only in the database and have no such entry ([creators](creators.md)); they are listed on `/projects` and can be followed, marked unverified until their creator is trusted ([browse](browse.md)).
 
-Content names its project: products, releases and news posts carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it); both are synced to the store database by `db/catalog.sql` like projects. The build fails if any of these point at a project that doesn't exist. Shows carry `project` too (`[data-shows]` lists only its project's dates).
+Content names its project: products, releases, news posts and polls (`data/polls.js`) carry `project`. Stacclets carry `project`; Pacs carry `stacclet` (their project comes from it); both are synced to the store database by `db/catalog.sql` like projects. The build fails if any of these point at a project that doesn't exist, or if a product lists another project's Pacs (`scripts/lib/platform.js`). Shows carry `project` too (`[data-shows]` lists only its project's dates).
 
 ## Glitches & Stitches
 
-The first project (`glitches-and-stitches`). It uses every feature, including polls (community votes on unfinished music) and relationships (which tracks were built from which fragments; see [identity](identity.md)). Its pages are `/autostacc/glitches-and-stitches` (its home: hero, listen, latest, shows, about, the loop, newsletter) and `/music`, `/news`, `/press` under it, written by hand in `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` from drop-in modules ([modules](modules.md)); release and news pages are generated under the same address. It has a skin (the glitch terminal, [brand](brand.md)) and sounds. Its identity is owner-written in [identity](identity.md); facts in [artist](artist.md).
+The first project (`glitches-and-stitches`). It uses every feature, including polls (community votes on unfinished music) and relationships (which tracks were built from which fragments; see [identity](identity.md)). Its pages are `/autostacc/glitches-and-stitches` (its home: hero, listen, latest, shop, shows, about, the loop, polls when there are any, newsletter) and `/music`, `/news`, `/press` under it, written by hand in `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` from drop-in modules ([modules](modules.md)); release and news pages are generated under the same address. It has a skin (the glitch terminal, [brand](brand.md)) and sounds. Its identity is owner-written in [identity](identity.md); facts in [artist](artist.md).
 
 ## Adding a project
 

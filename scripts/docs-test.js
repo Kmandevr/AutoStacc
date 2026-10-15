@@ -3,8 +3,9 @@
 // `covers:` entries, the vault index, and env vars the store reads but no note mentions.
 // WARN (maybe stale): files changed on this branch that a note covers while the note itself didn't change, and code
 // areas no note covers. Each note's `covers:` frontmatter lists the code it describes (.claude/rules/docs.md).
-// Usage: node scripts/docs-test.js [--base <ref>] [--stale]   (exit 1 on any FAIL; --stale prints only the stale notes,
-// one "note<TAB>changed files" line each, for the Stop hook). Base: --base, else origin/$GITHUB_BASE_REF, else origin/main.
+// Usage: node scripts/docs-test.js [--base <ref>] [--stale] [--strict]   (exit 1 on any FAIL; --stale prints only the
+// stale notes, one "note<TAB>changed files" line each, for the Stop hook; --strict, used by CI on pull requests, makes a
+// stale note a FAIL: update it, or at least re-check it and bump its `updated:`, in the same change). Base: --base, else origin/$GITHUB_BASE_REF, else origin/main.
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
@@ -12,6 +13,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 const args = process.argv.slice(2);
 const STALE_ONLY = args.includes("--stale");
+const STRICT = args.includes("--strict");
 const baseArg = args.includes("--base") ? args[args.indexOf("--base") + 1] : null;
 
 const out = [];
@@ -78,6 +80,28 @@ for (const doc of DOCS) {
   }
 }
 
+// ---------- the README names everything someone new needs to find ----------
+// Every top-level page and folder, workflow, npm script and data file must appear in README.md (as `name`), so a new
+// one can't be added without the README saying what it is.
+if (FILES.includes("README.md")) {
+  const readme = read("README.md");
+  const named = (n) => readme.includes("`" + n);
+  const want = [
+    ...[...TOP].filter((t) => !t.startsWith(".") && (/\.html$/.test(t) || FILES.some((f) => f.startsWith(t + "/")))),
+    ...FILES.filter((f) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(f) || /^data\/[^/]+\.js$/.test(f)),
+    ...Object.keys(JSON.parse(read("package.json")).scripts || {}).map((s) => (s === "test" ? "npm test" : `npm run ${s}`)),
+  ];
+  // npm scripts may sit in a shell block: `npm test`, or a script's name anywhere (e.g. "npm run test:api / test:browser").
+  const npmNamed = (s) => (s === "npm test" ? /\bnpm test\b/ : new RegExp(`(^|[\\s/(])${s.slice(8).replace(/[^\w]/g, "\\$&")}\\b`, "m")).test(readme);
+  const missing = want.filter((n) => !(n.startsWith("npm ") ? npmNamed(n) : named(n)));
+  if (missing.length) add("FAIL", "readme", `README.md doesn't name ${missing.join(", ")}; say what each is`, "README.md");
+}
+// The README's own covers: list sits in an HTML comment on its first line (it has no frontmatter).
+{
+  const m = FILES.includes("README.md") && read("README.md").match(/^<!-- covers: \[(.*)\] -->/);
+  if (m) covers["README.md"] = m[1].split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 // ---------- the vault index lists every note ----------
 if (NOTES.includes("docs/index.md")) {
   const index = read("docs/index.md");
@@ -115,7 +139,7 @@ else {
     const hit = [...changed].filter((f) => f !== note && pats.some((p) => matches(p, f)));
     if (hit.length) stale.push([note, hit]);
   }
-  for (const [note, hit] of stale) add("WARN", "stale", `covers changed files (${hit.slice(0, 5).join(", ")}${hit.length > 5 ? ` +${hit.length - 5} more` : ""}); check it still holds and update it if not`, note);
+  for (const [note, hit] of stale) add(STRICT ? "FAIL" : "WARN", "stale", `covers changed files (${hit.slice(0, 5).join(", ")}${hit.length > 5 ? ` +${hit.length - 5} more` : ""}); check it still holds and update it if not`, note);
   if (!stale.length) add("PASS", "stale", `every note covering code changed since ${baseRef} was updated too`);
 }
 

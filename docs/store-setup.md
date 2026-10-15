@@ -2,7 +2,7 @@
 title: Store setup
 summary: The owner's checklist to switch the store on: Cloudflare token permissions, secrets, Stripe and Brevo setup, first admin, uploading files, going live.
 covers: [.github/workflows/deploy.yml, scripts/cloudflare.js, scripts/deploy-check.js, server/lib/config.js, wrangler.toml, server/payments/stripe.js, server/payments/tax-codes.js, server/email/providers.js]
-updated: 2026-10-10
+updated: 2026-10-15
 ---
 
 # Store setup (owner)
@@ -22,7 +22,7 @@ R2 must be enabled once in the dashboard (Cloudflare → R2 → Purchase/enable;
 
 ## 2. Secrets (GitHub → Settings → Secrets and variables → Actions → Secrets)
 
-The repository is public, so keep these in the `production` Environment rather than as repository secrets (GitHub → Settings → Environments → production → Environment secrets, with "Deployment branches" limited to `main`): the deploy jobs use that Environment, and no other job or branch can read them. The deploy never prints them; a failed email shows its reason with any address blanked.
+Before the repository goes public (and from then on), keep these in the `production` Environment rather than as repository secrets (GitHub → Settings → Environments → production → Environment secrets, with "Deployment branches" limited to `main`): the deploy jobs use that Environment, and no other job or branch can read them. The deploy never prints them; a failed email shows its reason with any address blanked.
 
 | Secret | What it is | Where to get it |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ Optional, for creators' sales and payouts on a second Stripe account: `STRIPE_MA
 
 Optional: `SWEEP_TOKEN` (any random string of 32+ characters, for example from `openssl rand -hex 32`) turns on the daily clean-up of Pack Builder storage (retired files after 30 days, unused originals, abandoned drafts); both deploys copy it where it's needed.
 
-Then **Variables** tab: add `STORE_ENABLED` = `true`. The next deploy (push to `main`, or Actions → Deploy → Run workflow) provisions D1 and R2, applies migrations, syncs the catalog, sets the secrets in Cloudflare, checks them against the store's production rules, and after publishing checks that `https://autostacc.com/api/account` and `/api/products` answer and the webhook address exists (`scripts/deploy-check.js`). If a secret is missing, the deploy warns and the store stays "offline"; a secret that breaks a rule is printed (by name, never its value) as an error. The site is unaffected either way. Deleting a GitHub secret doesn't remove the copy already in Cloudflare.
+Then **Variables** tab: add `STORE_ENABLED` = `true`. The next deploy (push to `main`, or Actions → Deploy → Run workflow) first checks that the committed pages match `data/` and runs the SEO and unit tests (a failure stops it before anything is published), then provisions D1 and R2, applies migrations, syncs the catalog, sets the secrets in Cloudflare, checks them against the store's production rules, and after publishing checks that `https://autostacc.com/api/account` and `/api/products` answer and the webhook address exists (`scripts/deploy-check.js`). If a secret is missing, the deploy warns and the store stays "offline"; a secret that breaks a rule is printed (by name, never its value) as an error. The site is unaffected either way. Deleting a GitHub secret doesn't remove the copy already in Cloudflare.
 
 Production refuses test keys: `sk_test_` keys only work in development and previews (`server/lib/config.js`).
 
@@ -61,12 +61,12 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 3. Create the API key (step 2 table).
 4. Security → Authorised IPs: deactivate the IP blocking. The store sends from Cloudflare's servers, whose addresses change, so with blocking on Brevo refuses every mail (401 "unrecognised IP address").
 
-If mail doesn't arrive: each deploy prints the store's latest failed sends with Brevo's reason ("Email not sent ..." warnings in the "Store resources" step); `/admin` shows them per order. 401 = wrong key type or IP blocking, 400 = sender or domain not verified.
+If mail doesn't arrive: each deploy warns how many sends failed in the last 7 days and of which kinds (the "Store resources" step; the log is public, so it never shows reasons or addresses), and `/admin` shows them per order. For Brevo's reasons, run `npx wrangler d1 execute DB --remote --env production --command "SELECT kind, error, created_at FROM email_events WHERE status = 'failed' ORDER BY created_at DESC LIMIT 5"` on your own computer. 401 = wrong key type or IP blocking, 400 = sender or domain not verified.
 
 ## 5. First admin and products
 
 1. Create an account at `https://autostacc.com/login#signup` with an email listed in `ADMIN_EMAILS`, confirm it, then open `/admin`.
-2. For each real product: set the real title, price, description and type in `data/products.js` and remove `draft: true` (the `add-product` skill does this), push, let it deploy. Then in `/admin` upload its paid file(s) and, if wanted, a preview clip (and set `preview: { file: "..." }` on the product).
+2. For each real product: set the real title, price, description and type in `data/products.js` and remove `draft: true` (the `add-product` skill does this), push, let it deploy. Then in `/admin` upload its paid file(s) and, if wanted, a preview clip (and set `preview: { file: "..." }` on the product); a product that delivers a Pac gets its files in the Packs tab instead ([packs](packs.md)).
 3. Buy one yourself with a real card and refund it from Stripe: you should get the receipt, see it in your library, download it, then lose access after the refund.
 
 ## Previews and test mode
