@@ -1,8 +1,9 @@
 // "What's inside" on a product's page ([data-product-contents="<product id>"], or the Studio product page's ?p=): what
 // the product's published files contain, before anyone buys it (GET /api/products/:id/contents; docs/packs.md
-// Phase 7): how many files and how big, their kinds, tempo range, formats, keys and the rest, and the folders with
-// their files. Only for products whose files were published from the Pack Builder; stays hidden otherwise, when
-// switched off, or when the store is offline. Names and sizes only, never a link. Needs js/util.js.
+// Phase 7): how many files and how big, their kinds, tempo range, formats, keys and the rest, the Pacs' public preview
+// clips and read me, and the folders with their files. Only for products whose files were published from the Pack
+// Builder; stays hidden otherwise, when switched off, or when the store is offline. Names and sizes only, never a link
+// to a file (the clips are public previews). Needs js/util.js.
 (function () {
   "use strict";
 
@@ -21,6 +22,11 @@
     const c = res.data;
     const facts = c.facets.filter((g) => SHOWN.includes(g.id)).sort((a, b) => SHOWN.indexOf(a.id) - SHOWN.indexOf(b.id))
       .map((g) => `<dt>${e(g.label)}</dt><dd>${g.values.sort((a, b) => b.count - a.count).map((v) => `${e(v.label)} <span class="small-print">(${v.count})</span>`).join(", ")}</dd>`).join("");
+    // The Pacs' public preview clips (up to 3 each, from the API) and the read me's text, only when there are any.
+    const clips = (Array.isArray(c.previews) ? c.previews : []).filter((x) => x && typeof x.url === "string" && /^\/media\//.test(x.url));
+    const previews = clips.length ? `<ul class="pac-previews">${clips.map((x) => `<li><span class="pac-preview-title">${e(x.title || "Preview")}</span>
+        <audio controls preload="none" src="${e(x.url)}" aria-label="${e(`Preview: ${x.title || "Preview"}`)}"></audio></li>`).join("")}</ul>` : "";
+    const readme = typeof c.readme === "string" && c.readme.trim() ? `<details class="pac-readme"><summary>Read me</summary><pre>${e(c.readme)}</pre></details>` : "";
     const kinds = c.kinds.sort((a, b) => b.count - a.count).map((k) => `${e(k.label)} (${k.count})`).join(", ");
     const folders = c.folders.map((f) => `<details class="contents-folder"${c.folders.length <= 3 ? " open" : ""}>
         <summary>${e(f.path ? f.path.split("/").join(" › ") : "Top level")} <span class="small-print">${plural(f.files.length, "file")}</span></summary>
@@ -29,6 +35,7 @@
     root.innerHTML = `<div class="wrap"><div class="store-section-head"><h2 id="contents-head">What's inside</h2>
         <p class="small-print">${plural(c.files, "file")}, ${size(c.bytes)}${kinds ? `: ${kinds}` : ""}. Worked out from the files themselves.</p></div>
       <dl class="facts">${c.bpm ? `<dt>BPM</dt><dd>${c.bpm[0] === c.bpm[1] ? c.bpm[0] : `${c.bpm[0]}–${c.bpm[1]}`}</dd>` : ""}${facts}</dl>
+      ${previews}${readme}
       <div class="contents-tree">${folders}</div>
       ${c.truncated ? `<p class="small-print">The first 2,000 files are listed.</p>` : ""}</div>`;
     root.setAttribute("aria-labelledby", "contents-head");

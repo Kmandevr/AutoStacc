@@ -1,8 +1,10 @@
-// Studio Pack Builder (GS.studioPacks, for js/studio-products.js; docs/packs.md, Phase 5): a creator uploads their
-// product's contents as one ZIP, sees what the checks kept, refused and flagged, reviews the suggested kinds,
+// Studio Pack Builder (GS.studioPacks, for js/studio-products.js; docs/packs.md, Phase 5): a creator drops their
+// product's contents in (with the Pac editor on, one drop zone for a file, a folder or a whole ZIP, js/pac-drop.js, that
+// opens in the visual builder, js/pac-editor.js; otherwise one ZIP), sees what the checks kept, refused and flagged, reviews the suggested kinds,
 // instruments, tempos and keys, and publishes. A clean version goes live at once; a flagged one waits for AutoStacc's
 // review (the server decides, this only shows its answer). Shows the creator's file storage. Talks to
-// /api/studio/packs; uses js/packs-upload.js, js/packs-preview.js, js/packs-version.js and js/packs-review.js.
+// /api/studio/packs; uses js/packs-upload.js, js/packs-preview.js, js/packs-version.js, js/packs-review.js, and the
+// Pac editor (js/pac-editor.js, js/pac-previews.js) to build it one file at a time.
 // Needs js/util.js.
 (function () {
   "use strict";
@@ -13,6 +15,8 @@
   const STATE = { ready: "checked", in_review: "waiting for review", published: "published", superseded: "replaced", failed: "failed", discarded: "discarded",
     processing: "checking", uploading: "uploading", draft: "draft" };
 
+  // The one drop zone and the visual builder (js/pac-drop.js) replace the ZIP form when the Pac editor is on.
+  const dropping = () => Boolean(window.FEATURES && window.FEATURES["packs.editor"] && window.GS.pacDrop && window.GS.pacEditor);
   const enabled = () => Boolean(window.FEATURES && window.FEATURES["packs.builder"] && window.GS.packUpload && window.GS.packVersion);
 
   function open(root, productId, onBack) {
@@ -21,15 +25,31 @@
     root.onclick = root.onchange = root.onsubmit = null;
     root.innerHTML = `<div class="studio-packs">
         <div class="studio-bar"><button class="btn ghost" type="button" data-pack-back>&larr; Products</button><h2>Pack Builder</h2></div>
+        ${dropping() ? "<div data-pac-drop></div>" : ""}
         <div data-pack-body><p class="msg pending">Loading…</p></div></div>`;
     const el = $(".studio-packs", root);
     const url = `${BASE}/products/${encodeURIComponent(productId)}`;
+    if (dropping()) window.GS.pacDrop.mount($("[data-pac-drop]", el), { base: BASE, draft: { url: `${url}/drafts`, body: {} },
+      upload: { create: `${url}/versions`, have: { url: `${url}/have`, body: {} } }, info: () => api(url), onOpen: () => show() });
 
     function draw(v) {
       const box = $("[data-pack-version]", el);
       box.dataset.id = v.id;
       box.__version = v;
       box.innerHTML = window.GS.packVersion.render(v);
+      editor(v);
+    }
+
+    // The Pac as a file manager (js/pac-editor.js) above the version, and its preview clips (js/pac-previews.js).
+    function editor(v) {
+      if (!window.GS.pacEditor) return;
+      window.GS.pacEditor.attach($("[data-pac-editor]", el), v, { base: BASE, draft: { url: `${url}/drafts`, body: {} },
+        onChanged: draw, reload: async (id) => { await show(); showVersion(id); } });
+      const pp = $("[data-pac-previews]", el);
+      if (pp && window.GS.pacPreviews && !pp.dataset.mounted) {
+        pp.dataset.mounted = "1";
+        window.GS.pacPreviews.mount(pp, { url: `${url}/previews`, base: BASE, version: () => $("[data-pack-version]", el).__version || null });
+      } else if (pp && pp.refresh) pp.refresh();
     }
 
     async function showVersion(id) {
@@ -49,7 +69,11 @@
       if (!res.ok) { body.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
       const { pac, versions, product, storage } = res.data;
       const busy = Boolean(pac && pac.draftVersionId);
-      body.innerHTML = `
+      const intro = dropping()
+        ? `<p class="small-print"><strong>${e(product.title)}</strong>. AutoStacc checks every file you drop in (type, damage, unsafe names), keeps the originals byte for byte and suggests kinds, instruments, tempos and keys. When it looks right, publish: a clean Pac goes live at once; anything flagged waits for AutoStacc's review.</p>`
+        : "";
+      body.innerHTML = dropping() ? `${intro}
+        <p class="small-print">File storage: ${mb(storage.usedBytes)} of ${mb(storage.quotaBytes)} used.</p>` : `
         <p class="small-print"><strong>${e(product.title)}</strong>. Upload everything buyers get as one ZIP, in the folders you want them to see. AutoStacc checks every file (type, damage, unsafe names), keeps the originals byte for byte and suggests kinds, instruments, tempos and keys. Clean packs publish right away; anything flagged waits for AutoStacc's review.</p>
         <p class="small-print">File storage: ${mb(storage.usedBytes)} of ${mb(storage.quotaBytes)} used.</p>
         <form class="panel" data-pack-form>
@@ -57,12 +81,16 @@
           <div data-pack-preview aria-live="polite"></div>
           <div class="actions"><button class="btn" type="submit"${busy ? " disabled data-locked" : ""}>Upload and check</button></div>
           <progress max="1" value="0" hidden></progress><p class="msg" role="status">${busy ? "A version is in progress below: publish or discard it first." : ""}</p>
-        </form>
+        </form>`;
+      body.innerHTML += `
+        <div data-pac-editor></div>
         <div data-pack-version></div>
+        <div data-pac-previews></div>
         ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link-btn" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
           · ${e(STATE[v.status] || v.status)}${pac && v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}${v.note ? ` · ${e(v.note)}` : ""}</li>`).join("")}</ul>` : ""}`;
       const current = pac && (pac.draftVersionId || pac.liveVersionId);
       if (current) showVersion(current);
+      else editor(null);
     }
 
     el.addEventListener("change", async (ev) => {

@@ -146,6 +146,13 @@ const CASES = {
   ]),
   // How creators name things, for suggestions: kinds, instruments, tempos and keys in folder and file names, a tempo
   // that fits the length and one that doesn't, a name and a header that disagree, MIDI patterns and arrangements.
+  // Files added to a version one step at a time (the Pac editor, server/packs/append.js): a new file, one in a folder
+  // of its own, and a read me whose name the pack already has (refused as a duplicate where it lands).
+  "addition": () => zip([
+    { name: "Snare 02.wav", data: wav({ frames: 9000, seed: 21 }) },
+    { name: "Fills/Fill 01.wav", data: wav({ frames: 30000, seed: 22 }) },
+    { name: "Read me.txt", data: "Added later.\n", store: true }
+  ]),
   "pack-names": () => zip([
     { name: "Glitch Kit/One Shots/Hi Hats/HH Closed 03.wav", data: wav({ frames: 4410, seed: 4 }) },
     { name: "Glitch Kit/One Shots/808s/808 Sub C.wav", data: wav({ frames: 44100, seed: 5 }) },
@@ -197,8 +204,8 @@ const CASES = {
 };
 
 // Archives the Pack Builder makes in the browser (js/zip-thin.js), so tests can follow it end to end: pack-revision as
-// sent when the store already has pack-basic's files (only the read-me and changelog), and an archive with nothing
-// left in it (a revision that only moves files).
+// sent when the store already has pack-basic's files (only the read-me and changelog), an archive with nothing left in
+// it (a revision that only moves files), and one file as the Pac editor sends it (js/zip-make.js).
 const { thin } = require("../js/zip-thin.js");
 const THIN = {
   "pack-revision-thin": async () => {
@@ -207,6 +214,8 @@ const THIN = {
     const keep = (await directory(blob)).filter((e) => /^Pack\/(Read me|Changelog)\.txt$/.test(e.nameText));
     return Buffer.from(await (await thin(blob, keep)).arrayBuffer());
   },
+  // One file as the Pac editor sends it (js/zip-make.js): what a creator's single upload becomes.
+  "editor-file": async () => Buffer.from(await (await require("../js/zip-make.js").store([{ name: "Kick 07.wav", blob: new Blob([wav({ frames: 6000, seed: 31 })]) }])).arrayBuffer()),
   "empty": async () => Buffer.from(await (await thin(new Blob([CASES["pack-revision"]()]), [])).arrayBuffer())
 };
 

@@ -2,7 +2,7 @@
 title: Your Stacc
 summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, personal collections, tags and saved searches, follows and Auto-Stacc.
 covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
-updated: 2026-10-13
+updated: 2026-10-15
 ---
 
 # Your Stacc
@@ -33,7 +33,9 @@ The model runs on a background thread: `js/stacc-client.js` sends `{ type: "buil
 
 Every file has its own Download button (a fresh 5-minute signed link per click, as before). Checkboxes, with "select all" per Pac and per content type, feed **Download selected**: the page asks for each file's link in turn and saves them one after another.
 
-A Pac published from the Pack Builder keeps its creator's folders: inside it, Your Stacc groups files by folder ("Drums › Kicks") instead of by content type, and search matches folder names (`folderPath` from `/api/library`; `js/stacc-model.js`). Each folder has **Download folder (ZIP)** (`js/library-bundle.js`, `POST /api/downloads/bundle`): one ZIP of the original bytes, for files the API marks `bundleable`. A file a newer version replaced or removed (`retiredAt`) stays listed and downloadable for people who had it before, for 30 days ([packs](packs.md)): its row says "removed in an update" with the last day (`availableUntil`), and its Pac or product shows **Updated**. Files a revision kept (unchanged or moved) keep their id, so selections and download history stay valid.
+A Pac published from the Pack Builder keeps its creator's folders: inside it, Your Stacc shows them as a nested tree (folders inside folders, each a foldable `<details>` with its own files; top-level files at the Pac's root) instead of content types, and search matches folder names (`folderPath` from `/api/library`; `foldersOf` in `js/stacc-model.js` builds `{ name, path, assets, folders, count }`, `js/library-view.js` draws it). Each folder has **Select all** and **Download folder (ZIP)**, and the Pac's root **Download all (ZIP)**, each covering the files in it and below (`js/library-bundle.js`, `POST /api/downloads/bundle`): one ZIP of the original bytes, for files the API marks `bundleable`, offered for 2 to 2,000 files (the store's limit).
+
+Each Pac (or a Studio product's files) starts with what its creator sent along: up to three public preview clips (`previews` from `/api/library`, `<audio controls preload="none">` each with its title; only `/media/` addresses are played) and its read me (`readme`: the text of the Pac's top-level "Read me….txt", folded under **Read me**, shown as escaped plain text). Clips belong to their Pac; the read me is its product's (`extrasFrom` in the model, kept with the assets in the worker). A file a newer version replaced or removed (`retiredAt`) stays listed and downloadable for people who had it before, for 30 days ([packs](packs.md)): its row says "removed in an update" with the last day (`availableUntil`), and its Pac or product shows **Updated**. Files a revision kept (unchanged or moved) keep their id, so selections and download history stay valid.
 
 ## Collections, tags and saved searches
 

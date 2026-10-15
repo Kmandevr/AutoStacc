@@ -22,7 +22,7 @@ import { alertAdmins } from "../email/alerts.js";
 import { filesQuotaOf } from "../creators/policy.js";
 import { storageUsed } from "../creators/storage.js";
 import { capBytes } from "../usage/usage.js";
-import { createVersion, move } from "./versions.js";
+import { createVersion, move, getVersion } from "./versions.js";
 import { limit } from "../lib/ratelimit.js";
 import { startZip, getUpload, putPart, complete, PART_BYTES } from "./uploads.js";
 import { startProcess, refresh, discard } from "./process.js";
@@ -37,6 +37,8 @@ import { cleanCarry } from "./carry.js";
 import { routes as carryRoutes } from "./carry-routes.js";
 import { routes as reviewRoutes } from "./review-routes.js";
 import { versionView } from "./view.js";
+import { openAddition } from "./additions.js";
+import { refreshedStats, saveStatsStmt } from "./final-review.js";
 
 // Room for a carry list of the most files a version may have.
 const CREATE_BYTES = 3 * 1024 * 1024;
@@ -93,6 +95,8 @@ function shared(scope) {
     ["POST", `${P}/uploads/:uploadId/complete`, async (app, { uploadId }) => {
       const actor = await scope.actor(app);
       const u = await uploadFor(app, scope, actor, uploadId);
+      // An addition's upload completes through its own route (editor-routes.js).
+      if (u.addition_id) fail(404, "not_found", "Not found.");
       const done = await complete(app, u);
       if (!done.complete) return json(done, 409);
       const version = await scope.version(app, actor, u.version_id);
@@ -107,9 +111,13 @@ function shared(scope) {
     }],
     ["POST", `${P}/versions/:versionId/publish`, async (app, { versionId }) => {
       const actor = await scope.actor(app);
-      const v = await scope.version(app, actor, versionId);
+      let v = await scope.version(app, actor, versionId);
       const allowed = actor.admin ? ["ready", "in_review"] : ["ready"];
       if (!allowed.includes(v.status)) fail(409, "not_ready", v.status === "published" ? "Already published." : v.status === "in_review" ? "It's waiting for AutoStacc's review." : "Only a checked, ready version can be published.");
+      if (await openAddition(app.db, v.id)) fail(409, "addition_open", "Files are still being added. Wait for them first.");
+      // Built in steps or edited since it was checked: its diff and revision risk are taken again first (final-review.js).
+      await app.db.batch([saveStatsStmt(app.db, v.id, await refreshedStats(app.db, v))]);
+      v = await getVersion(app.db, v.id);
       const stats = parseJson(v.stats, {});
       if (!stats.files) fail(409, "nothing_to_publish", "No file in this version passed the checks.");
       const rv = stats.review || null;

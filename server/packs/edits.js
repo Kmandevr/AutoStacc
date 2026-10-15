@@ -12,7 +12,7 @@ const { FIELDS } = resolver;
 
 const READY = "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'ready')";
 
-async function run(app, version, statements) {
+export async function run(app, version, statements) {
   try {
     await app.db.batch([guardStmt(app.db, READY, version.id), ...statements]);
   } catch (e) {
@@ -28,7 +28,7 @@ function field(name) {
 }
 
 // The given files, all of this version (else 404, like files that don't exist).
-async function ownAssets(app, version, assetIds) {
+export async function ownAssets(app, version, assetIds) {
   if (!Array.isArray(assetIds) || !assetIds.length || assetIds.length > 5000 || !assetIds.every((x) => typeof x === "string" && /^as_[a-z2-7]+$/.test(x))) {
     fail(400, "invalid_files", "Choose files of this version.");
   }
@@ -72,7 +72,7 @@ export async function setFolderValue(app, version, { folderId, field: f, value, 
   ]);
 }
 
-async function folderOf(app, version, folderId) {
+export async function folderOf(app, version, folderId) {
   if (typeof folderId !== "string") fail(400, "invalid_folder", "Choose a folder.");
   const f = (await all(app.db, "SELECT id, parent_id, name FROM pac_folders WHERE version_id = ? AND id = ?", version.id, folderId))[0];
   if (!f) fail(404, "not_found", "No such folder in this version.");
@@ -87,7 +87,7 @@ export async function moveEntries(app, version, { assetIds, folderId }) {
 }
 
 const NAME = /^[^\\/:*?"<>|\u0000-\u001f]{1,120}$/;
-const cleanName = (s) => {
+export const cleanName = (s) => {
   const n = typeof s === "string" ? s.normalize("NFC").trim() : "";
   if (!NAME.test(n) || /^\.+$/.test(n) || /[. ]$/.test(n)) fail(400, "invalid_name", "Use a plain name (no / \\ : * ? \" < > |).");
   return n;
@@ -102,6 +102,25 @@ export async function renameEntry(app, version, { assetId, filename }) {
   const was = await first(app.db, "SELECT filename FROM pac_entries WHERE version_id = ? AND asset_id = ?", version.id, assetId);
   if (!was || extOf(was.filename) !== extOf(name)) fail(400, "extension_changed", "Keep the file's extension (its type was checked as it is).");
   await run(app, version, [stmt(app.db, "UPDATE pac_entries SET filename = ? WHERE version_id = ? AND asset_id IN (SELECT value FROM json_each(?))", name, version.id, ids)]);
+}
+
+/** Moves a folder (with everything in it) under parentId (null: the top); never into itself or a folder inside it. */
+export async function moveFolder(app, version, { folderId, parentId }) {
+  const f = await folderOf(app, version, folderId);
+  if (parentId !== null) {
+    const parents = new Map((await all(app.db, "SELECT id, parent_id FROM pac_folders WHERE version_id = ?", version.id)).map((x) => [x.id, x.parent_id]));
+    if (!parents.has(parentId)) fail(404, "not_found", "No such folder in this version.");
+    for (let at = parentId; at; at = parents.get(at)) if (at === f.id) fail(400, "invalid_move", "A folder can't go inside itself.");
+  }
+  const clash = await all(app.db, "SELECT 1 FROM pac_folders WHERE version_id = ? AND IFNULL(parent_id, '') = IFNULL(?, '') AND lower(name) = lower(?) AND id <> ?",
+    version.id, parentId, f.name, f.id);
+  if (clash.length) fail(409, "name_taken", "A folder with that name is already there.");
+  await run(app, version, [
+    // Checked again in the batch: two moves at once (A into B, B into A) can't make a loop.
+    ...(parentId === null ? [] : [guardStmt(app.db, `NOT EXISTS (WITH RECURSIVE up(id) AS (SELECT ? UNION SELECT f.parent_id FROM pac_folders f JOIN up ON f.id = up.id
+      WHERE f.version_id = ? AND f.parent_id IS NOT NULL) SELECT 1 FROM up WHERE id = ?)`, parentId, version.id, f.id)]),
+    stmt(app.db, "UPDATE pac_folders SET parent_id = ? WHERE version_id = ? AND id = ?", parentId, version.id, f.id)
+  ]);
 }
 
 export async function renameFolder(app, version, { folderId, name }) {
