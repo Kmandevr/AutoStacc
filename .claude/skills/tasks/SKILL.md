@@ -31,7 +31,7 @@ Issues, pull requests, commit messages and Actions logs here are public. Never p
 
 Where they go instead:
 - **Security problems:** a draft security advisory (the repository's Security tab → Advisories), which only the maintainers see. Fix it in the advisory's temporary private fork, or in a pull request whose title and description say only what changes ("Check the owner on folder moves"), never how it could be abused. Publish the advisory after the fix is deployed.
-- **Other private work** (operational notes, incidents, owner-only decisions, bugs that reveal how the live setup runs): issues in the private repository `Kmandevr/AutoStacc-private` (attach it with `add_repo`; the same labels apply). If it doesn't exist yet, or can't be reached, tell the user instead of writing it here.
+- **Other private work** (operational notes, incidents, owner-only decisions, bugs that reveal how the live setup runs): tell the user in the session instead of writing it here (there is no private tracker; owner, 2026-10-15).
 
 A public issue may point to private work only as "tracked privately".
 

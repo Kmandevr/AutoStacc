@@ -464,3 +464,7 @@ Before going public, the owner asked for the old commits to stop showing their p
 - GitHub's "Verified" mark on its own merge commits is gone.
 - Old branches and the stored copies of past pull requests still hold the old commits. The owner deletes the branches on GitHub, which a Claude session can't do (403), and asks GitHub Support to purge the pull request copies before the repository goes public.
 - New commits stay private through GitHub's "Keep my email address private" and "Block command line pushes that expose my email" settings.
+
+## 2026-10-15: No private tracker (owner)
+
+The owner decided not to create the private repository `Kmandevr/AutoStacc-private` planned in the entry on private reports above. Security problems still go to private security advisories. Other private work (operational notes, incidents, owner-only decisions) is told to the owner in the session and never written into the public repository (the `tasks` skill, "What stays private").
