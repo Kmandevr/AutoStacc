@@ -167,9 +167,12 @@
     const group = (account, label) => {
       const g = part(groups[account] || []);
       return `<li><strong>${label}</strong> (${g.count}): ${escapeHTML(g.names.join(", "))}
-        <button class="btn" type="button" data-pay-account="${account}"${groups[account] && groups[account].length ? "" : " disabled"}>Pay ${cents(g.total, "USD")}</button></li>`;
+        <button class="btn" type="button" data-pay-account="${account}"${groups[account] && groups[account].length ? "" : " disabled"}>Pay ${cents(g.total, currency)}</button></li>`;
     };
+    // The group amounts are line prices: a promo code is applied by the checkout of the group it covers.
+    const currency = (priced && priced.currency) || "USD";
     return `<div class="msg" role="status"><p>Your cart has AutoStacc items and items from creators. They're paid separately, one after the other. Pay for one group now; the other stays in your cart.</p>
+      <p class="small-print">Each group is its own payment. A group you've paid stays yours even if you never pay the other. Amounts shown are before any promo code.</p>
       <ul class="split-groups">${group("main", "AutoStacc")}${group("marketplace", "Creators")}</ul></div>`;
   }
 
