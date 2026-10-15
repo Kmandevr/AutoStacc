@@ -1,0 +1,40 @@
+# Code scanning with CodeQL (SECURITY.md, docs/development.md): GitHub's analysis of the store API, the site's scripts,
+# the engine Worker and the Actions workflows themselves for known kinds of vulnerability (injection, unsafe redirects,
+# missing checks, secrets reaching logs, script injection in workflows). Results appear under the repository's
+# Security tab. On pull requests that change code, and once a week. Free for public repositories; while this one is
+# private it skips (code scanning would need GitHub's paid security add-on there).
+name: CodeQL
+on:
+  pull_request:
+    paths-ignore: ["docs/**", "**/*.md", ".claude/**"]
+  schedule:
+    - cron: "41 5 * * 3"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  analyze:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+          config: |
+            paths-ignore: [dist, node_modules, test, "**/*.min.js", js/engine/autostacc_engine.wasm]
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
