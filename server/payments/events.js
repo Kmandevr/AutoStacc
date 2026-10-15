@@ -93,10 +93,10 @@ async function apply(app, ev) {
       }
       // Already owned through another paid order (two tabs, two carts): still granted (it was paid for), but recorded
       // and the admins alerted once, to refund one by hand (server/orders/double-purchase.js).
-      const double = await checkDoublePurchase(app, order);
       // Grants and the receipt are idempotent (the receipt has a once-per-order key), so every paid event runs them:
-      // a retry after a failure half-way still finishes the job.
+      // a retry after a failure half-way still finishes the job. The double-purchase check comes after and can't fail it.
       await fulfil(app, order.id);
+      const double = await checkDoublePurchase(app, order).catch((e) => (console.error("double-purchase check", e && e.message), null));
       return { outcome: moved ? "paid" : "already paid", detail: double, orderId: order.id };
     }
     case "failed":
