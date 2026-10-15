@@ -98,10 +98,12 @@ export default (ctx) => describe("usage: the budget guard", () => {
   });
 
   test("creators' uploads stop at the storage cap; AutoStacc's own don't", async () => {
-    const { c, creator, products } = await P.creatorWithProducts(base(), "us-cap");
+    const { c, products } = await P.creatorWithProducts(base(), "us-cap");
+    // Someone else's files fill AutoStacc's storage (a creator's own site files count against their own cap first).
+    const { creator: other } = await P.creatorWithProducts(base(), "us-cap-other");
     const admin = await adminClient(base());
     db(`INSERT INTO site_assets (id, creator_id, r2_key, filename, content_type, size_bytes, status, created_at)
-      VALUES ('sa_usage_fill', '${creator.id}', 'x', 'x.png', 'image/png', 1000000000, 'active', 'x')`);
+      VALUES ('sa_usage_fill', '${other.id}', 'x', 'x.png', 'image/png', 1000000000, 'active', 'x')`);
     try {
       assert.equal((await admin.req("PUT", "/api/admin/usage", { body: { capGb: 1 } })).status, 200);
       const zip = caseZip("pack-basic");
@@ -122,13 +124,14 @@ export default (ctx) => describe("usage: the budget guard", () => {
   });
 
   test("at import, unpacked files past the cap fail the version (storage_full)", async () => {
-    const { c, creator, products } = await P.creatorWithProducts(base(), "us-capimport");
+    const { c, products } = await P.creatorWithProducts(base(), "us-capimport");
+    const { creator: other } = await P.creatorWithProducts(base(), "us-capimport-other");
     const admin = await adminClient(base());
     const zip = caseZip("pack-basic");
     const stored = (await admin.get("/api/admin/usage")).data.usage.meters.r2_bytes.used;
     // Room for the archive (27 KB) but not for what it unpacks to (1.2 MB).
     db(`INSERT INTO site_assets (id, creator_id, r2_key, filename, content_type, size_bytes, status, created_at)
-      VALUES ('sa_usage_fill2', '${creator.id}', 'x', 'x.png', 'image/png', ${1e9 - stored - zip.length - 1000}, 'active', 'x')`);
+      VALUES ('sa_usage_fill2', '${other.id}', 'x', 'x.png', 'image/png', ${1e9 - stored - zip.length - 1000}, 'active', 'x')`);
     try {
       assert.equal((await admin.req("PUT", "/api/admin/usage", { body: { capGb: 1 } })).status, 200);
       const { version } = await build(c, products[0].id, zip);

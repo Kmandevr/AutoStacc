@@ -22,7 +22,7 @@ describe("the Product Studio in the browser", () => {
     await page.click("form[data-form=creator] button[type=submit]");
     await page.fill("#pr-name", "Studio Kits");
     await page.click("form[data-form=project] button[type=submit]");
-    await page.waitForSelector(".studio-bar");
+    await page.waitForSelector(".bx-bar");
     await page.goto("/studio");
     await page.click("[data-products]");
     await page.waitForSelector("form[data-form=new]");

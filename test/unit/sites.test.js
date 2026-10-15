@@ -10,7 +10,8 @@ import { RESERVED, slugProblem } from "../../server/lib/slugs.js";
 import { markup, safeUrl } from "../../server/sites/text.js";
 import { embedFor } from "../../server/sites/embeds.js";
 import { cleanDocument } from "../../server/sites/document.js";
-import { renderPage, CSP } from "../../server/sites/render.js";
+import { renderPage, cspFor } from "../../server/sites/render.js";
+import { projectSite } from "../../server/sites/targets.js";
 import { splitLine } from "../../server/revenue/split.js";
 import { sniffImage } from "../../server/sites/images.js";
 
@@ -59,30 +60,34 @@ test("embeds come only from known share links and are rebuilt, never copied", ()
     assert.equal(embedFor(bad), null, bad);
 });
 
-test("the site document: limits, page addresses and block fields", () => {
+test("the site document: limits, page addresses and block fields (a version 1 document converts)", () => {
   assert.throws(() => cleanDocument({ pages: [] }), /add at least one page/);
   assert.throws(() => cleanDocument({ pages: Array.from({ length: 13 }, (_, i) => ({ slug: `p${i}`, title: "x", blocks: [] })) }), /at most 12/);
   assert.throws(() => cleanDocument({ pages: [{ title: "x", blocks: [{ type: "html", html: "<script>" }] }] }), /must be one of/);
   const { doc, assets, products } = cleanDocument({ theme: { preset: "nope", accent: "red;}body{x", font: "comic" }, pages: [
     { slug: "ignored", title: "Home", blocks: [{ type: "gallery", images: [{ asset: "as_" + "b".repeat(26), alt: "x" }] }, { type: "products", ids: ["wallpapers"] }] },
     { slug: "Events", title: "Events", blocks: [] }] });
-  assert.deepEqual(doc.theme, { preset: "midnight", accent: "#a855f7", font: "inter" }, "unknown theme values fall back, never reach CSS");
+  assert.equal(doc.version, 2);
+  assert.deepEqual([doc.theme.preset, doc.theme.accent, doc.theme.font], ["midnight", "#a855f7", "inter"], "unknown theme values fall back, never reach CSS");
   assert.equal(doc.pages[0].slug, "", "the first page is the home");
   assert.equal(doc.pages[1].slug, "events");
   assert.deepEqual([...assets], ["as_" + "b".repeat(26)]);
   assert.deepEqual([...products], ["wallpapers"]);
 });
 
-test("a rendered page has no script, a strict CSP, and shows only the creator's own images and products", () => {
+test("a rendered page runs only AutoStacc's runtime, has a strict CSP, and shows only the creator's own images and products", () => {
   const { doc } = cleanDocument({ pages: [{ title: "Home", blocks: [{ type: "image", asset: "as_" + "c".repeat(26), alt: "x" }, { type: "products", ids: ["a-b", "c-d"] }] }] });
-  const html = renderPage({ siteUrl: "https://autostacc.com", creator: { slug: "me", name: "Me <3" }, project: { slug: "p", name: "P" }, doc, page: doc.pages[0], indexable: false,
-    ctx: { images: new Map(), products: new Map([["a-b", { title: "Mine", path: "/shop/a-b", artwork: null }]]) } });
-  assert.ok(!/<script/i.test(html));
+  const target = projectSite({ slug: "me", name: "Me <3" }, { id: "p1", slug: "p", name: "P" });
+  const html = renderPage({ siteUrl: "https://autostacc.com", target, doc, page: doc.pages[0], indexable: false,
+    ctx: { images: new Map(), products: new Map([["a-b", { title: "Mine", path: "/shop/a-b", artwork: null }]]), projects: new Map() } });
+  assert.deepEqual(html.match(/<script[^>]*>/g), ['<script src="https://autostacc.com/js/site-runtime.js" defer>']);
   assert.ok(!/as_ccc/.test(html));
   assert.match(html, /Mine/);
   assert.ok(!/c-d/.test(html));
   assert.match(html, /Me &lt;3/);
-  for (const rule of ["default-src 'none'", "script-src 'none'", "form-action 'none'", "frame-ancestors 'none'", "base-uri 'none'"]) assert.ok(CSP.includes(rule), rule);
+  const csp = cspFor("https://autostacc.com");
+  for (const rule of ["default-src 'none'", "script-src https://autostacc.com/js/site-runtime.js", "connect-src 'none'", "form-action 'none'", "frame-ancestors 'none'", "base-uri 'none'"]) assert.ok(csp.includes(rule), rule);
+  assert.ok(!/unsafe-eval|script-src[^;]*'unsafe-inline'|script-src[^;]*'self'/.test(csp));
 });
 
 test("images are recognised by their bytes, not their names", () => {

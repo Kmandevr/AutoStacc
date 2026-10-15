@@ -4,7 +4,8 @@
 // day's grace and are then deleted; stuck and abandoned Pac versions are settled; leftover archives and expired bundle
 // rows go; products' derived store details catch up with their files and the store.derivedFacets switch; jobs waiting
 // for the processing allowance are sent, a few at a time, when it allows; a few older files get their checksums
-// (files/legacy.js); and the admins hear about meters near the allowance.
+// (files/legacy.js); creator sites scheduled for earlier publish (sites/schedule.js); and the admins hear about meters
+// near the allowance.
 // Bounded per run; anything left waits for the next day.
 import { deactivateExpiredRetired } from "../files/files.js";
 import { hashLegacyFiles } from "../files/legacy.js";
@@ -17,6 +18,7 @@ import { checkLevels } from "../usage/usage.js";
 import { sweepBlobs } from "../blobs/sweep.js";
 import { deleteExpiredBundles } from "../downloads/bundle.js";
 import { sweepContents } from "../discovery/contents.js";
+import { runDue } from "../sites/schedule.js";
 
 export async function sweep(app, { nowMs = Date.now() } = {}) {
   const retiredFiles = await deactivateExpiredRetired(app.db, nowMs);
@@ -30,6 +32,7 @@ export async function sweep(app, { nowMs = Date.now() } = {}) {
   const additions = await sweepAdditions(app, { nowMs });
   const legacy = await hashLegacyFiles(app);
   const variants = await makeVariants(app);
+  const sites = await runDue(app);
   const usage = (await checkLevels(app)).level;
-  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, usage };
+  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage };
 }

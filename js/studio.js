@@ -1,9 +1,10 @@
-// The Studio (/studio): claim a creator name, see your creator's address and free storage, make, rename and delete
-// projects, open a project's site in the editor (js/studio-editor.js; #project=<id> reopens it), its products
+// The Studio (/studio): claim a creator name, see your creator's address and storage, make, rename and delete
+// projects, open your profile or a project's site in the visual builder (js/builder.js; #profile=<creator id> and
+// #project=<id> reopen them), a project's products
 // (js/studio-products.js; #products=<id>), one product in the Product Studio (js/studio-workspace.js;
 // #product=<id>&section=<key>) and see earnings (js/studio-earnings.js). All checks
-// (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/studio-blocks.js,
-// js/studio-editor.js, js/studio-products.js, js/studio-workspace.js and js/studio-earnings.js.
+// (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js (and the
+// modules it needs), js/studio-products.js, js/studio-workspace.js and js/studio-earnings.js.
 (function () {
   "use strict";
 
@@ -29,7 +30,7 @@
         <ol class="studio-steps" aria-label="How the Studio works">
           <li><strong>Claim your name</strong><span>Your creator address on AutoStacc, unique to you.</span></li>
           <li><strong>Make a project</strong><span>Up to ${data.limits.projectsPerCreator} of them, each with its own page.</span></li>
-          <li><strong>Build with blocks</strong><span>Headings, text, images, links and more. Pick a style and an accent colour; no code.</span></li>
+          <li><strong>Design it visually</strong><span>Start from a template, then drag, drop and style everything on the page itself. No code needed.</span></li>
           <li><strong>Publish</strong><span>Preview privately, then put it live at your address whenever you're ready.</span></li>
         </ol></div>`;
       return;
@@ -47,6 +48,8 @@
           <li><span>Projects</span><strong>${c.projects.length} <small>of ${data.limits.projectsPerCreator}</small></strong>
             <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>
         </ul>
+        <div class="studio-profile"><div><h3 class="studio-sub">Your profile</h3><p class="small-print">Your home at ${e(location.host + c.path)}: who you are, your music, your projects.</p></div>
+          <button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button></div>
         <h3 class="studio-sub">Projects</h3>
         <ul class="studio-projects">${c.projects.map((p) => `<li class="studio-project">
           <div class="studio-project-head"><strong>${e(p.name)}</strong> <span class="studio-state" data-live="${p.published}">${p.published ? "Live" : "Draft"}</span></div>
@@ -75,7 +78,8 @@
     const ws = window.GS.studioWorkspace;
     if (ws) ws.leave(); // a Product Studio section saves what's pending before another view replaces it
     if (hash.get("product") && ws) return ws.open(root, hash.get("product"), hash.get("section"));
-    if (hash.get("project")) return window.GS.studioEditor.open(root, hash.get("project"), back);
+    if (hash.get("project")) return window.GS.builder.open(root, { kind: "project", id: hash.get("project") }, back);
+    if (hash.get("profile")) return window.GS.builder.open(root, { kind: "profile", id: hash.get("profile") }, back);
     if (hash.get("products")) return window.GS.studioProducts.open(root, hash.get("products"), back);
     const res = await api("/api/studio");
     if (!res.ok) { root.innerHTML = `<p class="msg error">${e(res.status === 403 ? "Confirm your email first (check your inbox), then come back." : res.error.message)}</p>`; return; }
@@ -110,7 +114,7 @@
     }
     if (f.dataset.form === "project") {
       history.replaceState(null, "", `#project=${encodeURIComponent(res.data.project.id)}`);
-      return window.GS.studioEditor.open(root, res.data.project.id, back);
+      return window.GS.builder.open(root, { kind: "project", id: res.data.project.id }, back);
     }
     load();
   });
@@ -131,10 +135,15 @@
       history.replaceState(null, "", `#products=${encodeURIComponent(prod.dataset.products)}`);
       return window.GS.studioProducts.open(root, prod.dataset.products, back);
     }
+    const profile = ev.target.closest("[data-profile]");
+    if (profile) {
+      history.replaceState(null, "", `#profile=${encodeURIComponent(profile.dataset.profile)}`);
+      return window.GS.builder.open(root, { kind: "profile", id: profile.dataset.profile }, back);
+    }
     const edit = ev.target.closest("[data-edit]");
     if (!edit) return;
     history.replaceState(null, "", `#project=${encodeURIComponent(edit.dataset.edit)}`);
-    window.GS.studioEditor.open(root, edit.dataset.edit, back);
+    window.GS.builder.open(root, { kind: "project", id: edit.dataset.edit }, back);
   });
 
   // Links change the address (a product card's Open, the Product Studio's "Back to project"): draw what it names.

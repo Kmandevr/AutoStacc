@@ -85,12 +85,13 @@ export default (ctx) => describe("creators", () => {
       { type: "image", asset: "as_" + "a".repeat(26), alt: "not mine" }
     ]));
     assert.equal(saved.status, 200, JSON.stringify(saved.data));
-    assert.equal(saved.data.document.pages[0].blocks[1].evil, undefined, "unknown fields are dropped");
+    assert.equal(saved.data.document.version, 2, "an old-style document is saved as version 2");
+    assert.equal(saved.data.document.pages[0].sections[0].elements[1].evil, undefined, "unknown fields are dropped");
     const preview = await c.get(`/api/studio/projects/${project.id}/preview`);
     assert.equal(preview.status, 200);
-    assert.match(preview.headers.get("content-security-policy"), /script-src 'none'/);
+    assert.match(preview.headers.get("content-security-policy"), /script-src [^;]*\/js\/site-runtime\.js(;|$)/, "AutoStacc's runtime is the only script allowed");
     const html = preview.data;
-    assert.ok(!/<script/i.test(html), "no script tag survives");
+    assert.deepEqual(html.match(/<script[^>]*>/gi), [`<script src="${ctx.mock.url}/js/site-runtime.js" defer>`], "no other script tag survives");
     assert.ok(!/onerror=/.test(html.replace(/&lt;img src=x onerror=alert\(1\)&gt;/, "")), "markup in text is shown, not run");
     assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
     assert.match(html, /<strong>world<\/strong>/);

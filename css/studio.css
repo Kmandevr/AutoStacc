@@ -1,4 +1,4 @@
-/* The Studio (/studio, js/studio.js and js/studio-editor.js): the creator overview and the no-code site editor. */
+/* The Studio (/studio, js/studio.js): the creator overview and the bars of its views. The visual builder is css/builder.css. */
 .studio .tag { font-size: .75rem; }
 .studio-projects { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 14px; }
 .studio-projects li { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
@@ -8,41 +8,19 @@
 
 .studio-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 12px; }
 .studio-bar h2 { margin: 0 auto 0 0; font-size: clamp(1.4rem, 4vw, 2rem); }
-.studio-grid { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 24px; align-items: start; }
-.studio-side h3, .studio-block h3 { margin: 0 0 10px; }
-.studio-side h3 + .field { margin-top: 0; }
-.studio-images { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
-.studio-images li { display: grid; grid-template-columns: 56px 1fr; gap: 4px 10px; align-items: center; font-size: .8rem; color: var(--muted); }
-.studio-images img { width: 56px; height: 56px; object-fit: cover; grid-row: span 2; }
-.studio-images button { justify-self: start; }
 .studio-upload { display: inline-flex; cursor: pointer; }
-.studio-main { display: grid; gap: 18px; min-width: 0; }
-.studio-main .panel + .panel { margin-top: 0; }
-.studio-block-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
-.studio-block-head h3 { margin: 0 auto 0 0; }
-.studio-item { padding: 12px; margin: 0 0 12px; border: 1px dashed var(--line); }
-.studio-checks { display: grid; gap: 8px; border: 1px solid var(--line); padding: 12px; }
-.studio-checks label { display: flex; gap: 8px; align-items: center; }
-.studio-add { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.studio-add select { min-height: 44px; padding: 8px 12px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); }
-.studio-status:empty { display: none; }
+.studio-profile { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.studio-profile .studio-sub { margin: 0; }
+.studio-profile p { margin: 2px 0 0; }
 
-@media (max-width: 860px) {
-  .studio-grid { grid-template-columns: 1fr; }
-  .studio-bar .btn, .studio-add select, .studio-add .btn { flex: 1 1 auto; }
-}
 @media (pointer: coarse), (max-width: 700px) {
-  .studio .btn.small, .studio .btn.ghost, .studio-images button { min-height: 44px; }
+  .studio .btn.small, .studio .btn.ghost { min-height: 44px; }
   .studio-projects summary, .studio-creator summary { padding: 10px 0; }
-  .studio-checks label { min-height: 44px; }
-  .studio-images li { grid-template-columns: 72px 1fr; }
-  .studio-images img { width: 72px; height: 72px; }
 }
 
 /* ---------- layout fixes: these panels are <section>s, so keep the page's section spacing off them ---------- */
 .studio section.panel { padding: 26px; }
-.studio section.studio-block { padding: 18px 20px; }
-@media (max-width: 600px) { .studio section.panel { padding: 18px; } .studio section.studio-block { padding: 14px; } }
+@media (max-width: 600px) { .studio section.panel { padding: 18px; } }
 
 /* ---------- getting started: the claim form beside how the Studio works ---------- */
 .studio-start { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -88,25 +66,10 @@
 .studio-earnings .stat-label { color: var(--muted); font-size: .8rem; }
 .studio-earnings .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--heading); }
 
-/* ---------- the editor: sticky action bar, page tabs, numbered blocks, the add-block bar ---------- */
+/* ---------- the views' sticky action bar (products, Pack Builder) ---------- */
 .studio-bar { position: sticky; top: var(--topbar); z-index: 5; padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
 .studio-bar h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.studio-status { margin: 0 0 14px; }
-.studio-pages { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; border-bottom: 1px solid var(--line); scrollbar-width: thin; }
-.studio-pages button { flex: none; min-height: 44px; padding: 8px 16px; font: inherit; font-size: .95rem; color: var(--muted); background: transparent; border: 0; border-bottom: 3px solid transparent; cursor: pointer; }
-.studio-pages button:hover { color: var(--text); }
-.studio-pages button[aria-current] { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
-.studio-pages .studio-page-add { color: var(--link); }
-.studio-block-n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-family: var(--mono); font-size: .85rem; font-weight: 700; color: var(--on-accent); background: var(--accent); }
-.studio-block { transition: border-color .15s; }
-.studio-block:focus-within { border-color: var(--accent); }
-.studio .studio-add { padding: 16px; border: 1px dashed var(--line); border-radius: var(--radius); }
-.studio-add label { font-weight: 600; }
-@media (max-width: 860px) {
-  .studio-bar { position: static; }
-  .studio-side { order: 2; }
-  .studio-add label { flex-basis: 100%; }
-}
+@media (max-width: 860px) { .studio-bar { position: static; } }
 
 /* ---------- product "Store details" (js/studio-details.js) ---------- */
 .studio-details { margin: 6px 0 18px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
