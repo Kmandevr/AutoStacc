@@ -196,13 +196,16 @@
       const li = announce.closest("[data-product]"), msg = $("[data-announce-msg]", li);
       if (!confirm(`Email "${li.querySelector("strong").textContent}" to its project's followers? Each follower gets it once.`)) return;
       announce.disabled = true;
+      // "Sent" means the email provider accepted it; refused sends stay pending and the loop stops instead of retrying forever.
       let total = 0;
       for (;;) {
         const res = await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}/announce`, { method: "POST", body: {} });
-        if (!res.ok) { msg.textContent = res.error.message; break; }
+        if (!res.ok) { msg.textContent = `Stopped after ${total}: ${res.error.message}`; break; }
         total += res.data.sent;
-        msg.textContent = res.data.left ? `Sent ${total}, ${res.data.left} left…` : `Sent to ${total} follower${total === 1 ? "" : "s"}.`;
-        if (!res.data.left || !res.data.sent) break;
+        const people = (n) => `${n} follower${n === 1 ? "" : "s"}`;
+        if (!res.data.left) { msg.textContent = total ? `Sent to ${people(total)}.` : "Nobody left to email: every follower who wants new-release emails already has this one."; break; }
+        if (!res.data.sent) { msg.textContent = `Sent to ${people(total)}; ${people(res.data.left)} couldn't be emailed (the email provider refused). See Emails in the dashboard, then press again to retry them.`; break; }
+        msg.textContent = `Sent ${total}, ${res.data.left} left…`;
       }
       announce.disabled = false;
       return;
