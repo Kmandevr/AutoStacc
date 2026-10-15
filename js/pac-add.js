@@ -1,8 +1,9 @@
-// Pac editor: adds the files a creator picks to a checked, unpublished version (docs/packs.md, "Pac editor"): wraps them
-// in a small stored ZIP (js/zip-make.js; a picked folder keeps its folders), uploads it in the store's parts, and waits
-// while the engine checks it; the store merges what it keeps into the chosen folder (server/packs/additions.js).
-// GS.pacAdd.add({ base, versionId, folderId, files, onStatus }) → { addition, version }; throws with the store's message.
-// Used by js/pac-editor.js and the Product Studio's single-file upload. Needs js/util.js and js/zip-make.js.
+// Pac editor: adds files to a checked, unpublished version (docs/packs.md, "Pac editor"): wraps them in a small stored
+// ZIP (js/zip-make.js; a dropped or picked folder keeps its folders), or sends a dropped ZIP as it is, uploads it in the
+// store's parts, and waits while the engine checks it; the store merges what it keeps into the chosen folder
+// (server/packs/additions.js). GS.pacAdd.add({ base, versionId, folderId, files: [File | { name, blob }], zip, onStatus })
+// → { addition, version }; throws with the store's message. Used by js/pac-drop.js and js/pac-editor.js.
+// Needs js/util.js and js/zip-make.js.
 (function () {
   "use strict";
 
@@ -23,13 +24,15 @@
   // A file's name inside the archive: its folder within a picked folder, if any.
   const nameOf = (f) => (f.webkitRelativePath && f.webkitRelativePath.includes("/") ? f.webkitRelativePath : f.name);
 
-  async function add({ base, versionId, folderId = null, files, onStatus = () => {} }) {
-    if (!files.length) throw new Error("Choose files first.");
+  const entryOf = (f) => (f instanceof Blob ? { name: nameOf(f), blob: f } : f);
+  const zipName = (f) => (f.name && f.name.length <= 160 && /\.zip$/i.test(f.name) ? f.name : "pac.zip");
+
+  async function add({ base, versionId, folderId = null, files = [], zip: given = null, onStatus = () => {} }) {
+    if (!given && !files.length) throw new Error("Choose files first.");
     onStatus("Preparing…");
-    const zip = await window.GS.zipMake.store([...files].map((f) => ({ name: nameOf(f), blob: f })),
-      (x) => onStatus(`Preparing… ${Math.round(x * 100)}%`));
+    const zip = given || (await window.GS.zipMake.store([...files].map(entryOf), (x) => onStatus(`Preparing… ${Math.round(x * 100)}%`)));
     const made = await api(`${base}/versions/${encodeURIComponent(versionId)}/additions`, { method: "POST",
-      body: { filename: "files.zip", size: zip.size, folderId, idempotencyKey: crypto.randomUUID() } });
+      body: { filename: given ? zipName(given) : "files.zip", size: zip.size, folderId, idempotencyKey: crypto.randomUUID() } });
     if (!made.ok) throw new Error(made.error.message);
     const { addition, upload } = made.data;
     for (let n = 1; n <= upload.parts; n++) {

@@ -409,3 +409,11 @@ The owner asked for a small system that lets a creator build a whole Pac one thi
 - **Read me:** both, text written in the Studio that ships in the Pac as a file, or any document the creator uploads.
 - **Previews:** 0 to 3 per Pac that customers can play, each either an uploaded clip or picked from the Pac's own audio files and cut short.
 How it's built: [packs](packs.md).
+
+## 2026-10-15: One drop zone; everything opens in the builder (owner)
+
+The owner asked for the upload to be one thing, easy and visual: drop one file or a whole pack in the same place, and AutoStacc sets it up in the visual builder. Answers:
+- **One drop zone** replaces both the ZIP form and the Product Studio's "Add a file", in the Studio and the Control Center (`js/pac-drop.js`), and dropping takes you to the builder.
+- **Everything opens in the builder** and waits for Publish, a single file too. This replaces the earlier answer that a clean single file goes live at once (the entry above, and #111).
+- **A whole Pac (a ZIP or a folder) onto a Pac with files:** ask each time, "Replace the Pac with this" or "Add these files". Replacing makes a new version from the drop alone; its files are matched to the live ones by their bytes, so unchanged files stay the same files for buyers, and the automated review sees the change as any revision. A ZIP that becomes the whole Pac goes up as a version through the existing upload (listed in the browser first; on a revision only changed files upload), a folder through an empty draft.
+- **Visual:** file cards with a kind icon, waveform and badges (format, tempo, key, length, sample rate), a play button on audio, and drag and drop in the tree (files and folders onto a folder; files from the computer onto a folder add them there). Move buttons do the same from the keyboard.

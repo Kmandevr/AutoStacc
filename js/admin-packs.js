@@ -1,5 +1,6 @@
-// Control Center, Packs tab (docs/packs.md, Phase 3): pick a Pac, upload its ZIP for one of the products that include
-// it, watch the engine check it, review what it found (files kept, files refused and why, the values it suggests from
+// Control Center, Packs tab (docs/packs.md, Phase 3): pick a Pac, drop its contents in for one of the products that
+// include it (with the Pac editor on, the one drop zone, js/pac-drop.js, for a file, a folder or a ZIP, opening in the
+// visual builder; otherwise one ZIP), watch the engine check it, review what it found (files kept, files refused and why, the values it suggests from
 // names and headers) and publish it, or discard it. Publishing replaces this Pac's files in the product; files whose
 // bytes didn't change keep their id. Also the queue of creators' versions held by the automated review, to approve or
 // reject. Talks to /api/admin/packs; uploads through js/packs-upload.js, draws a version with js/packs-version.js and
@@ -57,19 +58,30 @@
     const res = await api(`${BASE}/${encodeURIComponent(pacId)}`);
     if (!res.ok) { body.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     const { pac, versions, products } = res.data;
+    const dropping = Boolean(window.FEATURES && window.FEATURES["packs.editor"] && window.GS.pacDrop && window.GS.pacEditor);
+    const choose = `<div class="field"><label for="pack-product">Product</label><select id="pack-product" name="product">${products.map((p) => `<option value="${e(p.id)}">${e(p.title)}</option>`).join("")}</select></div>`;
     body.innerHTML = `
-      ${products.length ? `<form class="panel wide" data-pack-form>
-        <div class="field"><label for="pack-product">Product</label><select id="pack-product" name="product">${products.map((p) => `<option value="${e(p.id)}">${e(p.title)}</option>`).join("")}</select></div>
+      ${products.length && dropping ? `<div class="panel wide">${choose}<div data-pac-drop></div></div>` : ""}
+      ${products.length && !dropping ? `<form class="panel wide" data-pack-form>
+        ${choose}
         <div class="field"><label for="pack-file">The Pac's contents as one ZIP</label><input id="pack-file" name="file" type="file" accept=".zip,application/zip" required data-pack-file></div>
         <div data-pack-preview aria-live="polite"></div>
         <div class="actions"><button class="btn" type="submit"${pac.draftVersionId ? " disabled data-locked" : ""}>Upload and check</button></div>
         <progress max="1" value="0" hidden></progress><p class="msg" role="status">${pac.draftVersionId ? "A version is in progress below: publish or discard it first." : ""}</p>
-      </form>` : `<p class="msg">No product includes this Pac yet (a product's <code>pacs</code> in data/products.js).</p>`}
+      </form>` : ""}
+      ${products.length ? "" : `<p class="msg">No product includes this Pac yet (a product's <code>pacs</code> in data/products.js).</p>`}
       ${products.length ? "<div data-pac-editor></div>" : ""}
       <div data-pack-version></div>
       <div data-pac-previews></div>
       ${versions.length ? `<h3>Versions</h3><ul class="plain">${versions.map((v) => `<li><button class="link" type="button" data-pack-open="${e(v.id)}">Version ${v.number}</button>
         · ${e(v.status)}${v.id === pac.liveVersionId ? " · live" : ""}${v.stats && v.stats.files !== undefined ? ` · ${v.stats.files} files` : ""}</li>`).join("")}</ul>` : ""}`;
+    if (products.length && dropping) {
+      window.GS.pacDrop.mount($("[data-pac-drop]", el), { base: BASE, info: () => api(`${BASE}/${encodeURIComponent(pacId)}`),
+        draft: { url: `${BASE}/${encodeURIComponent(pacId)}/drafts`, get body() { return { productId: $("#pack-product", el).value }; } },
+        upload: { create: `${BASE}/${encodeURIComponent(pacId)}/versions`, get body() { return { productId: $("#pack-product", el).value }; },
+          get have() { return { url: `${BASE}/${encodeURIComponent(pacId)}/have`, body: { productId: $("#pack-product", el).value } }; } },
+        onOpen: (id) => showVersion(id) });
+    }
     const current = pac.draftVersionId || pac.liveVersionId;
     if (current) showVersion(current);
     else editor(null);

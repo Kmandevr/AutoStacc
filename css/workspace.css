@@ -84,9 +84,33 @@
 .pe-tree > ul.pe-level { padding-left: 0; border-left: 0; }
 .pe-tree li { margin: 4px 0; }
 .pe-tree summary { cursor: pointer; font-weight: 600; }
-.pe-file { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
-.pe-name { overflow-wrap: anywhere; }
-.pe-actions { display: inline-flex; gap: 8px; margin-left: 6px; font-weight: 400; }
+/* The one drop zone (js/pac-drop.js) and the builder's file cards (js/pac-tree.js). */
+.pd { border: 2px dashed var(--line); border-radius: var(--radius); padding: 18px; margin: 0 0 14px; text-align: center; }
+.pd.over, .pe-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.pd-title { font-weight: 600; margin: 0 0 4px; }
+.pd .actions { justify-content: center; }
+.pd-ask { text-align: left; margin: 10px 0 0; }
+.pe-move { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+.pe-file { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.pe-file[draggable="true"], .pe-tree summary[draggable="true"] { cursor: grab; }
+.pe-folder { border-radius: var(--radius); }
+.pe-icon { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; background: var(--line); color: var(--text); font-size: 15px; }
+.pe-icon[data-kind="loops"] { background: color-mix(in srgb, var(--lime) 30%, transparent); }
+.pe-icon[data-kind="one-shots"] { background: color-mix(in srgb, var(--coral) 30%, transparent); }
+.pe-icon[data-kind="midi"], .pe-icon[data-kind="stems"] { background: color-mix(in srgb, var(--amber) 30%, transparent); }
+.pe-tree summary .pe-icon { width: auto; height: auto; background: none; margin-right: 4px; }
+.pe-play { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; font-size: 12px; }
+.pe-play[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.pe-file:not(:has(.pe-play)) .pe-main { grid-column: 2 / 4; }
+.pe-main { display: grid; gap: 4px; min-width: 0; }
+.pe-wave { width: 100%; max-width: 360px; height: 22px; stroke: var(--muted); stroke-width: 0.6; }
+.pe-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.pe-badge { font: 12px/1.6 var(--mono); padding: 0 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+.pe-name { overflow-wrap: anywhere; font-weight: 600; }
+.pe-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-left: 6px; font-weight: 400; }
+@media (max-width: 600px) { .pe-file { grid-template-columns: auto minmax(0, 1fr); } .pe-file .pe-play { grid-row: 1; grid-column: 2; justify-self: end; }
+  .pe-file .pe-main, .pe-file:not(:has(.pe-play)) .pe-main { grid-column: 1 / -1; } .pe-file .pe-actions { grid-column: 1 / -1; margin: 0; } }
 .pe-empty { margin: 4px 0 4px 16px; }
 .pp-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; margin: 0 0 10px; }
 .pp-list audio { grid-column: 1 / -1; width: 100%; }

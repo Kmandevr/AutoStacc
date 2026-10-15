@@ -5,7 +5,7 @@
 //   PUT   …/versions/:versionId/folders/:folderId/values {field, value}       a folder default (null removes it)
 //   POST  …/versions/:versionId/move                  {assetIds, folderId}     (folderId null: the top)
 //   PATCH …/versions/:versionId/files/:assetId        {filename}
-//   PATCH …/versions/:versionId/folders/:folderId     {name}
+//   PATCH …/versions/:versionId/folders/:folderId     {name} and/or {parentId} (null: the top)
 // Each answers the updated version. 404 to anyone outside the scope; audited (counts, never values of other people).
 import { json, readJson } from "../lib/http.js";
 import { audit } from "../audit/log.js";
@@ -49,8 +49,9 @@ export function editRoutes(scope) {
       return {};
     })],
     ["PATCH", `${BASE}/folders/:folderId`, handler("folder_renamed", async (app, v, b, p) => {
-      await edits.renameFolder(app, v, { folderId: p.folderId, name: b.name });
-      return {};
+      if (b.parentId !== undefined) await edits.moveFolder(app, v, { folderId: p.folderId, parentId: b.parentId === null ? null : String(b.parentId) });
+      if (b.name !== undefined || b.parentId === undefined) await edits.renameFolder(app, v, { folderId: p.folderId, name: b.name });
+      return b.parentId !== undefined ? { moved: true } : {};
     })]
   ];
 }
