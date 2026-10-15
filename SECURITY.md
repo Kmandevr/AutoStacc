@@ -7,7 +7,7 @@ to get around any of that, please tell us privately first.
 
 Use **[Report a vulnerability](../../security/advisories/new)** on this repository's Security tab (GitHub's private
 reporting). Only the maintainers see it. Please include what you found, how to reproduce it, and what it lets someone
-do. The site's own page, [autostacc.com/security](https://autostacc.com/security), says the same for people who don't
+do. Please don't open a public issue, pull request or discussion about it: everything there is public. The site's own page, [autostacc.com/security](https://autostacc.com/security), says the same for people who don't
 use GitHub.
 
 Please:

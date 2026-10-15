@@ -2,6 +2,9 @@ name: Bug
 description: Something on the site is broken
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: "**This issue is public.** Don't include security problems (report them privately from the Security tab), personal details, order numbers, logs, error messages with ids, or keys."
   - type: textarea
     id: summary
     attributes:

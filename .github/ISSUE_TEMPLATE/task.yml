@@ -2,6 +2,9 @@ name: Task
 description: A feature, improvement, refactor, docs change or chore
 labels: []
 body:
+  - type: markdown
+    attributes:
+      value: "**This issue is public.** Don't include security problems (report them privately from the Security tab), personal details, order numbers, logs, error messages with ids, or keys."
   - type: textarea
     id: summary
     attributes:

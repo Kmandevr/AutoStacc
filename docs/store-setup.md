@@ -61,7 +61,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 3. Create the API key (step 2 table).
 4. Security → Authorised IPs: deactivate the IP blocking. The store sends from Cloudflare's servers, whose addresses change, so with blocking on Brevo refuses every mail (401 "unrecognised IP address").
 
-If mail doesn't arrive: each deploy prints the store's latest failed sends with Brevo's reason ("Email not sent ..." warnings in the "Store resources" step); `/admin` shows them per order. 401 = wrong key type or IP blocking, 400 = sender or domain not verified.
+If mail doesn't arrive: each deploy warns how many sends failed in the last 7 days and of which kinds (the "Store resources" step; the log is public, so it never shows reasons or addresses), and `/admin` shows them per order. For Brevo's reasons, run `npx wrangler d1 execute DB --remote --env production --command "SELECT kind, error, created_at FROM email_events WHERE status = 'failed' ORDER BY created_at DESC LIMIT 5"` on your own computer. 401 = wrong key type or IP blocking, 400 = sender or domain not verified.
 
 ## 5. First admin and products
 
