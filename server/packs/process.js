@@ -12,6 +12,7 @@ import { importResult } from "./import.js";
 import { dropArchives } from "./uploads.js";
 import { deleteKeys } from "../storage/buckets.js";
 import { processingAllowed, meterStmts, jobCost, checkLevels } from "../usage/usage.js";
+import { failAddition } from "./additions.js";
 
 export const JOB_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
@@ -142,8 +143,8 @@ export async function discard(app, version) {
   const waiting = version.status === "processing"
     && (await run(app.db, "UPDATE processing_jobs SET status = 'cancelled', updated_at = ? WHERE id = ? AND status = 'queued'", now(), jobIdOf(version))).meta.changes === 1;
   const moved = await move(app.db, version.id, waiting ? ["processing"] : ["draft", "uploading", "ready", "in_review", "failed"], "discarded");
-  // Its additions in progress end with it (their uploads go with the version's below).
-  if (moved) await run(app.db, "UPDATE pac_additions SET status = 'failed', error = 'discarded', updated_at = ? WHERE version_id = ? AND status IN ('uploading', 'processing')", now(), version.id);
+  // Its additions in progress end with it: their jobs, uploads and leftovers too.
+  if (moved) for (const a of await all(app.db, "SELECT * FROM pac_additions WHERE version_id = ? AND status IN ('uploading', 'processing')", version.id)) await failAddition(app, a, "discarded");
   if (!moved) return false;
   await run(app.db, "UPDATE pacs SET draft_version_id = NULL, updated_at = ? WHERE id = ? AND draft_version_id = ?", now(), version.pac_id, version.id);
   await dropArchives(app, version.id);

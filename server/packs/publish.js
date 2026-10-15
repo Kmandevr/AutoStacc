@@ -34,13 +34,14 @@ export async function publishedEntries(db, versionId) {
 
 /** reviewedBy: the admin who approved a held version (or published over its flags), else null. */
 // A read me's text, kept with its published details so customers can read it on the product page and in Your Stacc
-// without a download: a text file at the top of the Pac named "Read me…" (any case), up to README_TEXT bytes.
+// without a download: one written in the Pac editor (tree-edits.js marks its stored original), at the top of the Pac.
+// A read me that only came inside an upload stays in the download: it may hold what's meant for buyers only.
 const README = /^read[ _-]?me\b.*\.txt$/i;
-const README_TEXT = 16 * 1024;
+const README_TEXT = 64 * 1024;
 async function withReadme(app, entries) {
   for (const e of entries) {
     if (e.folderPath || !README.test(e.filename) || e.meta.format !== "text" || e.size > README_TEXT) continue;
-    const blob = await first(app.db, "SELECT r2_key FROM blobs WHERE id = ?", e.blobId);
+    const blob = await first(app.db, "SELECT r2_key FROM blobs WHERE id = ? AND json_extract(facts, '$.writtenHere') = 1", e.blobId);
     const obj = blob && (await app.env.FILES.get(blob.r2_key));
     if (obj) e.meta.readme = (await obj.text()).replace(/\r\n/g, "\n");
   }

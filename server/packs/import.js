@@ -119,7 +119,9 @@ export async function importResult(app, version, job, state) {
     // If either of these fails, nothing is written and the version stays processing: the next look re-imports it and
     // fails it with the reason (missing_files, quota_exceeded).
     ...(carriedIds.length ? [guardStmt(db, "(SELECT COUNT(*) FROM blobs WHERE id IN (SELECT value FROM json_each(?))) = ?", JSON.stringify(carriedIds), carriedIds.length)] : []),
-    ...(room ? [guardStmt(db, `${inUseSql("?1")} - ?2 + ?3 <= ?4`, owner, room.archive, room.bytes, room.quota),
+    // The originals were claimed above, so the creator's storage already counts them (creators/storage.js); the archive
+    // they came in goes next.
+    ...(room ? [guardStmt(db, `${inUseSql("?1")} - ?2 <= ?3`, owner, room.archive, room.quota),
       guardStmt(db, `${storedSql()} - ?1 <= ?2`, room.archive, cap)] : []),
     // The originals this version uses are wanted now (newly claimed ones expire otherwise, see claimStmts).
     ...chunks(entries).map((json) => stmt(db, "UPDATE blobs SET delete_after = NULL WHERE id IN (SELECT j.value->>'blob' FROM json_each(?) j)", json)),

@@ -3,7 +3,7 @@
 // checked already because nothing new is in it, so it's ready at once with no engine job. With no live version it
 // starts empty. Files are then added, moved, removed or written (additions.js, tree-edits.js, edits.js) and the
 // version is published like any other (the automated review sees what it changes, final-review.js).
-import { first, stmt, now, parseJson } from "../lib/db.js";
+import { first, stmt, now } from "../lib/db.js";
 import { createVersion } from "./versions.js";
 import { restatStmt } from "./stats.js";
 
@@ -28,6 +28,3 @@ export async function startDraft(app, { pac, product, ownerScope, idempotencyKey
   ]);
   return first(app.db, "SELECT * FROM pac_versions WHERE id = ?", v.id);
 }
-
-/** Whether a version was made in the builder (a copy or an empty start) rather than from one upload. */
-export const isEdited = (version) => Boolean(parseJson(version.stats, {}).edited);

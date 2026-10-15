@@ -54,7 +54,10 @@ async function add(app, pac, user) {
   const res = await run(app.db, `INSERT INTO pac_previews (id, pac_id, sort, title, r2_key, content_type, size_bytes, source_asset_id, created_by, created_at)
     SELECT ?, ?, s.n, ?, ?, ?, ?, ?, ?, ? FROM (SELECT MIN(n) AS n FROM (SELECT 0 AS n UNION SELECT 1 UNION SELECT 2)
       WHERE n NOT IN (SELECT sort FROM pac_previews WHERE pac_id = ?)) s WHERE s.n IS NOT NULL`,
-    pid, pac.id, title, key, contentType, size, asset, user.id, now(), pac.id).catch(() => ({ meta: { changes: 0 } }));
+    pid, pac.id, title, key, contentType, size, asset, user.id, now(), pac.id).catch((e) => {
+    if (/UNIQUE constraint failed/i.test(String(e && e.message))) return { meta: { changes: 0 } };
+    throw e;
+  });
   if (!res.meta.changes) {
     await deletePreview(app.env, key);
     fail(409, "previews_full", `A Pac has up to ${PREVIEWS_PER_PAC} previews. Remove one first.`);

@@ -70,7 +70,11 @@ export async function appendResult(app, addition, job, state, upload) {
     const fresh = new Map(kept.filter((f) => !already[f.sha256]).map((f) => [f.sha256, f.size]));
     if ((await storedBytes(db)) - room.archive + [...fresh.values()].reduce((n, b) => n + b, 0) > cap) throw Object.assign(new Error("storage full"), { code: "storage_full" });
   }
-  const rev = await revisionOf(db, version, kept);
+  // Matched against the live version as the files will sit in this version (under the target folder).
+  const byFolder = new Map(folders.map((f) => [f.id, f]));
+  const pathOf = (id) => { const parts = []; for (let f = byFolder.get(id); f; f = byFolder.get(f.parent_id)) parts.unshift(f.name); return parts.join("/"); };
+  const base = target ? `${pathOf(target)}/` : "";
+  const rev = await revisionOf(db, version, kept.map((f) => ({ ...f, logical: base + f.logical })));
   const blobs = await claimOriginals(app, owner, kept, result.engineVersion);
 
   const t = now();
@@ -84,7 +88,10 @@ export async function appendResult(app, addition, job, state, upload) {
     entries.push({ asset, isNew: asset !== liveAsset, folder: f.folder, filename: f.filename, original: f.path, blob: blobs[f.sha256].id, sort: maxSort + 1 + i });
     values.push(...valuesOf(f, asset, blobs[f.sha256].id));
   });
-  const own = review({ result, kept, refused, existingHashes: kept.filter((f) => already[f.sha256] && !(rev.previous && f.sha256 in rev.previous)).length });
+  // Shares of the whole (mostly unknown formats, all duplicates) say nothing about a few files added to a Pac.
+  const own0 = review({ result, kept, refused, existingHashes: 0 });
+  const flags = own0.flags.filter((f) => f.code !== "mostly_unknown_formats");
+  const own = { verdict: flags.length ? "hold" : "pass", flags };
   const stats = parseJson(version.stats, {});
   const added = { files: entries.length, bytes: kept.reduce((n, f) => n + f.size, 0), refused, review: own };
   const json = (rows) => JSON.stringify(rows);
