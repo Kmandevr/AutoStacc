@@ -26,9 +26,12 @@ jobs:
         run: node scripts/build.js --check
       - name: SEO regression tests
         run: node scripts/seo-test.js
-      - name: Docs match the repository (stale-note warnings show as annotations)
+      # A note (or the README) whose code changed in this PR must change too (--strict); Dependabot's updates are exempt.
+      - name: Docs match the repository and were updated with the code they describe
+        env:
+          STRICT: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && '--strict' || '' }}
         run: |
-          node scripts/docs-test.js | tee docs-test.txt; code=${PIPESTATUS[0]}
+          node scripts/docs-test.js $STRICT | tee docs-test.txt; code=${PIPESTATUS[0]}
           sed -n 's/^WARN \(.*\)$/::warning title=docs::\1/p' docs-test.txt
           exit $code
   # Skipped when it already passed on exactly these files (the site and its checker, by content; notes aside): a marker
