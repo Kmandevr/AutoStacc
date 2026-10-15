@@ -1,6 +1,7 @@
 // Login page: sign in, create an account, forgot password and set a new password, all through Better Auth's
 // endpoints (/api/auth/*). Modes: #signup, #forgot, ?token=... (from the reset email), default sign in.
-// ?next=/path returns there afterwards (same-site paths only, GS.safeNext); without one, the dashboard. Needs js/util.js.
+// ?next=/path returns there afterwards (same-site paths only, GS.safeNext); without one, the dashboard. An account
+// with two-step sign-in hands over to js/sign-in-code.js after the password (gs:two-step). Needs js/util.js.
 (function () {
   "use strict";
 
@@ -100,6 +101,8 @@
     let res;
     if (kind === "signin") {
       res = await api("/api/auth/sign-in/email", { method: "POST", body: { email: value("email"), password: value("password"), rememberMe: $("#remember", form).checked } });
+      // Two-step sign-in on for this account: js/sign-in-code.js asks for the code next.
+      if (res.ok && res.data.twoFactorRedirect) { setBusy(form, false); dispatchEvent(new CustomEvent("gs:two-step", { detail: { next } })); return; }
       if (res.ok) { sound("open"); location.replace(next); return; }
     } else if (kind === "signup") {
       res = await api("/api/auth/sign-up/email", { method: "POST", body: { name: value("name"), email: value("email"), password: value("password"), callbackURL: safeNext(params.get("next"), "/dashboard?welcome=1") } });
@@ -117,6 +120,7 @@
   }
 
   root.addEventListener("submit", (e) => {
+    if (!VIEWS[e.target.dataset.form]) return; // another script's form (js/sign-in-code.js)
     e.preventDefault();
     const btn = $("button[type=submit]", e.target);
     if (!btn.disabled) submit(e.target);

@@ -1,12 +1,14 @@
-// Account deletion's share of Better Auth's tables: sessions, the password login, pending reset tokens and the user
-// row itself. As statements, so the whole deletion (server/account/delete.js) is one transaction.
+// Account deletion's share of Better Auth's tables: sessions, the password login, pending reset tokens, two-step
+// sign-in's secret and backup codes, and the user row itself. As statements, so the whole deletion (server/account/delete.js) is one transaction.
 import { stmt } from "../lib/db.js";
+import { eraseTwoFactorStmt } from "./two-factor-state.js";
 
 export const eraseUserStmts = (db, userId) => [
   stmt(db, `DELETE FROM "session" WHERE "userId" = ?`, userId),
   stmt(db, `DELETE FROM "account" WHERE "userId" = ?`, userId),
   // Password-reset tokens store the user id as their value.
   stmt(db, `DELETE FROM "verification" WHERE "value" = ?`, userId),
+  eraseTwoFactorStmt(db, userId),
   stmt(db, `DELETE FROM "user" WHERE "id" = ?`, userId)
 ];
 
