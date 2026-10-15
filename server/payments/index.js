@@ -1,4 +1,4 @@
-// Picks the payment provider for this environment. Each provider implements createCheckout, retrieveCheckout and
+// Picks the payment provider for this environment. Each provider implements createCheckout, expireCheckout, retrieveCheckout and
 // livemode; Stripe also verifies webhooks. Adding a provider = one file plus a line here.
 // Stripe has two accounts: "main" for AutoStacc's own products and "marketplace" for creators' (server/payments/stripe.js).
 import { stripeProvider, marketplaceProvider } from "./stripe.js";

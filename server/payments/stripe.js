@@ -75,6 +75,12 @@ const makeProvider = (account) => ({
       { idempotencyKey: `refund-${order.id}` });
   },
 
+  // Closes a payment page that hasn't been paid, so it can't be. Stripe refuses one that is already complete or
+  // expired; that's the caller's "nothing to close".
+  async expireCheckout(app, sessionId) {
+    await stripeClient(app.config, account).checkout.sessions.expire(sessionId);
+  },
+
   async retrieveCheckout(app, sessionId) {
     const s = await stripeClient(app.config, account).checkout.sessions.retrieve(sessionId);
     return { ...normalizeSession(s, s.payment_status === "paid" ? "paid" : s.status === "expired" ? "expired" : "pending"), account };

@@ -1,10 +1,11 @@
 // Pack Builder revisions that upload only what changed (docs/packs.md, Phase 6): the store says which files a creator
 // already has (their own only), a thin ZIP plus a carry list makes the same version as the whole archive would, and
 // the carry list can't be used to get anything past the checks: unsafe paths, hashes the creator doesn't have, another
-// creator's files, or a type the bytes were never checked as.
+// creator's files, or a type the bytes were never checked as. Files a revision retired keep counting against storage.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { newBuyer } from "../support/flows.js";
+import { sql } from "../support/client.js";
 import * as P from "../support/packs.js";
 
 const { S, caseZip, expected, create, build } = P;
@@ -41,6 +42,20 @@ export default (ctx) => describe("pack revisions", () => {
     const air = version.files.find((f) => f.filename === "Air.aif");
     assert.deepEqual([air.folderPath, air.change, air.format], ["Ambience", "moved", "aiff"]);
     assert.equal((await c.post(`${S}/versions/${version.id}/publish`, {})).status, 200);
+  });
+
+  // Owner, 2026-10-15: files a revision replaced or removed stay downloadable for 30 days, and count against the
+  // creator's storage for as long, so stacking revisions can't hold more than the quota.
+  test("files a revision retired still count against the creator's storage", async () => {
+    const { c, product } = await withLivePack("rv-quota");
+    const { version } = await build(c, product.id, caseZip("pack-revision"));
+    assert.equal(version.status, "ready", JSON.stringify(version));
+    assert.equal((await c.post(`${S}/versions/${version.id}/publish`, {})).status, 200);
+    const sum = (where) => Number(sql(ctx.mock.stateDir, `SELECT COALESCE(SUM(size_bytes), 0) AS n FROM product_files WHERE product_id = '${product.id}' AND active = 1 AND ${where}`)[0].n);
+    const retired = sum("retired_at IS NOT NULL"), current = sum("retired_at IS NULL");
+    assert.ok(retired > 0, "the revision retired files");
+    const used = (await c.get(`${S}/products/${product.id}`)).data.storage.usedBytes;
+    assert.ok(used >= current + retired, `used ${used} counts current ${current} and retired ${retired}`);
   });
 
   test("a revision that only moves files uploads an empty archive", async () => {

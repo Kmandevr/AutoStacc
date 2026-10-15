@@ -28,7 +28,7 @@ Before the repository goes public (and from then on), keep these in the `product
 | --- | --- | --- |
 | `BETTER_AUTH_SECRET` | Signs sessions | Make one: `openssl rand -hex 32` |
 | `DOWNLOAD_SIGNING_SECRET` | Signs download links (must differ from the one above) | `openssl rand -hex 32` |
-| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with write access to Checkout Sessions and Refunds is better: customers' own refunds go through it) | Stripe → Developers → API keys |
+| `STRIPE_SECRET_KEY` | Live secret key (`sk_live_...`; a restricted key `rk_live_...` with write access to Checkout Sessions and Refunds is better: customers' own refunds go through it, and closing an open payment page is a Checkout Sessions write) | Stripe → Developers → API keys |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` of the webhook endpoint in step 3 | Stripe → Developers → Webhooks → the endpoint → Signing secret |
 | `BREVO_API_KEY` | API key `xkeysib-...` (not the SMTP key `xsmtpsib-...`; the deploy refuses that) | Brevo → SMTP & API → API keys |
 | `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified (optional to the deploy, but without it nobody can open `/admin`) | You |
