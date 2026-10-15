@@ -3,7 +3,7 @@
 // manifest (the live version's asset when it's the same file, revision.js), its bytes one stored original per owner
 // and hash (a duplicate copy is deleted), its suggestions rows in asset_values. Then the uploaded archive and anything
 // the job left over are deleted: the manifest is the record from here on (owner's decision, docs/decisions.md).
-import { all, stmt, newId, now, guardStmt } from "../lib/db.js";
+import { all, run, stmt, newId, now, guardStmt } from "../lib/db.js";
 import { review } from "./review.js";
 import { revisionOf } from "./revision.js";
 import { keptFiles } from "./accept.js";
@@ -23,6 +23,40 @@ const withPeaks = (f) => {
   const peaks = f.analysis && Array.isArray(f.analysis.peaks) ? f.analysis.peaks.filter((p) => Number.isInteger(p) && p >= 0 && p <= 100).slice(0, 100) : [];
   return peaks.length ? { ...f.facts, peaks } : f.facts;
 };
+
+/** Claims a stored original for each kept file not carried (one per owner and hash) and gives a waveform to those
+ * without one. → { sha256: { id, key } } for every kept file (also used by append.js). */
+export async function claimOriginals(app, owner, kept, engineVersion) {
+  const fresh = kept.filter((f) => !f.carried);
+  if (fresh.length) {
+    const heard = fresh.map((f) => ({ sha256: f.sha256, peaks: withPeaks(f).peaks })).filter((f) => f.peaks);
+    await app.db.batch([...claimStmts(app.db, owner, fresh.map((f) => ({ key: f.stored, sha256: f.sha256, size: f.size, crc32: f.crc32,
+      format: f.format, facts: withPeaks(f), engineVersion }))), ...(heard.length ? [addPeaksStmt(app.db, owner, heard)] : [])]);
+  }
+  const blobs = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
+  if (kept.some((f) => !blobs[f.sha256])) throw Object.assign(new Error("carried file missing"), { code: "missing_files" });
+  return blobs;
+}
+
+/** One row per field, value and origin (the table's key) of a kept file's suggestions, whatever an engine repeats. */
+export function valuesOf(f, asset, blobId) {
+  const said = new Set();
+  const out = [];
+  for (const s of f.suggestions || []) {
+    const k = JSON.stringify([s.field, s.value, s.origin]);
+    if (said.has(k)) continue;
+    said.add(k);
+    out.push({ asset, field: s.field, value: s.value, origin: s.origin, confidence: s.confidence, blob: blobId });
+  }
+  return out;
+}
+
+/** Writes suggestion rows (valuesOf), keeping each row's status (accepted/rejected stays). */
+export const valueStmts = (db, values, engineVersion, t) => chunks(values).map((json) => stmt(db, `INSERT INTO asset_values (asset_id, field, value, origin, confidence, status, basis_blob_id, engine_version, updated_at)
+      SELECT j.value->>'asset', j.value->>'field', j.value->>'value', j.value->>'origin', j.value->>'confidence', 'suggested', j.value->>'blob', ?, ?
+      FROM json_each(?) j WHERE true
+      ON CONFLICT (asset_id, field, value, origin) DO UPDATE SET confidence = excluded.confidence, basis_blob_id = excluded.basis_blob_id,
+        engine_version = excluded.engine_version, updated_at = excluded.updated_at`, engineVersion || null, t, json));
 
 export async function importResult(app, version, job, state) {
   const { result, attempt } = state;
@@ -44,14 +78,7 @@ export async function importResult(app, version, job, state) {
   // 1. One stored original per owner and hash: claim, then learn which key each hash ended up with. Carried files
   // already are stored originals: never claimed again (a row the sweep removed meanwhile must not come back pointing
   // at a deleted object), and the batch below goes ahead only while they all still exist.
-  const fresh = kept.filter((f) => !f.carried);
-  if (fresh.length) {
-    const heard = fresh.map((f) => ({ sha256: f.sha256, peaks: withPeaks(f).peaks })).filter((f) => f.peaks);
-    await app.db.batch([...claimStmts(app.db, owner, fresh.map((f) => ({ key: f.stored, sha256: f.sha256, size: f.size, crc32: f.crc32,
-      format: f.format, facts: withPeaks(f), engineVersion: result.engineVersion }))), ...(heard.length ? [addPeaksStmt(app.db, owner, heard)] : [])]);
-  }
-  const blobs = await blobsByHash(app.db, owner, [...new Set(kept.map((f) => f.sha256))]);
-  if (kept.some((f) => !blobs[f.sha256])) throw Object.assign(new Error("carried file missing"), { code: "missing_files" });
+  const blobs = await claimOriginals(app, owner, kept, result.engineVersion);
   const carriedIds = [...new Set(carried.map((f) => f.blobId))];
 
   // 2. Folders, assets, the manifest and suggestions, in one batch with the move to ready.
@@ -73,14 +100,7 @@ export async function importResult(app, version, job, state) {
     const filename = p.slice(p.lastIndexOf("/") + 1);
     const asset = rev.assetOf(i) || newId("as");
     entries.push({ asset, isNew: !rev.assetOf(i), folder: folderOf(dir), filename, original: f.path, blob: blobs[f.sha256].id, sort: entries.length });
-    // One row per field, value and origin (the table's key), whatever an engine repeats.
-    const said = new Set();
-    for (const s of f.suggestions || []) {
-      const k = JSON.stringify([s.field, s.value, s.origin]);
-      if (said.has(k)) continue;
-      said.add(k);
-      values.push({ asset, field: s.field, value: s.value, origin: s.origin, confidence: s.confidence, blob: blobs[f.sha256].id });
-    }
+    values.push(...valuesOf(f, asset, blobs[f.sha256].id));
   });
   const bytes = kept.reduce((n, f) => n + f.size, 0);
   const stats = { files: entries.length, bytes, carried: kept.filter((f) => f.carried).length, folders: folders.size, refused, ignored: (result.files || []).filter((f) => f.ignored).length,
@@ -113,11 +133,7 @@ export async function importResult(app, version, job, state) {
     ...chunks(entries).map((json) => stmt(db, `INSERT INTO pac_entries (version_id, asset_id, folder_id, filename, original_path, blob_id, sort, state)
       SELECT ?, j.value->>'asset', j.value->>'folder', j.value->>'filename', j.value->>'original', j.value->>'blob', j.value->>'sort', 'verified'
       FROM json_each(?) j`, version.id, json)),
-    ...chunks(values).map((json) => stmt(db, `INSERT INTO asset_values (asset_id, field, value, origin, confidence, status, basis_blob_id, engine_version, updated_at)
-      SELECT j.value->>'asset', j.value->>'field', j.value->>'value', j.value->>'origin', j.value->>'confidence', 'suggested', j.value->>'blob', ?, ?
-      FROM json_each(?) j WHERE true
-      ON CONFLICT (asset_id, field, value, origin) DO UPDATE SET confidence = excluded.confidence, basis_blob_id = excluded.basis_blob_id,
-        engine_version = excluded.engine_version, updated_at = excluded.updated_at`, result.engineVersion || null, t, json)),
+    ...valueStmts(db, values, result.engineVersion, t),
     stmt(db, "UPDATE pac_versions SET stats = ?, engine_version = ?, base_version_id = ? WHERE id = ? AND status = 'processing'", JSON.stringify(stats), result.engineVersion || null, rev.liveId, version.id),
     moveStmt(db, version.id, "processing", "ready"),
     stmt(db, "UPDATE processing_jobs SET status = 'done', attempt_used = ?, updated_at = ? WHERE id = ?", attempt, t, job.id),
@@ -129,7 +145,9 @@ export async function importResult(app, version, job, state) {
   // 3. After the commit: remove duplicate copies, everything else the job left, and the uploaded archive.
   const keep = new Set(Object.values(blobs).map((b) => b.key));
   const leftovers = (await jobObjects(app, owner, job.id)).filter((k) => !keep.has(k));
-  const uploads = await all(db, "SELECT r2_key FROM uploads WHERE version_id = ?", version.id);
+  const uploads = await all(db, "SELECT id, r2_key FROM uploads WHERE version_id = ? AND addition_id IS NULL", version.id);
   await deleteKeys(app.env, [...leftovers, ...uploads.map((u) => u.r2_key)]);
+  // Its bytes are gone: the archive stops counting toward the creator's storage (creators/storage.js).
+  await run(db, "UPDATE uploads SET status = 'aborted', updated_at = ? WHERE id IN (SELECT value FROM json_each(?))", now(), JSON.stringify(uploads.map((u) => u.id)));
   return stats;
 }

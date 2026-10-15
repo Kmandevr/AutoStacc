@@ -12,7 +12,7 @@ const { FIELDS } = resolver;
 
 const READY = "EXISTS (SELECT 1 FROM pac_versions WHERE id = ? AND status = 'ready')";
 
-async function run(app, version, statements) {
+export async function run(app, version, statements) {
   try {
     await app.db.batch([guardStmt(app.db, READY, version.id), ...statements]);
   } catch (e) {
@@ -28,7 +28,7 @@ function field(name) {
 }
 
 // The given files, all of this version (else 404, like files that don't exist).
-async function ownAssets(app, version, assetIds) {
+export async function ownAssets(app, version, assetIds) {
   if (!Array.isArray(assetIds) || !assetIds.length || assetIds.length > 5000 || !assetIds.every((x) => typeof x === "string" && /^as_[a-z2-7]+$/.test(x))) {
     fail(400, "invalid_files", "Choose files of this version.");
   }
@@ -72,7 +72,7 @@ export async function setFolderValue(app, version, { folderId, field: f, value, 
   ]);
 }
 
-async function folderOf(app, version, folderId) {
+export async function folderOf(app, version, folderId) {
   if (typeof folderId !== "string") fail(400, "invalid_folder", "Choose a folder.");
   const f = (await all(app.db, "SELECT id, parent_id, name FROM pac_folders WHERE version_id = ? AND id = ?", version.id, folderId))[0];
   if (!f) fail(404, "not_found", "No such folder in this version.");
@@ -87,7 +87,7 @@ export async function moveEntries(app, version, { assetIds, folderId }) {
 }
 
 const NAME = /^[^\\/:*?"<>|\u0000-\u001f]{1,120}$/;
-const cleanName = (s) => {
+export const cleanName = (s) => {
   const n = typeof s === "string" ? s.normalize("NFC").trim() : "";
   if (!NAME.test(n) || /^\.+$/.test(n) || /[. ]$/.test(n)) fail(400, "invalid_name", "Use a plain name (no / \\ : * ? \" < > |).");
   return n;

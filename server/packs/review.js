@@ -51,3 +51,14 @@ export function review({ result, kept, refused, existingHashes = 0, revision = n
  * (a version checked before reviews existed) holds. */
 export const clearToPublish = (rv, { trusted = false, alwaysHold = false } = {}) =>
   !alwaysHold && Boolean(rv) && (rv.verdict === "pass" || (trusted && rv.flags.every((f) => !f.hard)));
+
+/** Two reviews as one (a version built in steps: each addition's, append.js): every flag of either, counts added. */
+export function mergeReviews(a, b) {
+  const byCode = new Map();
+  for (const f of [...((a && a.flags) || []), ...((b && b.flags) || [])]) {
+    const was = byCode.get(f.code);
+    byCode.set(f.code, was ? { ...was, hard: was.hard || f.hard, count: was.count + f.count, examples: [...was.examples, ...f.examples].slice(0, 5) } : { ...f });
+  }
+  const flags = [...byCode.values()];
+  return { verdict: flags.length ? "hold" : "pass", flags };
+}

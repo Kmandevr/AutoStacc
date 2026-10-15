@@ -18,19 +18,22 @@ const partLength = (size, n) => (n < partsOf(size) ? PART_BYTES : size - (partsO
 export const getUpload = (db, id) => first(db, "SELECT * FROM uploads WHERE id = ?", id);
 
 /**
+ * additionId: the upload is an addition's (additions.js) rather than the version's own archive.
  * quota: { creatorId, bytes, capBytes } for a creator's upload (null for AutoStacc's own): their own quota, and all of
  * AutoStacc's storage that creators may fill (server/usage/). carry: the files a thin ZIP leaves out,
  * already shape-checked (carry.js cleanCarry).
  */
-export async function startZip(app, version, { filename, size, quota = null, carry = [] }) {
+export async function startZip(app, version, { filename, size, quota = null, carry = [], additionId = null }) {
   if (!Number.isSafeInteger(size) || size < 22 || size > ZIP_MAX_BYTES) fail(400, "invalid_size", "That isn't a ZIP size AutoStacc accepts.");
   const id = newId("up");
   const key = `uploads/${version.id}/${id}.zip`;
   const mp = await startMultipart(app.env, key);
   const t = now();
-  const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at, carry)
-    SELECT ?2, ?3, 'zip', ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8, ?10 WHERE ?9 IS NULL OR (${inUseSql("?1")} + ?7 <= ?9 AND ${storedSql()} + ?7 <= ?11)`,
-    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null, JSON.stringify(carry), quota ? quota.capBytes : null);
+  // kind 'file': an addition's archive (additions.js), the files it adds to a checked version.
+  const res = await run(app.db, `INSERT INTO uploads (id, version_id, kind, filename, r2_key, upload_id, size_bytes, parts, status, created_at, updated_at, carry, addition_id)
+    SELECT ?2, ?3, ?12, ?4, ?5, ?6, ?7, '[]', 'open', ?8, ?8, ?10, ?13 WHERE ?9 IS NULL OR (${inUseSql("?1")} + ?7 <= ?9 AND ${storedSql()} + ?7 <= ?11)`,
+    quota ? quota.creatorId : null, id, version.id, filename, key, mp.uploadId, size, t, quota ? quota.bytes : null, JSON.stringify(carry), quota ? quota.capBytes : null,
+    additionId ? "file" : "zip", additionId);
   if (!res.meta.changes) {
     await abortMultipart(app.env, key, mp.uploadId).catch(() => {});
     if ((await storedBytes(app.db)) + size > quota.capBytes) fail(409, "storage_full", STORAGE_FULL);
@@ -54,7 +57,8 @@ export async function putPart(app, upload, n) {
 
 /** Joins the parts once all are there; the parts still missing otherwise. */
 export async function complete(app, upload) {
-  if (upload.status === "complete") return { complete: true };
+  // Already joined (aborted here means its bytes were unpacked and deleted, or the version ended): nothing to do again.
+  if (upload.status === "complete" || upload.status === "aborted") return { complete: true };
   const latest = new Map();
   for (const p of parseJson(upload.parts, [])) latest.set(p.part, p);
   const missing = [];

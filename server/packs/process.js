@@ -142,6 +142,8 @@ export async function discard(app, version) {
   const waiting = version.status === "processing"
     && (await run(app.db, "UPDATE processing_jobs SET status = 'cancelled', updated_at = ? WHERE id = ? AND status = 'queued'", now(), jobIdOf(version))).meta.changes === 1;
   const moved = await move(app.db, version.id, waiting ? ["processing"] : ["draft", "uploading", "ready", "in_review", "failed"], "discarded");
+  // Its additions in progress end with it (their uploads go with the version's below).
+  if (moved) await run(app.db, "UPDATE pac_additions SET status = 'failed', error = 'discarded', updated_at = ? WHERE version_id = ? AND status IN ('uploading', 'processing')", now(), version.id);
   if (!moved) return false;
   await run(app.db, "UPDATE pacs SET draft_version_id = NULL, updated_at = ? WHERE id = ? AND draft_version_id = ?", now(), version.pac_id, version.id);
   await dropArchives(app, version.id);
