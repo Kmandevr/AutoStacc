@@ -204,8 +204,8 @@ const CASES = {
 };
 
 // Archives the Pack Builder makes in the browser (js/zip-thin.js), so tests can follow it end to end: pack-revision as
-// sent when the store already has pack-basic's files (only the read-me and changelog), and an archive with nothing
-// left in it (a revision that only moves files).
+// sent when the store already has pack-basic's files (only the read-me and changelog), an archive with nothing left in
+// it (a revision that only moves files), and one file as the Pac editor sends it (js/zip-make.js).
 const { thin } = require("../js/zip-thin.js");
 const THIN = {
   "pack-revision-thin": async () => {
@@ -214,6 +214,8 @@ const THIN = {
     const keep = (await directory(blob)).filter((e) => /^Pack\/(Read me|Changelog)\.txt$/.test(e.nameText));
     return Buffer.from(await (await thin(blob, keep)).arrayBuffer());
   },
+  // One file as the Pac editor sends it (js/zip-make.js): what a creator's single upload becomes.
+  "editor-file": async () => Buffer.from(await (await require("../js/zip-make.js").store([{ name: "Kick 07.wav", blob: new Blob([wav({ frames: 6000, seed: 31 })]) }])).arrayBuffer()),
   "empty": async () => Buffer.from(await (await thin(new Blob([CASES["pack-revision"]()]), [])).arrayBuffer())
 };
 

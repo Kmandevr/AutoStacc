@@ -2,7 +2,8 @@
 // pick a ZIP (previewed in the browser by the engine's WebAssembly build), upload, wait for the check, then review: set
 // a value on selected files and see where each value comes from. And a Studio creator doing the same for their own
 // product in the Product Studio's Pac Builder section, whose clean pack publishes at once and whose next version
-// uploads only the files the store doesn't have (a thin ZIP, js/packs-thin.js). No console errors throughout.
+// uploads only the files the store doesn't have (a thin ZIP, js/packs-thin.js). And a creator's single file checked into
+// their Pac, then the Pac editor. No console errors throughout.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -10,7 +11,7 @@ import { after } from "node:test";
 import { browserStore, DESK, ADMIN_EMAIL } from "../support/browser.js";
 import fs from "node:fs";
 import { ROOT, unique, sql } from "../support/client.js";
-import { startMockEngine } from "../mock-engine/server.js";
+import { startMockEngine, entries } from "../mock-engine/server.js";
 
 const PORT = 8809;
 const engine = await startMockEngine(8819, { storage: `http://localhost:${PORT}/api/internal/engine-storage` });
@@ -94,5 +95,44 @@ test("a Studio creator uploads their product's pack, a clean pack publishes at o
   assert.match(inside, /Drums › Kicks/);
   assert.match(inside, /sample rate/i);
   assert.ok(!/Changelog/.test(inside), "an unpublished version shows nothing");
+  assert.deepEqual(page.errors, []);
+});
+
+test("a creator's single file is checked into their Pac and goes live; the Pac editor makes folders, writes a read me and removes files", { timeout: 120000 }, async () => {
+  const { page } = await store.open(DESK);
+  await store.signUp(page, unique("editor"));
+  await page.goto("/studio");
+  const post = (url, body) => page.evaluate(async ([u, b]) => (await fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) })).json(), [url, body]);
+  const { creator } = await post("/api/studio/creators", { name: "Editor", slug: `editor-${Date.now().toString(36)}` });
+  const { project } = await post(`/api/studio/creators/${creator.id}/projects`, { name: "Kits", slug: "kits" });
+  const { product } = await post(`/api/studio/projects/${project.id}/products`, { title: "One Kick", type: "sample-pack", priceCents: 300, description: "A kick.", includes: ["kicks"] });
+  // The file as the creator has it: the one inside the Pac editor's conformance case (js/zip-make.js makes the same archive).
+  const kick = path.join(store.stateDir, "Kick 07.wav");
+  fs.writeFileSync(kick, entries(fs.readFileSync(path.join(ROOT, "engine/conformance/cases/editor-file.zip"))).get("Kick 07.wav")());
+  await page.goto("/studio");
+  await page.click("[data-products]");
+  await page.click(`.sp-card[data-id="${product.id}"] a`);
+  await page.click('[data-ws-item="pacs"]');
+  await page.waitForSelector("[data-spc-upload]", { state: "attached" });
+  await page.setInputFiles("[data-spc-upload]", kick);
+  await page.waitForSelector(".spc-files >> text=is checked and live", { timeout: 60000 });
+  assert.equal(sql(store.stateDir, `SELECT COUNT(*) AS n FROM product_files WHERE product_id = '${product.id}' AND active = 1 AND status = 'published' AND blob_id IS NOT NULL`)[0].n, 1);
+
+  // The Pac editor: a draft copied from the live version, then a folder, a read me, and a removal.
+  await page.waitForSelector("[data-pe-draft]");
+  await page.click("[data-pe-draft]");
+  await page.waitForSelector(".pe-tree >> text=Kick 07.wav");
+  page.once("dialog", (d) => d.accept("Extras"));
+  await page.click("[data-pe-newfolder]");
+  await page.waitForSelector(".pe-tree >> text=Extras");
+  await page.click("[data-pe-readme]");
+  await page.fill("#pe-readme-text", "One kick, tuned to C.");
+  await page.click("[data-pe-readme-form] button[type=submit]");
+  await page.waitForSelector(".pe-tree >> text=Read me.txt");
+  page.once("dialog", (d) => d.accept());
+  await page.click(".pe-file:has-text('Kick 07.wav') [data-pe-rmfile]");
+  await page.waitForFunction(() => !document.querySelector(".pe-tree").innerText.includes("Kick 07.wav"));
+  // The previews panel is there for the Pac.
+  await page.waitForSelector("[data-pac-previews] >> text=Previews");
   assert.deepEqual(page.errors, []);
 });
