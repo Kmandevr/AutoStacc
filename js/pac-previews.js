@@ -51,10 +51,10 @@
       box.innerHTML = `<section class="panel pp" aria-labelledby="pp-h"><h3 id="pp-h">Previews</h3>
         <p class="small-print">Up to ${max} short clips anyone can play on the product page and in Your Stacc. A clip picked from your files is its first ${SECONDS} seconds.</p>
         <ul class="plain pp-list">${previews.map((p) => `<li><span>${e(p.title || "Preview")}</span><audio controls preload="none" src="${e(p.url)}"></audio>
-          <button class="link-btn" type="button" data-pp-remove="${e(p.id)}" aria-label="Remove preview ${e(p.title || "")}">Remove</button></li>`).join("")}</ul>
+          <button class="link-btn" type="button" data-pp-remove="${e(p.id)}" aria-label="Remove preview ${e(p.title || `${previews.indexOf(p) + 1}`)}">Remove</button></li>`).join("")}</ul>
         ${previews.length < max ? `<div class="pp-add">
           <div class="field"><label for="pp-title">Title (optional)</label><input id="pp-title" maxlength="80" data-pp-title></div>
-          <label class="btn ghost small studio-upload">Upload a clip<input type="file" accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,.mp3,.m4a,.ogg,.wav" hidden data-pp-upload></label>
+          <button class="btn ghost small" type="button" data-pp-choose>Upload a clip</button><input type="file" accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,.mp3,.m4a,.ogg,.wav" hidden data-pp-upload>
           ${audio.length ? `<div class="field"><label for="pp-pick">Or cut one from</label><select id="pp-pick" data-pp-pick><option value="">Choose a file…</option>
             ${audio.map((f) => `<option value="${e(f.assetId)}">${e(f.folderPath ? `${f.folderPath}/` : "")}${e(f.filename)}</option>`).join("")}</select></div>` : ""}
         </div>` : ""}
@@ -62,7 +62,14 @@
       if (note) say(note, error);
     }
 
+    let busy = false;
     async function send(blob, filename, asset) {
+      if (busy) return;
+      busy = true;
+      box.querySelectorAll("[data-pp-choose], [data-pp-pick]").forEach((x) => (x.disabled = true));
+      try { await upload(blob, filename, asset); } finally { busy = false; }
+    }
+    async function upload(blob, filename, asset) {
       const title = ($("[data-pp-title]", box) || {}).value || "";
       say("Uploading the clip…");
       const q = `?filename=${encodeURIComponent(filename)}&title=${encodeURIComponent(title)}${asset ? `&asset=${encodeURIComponent(asset)}` : ""}`;
@@ -91,6 +98,7 @@
     };
 
     box.onclick = async (ev) => {
+      if (ev.target.closest("[data-pp-choose]")) return $("[data-pp-upload]", box).click();
       const rm = ev.target.closest("[data-pp-remove]");
       if (!rm || !confirm("Remove this preview?")) return;
       rm.disabled = true;

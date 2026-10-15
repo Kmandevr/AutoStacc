@@ -126,6 +126,15 @@ export default (ctx) => describe("packs: the Pac editor", () => {
     // Discarding the draft ends it, and the live version is untouched.
     assert.equal((await c.post(`${S}/versions/${v.id}/discard`, {})).status, 200);
     assert.equal(db(`SELECT status FROM pac_additions WHERE id = '${open.addition.id}'`)[0].status, "failed");
+    // An addition whose upload stopped can be given up, so the next one can start.
+    const v2 = (await c.post(`${S}/products/${pid}/drafts`, { idempotencyKey: key() })).data.version;
+    const stuck = await add(c, v2.id, "addition", null, { complete: false });
+    const gone = await c.req("DELETE", `${S}/additions/${stuck.addition.id}`);
+    assert.equal(gone.status, 200, JSON.stringify(gone.data));
+    assert.equal(gone.data.addition.status, "failed");
+    const next = await add(c, v2.id, "addition");
+    assert.equal(next.addition.status, "done");
+    assert.equal((await c.post(`${S}/versions/${v2.id}/discard`, {})).status, 200);
     // A retry of its complete answers its state, never a server error.
     const retry = await c.post(`${S}/additions/${open.addition.id}/complete`, {});
     assert.equal(retry.status, 200, JSON.stringify(retry.data));
@@ -182,6 +191,12 @@ export default (ctx) => describe("packs: the Pac editor", () => {
     const list = (await c.get(`${S}/products/${pid}/previews`)).data.previews;
     assert.equal((await c.req("DELETE", `${S}/products/${pid}/previews/${list[1].id}`)).status, 200);
     assert.equal((await clip("Cross", `&asset=${oa}`)).data.error.code, "invalid_asset");
+    // A clip counts against the creator's storage: one that doesn't fit is refused, and nothing is kept.
+    const cid = db(`SELECT j.creator_id AS c FROM products p JOIN projects j ON j.id = p.project_id WHERE p.id = '${pid}'`)[0].c;
+    db(`UPDATE creators SET files_quota_bytes = 1 WHERE id = '${cid}'`);
+    assert.equal((await clip("Over")).data.error.code, "quota_exceeded");
+    assert.equal(db(`SELECT COUNT(*) AS n FROM pac_previews WHERE title = 'Over'`)[0].n, 0);
+    db(`UPDATE creators SET files_quota_bytes = NULL WHERE id = '${cid}'`);
     // And nobody else's.
     assert.equal((await other.c.get(`${S}/products/${pid}/previews`)).status, 404);
     assert.equal((await other.c.req("DELETE", `${S}/products/${pid}/previews/${list[0].id}`)).status, 404);

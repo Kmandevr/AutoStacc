@@ -12,6 +12,10 @@ import { requireFeature } from "../lib/features.js";
 import { extensionOf, contentTypeFor, looksLike, PREVIEW_EXTENSIONS } from "../files/policy.js";
 import { putPreview, peekPreview, deletePreview } from "../storage/buckets.js";
 import { ADMIN, STUDIO, ensureStudioPac } from "./access.js";
+import { inUseSql } from "../creators/storage.js";
+import { filesQuotaOf } from "../creators/policy.js";
+import { storedSql } from "../usage/storage.js";
+import { capBytes, STORAGE_FULL } from "../usage/usage.js";
 
 export const PREVIEWS_PER_PAC = 3;
 export const PREVIEW_MAX = 20 * 1024 * 1024;
@@ -29,7 +33,8 @@ async function list(app, pac) {
   return json({ previews: (await previewsOf(app.db, [pac.id]))[pac.id] || [], max: PREVIEWS_PER_PAC });
 }
 
-async function add(app, pac, user) {
+// creator: whose storage a clip counts against (null for AutoStacc's own Pacs: no limit, as for its uploads).
+async function add(app, pac, user, creator = null) {
   await limit(app, "pack-preview", 30, 3600);
   const q = new URL(app.request.url).searchParams;
   const filename = str(q.get("filename") || "", "filename", { max: 160 });
@@ -50,17 +55,23 @@ async function add(app, pac, user) {
     fail(415, "content_mismatch", "That file isn't really audio of the kind its name says.");
   }
   const pid = newId("pp");
-  // The first free place of the three; two uploads at once can't both take the last one (UNIQUE (pac_id, sort)).
+  // The first free place of the three; two uploads at once can't both take the last one (UNIQUE (pac_id, sort)). A
+  // creator's clip must fit their storage and AutoStacc's cap, checked in the same statement (as uploads.js does).
+  const room = creator ? `AND ${inUseSql("?11")} + ?6 <= ?12 AND ${storedSql()} + ?6 <= ?13` : "";
   const res = await run(app.db, `INSERT INTO pac_previews (id, pac_id, sort, title, r2_key, content_type, size_bytes, source_asset_id, created_by, created_at)
-    SELECT ?, ?, s.n, ?, ?, ?, ?, ?, ?, ? FROM (SELECT MIN(n) AS n FROM (SELECT 0 AS n UNION SELECT 1 UNION SELECT 2)
-      WHERE n NOT IN (SELECT sort FROM pac_previews WHERE pac_id = ?)) s WHERE s.n IS NOT NULL`,
-    pid, pac.id, title, key, contentType, size, asset, user.id, now(), pac.id).catch((e) => {
+    SELECT ?1, ?2, s.n, ?3, ?4, ?5, ?6, ?7, ?8, ?9 FROM (SELECT MIN(n) AS n FROM (SELECT 0 AS n UNION SELECT 1 UNION SELECT 2)
+      WHERE n NOT IN (SELECT sort FROM pac_previews WHERE pac_id = ?10)) s WHERE s.n IS NOT NULL ${room}`,
+    pid, pac.id, title, key, contentType, size, asset, user.id, now(), pac.id,
+    ...(creator ? [creator.id, filesQuotaOf(creator), await capBytes(app.db)] : [])).catch((e) => {
     if (/UNIQUE constraint failed/i.test(String(e && e.message))) return { meta: { changes: 0 } };
     throw e;
   });
   if (!res.meta.changes) {
     await deletePreview(app.env, key);
-    fail(409, "previews_full", `A Pac has up to ${PREVIEWS_PER_PAC} previews. Remove one first.`);
+    const full = (await first(app.db, "SELECT COUNT(*) AS n FROM pac_previews WHERE pac_id = ?", pac.id)).n >= PREVIEWS_PER_PAC;
+    if (full || !creator) fail(409, "previews_full", `A Pac has up to ${PREVIEWS_PER_PAC} previews. Remove one first.`);
+    if ((await first(app.db, `SELECT ${storedSql()} + ? > ? AS over`, size, await capBytes(app.db))).over) fail(409, "storage_full", STORAGE_FULL);
+    fail(409, "quota_exceeded", "That clip would go over your file storage.");
   }
   await audit(app, "pack.preview_added", { targetType: "pac", targetId: pac.id, detail: { previewId: pid, fromFile: Boolean(asset) } });
   return list(app, pac);
@@ -86,8 +97,8 @@ const adminPac = async (app, pacId) => {
 const studioPac = async (app, productId) => {
   requireFeature(app, "packs.editor");
   const actor = await STUDIO.actor(app);
-  const { product } = await STUDIO.product(app, actor, productId);
-  return { pac: await ensureStudioPac(app.db, product), user: actor.user };
+  const { product, creator } = await STUDIO.product(app, actor, productId);
+  return { pac: await ensureStudioPac(app.db, product), user: actor.user, creator };
 };
 
 export const routes = [
@@ -95,6 +106,6 @@ export const routes = [
   ["POST", "/api/admin/packs/:pacId/previews", async (app, p) => { const { pac, user } = await adminPac(app, p.pacId); return add(app, pac, user); }],
   ["DELETE", "/api/admin/packs/:pacId/previews/:previewId", async (app, p) => remove(app, (await adminPac(app, p.pacId)).pac, p.previewId)],
   ["GET", "/api/studio/packs/products/:productId/previews", async (app, p) => list(app, (await studioPac(app, p.productId)).pac)],
-  ["POST", "/api/studio/packs/products/:productId/previews", async (app, p) => { const { pac, user } = await studioPac(app, p.productId); return add(app, pac, user); }],
+  ["POST", "/api/studio/packs/products/:productId/previews", async (app, p) => { const { pac, user, creator } = await studioPac(app, p.productId); return add(app, pac, user, creator); }],
   ["DELETE", "/api/studio/packs/products/:productId/previews/:previewId", async (app, p) => remove(app, (await studioPac(app, p.productId)).pac, p.previewId)]
 ];

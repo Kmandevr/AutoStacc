@@ -35,12 +35,20 @@
       body: { filename: given ? zipName(given) : "files.zip", size: zip.size, folderId, idempotencyKey: crypto.randomUUID() } });
     if (!made.ok) throw new Error(made.error.message);
     const { addition, upload } = made.data;
-    for (let n = 1; n <= upload.parts; n++) {
-      await putPart(base, upload.uploadId, n, zip.slice((n - 1) * upload.partBytes, Math.min(zip.size, n * upload.partBytes)));
-      onStatus(`Uploading… ${Math.round((n / upload.parts) * 100)}%`);
+    const at = `${base}/additions/${encodeURIComponent(addition.id)}`;
+    let res;
+    try {
+      for (let n = 1; n <= upload.parts; n++) {
+        await putPart(base, upload.uploadId, n, zip.slice((n - 1) * upload.partBytes, Math.min(zip.size, n * upload.partBytes)));
+        onStatus(`Uploading… ${Math.round((n / upload.parts) * 100)}%`);
+      }
+      res = await api(`${at}/complete`, { method: "POST", body: {} });
+      if (!res.ok) throw new Error(res.error.message);
+    } catch (err) {
+      // Given up, so it doesn't hold the version (one addition at a time, and Publish waits for it).
+      await api(at, { method: "DELETE" });
+      throw err;
     }
-    let res = await api(`${base}/additions/${encodeURIComponent(addition.id)}/complete`, { method: "POST", body: {} });
-    if (!res.ok) throw new Error(res.error.message);
     onStatus("Checking…");
     for (let i = 0; res.data.addition.status === "processing"; i++) {
       await wait(i < 10 ? 1500 : 4000);
@@ -51,5 +59,18 @@
     return res.data;
   }
 
-  window.GS.pacAdd = { add };
+  // What wasn't added and why, in plain words (codes: engine/contract/v1/errors.json, server/packs/append.js).
+  const WHY = { duplicate_name: "a file with that name is already there", case_collision: "a file with that name is already there",
+    unsupported_type: "AutoStacc doesn't deliver that type", content_does_not_match_name: "it isn't the kind of file its name says",
+    encrypted: "it's password-protected", symlink: "it's a link, not a file", corrupt: "it's damaged", crc_mismatch: "it's damaged",
+    size_mismatch: "it's damaged", damaged_entry: "it's damaged", storage_mismatch: "it didn't store correctly; try again",
+    suspicious_compression_ratio: "it expands suspiciously much", file_too_large: "it's too large" };
+  function refusedText(stats) {
+    const r = (stats && stats.refused) || [];
+    if (!r.length) return "";
+    const list = r.slice(0, 5).map((x) => `${x.path} (${WHY[x.codes[0]] || "it couldn't be checked"})`).join("; ");
+    return ` Not added: ${list}${r.length > 5 ? ` and ${r.length - 5} more` : ""}.`;
+  }
+
+  window.GS.pacAdd = { add, refusedText };
 })();

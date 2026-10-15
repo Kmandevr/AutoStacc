@@ -72,7 +72,11 @@ export async function appendResult(app, addition, job, state, upload) {
   }
   // Matched against the live version as the files will sit in this version (under the target folder).
   const byFolder = new Map(folders.map((f) => [f.id, f]));
-  const pathOf = (id) => { const parts = []; for (let f = byFolder.get(id); f; f = byFolder.get(f.parent_id)) parts.unshift(f.name); return parts.join("/"); };
+  const pathOf = (id) => {
+    const parts = [], seen = new Set();
+    for (let f = byFolder.get(id); f && !seen.has(f.id); f = byFolder.get(f.parent_id)) (seen.add(f.id), parts.unshift(f.name));
+    return parts.join("/");
+  };
   const base = target ? `${pathOf(target)}/` : "";
   const rev = await revisionOf(db, version, kept.map((f) => ({ ...f, logical: base + f.logical })));
   const blobs = await claimOriginals(app, owner, kept, result.engineVersion);
