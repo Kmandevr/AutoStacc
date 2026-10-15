@@ -1,12 +1,14 @@
 // A product's "What's inside" before anyone buys it (docs/packs.md, Phase 7): GET /api/products/:productId/contents.
 // Published, visible products only (404 otherwise, like the product itself), and only files published from the Pack
-// Builder: their folders and names, kinds, formats and sizes, and the totals worked out from them (contents.js). Never
+// Builder: their folders and names, kinds, formats and sizes, the totals worked out from them (contents.js), and the
+// Pacs' read me and preview clips (server/packs/previews.js), which are public anyway. Never
 // a download link, a storage key or a hash. Public and cached for a minute, like the product. Switch product.contentsTree.
 import { json, fail, id } from "../lib/http.js";
 import { all, first, parseJson } from "../lib/db.js";
 import { requireFeature } from "../lib/features.js";
 import { getProduct, isVisible } from "../catalog/products.js";
 import { FACETS, KINDS, FORMATS, label } from "./vocabulary.js";
+import { previewsOf } from "../packs/previews.js";
 
 const MAX_FILES = 2000;
 
@@ -29,7 +31,12 @@ async function contents(app, { productId }) {
     folders[folders.length - 1].files.push({ name: f.filename, sizeBytes: f.size_bytes,
       kind: KINDS[kind] ? KINDS[kind].label : "", format: FORMATS[meta.format] ? FORMATS[meta.format].label : "" });
   }
+  // The Pacs' read me (its text, kept at publishing) and preview clips (server/packs/previews.js).
+  const readmeRow = files.find((f) => !f.folder_path && parseJson(f.meta, {}).readme);
+  const clips = await previewsOf(app.db, parseJson(p.pacs, []));
   return json({
+    readme: readmeRow ? parseJson(readmeRow.meta, {}).readme : null,
+    previews: Object.values(clips).flat().map(({ title, url }) => ({ title, url })),
     files: summary.files || 0, bytes: summary.bytes || 0, bpm: summary.bpm || null,
     kinds: Object.entries(summary.kinds || {}).map(([k, n]) => ({ value: k, label: KINDS[k] ? KINDS[k].label : k, count: n })),
     facets: Object.entries(summary.facets || {}).filter(([f]) => FACETS[f]).map(([f, values]) => ({ id: f, label: FACETS[f].label,

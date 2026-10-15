@@ -2,7 +2,7 @@
 // unchanged files' ids and retires the rest), the previous live version is superseded and the Pac is free for its next
 // version, all in one D1 batch (all or nothing) that runs only while the version is still ready (or held for review).
 // Then each product's contents (server/discovery/contents.js) are worked out again from what is now published.
-import { stmt, newId, now, guardStmt } from "../lib/db.js";
+import { stmt, first, newId, now, guardStmt } from "../lib/db.js";
 import { loadManifest } from "./manifest.js";
 import { publishStmts } from "../files/publish-rows.js";
 import { releaseDraftStmt } from "./versions.js";
@@ -33,10 +33,24 @@ export async function publishedEntries(db, versionId) {
 }
 
 /** reviewedBy: the admin who approved a held version (or published over its flags), else null. */
+// A read me's text, kept with its published details so customers can read it on the product page and in Your Stacc
+// without a download: a text file at the top of the Pac named "Read me…" (any case), up to README_TEXT bytes.
+const README = /^read[ _-]?me\b.*\.txt$/i;
+const README_TEXT = 16 * 1024;
+async function withReadme(app, entries) {
+  for (const e of entries) {
+    if (e.folderPath || !README.test(e.filename) || e.meta.format !== "text" || e.size > README_TEXT) continue;
+    const blob = await first(app.db, "SELECT r2_key FROM blobs WHERE id = ?", e.blobId);
+    const obj = blob && (await app.env.FILES.get(blob.r2_key));
+    if (obj) e.meta.readme = (await obj.text()).replace(/\r\n/g, "\n");
+  }
+  return entries;
+}
+
 export async function publishVersion(app, version, { reviewedBy = null } = {}) {
   const db = app.db;
   const t = now();
-  const entries = await publishedEntries(db, version.id);
+  const entries = await withReadme(app, await publishedEntries(db, version.id));
   // A Pac is content and products sell it: every product that includes it gets the same files (each its own rows).
   const products = await productsWithPac(db, version.pac_id);
   await db.batch([

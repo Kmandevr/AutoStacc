@@ -123,4 +123,45 @@ export default (ctx) => describe("packs: the Pac editor", () => {
       assert.equal((await other.c.req(m, `${S}${path}`, { body })).status, 404, `${m} ${path}`);
     }
   });
+
+  test("previews: up to three clips, only this Pac's files as sources; public with the read me once on sale", async () => {
+    const { c, products } = await P.creatorWithProducts(base(), "ed-previews");
+    const pid = products[0].id;
+    const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVE"), Buffer.alloc(3000)]);
+    const clip = (title, extra = "") => c.req("POST", `${S}/products/${pid}/previews?filename=clip.wav&title=${encodeURIComponent(title)}${extra}`, { raw: wav, headers: { "Content-Type": "audio/wav" } });
+    // Built with a read me, then published and put on sale.
+    let v = (await c.post(`${S}/products/${pid}/drafts`, { idempotencyKey: key() })).data.version;
+    v = (await add(c, v.id, "addition")).version;
+    v = (await c.req("PUT", `${S}/versions/${v.id}/readme`, { body: { text: "Thanks!\nAll at 128 BPM." } })).data.version;
+    const snare = v.files.find((f) => f.filename === "Snare 02.wav");
+    const one = await clip("Groove", `&asset=${snare.assetId}`);
+    assert.equal(one.status, 200, JSON.stringify(one.data));
+    assert.equal((await c.req("POST", `${S}/products/${pid}/previews?filename=clip.wav`, { raw: Buffer.from("not audio at all, not even close"), headers: { "Content-Type": "audio/wav" } })).data.error.code, "content_mismatch");
+    assert.equal((await clip("Two")).status, 200);
+    assert.equal((await clip("Three")).status, 200);
+    assert.equal((await clip("Four")).data.error.code, "previews_full");
+    // A source from another Pac is refused.
+    const other = await P.creatorWithProducts(base(), "ed-previews-other");
+    const ov = (await other.c.post(`${S}/products/${other.products[0].id}/drafts`, { idempotencyKey: key() })).data.version;
+    const oa = (await add(other.c, ov.id, "addition")).version.files[0].assetId;
+    const list = (await c.get(`${S}/products/${pid}/previews`)).data.previews;
+    assert.equal((await c.req("DELETE", `${S}/products/${pid}/previews/${list[1].id}`)).status, 200);
+    assert.equal((await clip("Cross", `&asset=${oa}`)).data.error.code, "invalid_asset");
+    // And nobody else's.
+    assert.equal((await other.c.get(`${S}/products/${pid}/previews`)).status, 404);
+    assert.equal((await other.c.req("DELETE", `${S}/products/${pid}/previews/${list[0].id}`)).status, 404);
+    assert.equal((await c.post(`${S}/versions/${v.id}/publish`, {})).status, 200);
+    db(`UPDATE products SET price_cents = 0 WHERE id = '${pid}'`);
+    assert.equal((await c.req("PATCH", `/api/studio/products/${pid}`, { body: { published: true } })).status, 200);
+    const inside = (await fetch(`${base()}/api/products/${pid}/contents`).then((r) => r.json()));
+    assert.deepEqual(inside.previews.map((x) => x.title), ["Groove", "Three"]);
+    assert.ok(inside.previews.every((x) => x.url.startsWith("/media/previews/")));
+    assert.equal(inside.readme, "Thanks!\nAll at 128 BPM.");
+    // A buyer's Your Stacc gets them too.
+    const buyer = await P.creatorWithProducts(base(), "ed-previews-buyer");
+    assert.equal((await buyer.c.post("/api/library/free", { productId: pid })).status, 200);
+    const item = (await buyer.c.get("/api/library")).data.items.find((x) => x.productId === pid);
+    assert.equal(item.readme, "Thanks!\nAll at 128 BPM.");
+    assert.equal(item.previews.length, 2);
+  });
 });
