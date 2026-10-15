@@ -22,7 +22,7 @@ R2 must be enabled once in the dashboard (Cloudflare → R2 → Purchase/enable;
 
 ## 2. Secrets (GitHub → Settings → Secrets and variables → Actions → Secrets)
 
-The repository is public, so keep these in the `production` Environment rather than as repository secrets (GitHub → Settings → Environments → production → Environment secrets, with "Deployment branches" limited to `main`): the deploy jobs use that Environment, and no other job or branch can read them. The deploy never prints them; a failed email shows its reason with any address blanked.
+Before the repository goes public (and from then on), keep these in the `production` Environment rather than as repository secrets (GitHub → Settings → Environments → production → Environment secrets, with "Deployment branches" limited to `main`): the deploy jobs use that Environment, and no other job or branch can read them. The deploy never prints them; a failed email shows its reason with any address blanked.
 
 | Secret | What it is | Where to get it |
 | --- | --- | --- |
