@@ -8,6 +8,7 @@ updated: 2026-10-15
 
 Newest first.
 
+- 2026-10-15: Checkout no longer sends the payment provider's error details to the browser in production (logs only); found by the pre-public scan of issues and PRs. Notes: store.
 - 2026-10-15: README rewritten and checked (docs-test fails when it misses a page, folder, workflow, npm script or data file; `--strict` on PRs fails stale notes); every note audited against the code. Private reporting: issue forms link to security advisories and warn that issues are public, the `tasks` skill keeps private work out of the public repository (to `AutoStacc-private`), deploy logs drop ids and email reasons. Notes: decisions, development, store-setup and all audited notes.
 - 2026-10-15: Before going public: SECURITY.md, LICENSE (all rights reserved), CodeQL, Dependabot, CODEOWNERS, deploy secrets behind the `production` Environment and hidden from installs, no token permissions or addresses in logs, fuzz crashes private only, the `tasks` skill trusts only the owner and collaborators. Notes: decisions, development, engine.
 - 2026-10-15: CI skips files that already passed: each check job fingerprints the files it reads and leaves a marker in the Actions cache once green, so pushes that change only notes, and re-runs, test nothing again (store, site browser checks, engine). Notes: decisions, development.
