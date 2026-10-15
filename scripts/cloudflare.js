@@ -127,7 +127,9 @@ async function recentEmailFailures() {
     const out = await wrangler(["d1", "execute", "DB", "--remote", "--env", "production", "--json", "--command",
       "SELECT kind, error, created_at FROM email_events WHERE status = 'failed' ORDER BY created_at DESC LIMIT 5"]);
     const rows = JSON.parse(out)[0]?.results || [];
-    for (const r of rows) console.log(`::warning::Email not sent (${r.kind}, ${r.created_at}): ${r.error}`);
+    // The provider's text can quote the recipient: any address in it is blanked, and it's cut short.
+    const reason = (t) => String(t || "").replace(/[^\s@<>"']+@[^\s@<>"']+/g, "[address]").slice(0, 160);
+    for (const r of rows) console.log(`::warning::Email not sent (${r.kind}, ${r.created_at}): ${reason(r.error)}`);
     if (!rows.length) console.log("cloudflare: no failed emails recorded");
   } catch (e) {
     console.log(`cloudflare: couldn't read email failures (${String(e.message || e).split("\n")[0]})`);

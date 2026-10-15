@@ -35,8 +35,13 @@ jobs:
         run: mkdir -p fuzz/corpus/zip && cp conformance/cases/*.zip fuzz/corpus/zip/
       - name: Fuzz ${{ matrix.target }} for five minutes
         run: cargo +nightly fuzz run ${{ matrix.target }} -- -max_total_time=300 -rss_limit_mb=2048 -max_len=262144
-      - name: Keep the crashing input
+      # A crashing input is a ready-made parser bug: kept as an artifact only while the repository is private. In a
+      # public one the log names it (by hash) and the fuzzer is re-run locally to reproduce it (docs/engine.md).
+      - name: Name the crashing input
         if: failure()
+        run: ls -l fuzz/artifacts/*/ || true
+      - name: Keep the crashing input
+        if: failure() && github.event.repository.private
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-${{ matrix.target }}
