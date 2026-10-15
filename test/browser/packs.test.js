@@ -65,6 +65,13 @@ test("a Studio creator uploads their product's pack, a clean pack publishes at o
   await page.setInputFiles("[data-pd-files]", path.join(ROOT, "engine/conformance/cases/pack-basic.zip"));
   await page.waitForSelector("[data-pack-publish]", { timeout: 60000 });
   assert.match(await page.locator("[data-pack-version]").innerText(), /nothing flagged/);
+  assert.match(await page.locator("[data-pack-version]").innerText(), /Draft, ready to publish/);
+  // On a phone the ready draft (its review table included) never widens the page.
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.ok(await page.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth + 1), `no sideways scroll at ${width}px`);
+  }
+  await page.setViewportSize(DESK.viewport);
   page.once("dialog", (d) => d.accept());
   await page.click("[data-pack-publish]");
   await page.waitForSelector("[data-pack-version] >> text=Published");

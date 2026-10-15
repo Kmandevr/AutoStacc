@@ -94,6 +94,8 @@
 .pd-title { font-weight: 600; margin: 0 0 4px; }
 .pd .actions { justify-content: center; }
 .pd-ask { text-align: left; margin: 10px 0 0; }
+/* The review table (js/packs-review.js) scrolls inside its box on phones instead of widening the page. */
+[data-pack-version] .table-wrap { max-width: 100%; overflow-x: auto; }
 .pe-move { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
 .pe-file { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center;
   padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
