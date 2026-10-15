@@ -16,7 +16,7 @@
       <div><strong>${e(p.title)}</strong><small>${e(p.kind === "template" ? "Whole site" : p.kind === "section" ? "Section" : "Element")} · by ${e(p.creator.name)}${p.installs ? ` · used by ${p.installs}` : ""}</small>
         ${p.description ? `<span>${e(p.description)}</span>` : ""}</div>
       <div class="bx-row">
-        <button class="btn ghost small" type="button" data-action="lib-preview" data-id="${e(p.id)}">Preview</button>
+        <button class="btn ghost small" type="button" data-action="lib-preview" data-id="${e(p.id)}">${p.owned ? "Preview" : "Preview layout"}</button>
         ${p.owned ? `<button class="btn small" type="button" data-action="lib-use" data-id="${e(p.id)}">Use</button>`
           : `<a class="btn small" href="${e(p.productPath)}" target="_blank" rel="noopener">Buy ${e(money(p.priceCents))}</a>`}
         ${p.mine ? `<button class="btn ghost small danger" type="button" data-action="lib-delete" data-id="${e(p.id)}">Delete</button>`
@@ -26,15 +26,17 @@
       <p class="small-print">Pieces other creators share. Free ones are yours to use; paid ones after you buy them in the store, on any of your own sites.</p>
       <div class="bx-row"><label class="field"><span class="sr-only">Search</span><input type="search" data-lib="q" placeholder="Search" value="${e(lib.q)}"></label>
         <label class="field"><span class="sr-only">Kind</span><select data-lib="kind">${KINDS.map(([v, l]) => `<option value="${v}"${v === lib.kind ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
-      <iframe class="bx-piece-frame" title="Preview of a library piece"${lib.preview ? "" : " hidden"}></iframe>
+      <iframe class="bx-piece-frame" title="Preview of a library piece" sandbox=""${lib.preview ? "" : " hidden"}></iframe>
       ${items}`;
   }
 
   // A document that shows one piece, for the preview frame.
+  // A piece you may use shows as it is; a paid one you don't own shows its layout only (the server sends an outline).
   function previewDoc(piece, theme) {
     const M = window.GS.builderModel;
-    if (piece.kind === "template") return piece.fragment;
-    const section = piece.kind === "section" ? piece.fragment : { ...M.newSection("blank"), rows: Math.max(4, piece.fragment.box.h + 1), elements: [piece.fragment] };
+    const shown = piece.fragment || piece.outline;
+    if (piece.kind === "template") return shown;
+    const section = piece.kind === "section" ? shown : { ...M.newSection("blank"), rows: Math.max(4, shown.box.h + 1), elements: [shown] };
     return { version: 2, theme, nav: { items: [] }, pages: [{ slug: "", title: "Preview", sections: [section] }] };
   }
 

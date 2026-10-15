@@ -1,6 +1,7 @@
 // Control Center: the Community library tab (docs/builder.md, phase 8). Every shared piece with its creator, price,
-// installs and open reports (most reported first); Take down removes it from the library, takes its product off sale
-// and stops its images showing on the sites that installed it; Restore lists it again. Talks to /api/admin/library
+// installs and open reports (most reported first), including pieces their creators deleted; Take down removes it from
+// the library, takes its product off sale and stops its images showing on the sites that installed it; Restore puts
+// back what it was. Talks to /api/admin/library
 // (server/library/admin.js). Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
@@ -21,7 +22,7 @@
         <td>${p.priceCents ? `$${(p.priceCents / 100).toFixed(2)}` : "Free"}</td>
         <td>${p.installs}</td>
         <td>${p.openReports ? `<strong>${p.openReports}</strong><ul class="small-print">${p.reasons.map((r) => `<li>${e(r)}</li>`).join("")}</ul>` : "0"}</td>
-        <td>${p.status === "removed" ? `<strong>Taken down</strong>${p.note ? `<br><span class="small-print">${e(p.note)}</span>` : ""}` : "Listed"}</td>
+        <td>${p.status === "removed" ? `<strong>Taken down</strong>${p.note ? `<br><span class="small-print">${e(p.note)}</span>` : ""}` : p.status === "deleted" ? "Deleted by its creator (still on sites that use it)" : "Listed"}</td>
         <td>${p.status === "removed" ? '<button class="btn ghost small" type="button" data-restore>Restore</button>' : '<button class="btn ghost small danger" type="button" data-takedown>Take down</button>'}</td>
       </tr>`).join("") || '<tr><td colspan="7">Nothing shared yet.</td></tr>'}</tbody></table></div>`;
   }

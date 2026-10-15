@@ -183,7 +183,7 @@ window.LEGAL = [
     title: "Refund policy",
     description: "When AutoStacc refunds digital purchases: failed and duplicate payments, files that don't work, unauthorized purchases, and how to ask.",
     summary: "Everything AutoStacc sells is a digital download you can use straight away, so refunds work a little differently from physical goods. Here's when you get your money back.",
-    updated: "2026-10-08",
+    updated: "2026-10-15",
     review: "",
     sections: [
       { id: "default", heading: "Digital downloads", body: [
@@ -196,7 +196,7 @@ window.LEGAL = [
         "The store won't let you buy something you already own, and pressing the button twice opens one order, not two. If you're still charged twice for the same thing, the extra payment is refunded in full."
       ] },
       { id: "accidental", heading: "Bought the wrong thing", body: [
-        "If you haven't downloaded anything from the purchase yet, you can refund it yourself within 14 days: open [Settings › Orders](/settings/orders) and press Refund this order. The money goes back to your card and the files leave Your Stacc. Once anything from the order has been downloaded, it can't be refunded this way; see the cases below, or ask."
+        "If you haven't downloaded anything from the purchase yet, you can refund it yourself within 14 days: open [Settings › Orders](/settings/orders) and press Refund this order. The money goes back to your card and the files leave Your Stacc. Once anything from the order has been downloaded, it can't be refunded this way; see the cases below, or ask. A site template from the Studio's community library counts as downloaded once you use it on a site."
       ] },
       { id: "broken", heading: "Missing, broken or not as described", body: [
         "If files are missing, won't open, or aren't what the product page described, tell AutoStacc. The files are fixed or replaced first; if that isn't possible, you get a refund."

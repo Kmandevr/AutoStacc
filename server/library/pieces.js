@@ -55,7 +55,20 @@ async function filesOf(db, piece) {
 
 const SELECT = `SELECT p.*, c.name AS creator_name, c.slug AS creator_slug FROM library_pieces p JOIN creators c ON c.id = p.creator_id`;
 
+// A paid piece's shape without its content, for someone who doesn't own it: each element as a plain box where it
+// sits, so they see the layout before buying but can't copy the words, settings or images.
+function outlineOf(kind, fragment) {
+  const box = (e) => ({ id: e.id, type: "spacer", box: e.box, style: { bg: "#9aa0ad", radius: 8 } });
+  const section = (s) => ({ ...s, cls: [], background: { color: "", asset: "", fit: "cover", overlay: 0, text: "" }, elements: s.elements.map(box) });
+  if (!fragment) return null;
+  if (kind === "element") return box(fragment);
+  if (kind === "section") return section(fragment);
+  return { version: 2, theme: { preset: fragment.theme.preset, accent: fragment.theme.accent, font: fragment.theme.font }, nav: { items: [] },
+    pages: fragment.pages.map((p) => ({ slug: p.slug, title: p.title, sections: p.sections.map(section) })) };
+}
+
 // Listed pieces (active, from active creators), newest first, with what this account owns; plus the asking creator's own.
+// Content and files only for pieces this account may use; for the others, an outline.
 export async function browse(db, { kind, q, creatorId, owned }) {
   const where = ["p.status = 'active'", "c.status = 'active'", "c.deleted_at IS NULL"];
   const args = [];
@@ -66,8 +79,9 @@ export async function browse(db, { kind, q, creatorId, owned }) {
   const out = new Map();
   for (const p of [...mine, ...rows]) {
     if (out.has(p.id)) continue;
-    out.set(p.id, publicPiece(p, { mine: p.creator_id === creatorId, owned: !p.product_id || p.creator_id === creatorId || owned.has(p.product_id),
-      fragment: parseJson(p.fragment, null), files: await filesOf(db, p) }));
+    const usable = !p.product_id || p.creator_id === creatorId || owned.has(p.product_id);
+    out.set(p.id, publicPiece(p, { mine: p.creator_id === creatorId, owned: usable,
+      ...(usable ? { fragment: parseJson(p.fragment, null), files: await filesOf(db, p) } : { outline: outlineOf(p.kind, parseJson(p.fragment, null)), files: [] }) }));
   }
   return [...out.values()];
 }
@@ -102,24 +116,37 @@ export async function install(db, piece, creatorId, user) {
 export const setStatus = (db, pieceId, status, note = null) =>
   run(db, "UPDATE library_pieces SET status = ?, removed_note = ?, updated_at = ? WHERE id = ?", status, note, now(), pieceId);
 
+// A takedown remembers what it undoes.
+export const takeDown = (db, piece, note, productWasLive) => run(db,
+  "UPDATE library_pieces SET status = 'removed', removed_from = ?, product_was_live = ?, removed_note = ?, updated_at = ? WHERE id = ? AND status <> 'removed'",
+  piece.status, productWasLive ? 1 : 0, note, now(), piece.id);
+
+// Deletes a piece that was never shared (its product couldn't be made).
+export const discard = (db, pieceId) => run(db, "DELETE FROM library_pieces WHERE id = ? AND installs = 0", pieceId);
+
 export async function report(db, piece, user, reason) {
   const res = await run(db, "INSERT INTO library_reports (id, piece_id, reporter_id, reason, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
     newId("lr"), piece.id, user.id, reason, now());
   return Boolean(res.meta.changes);
 }
 
-// Files of active or deleted pieces this creator installed, among these ids: their sites may show them. A piece taken
-// down by AutoStacc shows nothing anymore.
+// Pieces another creator installed that their sites may still show: active or deleted (never taken down by AutoStacc),
+// not their own (their own files are theirs already), and for a paid piece only while whoever installed it still owns
+// it (a refund ends it).
+const LIVE_INSTALL = `p.status IN ('active', 'deleted') AND p.creator_id <> i.creator_id
+  AND (p.product_id IS NULL OR EXISTS (SELECT 1 FROM entitlements e WHERE e.product_id = p.product_id AND e.user_id = i.installed_by AND e.status = 'active'))`;
+
+// Files of the pieces this creator installed, among these ids: their sites may show them.
 export async function installedFiles(db, creatorId, ids) {
   if (!ids.length) return [];
-  return all(db, `SELECT DISTINCT a.id FROM library_installs i JOIN library_pieces p ON p.id = i.piece_id AND p.status IN ('active', 'deleted')
+  return all(db, `SELECT DISTINCT a.id FROM library_installs i JOIN library_pieces p ON p.id = i.piece_id AND ${LIVE_INSTALL}
     JOIN json_each(p.assets) j JOIN site_assets a ON a.id = j.value AND a.status = 'active'
     WHERE i.creator_id = ? AND a.id IN (${ids.map(() => "?").join(",")})`, creatorId, ...ids);
 }
 
 // The files the installer's editor may use from the pieces it installed.
 export async function installedFileList(db, creatorId) {
-  const pieces = await all(db, "SELECT p.assets FROM library_installs i JOIN library_pieces p ON p.id = i.piece_id AND p.status IN ('active', 'deleted') WHERE i.creator_id = ?", creatorId);
+  const pieces = await all(db, `SELECT p.assets FROM library_installs i JOIN library_pieces p ON p.id = i.piece_id AND ${LIVE_INSTALL} WHERE i.creator_id = ?`, creatorId);
   const ids = [...new Set(pieces.flatMap((p) => parseJson(p.assets, [])))];
   return filesOf(db, { assets: JSON.stringify(ids) });
 }

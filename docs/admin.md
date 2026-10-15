@@ -86,7 +86,7 @@ Not recorded here: news posts and events, which are edited in `data/` and publis
 
 ## Community library
 
-The **Community library** section (`js/admin-library.js`, `server/library/admin.js`; [builder](builder.md#community-library-built)) lists every piece trusted creators shared, most reported first, with the latest report reasons. **Take down** (with a note kept for the record) removes it from the library, takes its product off sale, stops its images showing on the sites that installed it and resolves its reports; **Restore** lists it again and puts its product back on sale. Both are audited (`library.removed`, `library.restored`). Words already copied into other creators' drafts stay theirs.
+The **Community library** section (`js/admin-library.js`, `server/library/admin.js`; [builder](builder.md#community-library-built)) lists every piece trusted creators shared, most reported first, with the latest report reasons. **Take down** (with a note kept for the record) removes it from the library, takes its product off sale, stops its images showing on the sites that installed it and resolves its reports; **Restore** puts back what it was (listed, or deleted by its creator) and its product on sale only if it was and still passes readiness. Pieces their creators deleted are listed too, so deleting can't dodge a takedown. Both are audited (`library.removed`, `library.restored`). Words already copied into other creators' drafts stay theirs.
 
 ## Creators
 

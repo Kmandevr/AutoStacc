@@ -17,6 +17,9 @@ CREATE TABLE library_pieces (
   product_id TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deleted', 'removed')),
   removed_note TEXT,
+  -- At a takedown: the status it had and whether its product was on sale, so a restore puts back exactly that.
+  removed_from TEXT,
+  product_was_live INTEGER,
   installs INTEGER NOT NULL DEFAULT 0,
   created_by TEXT,
   created_at TEXT NOT NULL,

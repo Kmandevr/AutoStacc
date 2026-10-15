@@ -8,7 +8,7 @@ updated: 2026-10-15
 
 ## 2026-10-15: The community library
 
-Phase 8 (Claude, following the owner's answers): a shared piece is a checked fragment of a site document, never markup; it drops the seller's own products, projects and audio players, which a buyer's site couldn't show anyway. A paid piece is an ordinary store product of a new kind, `template` (general digital-goods tax code, its own licence), so buying, refunds, payouts and Your Stacc need nothing new; ownership is the buyer account's, usable on any creator it edits for. A takedown hides the piece's files everywhere but can't take back words already copied into drafts.
+Phase 8 (Claude, following the owner's answers): a shared piece is a checked fragment of a site document, never markup; it drops the seller's own products, projects and audio players, which a buyer's site couldn't show anyway. A paid piece is an ordinary store product of a new kind, `template` (general digital-goods tax code, its own licence), so buying, refunds, payouts and Your Stacc need nothing new; ownership is the buyer account's, usable on any creator it edits for. A takedown hides the piece's files everywhere but can't take back words already copied into drafts. After the security review: non-buyers see a paid piece's layout only; using a bought piece counts as a download for refunds (as with files); an installer's sites show a paid piece's files only while the installer still owns it; installing your own piece never keeps files alive.
 
 ## 2026-10-15: Team roles are capabilities
 

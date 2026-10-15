@@ -70,6 +70,13 @@ export default (ctx) => describe("community library", () => {
     const row = sql(ctx.mock.stateDir, `SELECT p.product_id, d.type, d.published, d.price_cents FROM library_pieces p JOIN products d ON d.id = p.product_id WHERE p.id = '${made.data.piece.id}'`)[0];
     assert.deepEqual([row.type, row.published, row.price_cents], ["template", 1, 900]);
     const u = await creator("lib-buyer");
+    // Before buying: the layout only, never the words, settings or images.
+    const seen = (await u.c.get(`/api/studio/library?creatorId=${u.creator.id}`)).data.pieces.find((p) => p.id === made.data.piece.id);
+    assert.equal(seen.owned, false);
+    assert.equal(seen.fragment, undefined);
+    assert.deepEqual(seen.files, []);
+    assert.ok(seen.outline.elements.every((e) => e.type === "spacer" && !e.asset && !e.text), JSON.stringify(seen.outline));
+    assert.ok(!JSON.stringify(seen).includes(s.image.id), "no file of a paid piece reaches a non-buyer");
     const refused = await u.c.post(`/api/studio/creators/${u.creator.id}/library/${made.data.piece.id}/install`, {});
     assert.equal(refused.status, 402);
     assert.equal(refused.data.error.code, "buy_first");
@@ -77,6 +84,15 @@ export default (ctx) => describe("community library", () => {
     assert.equal(order.pay.status, 200, JSON.stringify(order.pay.data));
     assert.equal((await u.c.post(`/api/studio/creators/${u.creator.id}/library/${made.data.piece.id}/install`, {})).status, 200);
     assert.equal((await s.c.post(`/api/studio/creators/${s.creator.id}/library/${made.data.piece.id}/install`, {})).status, 200, "its creator uses it free");
+    // Using it counts like a download: the buyer can't refund it and keep it.
+    const back = await u.c.post(`/api/orders/${order.orderId}/refund`, {});
+    assert.equal(back.status, 409);
+    assert.equal(back.data.error.reason, "downloaded");
+    // And if the purchase goes away (an admin refund, say), the buyer's sites stop showing its files.
+    await u.c.req("PUT", `/api/studio/projects/${u.project.id}/site`, { body: v2([img(s.image.id)]) });
+    assert.match((await u.c.get(`/api/studio/projects/${u.project.id}/preview`)).data, new RegExp(s.image.id));
+    sql(ctx.mock.stateDir, `UPDATE entitlements SET status = 'revoked' WHERE product_id = '${row.product_id}' AND user_id = '${u.user.id}'`);
+    assert.ok(!new RegExp(s.image.id).test((await u.c.get(`/api/studio/projects/${u.project.id}/preview`)).data));
   });
 
   test("deleting a piece: used where installed, no longer counted against its creator; unused files go", async () => {
@@ -92,6 +108,13 @@ export default (ctx) => describe("community library", () => {
     assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/site`)).data.storage.usedBytes, before - PNG.length, "released from its creator's storage");
     assert.equal((await new Client(base()).get(s.image.src)).status, 200, "still served for the site that installed it");
     assert.equal((await u.c.post(`/api/studio/creators/${u.creator.id}/library/${id}/install`, {})).status, 200, "who installed it can still use it");
+    // Installing your own piece and deleting it frees nothing: only other creators' installs keep files.
+    const self = await creator("lib-self", { trusted: true });
+    const sid = (await self.c.post(`/api/studio/creators/${self.creator.id}/library`, shareBody(self))).data.piece.id;
+    await self.c.post(`/api/studio/creators/${self.creator.id}/library/${sid}/install`, {});
+    await self.c.req("DELETE", `/api/studio/creators/${self.creator.id}/images/${self.image.id}`, { body: {} });
+    await self.c.req("DELETE", `/api/studio/creators/${self.creator.id}/library/${sid}`, { body: {} });
+    assert.equal(sql(ctx.mock.stateDir, `SELECT released_at FROM site_assets WHERE id = '${self.image.id}'`)[0].released_at, null);
     // A piece nobody installed: its files go with it.
     const lone = await creator("lib-lone", { trusted: true });
     const lid = (await lone.c.post(`/api/studio/creators/${lone.creator.id}/library`, shareBody(lone))).data.piece.id;
@@ -118,5 +141,19 @@ export default (ctx) => describe("community library", () => {
     assert.equal(sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM admin_audit WHERE action = 'library.removed' AND target_id = '${id}'`)[0].n, 1);
     assert.equal((await admin.req("PATCH", `/api/admin/library/${id}`, { body: { status: "active" } })).status, 200);
     assert.equal(sql(ctx.mock.stateDir, `SELECT published FROM products WHERE id = '${productId}'`)[0].published, 1);
+    // Deleting a piece doesn't dodge a takedown: it is still listed for the admin and can be taken down, and its files
+    // then stop showing on the sites that installed it.
+    const d = await creator("lib-dodge", { trusted: true });
+    const did = (await d.c.post(`/api/studio/creators/${d.creator.id}/library`, shareBody(d))).data.piece.id;
+    const victim = await creator("lib-dodge-user");
+    await victim.c.post(`/api/studio/creators/${victim.creator.id}/library/${did}/install`, {});
+    await victim.c.req("PUT", `/api/studio/projects/${victim.project.id}/site`, { body: v2([img(d.image.id)]) });
+    await d.c.req("DELETE", `/api/studio/creators/${d.creator.id}/library/${did}`, { body: {} });
+    assert.match((await victim.c.get(`/api/studio/projects/${victim.project.id}/preview`)).data, new RegExp(d.image.id));
+    assert.ok((await admin.get("/api/admin/library")).data.pieces.some((p) => p.id === did && p.status === "deleted"));
+    assert.equal((await admin.req("PATCH", `/api/admin/library/${did}`, { body: { status: "removed", note: "abuse" } })).status, 200);
+    assert.ok(!new RegExp(d.image.id).test((await victim.c.get(`/api/studio/projects/${victim.project.id}/preview`)).data));
+    assert.equal((await admin.req("PATCH", `/api/admin/library/${did}`, { body: { status: "active" } })).status, 200);
+    assert.equal(sql(ctx.mock.stateDir, `SELECT status FROM library_pieces WHERE id = '${did}'`)[0].status, "deleted", "a restore puts back what it was");
   });
 });

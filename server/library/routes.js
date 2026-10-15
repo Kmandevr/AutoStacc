@@ -14,7 +14,9 @@ import { createProduct, updateProduct } from "../creators/products.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { stillUsed, purge, releaseFile } from "../sites/images.js";
 import { getProject } from "../creators/creators.js";
-import { KINDS, browse, getPiece, share, linkProduct, install, setStatus, report } from "./pieces.js";
+import { KINDS, browse, getPiece, share, linkProduct, install, setStatus, report, discard } from "./pieces.js";
+import { activeEntitlements } from "../entitlements/grants.js";
+import { logEvent } from "../downloads/events.js";
 
 const PIECES_PER_CREATOR = 50;
 const owned = async (app, user) => new Set(await ownedProductIds(app.db, { user, guestOrderIds: [] }));
@@ -46,9 +48,17 @@ async function create(app, { creatorId }) {
   if (project && project.creator_id !== creator.id) fail(404, "not_found", "Nothing here.");
   const pieceId = await share(app.db, { creator, user, kind: body.kind, title, description, raw: body.piece });
   if (priceCents) {
-    const product = await createProduct(app.db, { creator, project, user, input: { title, description, type: "template", priceCents } });
-    await linkProduct(app.db, pieceId, product.id, priceCents);
-    await updateProduct(app.db, { product, project, creator, input: { published: true }, user });
+    // Shared and on sale together, or neither: a product that can't be made or put on sale takes the piece back.
+    let product = null;
+    try {
+      product = await createProduct(app.db, { creator, project, user, input: { title, description, type: "template", priceCents } });
+      await linkProduct(app.db, pieceId, product.id, priceCents);
+      await updateProduct(app.db, { product, project, creator, input: { published: true }, user });
+    } catch (e) {
+      await discard(app.db, pieceId);
+      if (product) await updateProduct(app.db, { product, project, creator, input: { deleted: true }, user }).catch(() => {});
+      throw e;
+    }
   }
   return json({ piece: { id: pieceId } }, 201);
 }
@@ -66,7 +76,8 @@ async function remove(app, { creatorId, pieceId }) {
   }
   // Its files: still the creator's while their own sites use them; else kept for the sites that installed it (and no
   // longer counted for the creator); else deleted.
-  const installs = (await first(app.db, "SELECT COUNT(*) AS n FROM library_installs WHERE piece_id = ?", piece.id)).n;
+  // Only other creators' installs keep files alive (installing your own piece doesn't).
+  const installs = (await first(app.db, "SELECT COUNT(*) AS n FROM library_installs WHERE piece_id = ? AND creator_id <> ?", piece.id, creator.id)).n;
   const assets = JSON.parse(piece.assets || "[]");
   for (const id of assets) {
     if (await stillUsed(app.db, creator.id, id)) continue;
@@ -91,6 +102,11 @@ async function use(app, { creatorId, pieceId }) {
   if (!mine && (!seller || seller.status !== "active")) fail(404, "not_found", "This piece isn't available.");
   if (piece.status === "deleted" && !mine && !bought && !before) fail(404, "not_found", "This piece isn't available.");
   if (piece.product_id && !mine && !bought) fail(402, "buy_first", "Buy it in the AutoStacc store first, then use it here.", { productPath: `/product?p=${piece.product_id}` });
+  // Using a bought piece is like downloading it: its order can't be refunded by the buyer afterwards (orders/refunds.js).
+  if (piece.product_id && !mine) {
+    const [ent] = await activeEntitlements(app.db, { user, guestOrderIds: [] }, piece.product_id);
+    if (ent) await logEvent(app, "served", { productId: piece.product_id, entitlementId: ent.id, subject: `u:${user.id}`, reason: "library-install" });
+  }
   return json(await install(app.db, piece, creator.id, user));
 }
 

@@ -31,7 +31,7 @@ export const listImages = (db, creatorId) =>
   all(db, "SELECT id, filename, content_type, size_bytes, created_at FROM site_assets WHERE creator_id = ? AND status = 'active' AND hidden_at IS NULL ORDER BY created_at DESC", creatorId);
 // The creator's active files among these ids (a document may only show its own creator's files).
 export const ownImages = (db, creatorId, ids) => (ids.length
-  ? all(db, `SELECT id, content_type FROM site_assets WHERE creator_id = ? AND status = 'active' AND id IN (${ids.map(() => "?").join(",")})`, creatorId, ...ids)
+  ? all(db, `SELECT id, content_type FROM site_assets WHERE creator_id = ? AND status = 'active' AND released_at IS NULL AND id IN (${ids.map(() => "?").join(",")})`, creatorId, ...ids)
   : Promise.resolve([]));
 // What /media/sites/<id> serves: an active file of a creator that isn't suspended.
 export const servableImage = (db, id) => first(db,
