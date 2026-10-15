@@ -2,7 +2,7 @@
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
 covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Product Studio and the workspace shell
@@ -36,7 +36,7 @@ updated: 2026-10-14
 
 ## Layout (shared shell: `js/workspace.js`, `css/workspace.css`)
 
-`css/workspace.css` also styles the Pack Builder's review table where Studio and the Control Center share it (the waveform beside each file, from the engine's analysis; [packs](packs.md)).
+`css/workspace.css` also styles the Pack Builder's review table and the Pac editor where Studio and the Control Center share them (the waveform beside each file, the folder tree, the previews panel; [packs](packs.md#pac-editor-built-2026-10-15)). In the Pac Builder section, "Add a file" puts a single file into the product's Pac, checked by the engine (`js/studio-section-pacs.js`).
 
 - **Desktop:** a persistent sidebar of sections on the left, with the open section in the central workspace. Sections can be grouped; the Control Center uses groups.
 - **Compact header:** the item's name, its status (Draft, On sale, Paused, Removed for a product; LIVE or TEST for the Control Center), a save status ("All changes saved", "Saving…", "Unsaved changes", "Couldn't save"), a **Preview** action and a settings menu.

@@ -2,7 +2,7 @@
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
 covers: [package.json, scripts/dev.js, scripts/dist.js, scripts/serve.js, wrangler.toml, server/lib/config.js, db/migrations/, test/, .github/workflows/store.yml, server/payments/index.js, server/email/, server/app.js, server/dev/, scripts/docs-test.js, .github/workflows/clear-status-on-close.yml]
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Development
@@ -55,7 +55,7 @@ Bindings: `DB` (D1), `FILES` (private R2), `PREVIEWS` (R2 for preview clips), an
 
 ## Database
 
-Schema changes are new files in `db/migrations/` with the next number after the highest (today `0021_usage_guard.sql`, so `0022_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
+Schema changes are new files in `db/migrations/` with the next number after the highest (today `0023_pac_editor.sql`, so `0024_....sql`; there is no `0010`), forward-only: add tables and columns, never drop or rewrite data in a migration. Apply locally by restarting `npm run dev`; the deploy applies them to production before publishing. `db/catalog.sql` is generated; never edit it.
 
 ## Tests
 

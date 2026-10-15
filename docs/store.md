@@ -2,7 +2,7 @@
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
 covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
-updated: 2026-10-14
+updated: 2026-10-15
 ---
 
 # Store
@@ -54,7 +54,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `sites/` | creator sites: the document, blocks, embeds, themes, rendering, publishing, images, public pages | `/<creator>[/<project>[/<page>]]` (`functions/[[path]].js`), `/media/sites/:id` |
 | `revenue/` | who sold each order line and how its money splits (`split.js`), creators' earnings and the 14-day hold (`earnings.js`), payout requests (`payouts.js`) | (used by checkout, studio, admin) |
 | `integrations/` | connected accounts: the provider registry (none switched on) | |
-| `packs/` | the Pack Builder: Pac versions, resumable ZIP uploads, processing by the engine, import, publish ([packs](packs.md)) | `/api/admin/packs/*` (admin only) |
+| `packs/` | the Pack Builder: Pac versions, resumable ZIP uploads, processing by the engine, import, publish, and the Pac editor (drafts, additions, tree edits, read me, previews; [packs](packs.md)) | `/api/admin/packs/*` (admin only) |
 | `blobs/` | stored originals, one per owner and SHA-256, and their retention | (used by packs, files, downloads) |
 | `usage/` | the budget guard: monthly meters of processing and storage against the free allowance, the storage cap creators' uploads stop at ([packs](packs.md)) | (used by packs and studio; admin: `/api/admin/usage`) |
 | `maintenance/` | the daily retention sweep (also: removed files' bytes, older files' checksums, waiting processing jobs), asked for by the engine Worker's cron with `SWEEP_TOKEN` | `POST /api/internal/sweep` |
