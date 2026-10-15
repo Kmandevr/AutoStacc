@@ -6,7 +6,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import { sql, unique } from "../support/client.js";
+import { sql, unique, outbox, linkIn } from "../support/client.js";
 import { browserStore, PHONE, DESK, settle } from "../support/browser.js";
 
 const t = browserStore({ name: "builder", port: 8828 });
@@ -126,6 +126,41 @@ describe("the visual builder in the browser", () => {
     const project = sql(t.stateDir, "SELECT p.id FROM projects p WHERE p.name = 'Glow'")[0];
     assert.match(sql(t.stateDir, `SELECT draft FROM project_sites WHERE project_id = '${project.id}'`)[0].draft, /cs-h/);
     assert.deepEqual(page.errors, []);
+  });
+
+  test("team: the owner invites by email from the Studio; the invitee accepts from the link and sees only what their role allows", async () => {
+    const { page } = await open(DESK);
+    await signUp(page, unique("team-owner"));
+    await page.goto("/studio");
+    await page.fill("#cr-name", "Team Creator");
+    await page.fill("#cr-slug", `vbt-${Date.now().toString(36)}`);
+    await page.click("form[data-form=creator] button[type=submit]");
+    await page.fill("#pr-name", "Shared");
+    await page.click("form[data-form=project] button[type=submit]");
+    await page.waitForSelector(".bx-bar");
+    await page.goto("/studio");
+    await page.waitForSelector("[data-team-invite]");
+    const invitee = unique("team-editor");
+    await page.fill("[data-team-invite] [name=email]", invitee);
+    await page.selectOption("[data-team-invite] [name=role]", "editor");
+    await page.click("[data-team-invite] button[type=submit]");
+    await page.waitForSelector(`.studio-team-invite:has-text("${invitee}")`);
+    assert.deepEqual(page.errors, []);
+
+    const guest = await open(DESK);
+    await signUp(guest.page, invitee);
+    const link = new URL(linkIn((await outbox(t.base, invitee)).find((m) => m.kind === "creator-invite")));
+    await guest.page.goto(link.pathname + link.hash);
+    await guest.page.click("[data-accept]");
+    await guest.page.waitForSelector(".studio-creator");
+    // An editor edits the site but has no Products, no project settings and no Publish.
+    assert.equal(await guest.page.locator("[data-edit]").count(), 1);
+    assert.equal(await guest.page.locator("[data-products]").count(), 0);
+    assert.equal(await guest.page.locator("[data-team-invite]").count(), 0);
+    await guest.page.click("[data-edit]");
+    await guest.page.waitForSelector(".bx-bar");
+    assert.equal(await guest.page.locator('[data-action="publish"]').count(), 0);
+    assert.deepEqual(guest.page.errors, []);
   });
 
   test("on a phone: the editor fits, the panel follows the page, nothing scrolls sideways", async () => {

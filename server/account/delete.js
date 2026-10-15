@@ -19,7 +19,7 @@ import { removeAllFollowsStmt } from "../projects/follows.js";
 import { removeWishlistStmt } from "../wishlist/wishlist.js";
 import { eraseCollectionsStmts } from "../collections/collections.js";
 import { removeVotesStmt } from "../polls/polls.js";
-import { creatorsOfUser, leaveAllCreatorsStmt } from "../creators/creators.js";
+import { creatorsOfUser, leaveAllCreatorsStmts } from "../creators/creators.js";
 import { forgetActorStmt } from "../creators/events.js";
 import { randomToken } from "../lib/db.js";
 import { limit } from "../lib/ratelimit.js";
@@ -56,7 +56,7 @@ async function deleteAccount(app) {
     removeWishlistStmt(db, user.id),
     ...eraseCollectionsStmts(db, user.id),
     removeVotesStmt(db, user.id),
-    leaveAllCreatorsStmt(db, user.id),
+    ...leaveAllCreatorsStmts(db, user.id, email),
     forgetActorStmt(db, user.id),
     ...eraseUserStmts(db, user.id)
   ]);

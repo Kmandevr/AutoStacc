@@ -1,13 +1,13 @@
 ---
 title: Visual builder
-summary: Phases 1–6 BUILT, 7–9 planned (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
+summary: Phases 1–7 BUILT, 8–9 planned (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
 covers: [js/builder*.js, js/site-*.js, css/builder.css, css/builder-canvas.css, css/creator-site.css, server/sites/, server/studio/sites.js, server/studio/site-files.js, server/creators/storage.js, db/migrations/0025_visual_builder.sql, test/unit/builder.test.js, test/api/builder.suite.js, test/browser/builder.test.js]
 updated: 2026-10-15
 ---
 
 # Visual builder
 
-> **Phases 1–6 BUILT (2026-10-15); 7–9 PLANNED.** The owner's answers of 2026-10-15, turned into a build plan. The visual editor replaced the Studio's form-based block editor ([creators](creators.md#the-studio-studio)). Each phase below is marked; what isn't marked **Built** doesn't exist yet. Decisions: [decisions](decisions.md#2026-10-15-the-visual-builder).
+> **Phases 1–7 BUILT (2026-10-15); 8–9 PLANNED.** The owner's answers of 2026-10-15, turned into a build plan. The visual editor replaced the Studio's form-based block editor ([creators](creators.md#the-studio-studio)). Each phase below is marked; what isn't marked **Built** doesn't exist yet. Decisions: [decisions](decisions.md#2026-10-15-the-visual-builder).
 
 ## What the owner asked for
 
@@ -49,7 +49,7 @@ updated: 2026-10-15
 The rules in [creators](creators.md#how-creator-pages-stay-safe) still hold; these are the changes:
 
 - **Still no creator HTML or JavaScript.** A site is still a JSON document that the server checks and renders itself. The grid adds positions (`x`, `y`, `w`, `h` in grid units), section backgrounds, class names and settings for the trusted pieces, all checked values.
-- **CSS is parsed and rebuilt, never pasted.** The server's checker (a new module, server/sites/css.js) reads the stylesheet into rules and declarations and writes a new one. Every selector becomes a descendant of the page area (`.cs-site …`), and the page area itself can't be named (its containment is what holds everything in; style `.cs-main` or a section instead), so `body`, `html`, `:root`, the AutoStacc strip and the footer can't be reached. Brackets, quotes and braces must balance in every selector, value and condition, so the browser can't read a rule's end anywhere other than where the checker did (both found in the security review, 2026-10-15, and covered by tests). Refused: `@import`, `@font-face`, `@namespace`, `@charset`, `url()` other than the creator's own images and fonts, `image-set()`, `expression()`, `behavior`, `-moz-binding`, backslash escapes, `<`, nesting (`&`), and anything over the size limit. The page area itself is `contain: paint` and `isolation: isolate`, so even `position: fixed` stays inside it and nothing can be drawn over the strip.
+- **CSS is parsed and rebuilt, never pasted.** The server's checker (a new module, server/sites/css.js) reads the stylesheet into rules and declarations and writes a new one. Every selector becomes a descendant of the page area (`.cs-site …`), and the page area itself can't be named (its containment is what holds everything in; style `.cs-main` or a section instead), so `body`, `html`, `:root`, the AutoStacc strip and the footer can't be reached. Selectors can't name the editor's own `bx-` marks either. Brackets, quotes and braces must balance in every selector, value and condition, so the browser can't read a rule's end anywhere other than where the checker did (both found in the security review, 2026-10-15, and covered by tests). Refused: `@import`, `@font-face`, `@namespace`, `@charset`, `url()` other than the creator's own images and fonts, `image-set()`, `expression()`, `behavior`, `-moz-binding`, backslash escapes, `<`, nesting (`&`), and anything over the size limit. The page area itself is `contain: paint` and `isolation: isolate`, so even `position: fixed` stays inside it and nothing can be drawn over the strip.
 - **One trusted script.** The page's CSP changes from `script-src 'none'` to the address of AutoStacc's runtime (/js/site-runtime.js, new) only. `connect-src`, forms and frames stay as they are. The runtime reads the settings the server wrote into `data-` attributes; it never evaluates anything a creator typed. Every piece works without it (all slides shown, every tab open, plain audio controls).
 - **Fonts are checked by their bytes** (the WOFF2 header: signature, a known flavor and the file's own length) and served from `/media/sites/<id>` like images, with `font-src` allowing only them and the curated Google Fonts.
 - **Shared and bought pieces** are copied into the buyer's document as data and checked again like anything the buyer typed. Their images stay the seller's, so a document may show its creator's own images **and** images of pieces its creator installed.
@@ -66,7 +66,7 @@ The rules in [creators](creators.md#how-creator-pages-stay-safe) still hold; the
 - **Scheduling**: `scheduled_at` and a copy of the saved draft on the site's row; published on the first visit after that time or by the daily sweep (`server/sites/schedule.js`; a compare-and-set takes the copy, so it publishes once). Edits after scheduling stay in the draft.
 - **Files**: `site_assets` holds images and fonts; `hidden_at` marks a deleted file a published page or kept version still uses (still served and counted; released after the next publish that leaves nothing using it; `server/sites/images.js`). Storage: `inUseSql` in `server/creators/storage.js` now adds site files, and `quotaOf` in `server/creators/policy.js` is the one 550 MB cap for every kind of upload.
 - **Templates**: `server/sites/templates.js`, four documents with placeholder words only and no files (`GET /api/studio/templates/:id`).
-- **Roles** (planned, phase 7): new roles in a separate table beside `creator_members` (its CHECK constraint allows only `owner` and `editor`, and migrations never rebuild tables); invitations by email.
+- **Roles** (built, phase 7): `creator_roles` beside `creator_members` (its CHECK allows only `owner` and `editor`, and migrations never rebuild tables), invitations in `creator_invites` ([creators](creators.md#teams-built-2026-10-15)). In the editor, members who can't publish see no Publish, Unpublish or schedule; the server refuses them anyway.
 - **Community library** (planned, phase 8): `library_pieces` (kind section, element or template; the checked fragment; trusted creators only), `library_installs`, `library_reports`. A paid piece is a store product of kind `template` with no file; owning it allows installing it.
 
 ## The editor (built)
@@ -85,7 +85,7 @@ The rules in [creators](creators.md#how-creator-pages-stay-safe) still hold; the
 4. **Built.** Templates: the four starters, offered when a site starts and any time under Add.
 5. **Built.** Trusted library: `js/site-runtime.js` and its pieces (motion, slideshow, tabs, accordion, lightbox, audio player with waveform, countdown, store-link pieces).
 6. **Built.** History and scheduling: last 20 publishes with restore, scheduled publishing.
-7. Roles: the four roles across the Studio API, invitations.
+7. **Built.** Roles: the four roles across the Studio API (capabilities in `server/creators/roles.js`), invitations by email, the Team panel.
 8. Community library: share, browse, install, report, Control Center takedown; selling pieces as store products.
 9. Finish: `/privacy`, the terms and notes for roles and the library.
 

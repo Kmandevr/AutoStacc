@@ -10,6 +10,7 @@ import { limit } from "../lib/ratelimit.js";
 import { LIMITS, quotaOf } from "../creators/policy.js";
 import { requireCreator, projectsOf } from "../creators/creators.js";
 import { requireProject } from "../creators/projects.js";
+import { rolesFor, capabilitiesOf } from "../creators/roles.js";
 import { storageUsed } from "../creators/storage.js";
 import { cleanDocument, starterDocument } from "../sites/document.js";
 import { ELEMENT_TYPES, EFFECTS, HOVERS } from "../sites/elements.js";
@@ -26,13 +27,14 @@ import { listProjectProducts } from "../catalog/products.js";
 import { productPath } from "../creators/products.js";
 import { TEMPLATES, templateById } from "../sites/templates.js";
 
-// The site a request is about, and the account's role in its creator. Not a member: 404.
-async function targetOf(app, params, user) {
+// The site a request is about, and the account's role in its creator, for a member who may do this (roles.js:
+// "site.edit" to see and change drafts, "site.publish" to put them live). Not a member: 404.
+async function targetOf(app, params, user, capability = "site.edit") {
   if (params.projectId) {
-    const { project, creator, role } = await requireProject(app.db, params.projectId, user);
+    const { project, creator, role } = await requireProject(app.db, params.projectId, user, rolesFor(capability));
     return { target: projectSite(creator, project), role };
   }
-  const { creator, role } = await requireCreator(app.db, params.creatorId, user);
+  const { creator, role } = await requireCreator(app.db, params.creatorId, user, rolesFor(capability));
   // A profile's row is made on first use.
   await run(app.db, "INSERT OR IGNORE INTO creator_sites (creator_id, draft, draft_updated_at) VALUES (?, '{}', ?)", creator.id, now());
   return { target: profileSite(creator), role };
@@ -60,7 +62,7 @@ async function getSite(app, params) {
     site: { kind: target.kind, id: target.id, name: target.name, path: target.base, live, savedAt: site && site.draft_updated_at, publishedAt: site && site.published_at,
       version: site ? site.version : 0, scheduledAt: (site && site.scheduled_at) || null, fresh: !parseJson(site && site.draft, {}).pages },
     creator: { id: creator.id, slug: creator.slug, name: creator.name, trusted: Boolean(creator.trusted) },
-    role,
+    role, capabilities: capabilitiesOf(role),
     document: draftOf(site, target),
     files: files.map((i) => ({ id: i.id, src: imageSrc(i.id), filename: i.filename, contentType: i.content_type, sizeBytes: i.size_bytes })),
     products: products.map((p) => ({ id: p.id, title: p.title, path: productPath(p), artwork: p.artwork, preview: p.preview || null })),
@@ -99,13 +101,13 @@ async function preview(app, params) {
 async function publish(app, params) {
   const user = await requireUser(app);
   await limit(app, "studio-publish", 20, 600);
-  const { target } = await targetOf(app, params, user);
+  const { target } = await targetOf(app, params, user, "site.publish");
   return json(await publishSite(app, target, { user }));
 }
 
 async function unpublish(app, params) {
   const user = await requireUser(app);
-  const { target } = await targetOf(app, params, user);
+  const { target } = await targetOf(app, params, user, "site.publish");
   await unpublishSite(app, target);
   return json({ ok: true });
 }
@@ -127,14 +129,14 @@ async function restore(app, params) {
 async function schedule(app, params) {
   const user = await requireUser(app);
   await limit(app, "studio-publish", 20, 600);
-  const { target } = await targetOf(app, params, user);
+  const { target } = await targetOf(app, params, user, "site.publish");
   const body = await readJson(app.request);
   return json(await scheduleSite(app.db, target, str(body.at, "at", { max: 40 }), user));
 }
 
 async function unschedule(app, params) {
   const user = await requireUser(app);
-  const { target } = await targetOf(app, params, user);
+  const { target } = await targetOf(app, params, user, "site.publish");
   await cancelSchedule(app.db, target);
   return json({ ok: true });
 }

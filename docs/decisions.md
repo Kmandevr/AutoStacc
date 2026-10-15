@@ -6,6 +6,10 @@ updated: 2026-10-15
 
 # Decisions
 
+## 2026-10-15: Team roles are capabilities
+
+Phase 7 of the builder (Claude, following the owner's four roles): routes ask for a capability (`site.edit`, `site.publish`, `products`, `projects`, `members`, `library.share`, `money`), mapped to roles in one file (`server/creators/roles.js`), so roles can change without touching routes. The existing `editor` role, never grantable before, now means site drafts only; product work moved to the new Store manager. Any member may upload site files (product pages use them too). Admins manage the team but can't touch the owner, other admins, or make admins.
+
 ## 2026-10-15: The visual builder
 
 Owner's request: turn the Studio's mini web builder into an "account builder", simple and visual like Wix. Answers, full plan and build order in [builder](builder.md):

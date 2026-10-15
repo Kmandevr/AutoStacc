@@ -44,7 +44,7 @@
       if (tab === "add") html = window.GS.builderAdd.palette(data, { profile: target.kind === "profile" });
       if (tab === "site") html = P().sitePanel(doc, data);
       if (tab === "files") html = FL().filesPanel(data);
-      if (tab === "history") html = FL().historyPanel(data, versions);
+      if (tab === "history") html = FL().historyPanel(data, versions, mayPublish());
       host.innerHTML = html;
       root.querySelectorAll(".bx-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     }
@@ -62,10 +62,11 @@
         ${s.live ? `<a class="btn ghost small" href="${e(s.path)}" target="_blank" rel="noopener">View live</a>` : ""}
         <button class="btn ghost small" type="button" data-action="preview">Preview</button>
         <button class="btn ghost small" type="button" data-action="save">Save</button>
-        <button class="btn small" type="button" data-action="publish">Publish</button>
-        ${s.live ? '<button class="btn ghost small" type="button" data-action="unpublish">Unpublish</button>' : ""}`;
+        ${mayPublish() ? `<button class="btn small" type="button" data-action="publish">Publish</button>
+        ${s.live ? '<button class="btn ghost small" type="button" data-action="unpublish">Unpublish</button>' : ""}` : '<span class="small-print">Saved drafts are published by an owner, admin or publisher.</span>'}`;
     }
 
+    const mayPublish = () => (data.capabilities || []).includes("site.publish");
     const drawAll = () => { drawBar(); drawCanvas(); drawPanel(); };
     // Only the undo and redo buttons, so a click on another toolbar button isn't lost to a redraw (leaving a field fires
     // change just before the click lands).

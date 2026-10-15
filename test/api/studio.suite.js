@@ -1,6 +1,6 @@
 // Product Studio (docs/studio.md): one product's workspace, readiness guarding publish, the release history, creators'
 // own sales (one at a time, race-safe, never someone else's) with earnings estimates, and insights from real paid
-// orders (with a CSV). Every route answers 404 to anyone who isn't the product's owner or editor, and editors never
+// orders (with a CSV). Every route answers 404 to anyone who isn't the product's owner or a teammate who runs products, and they never
 // see earnings figures.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -38,10 +38,12 @@ export default (ctx) => describe("studio", () => {
     return p;
   };
   const kinds = async (s, p) => (await s.c.get(`/api/studio/products/${p.id}/activity`)).data.activity.map((e) => e.kind);
-  // Another account, made an editor of the creator directly (the role can't be granted through the API yet).
+  // Another account on the creator's team who runs products but never sees money: a store manager (roles.js), made
+  // directly in the database (invitations are tested in team.suite.js).
   async function editorOf(s, tag) {
     const e = await newBuyer(base(), tag);
-    db(`INSERT INTO creator_members (creator_id, user_id, role, created_at) VALUES ('${s.creator.id}', '${e.user.id}', 'editor', '${iso(0)}')`);
+    db(`INSERT INTO creator_members (creator_id, user_id, role, created_at) VALUES ('${s.creator.id}', '${e.user.id}', 'editor', '${iso(0)}');
+      INSERT INTO creator_roles (creator_id, user_id, role, created_at, updated_at) VALUES ('${s.creator.id}', '${e.user.id}', 'store_manager', '${iso(0)}', '${iso(0)}')`);
     return e;
   }
 
@@ -81,10 +83,10 @@ export default (ctx) => describe("studio", () => {
     assert.deepEqual(w.summary, { days: 30, orders: 0, units: 0, netCents: 0, creatorShareCents: 0, downloads: 0, views: 0 });
     assert.equal(w.limits.minPriceCents, 100);
     assert.equal(typeof w.features.packsStudio, "boolean");
-    // An editor sees the same product but not the creator's share.
+    // A store manager sees the same product but not the creator's share.
     const e = await editorOf(s, "ps-ws-editor");
     const ew = (await e.c.get(`/api/studio/products/${p.id}`)).data;
-    assert.equal(ew.role, "editor");
+    assert.equal(ew.role, "store_manager");
     assert.equal(ew.summary.creatorShareCents, null);
   });
 

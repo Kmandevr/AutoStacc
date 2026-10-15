@@ -4,5 +4,6 @@
 import { runGroup } from "./group.js";
 import studio from "./studio.suite.js";
 import builder from "./builder.suite.js";
+import team from "./team.suite.js";
 
-runGroup({ name: "studio", ports: { mock: 8820 }, stripe: false }, [studio, builder]);
+runGroup({ name: "studio", ports: { mock: 8820 }, stripe: false }, [studio, builder, team]);

@@ -9,10 +9,11 @@ import { LIMITS, SELLING } from "../creators/policy.js";
 import { requireProject } from "../creators/projects.js";
 import { cleanProductInput, requireOwnProduct, createProduct, updateProduct, listProjectProductRows, productViews, countProducts } from "../creators/products.js";
 import { listImages, imageSrc } from "../sites/images.js";
+import { rolesFor } from "../creators/roles.js";
 
 async function list(app, { projectId }) {
   const user = await requireUser(app);
-  const { project, creator } = await requireProject(app.db, projectId, user);
+  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"));
   const [rows, images, used] = await Promise.all([listProjectProductRows(app.db, project.id), listImages(app.db, creator.id), countProducts(app.db, creator.id)]);
   return json({
     products: await productViews(app.db, rows),
@@ -25,7 +26,7 @@ async function list(app, { projectId }) {
 async function create(app, { projectId }) {
   const user = await requireUser(app);
   await limit(app, "studio-product", 30, 3600);
-  const { project, creator } = await requireProject(app.db, projectId, user);
+  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"));
   const input = cleanProductInput(await readJson(app.request, 8 * 1024), { requireAll: true });
   if (input.published || input.deleted || input.salesPaused) fail(400, "invalid_field", "A new product starts as a draft.");
   const product = await createProduct(app.db, { creator, project, user, input });
