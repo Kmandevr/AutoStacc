@@ -8,6 +8,7 @@ updated: 2026-10-15
 
 Newest first.
 
+- 2026-10-15: Visual builder planned with the owner (Wix-like editor for creator profiles and project sites, free grid, templates, checked CSS, AutoStacc's trusted interactive library, community library with paid pieces, roles, history, scheduling, fonts, one 550 MB storage cap). Notes: builder (new), decisions, creator-pages, creators, index.
 - 2026-10-15: No private tracker (owner): the `tasks` skill tells the owner about private work instead of pointing to `AutoStacc-private`. Notes: decisions, development.
 - 2026-10-15: History of `main` rewritten so commits carry the owner's GitHub no-reply address instead of their personal email (same files, 365 commits); old branches and PR copies left for the owner to clear. Notes: decisions.
 - 2026-10-15: Owner-approved fixes: retired Pac files count against creator storage for their 30 days; pausing creator purchases expires open payment pages; the docs reminder Stop hook is on; issues #111 and #44 cleaned of setup details. Notes: decisions, admin, creators, payouts-setup, store, store-setup, studio, development, .claude/README.

@@ -6,6 +6,18 @@ updated: 2026-10-15
 
 # Decisions
 
+## 2026-10-15: The visual builder
+
+Owner's request: turn the Studio's mini web builder into an "account builder", simple and visual like Wix. Answers, full plan and build order in [builder](builder.md):
+
+- **One editor** for the creator profile (`/<creator>`) and every project site, edited on the live page with a **free 12-column grid**, automatic phone layouts with phone-only tweaks, several pages with a custom menu, undo / redo, a phone preview, section banners and backgrounds. Existing sites convert automatically; the form editor goes.
+- **Four starter templates**: Artist / Producer, DJ / Live, Sample-pack brand, Label / Collective.
+- **CSS, never creator JavaScript.** A checked, rebuilt stylesheet confined to the page area plus class names; interactivity comes from a library AutoStacc writes (motion, slideshows, tabs, accordion, lightbox, audio player with waveform, countdown, store pieces), the only script a creator page may load. Chosen over sandboxed creator code ([creator-pages](creator-pages.md)) because it needs no second origin and can't run anything a creator wrote.
+- **Store pieces are links only**: carts, sign-in and payment stay on AutoStacc's own pages.
+- **Community library**: trusted creators share sections, elements and templates; anyone can report; the Control Center takes pieces down. Pieces can be sold as store products (20% fee); buyers use them on their own sites only.
+- **Roles**: Editor, Publisher, Store manager, Admin; only the owner controls money. **History**: last 20 publishes. **Scheduled publishing.** **Uploaded fonts (WOFF2) and logos.**
+- **Storage: one 550 MB cap** for images, fonts, templates, history and paid files; template images count only against the seller; history counts only images old versions alone still use; at the cap only uploads stop. A deleted template's images stay while sites use them and stop counting against the seller (proposed by Claude).
+
 ## 2026-10-10: Engine Phase 0 measurements confirm Rust, zlib-rs, no SIMD
 
 Measured on a 1 GB synthetic pack (918 files; numbers in [engine](engine.md)): listing is instant (10 ms native, 0.7 s in Chromium), and decompression is what costs. Native and WebAssembly results are identical. zlib-rs replaced miniz_oxide (about 20% faster, same results). WebAssembly SIMD brought nothing measurable, so it's off and older browsers keep working. In Chromium, 4 Web Workers check a 1 GB pack in about 8 s, far less than the upload takes, so browser-side checking is kept. The engine's WebAssembly build is 389 KB (about 180 KB gzipped). With the `basic` Container's limits the engine checks a 1 GB pack in about 20 s using 7 MB of memory and is healthy 0.5 s after starting, so the Container now sleeps 15 s after its last job instead of 30 s (it is billed while awake). The engine Worker is a separate Worker because Pages Functions can't consume Queues or own Containers; the container has no internet and no storage credentials: it reads job inputs through the engine Worker, which answers from its R2 binding (decided 2026-10-10, below).
