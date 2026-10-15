@@ -77,7 +77,7 @@ It is the production checkout, not a copy: the order is created by `POST /api/ch
 
 `admin_audit`, append-only (database triggers refuse updates and deletes), read in the Audit log tab (`GET /api/admin/audit`, admin only). Recorded:
 
-- admin signed in; impersonation started, ended (with reason) and every write inside it; test purchase started; customer previewed
+- admin signed in (with two-step sign-in on, once, after the code); two-step sign-in switched on or off (`auth.two_factor_enabled`, `auth.two_factor_disabled`; never the key or a code); impersonation started, ended (with reason) and every write inside it; test purchase started; customer previewed
 - product sales paused or resumed, product changed in the Control Center (price, published, removed), file added, replaced (new version), published, held back, rejected or deactivated, preview uploaded; receipt resent; entitlement granted or revoked; promotion created or ended; creator updated; creator purchases paused or allowed; payout paid or declined; AutoStacc news sent, a product announced to followers; usage spending allowed or stopped, storage cap set; Pack Builder steps (version created, edited, held, approved, rejected, published or discarded; drafts, additions and preview clips)
 - by the system: each daily retention sweep (`maintenance.sweep`)
 - by the database itself, as "catalog sync": product created, price changed, published, unpublished, removed; project created, published, unpublished

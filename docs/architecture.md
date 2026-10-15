@@ -86,7 +86,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | a kind of product | one entry in `data/product-types.js` |
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |
-| a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` (a module with no routes of its own, like `server/usage/`, is called by the modules that need it; one area may wire more than one route table, like `server/packs/`) |
+| a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` (a module with no routes of its own, like `server/usage/`, is called by the modules that need it; one area may wire more than one route table, like `server/packs/` or `server/account/`) |
 | a store-wide switch the owner flips | a key in `SETTINGS` (`server/settings/settings.js`) |
 | a section of the Product Studio or Control Center | an entry in `data/workspaces.js` and a section module ([studio](studio.md)) |
 

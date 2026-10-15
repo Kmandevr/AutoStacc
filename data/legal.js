@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-14",
+    updated: "2026-10-15",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -30,6 +30,7 @@ window.LEGAL = [
       { id: "account", heading: "Your account", body: [
         "When you create an account: your name, your email address, and your password, which is stored only as a one-way hash (nobody, including AutoStacc, can read it back). Whether you've confirmed your email, and when the account was made.",
         "When you sign in: a session, so you stay signed in until 30 days after you last use the site (or until you close your browser, if you untick \"Keep me logged in\"). Each session records the IP address and browser it started from; you can see them, and sign any of them out, under [Settings › Security](/settings/security).",
+        "Admin accounts only, where AutoStacc has made it available: if you switch on two-step sign-in, the secret key your authenticator app uses and ten one-time backup codes are stored with your account, encrypted, along with whether it's on. Both are deleted when you switch it off or delete the account; your data download says only whether it's on, never the key or the codes. While you type the code after your password, a cookie (**gs.two_factor**) holds that sign-in for up to 10 minutes.",
         "If you follow projects, turn on Auto-Stacc, vote in polls, save products to your wishlist, organize Your Stacc with collections, tags and saved searches, or choose which emails you get, those choices are stored with your account. Collections, tags and saved searches are yours alone: nobody else, including the artists, sees them."
       ] },
       { id: "purchases", heading: "Orders and purchases", body: [
