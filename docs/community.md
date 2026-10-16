@@ -8,7 +8,11 @@ updated: 2026-10-16
 
 > **PLANNED / NOT IMPLEMENTED.** Nothing here exists yet. This turns the open question "community features" in [vision](vision.md) §8 into what the owner chose on 2026-10-16 ([decisions](decisions.md#2026-10-16-guides-and-community-forum-planned-owner)). Profiles, points, friends and collab requests are in [profiles](profiles.md). Support articles are in [guides](guides.md). Legal and security requirements (launch gates, copyright strikes, urgent reports, contest rules) are in [community safety](community-safety.md).
 
-"Like Reddit, but less of a do-what-you-want" (owner): a place to ask questions and get answers, share and have fun, and grow communities without needing a creator, inside rules AutoStacc sets and enforces.
+"Like Reddit, but less of a do-what-you-want" (owner): a place to ask questions and get answers, share and have fun, and grow communities without needing a creator, inside rules AutoStacc sets.
+
+**Scope (owner):** music and sound (making, sharing and talking about it, sound design, gear and software, the creators and projects on AutoStacc, challenges) and ideas and thoughts about products and AutoStacc. It isn't a general social site: spaces and threads outside that are off-topic and can be removed, and chat goes in a space's own off-topic channel. The aim is a space that stays welcoming to people coming in, not hostile to them.
+
+**Who is accountable (owner):** each space's owner and team moderate it. AutoStacc does only what the law requires of the site and what can be done automatically or simply, which also keeps the legal duties as few as possible ([community safety](community-safety.md)).
 
 ## What the owner chose
 
@@ -59,12 +63,15 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 
 **Base rules (AutoStacc, everywhere, not negotiable).** Nothing illegal. No threats, harassment, hate, doxxing or sharing private information, sexual content involving minors, spam or scams, piracy (sharing paid packs or anyone's files without rights), or impersonation. Published at `/community/rules` and linked from the terms. The wording is drafted, then approved by the owner.
 
+**Welcoming (guideline, owner).** The rules recommend welcoming beginners and not mocking basic questions. It's a guideline, not a base rule: each space decides how to enforce it.
+
 **Space rules (stricter only).** Each space may add topic, tone, self-promotion or spoiler rules, shown beside its threads. They can only add limits, never allow what the base rules forbid.
 
 **Who enforces what.**
-- Space team (founder or creator team, and moderators): pin, lock, hide and restore, move between channels, remove from their space, ban someone from their space, for either set of rules. Logged and visible to AutoStacc.
-- AutoStacc admins (Control Center, [admin](admin.md)): base-rule reports from anywhere, site-wide suspensions, removing moderators who abuse the role, closing communities that break the base rules, appeals.
-- Everyone: report a post (the reason routes it to the space team or AutoStacc), block a person.
+- Space team (founder or creator team, and moderators): responsible for their space. Pin, lock, hide and restore, move between channels, remove from their space, ban someone from their space, for either set of rules; handle danger reports first (top of their queue); handle appeals of their own decisions. Logged.
+- AutoStacc (Control Center, [admin](admin.md)) handles **only the legal minimum**: illegal-content notices (the EU notice form), copyright notices and strikes, CSAM, impersonation of creators, and account-wide suspensions that follow from those. It removes a space, or a team member, only when they leave illegal content up after notice.
+- **Automatic for every space**: spam filters, rate limits, Turnstile, a post with several reports from different accounts is hidden until the space team decides, and crisis resources shown on self-harm wording.
+- Everyone: report a post (rule-breaking, harassment and danger go to the space team; illegal content, copyright and impersonation to AutoStacc), block a person. Appeals of a space's decisions go to that space's team.
 - The author is always told when their post is hidden or removed, and why.
 
 **Unofficial communities about a creator** can't use the creator's name alone or their logo and artwork. Their header says Unofficial and links to the official space.
@@ -74,7 +81,7 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 - Any verified account, 16+, straight away.
 - **A cap of 3 communities per account**, adjustable by AutoStacc (a setting, with per-account exceptions). Creator and project spaces don't count toward it.
 - **Name checks**: reserved words (AutoStacc, admin, official), creators' and projects' names unless they're yours, and slurs.
-- **Abandoned communities**: with no active moderator for months, AutoStacc can hand it to a willing member or archive it (read-only).
+- **Inactive teams (automatic)**: when no team member has acted for **40 days**, or reports have waited unhandled for 40 days, the space turns read-only by itself and the founder is emailed. A team member reopens it by handling the queue. A long-read-only space can be taken over by a willing member (a request the system checks; no AutoStacc review).
 - If a founder deletes their account, the longest-serving moderator becomes founder. With no moderators, it's archived and can be handed over.
 - Owner, for later: a system that makes starting a *project* "a little less willy-nilly" (not designed yet).
 
