@@ -7,6 +7,8 @@ import { all } from "../lib/db.js";
 import { MIN_CHARGE_CENTS } from "../promotions/promotions.js";
 import { FACETS, schemaOf, label } from "./vocabulary.js";
 import { NEW_DAYS } from "./filters.js";
+import { RATINGS_SQL } from "../reviews/reviews.js";
+import { RATING } from "./weights.js";
 
 const PURCHASE_DAYS = 90;
 const iso = (at, days) => new Date(Date.parse(at) - days * 86400000).toISOString();
@@ -26,17 +28,20 @@ function effective(sales) {
   return { sql: parts.length ? `MIN(p.price_cents, ${parts.join(", ")})` : "p.price_cents", params };
 }
 
-// WITH e: visible products with eff (price now), sold (confirmed purchases, 90 days) and released (date for "new").
+// WITH e: visible products with eff (price now), sold (confirmed purchases, 90 days), released (date for "new"), and
+// buyers' reviews: how many are shown, their average and its confidence-adjusted score (weights.js RATING).
 function base(sales, at, derived = true) {
   const eff = effective(sales);
   return {
     sql: `WITH sold AS (SELECT product_id, COUNT(*) AS n FROM entitlements WHERE source_type = 'purchase' AND status = 'active' AND granted_at >= ? GROUP BY product_id),
+      rv AS (${RATINGS_SQL}),
       e AS (SELECT p.*, ${eff.sql} AS eff, COALESCE(sold.n, 0) AS sold, COALESCE(p.released_at, p.created_at) AS released,
+        COALESCE(rv.n, 0) AS reviews, rv.avg AS rating, (${RATING.prior * RATING.weight} + COALESCE(rv.n, 0) * COALESCE(rv.avg, 0)) / (${RATING.weight} + COALESCE(rv.n, 0)) AS rating_score,
         CASE WHEN p.bpm_min IS NOT NULL OR ${derived ? 0 : 1} THEN p.bpm_min ELSE pc.bpm_min END AS bpm_lo,
         CASE WHEN p.bpm_min IS NOT NULL OR ${derived ? 0 : 1} THEN p.bpm_max ELSE pc.bpm_max END AS bpm_hi
-        FROM products p LEFT JOIN sold ON sold.product_id = p.id LEFT JOIN product_contents pc ON pc.product_id = p.id
+        FROM products p LEFT JOIN sold ON sold.product_id = p.id LEFT JOIN rv ON rv.product_id = p.id LEFT JOIN product_contents pc ON pc.product_id = p.id
         WHERE p.published = 1 AND p.deleted_at IS NULL)`,
-    params: [iso(at, PURCHASE_DAYS), ...eff.params]
+    params: [iso(at, PURCHASE_DAYS), at, ...eff.params]
   };
 }
 
@@ -58,6 +63,7 @@ function where(f, at, skip = "") {
   if (skip !== "free" && f.free !== null) add(f.free ? "e.price_cents = 0" : "e.price_cents > 0");
   if (skip !== "sale" && f.sale) add("e.eff < e.price_cents");
   if (skip !== "new" && f.recent) add("e.released >= ?", iso(at, NEW_DAYS));
+  if (skip !== "rating" && f.ratingMin != null) add("e.rating >= ?", f.ratingMin);
   if (skip !== "bpm") {
     // The creator's tempo range, else the one the files' published details give (contents.js).
     if (f.bpmMin !== null) add("e.bpm_hi >= ?", f.bpmMin);
@@ -79,6 +85,7 @@ function relevance(words) {
 const ORDER = {
   relevance: "rel DESC, e.featured DESC, e.sold DESC, e.released DESC",
   bestselling: "e.sold DESC, e.released DESC",
+  rating: "e.rating_score DESC, e.reviews DESC, e.sold DESC",
   newest: "e.released DESC",
   "price-asc": "e.eff ASC",
   "price-desc": "e.eff DESC",
@@ -124,7 +131,8 @@ export async function search(db, f, { sales = [], kinds = [], at = new Date().to
     statement(`${b.sql} SELECT MIN(e.bpm_lo) AS lo, MAX(e.bpm_hi) AS hi FROM e WHERE ${wb.sql}`, ...b.params, ...wb.params),
     statement(`${b.sql} SELECT SUM(e.price_cents = 0) AS n FROM e WHERE ${wt("free").sql}`, ...b.params, ...wt("free").params),
     statement(`${b.sql} SELECT SUM(e.eff < e.price_cents) AS n FROM e WHERE ${wt("sale").sql}`, ...b.params, ...wt("sale").params),
-    statement(`${b.sql} SELECT SUM(e.released >= ?) AS n FROM e WHERE ${wt("new").sql}`, ...b.params, iso(at, NEW_DAYS), ...wt("new").params)
+    statement(`${b.sql} SELECT SUM(e.released >= ?) AS n FROM e WHERE ${wt("new").sql}`, ...b.params, iso(at, NEW_DAYS), ...wt("new").params),
+    statement(`${b.sql} SELECT SUM(e.rating >= 4) AS n FROM e WHERE ${wt("rating").sql}`, ...b.params, ...wt("rating").params)
   );
   const res = await db.batch(stmts);
   const rows = (i) => res[i].results || [];
@@ -135,7 +143,7 @@ export async function search(db, f, { sales = [], kinds = [], at = new Date().to
     for (const facet of g) facetCounts[facet] = {};
     for (const r of rows(i++)) facetCounts[r.facet][r.value] = r.n;
   }
-  const [cats, makers, price, bpm, free, sale, fresh] = [rows(i), rows(i + 1), rows(i + 2)[0], rows(i + 3)[0], rows(i + 4)[0], rows(i + 5)[0], rows(i + 6)[0]];
+  const [cats, makers, price, bpm, free, sale, fresh, rated] = [rows(i), rows(i + 1), rows(i + 2)[0], rows(i + 3)[0], rows(i + 4)[0], rows(i + 5)[0], rows(i + 6)[0], rows(i + 7)[0]];
   return {
     rows: page,
     total,
@@ -148,7 +156,7 @@ export async function search(db, f, { sales = [], kinds = [], at = new Date().to
     categories: cats.map((r) => ({ value: r.value, count: r.n, selected: f.categories.includes(r.value) })),
     creators: makers.map((r) => ({ value: r.value, label: r.name || r.value, count: r.n, selected: f.creators.includes(r.value) })),
     ranges: { price: { min: price.lo, max: price.hi }, bpm: { min: bpm.lo, max: bpm.hi } },
-    toggles: { free: free.n || 0, sale: sale.n || 0, new: fresh.n || 0 }
+    toggles: { free: free.n || 0, sale: sale.n || 0, new: fresh.n || 0, rated: rated.n || 0 }
   };
 }
 

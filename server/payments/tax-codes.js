@@ -16,3 +16,6 @@ export const TAX_CODES = {
 };
 export const GENERAL_TAX_CODE = "txcd_10000000";
 export const taxCodeFor = (type) => TAX_CODES[type] || GENERAL_TAX_CODE;
+// A creator's paid storage (server/billing/): a cloud storage service AutoStacc sells. The owner confirms the code (and
+// that the main account's Managed Payments accepts it) with their tax adviser before storage billing is turned on.
+export const STORAGE_TAX_CODE = GENERAL_TAX_CODE;

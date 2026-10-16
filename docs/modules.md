@@ -21,7 +21,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 
 | Module | Element | Options |
 | --- | --- | --- |
-| Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`; each card opens the product's own page |
+| Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`, `data-mixed` (store-style sizes: featured products as wide banner cards with a Preview button when they have a clip, the rest as artwork capsules whose name and price always show, with the description and buy button sliding out on hover (the buy button always shows on phones); the store uses them too); each card opens the product's own page |
 | The store page (`js/store-browse.js`, `js/store-filters.js`, `js/store-suggest.js`, `js/store-sections.js`) | `[data-browse]`, `[data-store-sections]` | none: one per page, state in the address ([discovery](discovery.md)); sections elsewhere take `data-sections`, `data-brief`, `data-fallback` |
 | Wishlist hearts (`js/wishlist.js`) | `[data-wish]` | the product id |
 | What's inside (`js/product-contents.js`) | `[data-product-contents]` | the product id (else `?p=` in the address); hidden unless its files came from the Pack Builder ([discovery](discovery.md)) |
@@ -35,6 +35,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | DAW backdrop (`js/daw-stage.js`, `css/daw-stage.css`) | `[data-daw-stage]` | `[data-daw-hero]` on the element it sits behind (it stops moving when that is out of view) |
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |
 | Account links and menu (`js/account-nav.js`) | `[data-auth="in"\|"out"]`, `[data-account-menu]`, `[data-signout]` | |
+| Site notice (`js/site-notice.js`) | every page's `<main>` (loaded after `js/account-nav.js`, in `scripts/lib/pages.js` too) | the owner's one-line notice from `GET /api/site-status`, text only; nothing when there's none |
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |
 | News (`js/news.js`) | `[data-news]` | `data-project`, `data-limit`, `data-full` (whole posts as h2 sections, the news page; otherwise headlines and summaries as h3) |
 | Shows (`js/shows.js`) | `[data-shows]` | `data-project` (shows carry `project` in `data/shows.js`; ticketed ones go into structured data once per project) |

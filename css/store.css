@@ -109,7 +109,7 @@
 .store-section-head h2 { margin: 0; font-size: 1.25rem; }
 .store-section-head p { margin: 0; }
 .store-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, calc((100% - 44px) / 3)); gap: 22px; overflow-x: auto;
-  padding: 6px 2px 14px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+  padding: 16px 12px 24px; margin-inline: -10px; margin-block: -10px; scroll-padding-inline: 12px; /* room for a hovered card to grow */ scroll-snap-type: x proximity; scrollbar-width: thin; }
 .store-row > .card { scroll-snap-align: start; }
 
 /* ---------- tablets and phones: the filters become a drawer ---------- */
@@ -123,9 +123,9 @@
     width: min(88vw, 360px);
     max-height: none;
     padding: 16px 18px 28px;
-    background: color-mix(in srgb, var(--bg) 80%, transparent);
-    -webkit-backdrop-filter: var(--blur, blur(18px));
-    backdrop-filter: var(--blur, blur(18px));
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    -webkit-backdrop-filter: var(--blur-bar, blur(20px));
+    backdrop-filter: var(--blur-bar, blur(20px));
     border-right: 1px solid var(--line);
     transform: translateX(-105%);
     visibility: hidden;
@@ -173,3 +173,14 @@
 .contents-section .pac-readme summary { cursor: pointer; padding: 6px 0; font-weight: 600; }
 .contents-section .pac-readme pre { margin: 6px 0 0; padding: 10px 12px; max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); font-size: .85rem; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 @media (max-width: 600px) { .contents-section audio { flex-basis: 100%; width: 100%; } }
+
+/* Reviews from verified buyers on a product page (js/product-reviews.js). */
+.reviews-section[hidden] { display: none; }
+.reviews-section { padding-block: 24px; }
+.review-stars { color: var(--accent-2); letter-spacing: 1px; }
+.review-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 12px; }
+.review { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.review p { margin: 6px 0 0; overflow-wrap: anywhere; }
+.review-form { display: grid; gap: 10px; max-width: 560px; margin-top: 18px; }
+.review-rating { display: flex; flex-wrap: wrap; gap: 10px; border: 0; padding: 0; margin: 0; }
+.review-form textarea { width: 100%; }

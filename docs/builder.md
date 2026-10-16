@@ -41,7 +41,7 @@ updated: 2026-10-16
 - **One combined cap: 550 MB free** (today's 50 MB of site images plus 500 MB of paid files). Images, fonts, templates, version history and paid files all count toward it. An admin-set quota still overrides it.
 - **Template images count only against the seller.** Buyers' sites point at the seller's copy; only what a buyer uploads or changes counts for them.
 - **History counts only unique files**: images that only old versions still use. Page layouts are free.
-- **At the cap only new uploads stop.** Live sites and products stay up.
+- **At the cap only new uploads stop.** Live sites and products stay up. Site files are one of the parts `server/creators/storage.js` adds up (`PARTS.siteFiles`); more than the cap is [paid storage](creators.md#paid-storage-built-2026-10-16-off).
 - **A deleted template's images stay** while any other creator's site still uses them, and keep counting against the seller until the daily sweep deletes them (Claude first proposed they stop counting; changed after the security review showed two accounts could then pass the cap).
 
 ## How it stays safe

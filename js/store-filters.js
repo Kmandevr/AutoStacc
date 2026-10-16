@@ -46,7 +46,9 @@
     const flag = (key, text, n) => `<li><label for="f-${key}"><input type="checkbox" id="f-${key}" data-flag="${key}"${params.get(key) === "1" ? " checked" : ""}${!n && params.get(key) !== "1" ? " disabled" : ""}>
       <span>${text}</span><span class="f-count">${n || 0}</span></label></li>`;
     const deals = `<details class="f-group" id="g-deals" open><summary>Deals and new</summary><ul class="f-list">
-      ${flag("sale", "On sale", toggles.sale)}${flag("new", "Added in the last 30 days", toggles.new)}</ul></details>`;
+      ${flag("sale", "On sale", toggles.sale)}${flag("new", "Added in the last 30 days", toggles.new)}
+      <li><label for="f-rating"><input type="checkbox" id="f-rating" data-rating${params.get("rating_min") ? " checked" : ""}${!toggles.rated && !params.get("rating_min") ? " disabled" : ""}>
+        <span>4 stars and up from buyers</span><span class="f-count">${toggles.rated || 0}</span></label></li></ul></details>`;
     const bpm = r.bpm && r.bpm.min !== null ? `<details class="f-group" id="g-bpm"${params.get("bpm_min") || params.get("bpm_max") ? " open" : ""}><summary>BPM</summary>
       <form class="f-range" data-range="bpm">
         <label for="f-bpm-min">From<input id="f-bpm-min" name="min" inputmode="numeric" pattern="\\d{1,3}" placeholder="${r.bpm.min}" value="${e(params.get("bpm_min") || "")}"></label>
@@ -74,7 +76,7 @@
         continue;
       }
       const fixed = { price_min: `From $${raw}`, price_max: `Up to $${raw}`, bpm_min: `From ${raw} BPM`, bpm_max: `Up to ${raw} BPM`,
-        free: raw === "1" ? "Free" : "Paid", sale: "On sale", new: "New this month" }[key];
+        free: raw === "1" ? "Free" : "Paid", sale: "On sale", new: "New this month", rating_min: `${raw} stars and up` }[key];
       if (fixed) out.push({ key, value: raw, text: fixed });
     }
     return out;

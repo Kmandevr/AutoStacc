@@ -3,6 +3,7 @@
 // claiming free products. Paid files are listed by id only; links come from server/downloads. Opening it runs
 // Auto-Stacc first, so free products of followed projects arrive without any other trigger.
 import { json, fail, readJson, id } from "../lib/http.js";
+import { isOpen } from "../settings/settings.js";
 import { parseJson } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { requireAccess } from "./access.js";
@@ -60,6 +61,7 @@ async function library(app) {
 async function claimFree(app) {
   const user = await requireUser(app);
   await limit(app, "free", 20, 60);
+  if (!(await isOpen(app.db, "store_sales"))) fail(503, "sales_paused", "Sales are paused for a moment, free items too. Try again soon.");
   const body = await readJson(app.request);
   const p = await getProduct(app.db, id(body.productId, "productId"));
   if (!isVisible(p)) fail(404, "not_found", "No product with that id.");

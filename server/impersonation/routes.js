@@ -34,7 +34,7 @@ async function start(app, { userId }) {
 async function exit(app) {
   const real = await realSession(app);
   const ended = await endImpersonation(app, real && real.user);
-  return json({ ok: true, ended: ended.ended, redirect: real && isAdmin(app, real.user) ? "/admin" : "/" }, 200, { "Set-Cookie": ended.setCookie });
+  return json({ ok: true, ended: ended.ended, redirect: real && isAdmin(app, real.user) ? "/admin/daily#customers" : "/" }, 200, { "Set-Cookie": ended.setCookie });
 }
 
 export const routes = [

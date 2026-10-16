@@ -1,19 +1,21 @@
-/* The home page's DAW backdrop (js/daw-stage.js, [data-daw-stage]): fixed behind the page, always a dark studio
-   screen in either theme (a DAW is), with the track colours of the dark theme. The hero sits over its left side
+/* The home page's DAW backdrop (js/daw-stage.js, [data-daw-stage]): fixed behind the page, a studio screen that
+   follows the light or dark theme, with that theme's track colours. The hero sits over its left side
    behind a shade that keeps the text readable; the page's sections slide over it (css/home.css). Moves only with
    prefers-reduced-motion: no-preference, and stops when the hero is out of view (.is-still). */
 
 .daw-stage {
-  --teal: #2ee6d6; --amber: #ffb547; --coral: #ff6b6b; --lime: #9be15d; --violet: #a78bfa;
   --daw-lane: max(56px, calc((100svh - 60px) / 8));
-  --daw-bg: #0c0e13; --daw-panel: #14171e; --daw-line: #232833; --daw-text: #9aa3b2;
+  --daw-bg: #e4e7ee; --daw-glow: #f6f7fa; --daw-panel: #f2f4f8; --daw-line: #cfd4de; --daw-text: #586174; --daw-ink: #161a22;
+  --daw-meter: #d3d8e1;
+  /* the playhead: a soft see-through teal in light, so it never reads as a grey rule through the hero's words */
+  --daw-head: color-mix(in srgb, var(--teal) 40%, transparent); --daw-head-glow: transparent;
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr);
-  background: radial-gradient(120% 90% at 85% 10%, #1a1f2b 0%, var(--daw-bg) 60%);
+  background: radial-gradient(120% 90% at 85% 10%, var(--daw-glow) 0%, var(--daw-bg) 60%);
   color: var(--daw-text);
   font-family: var(--mono);
   font-size: 11px;
@@ -33,33 +35,45 @@
 .daw-body { display: grid; grid-template-columns: 132px minmax(0, 1fr) auto; min-height: 0; padding-left: var(--side, 0px); }
 .daw-heads { background: var(--daw-panel); border-right: 1px solid var(--daw-line); }
 .daw-ruler-gap { height: 26px; border-bottom: 1px solid var(--daw-line); }
-.daw-head { display: flex; align-items: center; gap: 8px; height: var(--daw-lane); padding: 0 12px; border-bottom: 1px solid var(--daw-line); color: #c9d0db; }
+.daw-head { display: flex; align-items: center; gap: 8px; height: var(--daw-lane); padding: 0 12px; border-bottom: 1px solid var(--daw-line); color: var(--daw-ink); }
 .daw-head i { width: 4px; height: 60%; border-radius: 2px; background: var(--track); }
 
 .daw-view { position: relative; overflow: hidden; }
 .daw-strip { display: flex; width: max-content; will-change: transform; }
 .daw-pass { position: relative; }
 .daw-ruler { position: relative; height: 26px; border-bottom: 1px solid var(--daw-line); background: var(--daw-panel); }
-.daw-ruler span { position: absolute; top: 0; bottom: 0; padding: 6px 0 0 5px; border-left: 1px solid var(--daw-line); color: #6d7685; }
+.daw-ruler span { position: absolute; top: 0; bottom: 0; padding: 6px 0 0 5px; border-left: 1px solid var(--daw-line); color: var(--daw-text); }
 .daw-lane { position: relative; height: var(--daw-lane); border-bottom: 1px solid var(--daw-line);
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .035) 0 1px, transparent 1px 24px); }
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--daw-ink) 4%, transparent) 0 1px, transparent 1px 24px); }
 .daw-clip { position: absolute; top: 4px; bottom: 4px; display: flex; flex-direction: column; overflow: hidden; border-radius: 5px;
   background: color-mix(in srgb, var(--track) 22%, var(--daw-bg)); border: 1px solid color-mix(in srgb, var(--track) 60%, transparent); }
 .daw-clip::before { content: ""; height: 8px; flex: none; background: color-mix(in srgb, var(--track) 70%, transparent); }
-.daw-clip svg { display: block; flex: 1; width: 100%; height: auto; min-height: 0; fill: color-mix(in srgb, var(--track) 85%, #fff); opacity: .85; }
-.daw-playhead { position: absolute; top: 0; bottom: 0; left: 62%; width: 2px; background: #fff; box-shadow: 0 0 12px rgba(255, 255, 255, .7); }
-.daw-playhead::before { content: ""; position: absolute; top: 0; left: -6px; border-inline: 7px solid transparent; border-top: 9px solid #fff; }
+.daw-clip svg { display: block; flex: 1; width: 100%; height: auto; min-height: 0; fill: color-mix(in srgb, var(--track) 85%, var(--daw-glow)); opacity: .85; }
+.daw-playhead { position: absolute; top: 0; bottom: 0; left: 62%; width: 2px; background: var(--daw-head); box-shadow: 0 0 12px var(--daw-head-glow); }
+.daw-playhead::before { content: ""; position: absolute; top: 0; left: -6px; border-inline: 7px solid transparent; border-top: 9px solid var(--daw-head); }
 
 .daw-mixer { display: flex; align-items: stretch; gap: 6px; padding: 34px 14px 14px; background: var(--daw-panel); border-left: 1px solid var(--daw-line); }
-.daw-meter { position: relative; width: 10px; border-radius: 3px; background: #0a0c10; overflow: hidden; }
+.daw-meter { position: relative; width: 10px; border-radius: 3px; background: var(--daw-meter); overflow: hidden; }
 .daw-meter i { position: absolute; inset: 0; transform-origin: bottom; transform: scaleY(.55);
   background: linear-gradient(to top, var(--track) 0 70%, var(--amber) 70% 88%, var(--coral) 88%); }
 .daw-master { width: 16px; margin-left: 8px; --track: var(--lime); }
 
+/* dark theme: the dark studio screen (the light one is the default above) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .daw-stage {
+  --daw-bg: #0c0e13; --daw-glow: #1a1f2b; --daw-panel: #14171e; --daw-line: #232833; --daw-text: #9aa3b2; --daw-ink: #eef1f6;
+  --daw-meter: #0a0c10; --daw-head: #fff; --daw-head-glow: rgba(255, 255, 255, .7);
+  }
+}
+:root[data-theme="dark"] .daw-stage {
+  --daw-bg: #0c0e13; --daw-glow: #1a1f2b; --daw-panel: #14171e; --daw-line: #232833; --daw-text: #9aa3b2; --daw-ink: #eef1f6;
+  --daw-meter: #0a0c10; --daw-head: #fff; --daw-head-glow: rgba(255, 255, 255, .7);
+}
+
 /* keeps the hero's words readable over the moving picture */
 .daw-shade { position: absolute; inset: 0; background:
-  linear-gradient(90deg, rgba(8, 10, 14, .94) 0%, rgba(8, 10, 14, .86) 50%, rgba(8, 10, 14, .45) 78%, rgba(8, 10, 14, .2) 100%),
-  linear-gradient(0deg, rgba(8, 10, 14, .85) 0%, transparent 35%); }
+  linear-gradient(90deg, color-mix(in srgb, var(--daw-bg) 94%, transparent) 0%, color-mix(in srgb, var(--daw-bg) 86%, transparent) 50%, color-mix(in srgb, var(--daw-bg) 45%, transparent) 78%, color-mix(in srgb, var(--daw-bg) 20%, transparent) 100%),
+  linear-gradient(0deg, color-mix(in srgb, var(--daw-bg) 85%, transparent) 0%, transparent 35%); }
 
 @media (prefers-reduced-motion: no-preference) {
   .daw-strip { animation: daw-scroll 40s linear infinite; }
@@ -76,6 +90,6 @@
   .daw-body { grid-template-columns: 0 minmax(0, 1fr); padding-left: 0; }
   .daw-heads { overflow: hidden; border: 0; }
   .daw-top { padding-left: 12px; }
-  .daw-playhead { left: 78%; }
-  .daw-shade { background: linear-gradient(180deg, rgba(8, 10, 14, .55) 0%, rgba(8, 10, 14, .82) 45%, rgba(8, 10, 14, .95) 100%); }
+  .daw-playhead { left: 78%; opacity: .6; }
+  .daw-shade { background: linear-gradient(180deg, color-mix(in srgb, var(--daw-bg) 55%, transparent) 0%, color-mix(in srgb, var(--daw-bg) 82%, transparent) 45%, color-mix(in srgb, var(--daw-bg) 95%, transparent) 100%); }
 }

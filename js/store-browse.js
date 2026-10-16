@@ -13,9 +13,9 @@
   const root = $("[data-browse]");
   if (!root || !GS.productCard || !GS.storeFilters) return;
   const card = GS.productCard, F = GS.storeFilters;
-  const KEYS = new Set(["q", "category", "creator", "price_min", "price_max", "free", "sale", "new", "bpm_min", "bpm_max", "sort", "page",
+  const KEYS = new Set(["q", "category", "creator", "price_min", "price_max", "free", "sale", "new", "rating_min", "bpm_min", "bpm_max", "sort", "page",
     ...Object.keys((window.VOCABULARY || {}).facets || {})]);
-  const SORTS = [["relevance", "Relevance"], ["bestselling", "Best-selling"], ["newest", "Newest"], ["price-asc", "Price: low to high"],
+  const SORTS = [["relevance", "Relevance"], ["bestselling", "Best-selling"], ["rating", "Top rated"], ["newest", "Newest"], ["price-asc", "Price: low to high"],
     ["price-desc", "Price: high to low"], ["discount", "Biggest discount"], ["name", "Name"]];
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -99,7 +99,7 @@
     const from = (d.page - 1) * d.per;
     $(".browse-count", root).textContent = d.total ? `${d.total} product${d.total === 1 ? "" : "s"}${d.pages > 1 ? ` · ${from + 1}–${from + d.products.length}` : ""}` : "No products match";
     $(".browse-results-head", root).textContent = narrowed() ? "Results" : "All products";
-    grid.innerHTML = d.products.length ? d.products.map((p) => card(p, { level: 3, wish: true })).join("") : empty(chips);
+    grid.innerHTML = d.products.length ? d.products.map((p) => card(p, { level: 3, wish: true, mixed: true })).join("") : empty(chips);
     $(".browse-pages", root).innerHTML = pages(d);
     if (d.ignored && d.ignored.length) $(".browse-count", root).textContent += ` (some filters from this link no longer exist and were left out)`;
     grid.setAttribute("aria-busy", "false");
@@ -131,7 +131,7 @@
   // Offline (or the store API failing): AutoStacc's own catalog from data/, without filters.
   function offline() {
     const all = window.PRODUCTS || [];
-    grid.innerHTML = all.map((p) => card(p, { level: 3 })).join("") || `<p class="empty">Nothing here yet.</p>`;
+    grid.innerHTML = all.map((p) => card(p, { level: 3, mixed: true })).join("") || `<p class="empty">Nothing here yet.</p>`;
     $(".browse-count", root).textContent = "Search and filters are offline right now; here is AutoStacc's own catalog.";
     $("[data-panel]", root).innerHTML = "";
     dispatchEvent(new CustomEvent("gs:cards"));
@@ -185,6 +185,7 @@
       if (t.checked && key !== "creator") taste({ t: "filter", facet: key, value: v });
       return go();
     }
+    if (t.matches("[data-rating]")) { t.checked ? params.set("rating_min", "4") : params.delete("rating_min"); return go(); }
     if (t.matches("[data-flag]")) { t.checked ? params.set(t.dataset.flag, "1") : params.delete(t.dataset.flag); return go(); }
     if (t.matches("[data-free]")) { t.dataset.free ? params.set("free", t.dataset.free) : params.delete("free"); return go(); }
   });
@@ -201,7 +202,7 @@
     if (chip) {
       const key = chip.dataset.chip;
       const rest = listOf(key).filter((x) => x !== chip.dataset.chipValue);
-      if (rest.length && !["q", "price_min", "price_max", "bpm_min", "bpm_max", "free", "sale", "new"].includes(key)) setList(key, rest);
+      if (rest.length && !["q", "price_min", "price_max", "bpm_min", "bpm_max", "free", "sale", "new", "rating_min"].includes(key)) setList(key, rest);
       else params.delete(key);
       go();
       return $(".browse-results-head", root).focus({ preventScroll: true });

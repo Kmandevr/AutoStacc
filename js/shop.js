@@ -3,6 +3,7 @@
 //   data-project="<id>"      only that project's items (else every project's)
 //   data-featured            only featured items;  data-limit="3"  at most that many
 //   data-level="2"           card heading level (default 3)
+//   data-mixed               store-style card sizes (js/product-card.js): a featured-only grid opens with one banner
 // Each card opens the product's own page. The store itself (/shop: search, filters, sections) is js/store-browse.js.
 // Creators' (Studio) products come from the store API and join the grid once it answers, each marked "Unverified
 // creator" until AutoStacc trusts its creator; with the store offline the grid simply shows AutoStacc's own catalog.
@@ -30,7 +31,9 @@
     const draw = (list) => {
       let items = list.filter(wanted);
       if (cfg.limit) items = items.slice(0, Number(cfg.limit));
-      root.innerHTML = `<div class="grid">${items.map((p) => card(p, { level })).join("") || `<p class="empty">Nothing here yet.</p>`}</div>`;
+      // data-mixed: store-style sizes; in a featured-only grid the first is the banner and the rest are capsules.
+      const mixed = "mixed" in cfg, top = (p, i) => ("featured" in cfg ? { ...p, featured: i === 0 } : p);
+      root.innerHTML = `<div class="grid">${items.map((p, i) => card(mixed ? top(p, i) : p, { level, mixed })).join("") || `<p class="empty">Nothing here yet.</p>`}</div>`;
       dispatchEvent(new CustomEvent("gs:cards"));
     };
     draw(PRODUCTS);

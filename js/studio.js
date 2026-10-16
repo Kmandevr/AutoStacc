@@ -2,10 +2,10 @@
 // projects, open your profile or a project's site in the visual builder (js/builder.js; #profile=<creator id> and
 // #project=<id> reopen them), a project's products
 // (js/studio-products.js; #products=<id>), one product in the Product Studio (js/studio-workspace.js;
-// #product=<id>&section=<key>) and see earnings (js/studio-earnings.js). All checks
+// #product=<id>&section=<key>), see storage and paid storage (js/studio-storage.js) and earnings (js/studio-earnings.js). All checks
 // (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js (and the
 // modules it needs), js/studio-team.js (the Team panel; #invite=<token> opens an emailed invitation), js/studio-products.js,
-// js/studio-workspace.js and js/studio-earnings.js. What each member's role allows (capabilities from the API) decides
+// js/studio-workspace.js, js/studio-storage.js and js/studio-earnings.js. What each member's role allows (capabilities from the API) decides
 // which actions show; the server checks again.
 (function () {
   "use strict";
@@ -71,10 +71,12 @@
         ${c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
         <div class="studio-team-panel" data-team="${e(c.id)}"></div>
+        <div class="studio-earnings" data-storage="${e(c.id)}"></div>
         ${c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
         <p class="msg" role="status" hidden></p>
       </section>`).join("");
     root.querySelectorAll("[data-earnings]").forEach((el) => window.GS.studioEarnings.draw(el, el.dataset.earnings));
+    root.querySelectorAll("[data-storage]").forEach((el) => window.GS.studioStorage.draw(el, el.dataset.storage));
     root.querySelectorAll("[data-team]").forEach((el) => window.GS.studioTeam.draw(el, el.dataset.team));
   }
 

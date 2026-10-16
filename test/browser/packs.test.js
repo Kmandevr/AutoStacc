@@ -21,7 +21,7 @@ const store = browserStore({ name: "packs", port: PORT, vars: { ENGINE_URL: engi
 test("an admin uploads a Pac's ZIP, sees the preview and the engine's findings, and reviews values", { timeout: 120000 }, async () => {
   const { page } = await store.open(DESK);
   await store.signUp(page, ADMIN_EMAIL);
-  await page.goto("/admin#packs");
+  await page.goto("/admin/manage#packs");
   await page.selectOption("[data-pack-pac]", "frayed-signals-loops");
   // The one drop zone: a whole ZIP into an empty Pac is listed in the browser, then uploaded as a version.
   await page.waitForSelector("[data-pac-drop] [data-pd-files]", { state: "attached" });

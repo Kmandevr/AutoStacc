@@ -27,6 +27,11 @@ export const restoreBySource = (db, sourceType, sourceId, reason) =>
 export const revokeById = (db, id, reason) =>
   run(db, "UPDATE entitlements SET status = 'revoked', revoked_at = ?, revoke_reason = ? WHERE id = ? AND status = 'active'", now(), reason, id);
 
+// For other modules' queries: "the account in column userCol (with email column emailCol) owns the product in column
+// productCol right now", with one parameter, the current time (server/reviews/ shows a review only while this holds).
+export const ownsNowSql = (productCol, userCol, emailCol) => `EXISTS (SELECT 1 FROM entitlements e WHERE e.product_id = ${productCol}
+  AND (e.user_id = ${userCol} OR (e.user_id IS NULL AND e.email = lower(${emailCol}))) AND ${ACTIVE})`;
+
 // SQL condition + params for "entitlements this requester may use": a verified account (by id, or by its email for
 // grants not yet linked) and/or guest order keys (only that order's purchases).
 function accessClause(access) {

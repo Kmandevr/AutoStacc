@@ -38,7 +38,7 @@ function shell(SITE, { page, section, styles, scripts, main, project = null, pro
   const lookOf = skin ? project : look && look.skin ? look : null;
   const sounds = project && project.sounds;
   const css = ["core", "platform", "layout", ...(project ? ["project-frame"] : []), ...styles, ...(lookOf ? [`projects/${lookOf.id}/look`] : []), ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js",
+  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
     ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js"];
   return `<!doctype html>
 ${GENERATED}
@@ -330,6 +330,7 @@ function productPage(SITE, data, p) {
     </section>
 
     <section class="contents-section" data-product-contents="${esc(p.id)}" hidden></section>
+    <section class="reviews-section" data-reviews="${esc(p.id)}" hidden></section>
     <section class="similar-section" data-similar="${esc(p.id)}" hidden></section>
 ${others.length ? `
     <section class="alt">
@@ -340,7 +341,7 @@ ${others.length ? `
     </section>
 ` : ""}`;
   return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "store", "detail"],
-    scripts: ["data/product-types.js", "data/vocabulary.js", "js/product-card.js", "js/taste.js", "data/features.js", "js/product-contents.js", "js/similar.js", "js/wishlist.js", "js/store.js"], main, look: creator }) };
+    scripts: ["data/product-types.js", "data/vocabulary.js", "js/product-card.js", "js/taste.js", "data/features.js", "js/product-contents.js", "js/product-reviews.js", "js/similar.js", "js/wishlist.js", "js/store.js"], main, look: creator }) };
 }
 
 // ---------- news post ----------

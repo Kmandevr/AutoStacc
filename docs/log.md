@@ -8,6 +8,12 @@ updated: 2026-10-16
 
 Newest first.
 
+- 2026-10-16: Control Center Settings › Switches (owner): store sales, payout requests, new accounts, new creators and reviews switches, enforced server-side and audited, with creator purchases, paid storage and the usage budget in the same list, and a site notice on every page.
+- 2026-10-16: Control Center split into sub-pages (owner): Stats, Daily, Manage and Settings at /admin/<page>, gated like /admin; figures and payment alerts on Stats with a count on its tab; leaving an impersonation returns to Daily › Customers.
+- 2026-10-16: Top bar blur restored: its frosting is back on the bar itself (a view-transition name makes the bar a backdrop root, so a layer or menu inside it cannot blur the page); the account menu is nearly solid instead.
+- 2026-10-16: UI pass (owner): readable frosted glass, home backdrop follows the theme, phone scroll cue fixed, clickable cards lift, grow and tilt on hover, store-style card sizes (featured banners, artwork capsules) with a faint ring so artwork never blends into the page.
+- 2026-10-16: Paid storage: owner's answers (rate $0.05, monthly cap in dollars, earnings first then card, charged above a lowered cap until back under) and the security review's fixes. Reviews from confirmed buyers (stars and optional text, server/reviews/, migration 0030, #96). Notes: creators, store, admin, decisions.
+- 2026-10-16: Paid creator storage built and off (server/billing/, Studio storage panel, Control Center Paid storage, migration 0029, #142); each stored original now counts once; taxed orders' refunds recorded before tax (#129); /privacy and /terms describe storage billing.
 - 2026-10-16: Guides (#134) in progress: `/guide` and 12 articles from `data/guides.js`, search across guides and help, links from the footer, help, contact and the Studio, reserved names for the guide and the planned community. Paused by the owner before review. Notes: guides, seo, production, autostacc, creators.
 - 2026-10-16: Community narrowed with the owner: music and sound plus product ideas, space owners accountable for moderation, AutoStacc only the legal minimum plus automatic help, read-only after 40 inactive days. Nothing built. Notes: community, community-safety, decisions.
 - 2026-10-16: Community legal and security plan with the owner (legal setup, DMCA agent and tiered strikes, CSAM scanning, UK/EU duties, contest rules, urgent reports, retention, legal requests, Turnstile, security design rules). Nothing built. Notes: community-safety (new), community, profiles, decisions, index.

@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { loginRedirect, GATED, SETTINGS_SECTIONS } from "../../server/pages/guard.js";
+import { loginRedirect, GATED, SETTINGS_SECTIONS, ADMIN_PAGES } from "../../server/pages/guard.js";
 
 // js/util.js is a browser script: run it in a bare context and take its GS.
 const sandbox = { window: {}, document: {} };
@@ -47,4 +47,12 @@ test("the SEO link check, the page and the store-off rewrites know exactly the S
   assert.deepEqual([...page.matchAll(/href="\/settings\/([a-z]+)" data-section="\1"/g)].map((m) => m[1]), SETTINGS_SECTIONS, "the page lists every section, in order");
   const rewrites = readFileSync(new URL("../../_redirects", import.meta.url), "utf8").split("\n").map((l) => l.trim().split(/\s+/)).filter(([, to, code]) => code === "200" && to === "/settings");
   assert.deepEqual(rewrites.map(([from]) => from), SETTINGS_SECTIONS.map((x) => `/settings/${x}`), "the store-off rewrites cover exactly the sections");
+});
+
+test("the Control Center's sub-pages are the same in the gate, the page data and the store-off rewrites", () => {
+  const box = { window: {} };
+  vm.runInNewContext(readFileSync(new URL("../../data/workspaces.js", import.meta.url), "utf8"), box);
+  assert.deepEqual([...box.window.WORKSPACES.control.pages.map((p) => p.id)], ADMIN_PAGES, "the gate serves every sub-page the Control Center has");
+  const rewrites = readFileSync(new URL("../../_redirects", import.meta.url), "utf8").split("\n").map((l) => l.trim().split(/\s+/)).filter(([from, to, code]) => from.startsWith("/admin/") && to === "/admin" && code === "200");
+  assert.deepEqual(rewrites.map(([from]) => from), ADMIN_PAGES.map((x) => `/admin/${x}`), "the store-off rewrites cover exactly the sub-pages");
 });

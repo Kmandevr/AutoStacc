@@ -3,6 +3,7 @@
 // ignoring case); renames keep the old address redirecting and the old name held. Only the account's own creators
 // answer; anyone else's look like nothing there.
 import { json, readJson, str, fail } from "../lib/http.js";
+import { isOpen } from "../settings/settings.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
 import { LIMITS, quotaOf } from "../creators/policy.js";
@@ -28,6 +29,7 @@ async function overview(app) {
 async function newCreator(app) {
   const user = await requireUser(app);
   await limit(app, "studio-create", 10, 3600);
+  if (!(await isOpen(app.db, "creator_signups"))) fail(503, "creator_signups_closed", "New creator names are closed for now. Try again later.");
   const body = await readJson(app.request);
   const creator = await createCreator(app.db, user, { slug: cleanSlug(body.slug, { creator: true }), name: name(body.name) });
   return json({ creator: { ...publicCreator(creator), path: `/${creator.slug}` } }, 201);

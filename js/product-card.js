@@ -37,8 +37,10 @@
   // level: heading level. selected: a large card (label names it, "Selected" by default). why: a line saying why it's
   // shown (recommendations). dismissable: adds "Not interested" (recommendation sections). wish: adds the wishlist heart
   // (only on pages that load js/wishlist.js, so it never sits there doing nothing). buy: false leaves out the buy control
-  // (a product page's "You might also like" row, so the page has one buy button: its own).
-  function productCard(p, { level = 3, selected = false, label: kicker = "Selected", why = "", dismissable = false, wish = false, buy = true } = {}) {
+  // (a product page's "You might also like" row, so the page has one buy button: its own). mixed: store-style sizes
+  // (css/shop.css): a featured product is a wide banner card with its description and a preview button when it has a
+  // clip; every other product is a capsule, its artwork with the title and price over it.
+  function productCard(p, { level = 3, selected = false, label: kicker = "Selected", why = "", dismissable = false, wish = false, buy = true, mixed = false } = {}) {
     const project = p.projectId || p.project;
     const live = p.priceCents !== undefined;
     const priceText = live ? (p.free ? "Free" : `${p.sale ? `<s class="price-was">${e(cents(p.listPriceCents, p.currency))}</s> ` : ""}${e(cents(p.priceCents, p.currency))}`)
@@ -51,12 +53,19 @@
     const by = p.projectName || projectOf(project).name || "";
     const href = GS.shopItemPath(p);
     const b = p.badges || {};
-    const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : ""].filter(Boolean);
+    const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
+      // Buyers' reviews (server/reviews/), only when there are any.
+      p.rating ? `★ ${p.rating.average} (${p.rating.count} review${p.rating.count === 1 ? "" : "s"})` : ""].filter(Boolean);
     const art = p.artwork || (p.image && "/" + p.image.src.replace(/^\/+/, ""));
+    const size = mixed ? (p.featured ? " feature" : " capsule") : "";
+    // A data entry's clip is { file }, the store API's a URL.
+    const clip = typeof p.preview === "string" ? p.preview : p.preview && p.preview.file ? `/media/previews/${p.preview.file}` : "";
+    const listen = size === " feature" && clip
+      ? `<button class="btn ghost card-listen" type="button" data-card-preview="${e(clip)}" aria-pressed="false">Preview<span class="sr-only">: ${e(p.title)}</span></button>` : "";
     const facts = [...labels(p).map((l) => `<li class="label-${l.facet}">${e(l.label)}</li>`),
       p.bpm ? `<li class="label-bpm">${p.bpm[0] === p.bpm[1] ? p.bpm[0] : `${p.bpm[0]}–${p.bpm[1]}`} BPM</li>` : ""];
     return `
-      <article class="card${selected ? " selected" : ""} ${GS.look(project)}" data-product="${e(p.id)}">
+      <article class="card${selected ? " selected" : ""}${size} ${GS.look(project)}" data-product="${e(p.id)}">
         <a class="cover tint-${tint(p.hue !== undefined ? p.hue : (p.metadata || {}).hue)}${art ? " has-art" : ""}" href="${e(href)}" data-track="${e((TYPES[p.type] || {}).track || "")}" tabindex="-1" aria-hidden="true">
           ${art ? `<img src="${e(art)}" alt="" loading="lazy" width="400" height="400">` : `<span>${e(p.title.split(" — ")[0])}</span>`}
           ${badges.length ? `<span class="card-badges">${badges.map((x) => `<em>${e(x)}</em>`).join("")}</span>` : ""}
@@ -71,12 +80,28 @@
           <ul class="card-labels" aria-label="Details">${facts.join("")}<li class="label-size" data-size="${e(p.id)}" hidden></li></ul>
           <div class="card-foot">
             <span class="price" data-price="${e(p.id)}">${priceText}</span>
+            ${listen}
             ${buy ? `<div class="buy" data-buy="${e(p.id)}">${button}</div>` : `<a class="btn ghost" href="${e(href)}">See it<span class="sr-only">: ${e(p.title)}</span></a>`}
           </div>
           ${dismissable ? `<button class="card-dismiss" type="button" data-dismiss="${e(p.id)}">Not interested<span class="sr-only"> in ${e(p.title)}</span></button>` : ""}
         </div>
       </article>`;
   }
+
+  // Banner cards' Preview buttons: one clip plays at a time; pressing the playing one again stops it.
+  let player = null, playing = null;
+  document.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-card-preview]");
+    if (!btn) return;
+    player = player || new Audio();
+    const again = playing === btn;
+    player.pause();
+    if (playing) { playing.setAttribute("aria-pressed", "false"); playing = null; }
+    if (again) return;
+    player.src = btn.dataset.cardPreview;
+    player.onended = () => { btn.setAttribute("aria-pressed", "false"); playing = null; };
+    player.play().then(() => { btn.setAttribute("aria-pressed", "true"); playing = btn; }).catch(() => {});
+  });
 
   // One namespace: the template, with its type-label helper attached.
   productCard.label = label;

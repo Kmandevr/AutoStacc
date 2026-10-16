@@ -6,13 +6,16 @@
 // line, not the only one. /library isn't gated here: guests open it with the key in their receipt link (#key=..., which
 // never reaches the server) and the library API decides what they may see. /admin (guardAdminPage) is stricter: anyone
 // who isn't signed in to an admin account, including an admin while impersonating a customer, gets the site's
-// ordinary 404 page, so the Control Center doesn't exist for them.
+// ordinary 404 page, so the Control Center doesn't exist for them; its sub-pages (/admin/<page>, guardAdminSubpage) too.
 import { loadConfig } from "../lib/config.js";
 import { currentUser, isAdmin } from "../auth/session.js";
 
 export const GATED = new Set(["/dashboard", "/settings", "/studio"]);
 // Settings is one page (settings.html) with a section per address: /settings/profile, /settings/security, ...
 export const SETTINGS_SECTIONS = ["profile", "security", "orders", "email", "privacy"];
+// The Control Center is one page (admin.html) split into sub-pages, one per address: /admin/stats (also plain /admin),
+// /admin/daily, /admin/manage and /admin/settings (js/admin.js reads its page from the address).
+export const ADMIN_PAGES = ["stats", "daily", "manage", "settings"];
 const HOME = "/dashboard";
 const settingsSection = (path) => (path.match(/^\/settings\/([a-z]+)$/) || [])[1];
 const isGated = (path) => GATED.has(path) || SETTINGS_SECTIONS.includes(settingsSection(path));
@@ -57,6 +60,17 @@ async function notFound(context) {
 export async function guardAdminPage(context) {
   if (!(await signedInAdmin(context))) return notFound(context);
   return noStore(await context.next());
+}
+
+// /admin/<page>: the same gate (anyone but a signed-in admin gets the 404 first, so the addresses reveal nothing), then
+// the one Control Center page for every known sub-page. An unknown one is the site's 404 too.
+export async function guardAdminSubpage(context) {
+  const url = new URL(context.request.url);
+  const path = url.pathname.replace(/(.)\/+$/, "$1");
+  // The catch-all answers plain /admin too (Cloudflare routes it here before functions/admin.js): that's Stats.
+  const page = path === "/admin" ? "stats" : (path.match(/^\/admin\/([a-z]+)$/) || [])[1];
+  if (!(await signedInAdmin(context)) || !ADMIN_PAGES.includes(page)) return notFound(context);
+  return noStore(await context.env.ASSETS.fetch(new URL("/admin", url)));
 }
 
 // Where to come back to after logging in: this page and its query, never anything else (no open redirects).

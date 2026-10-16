@@ -18,6 +18,8 @@ export function storeProduct(row, { sales, seller, facets = {}, at }) {
     bpm: row.bpm_lo ? [row.bpm_lo, row.bpm_hi] : row.bpm_min ? [row.bpm_min, row.bpm_max] : null,
     specs: parseJson(row.metadata, {}).specs || {},
     released,
+    // Buyers' reviews (server/reviews/): only when there are any.
+    rating: row.reviews ? { average: Math.round(row.rating * 10) / 10, count: row.reviews } : null,
     badges: {
       new: age >= 0 && age < NEW_DAYS,
       percentOff: p.sale && p.listPriceCents ? Math.round((1 - p.priceCents / p.listPriceCents) * 100) : 0,

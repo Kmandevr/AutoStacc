@@ -37,9 +37,9 @@ body:has(> .site-frame) { padding-left: var(--side); }
   gap: 18px;
   padding: 16px 12px 24px;
   overflow-y: auto;
-  background: color-mix(in srgb, var(--panel) 66%, transparent);
-  -webkit-backdrop-filter: var(--blur, blur(18px));
-  backdrop-filter: var(--blur, blur(18px));
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  -webkit-backdrop-filter: var(--blur-bar, blur(20px));
+  backdrop-filter: var(--blur-bar, blur(20px));
   border-right: 1px solid var(--glass-edge, var(--line));
   font-family: var(--font);
   view-transition-name: side;
@@ -128,9 +128,9 @@ body:has(> .site-frame) { padding-left: var(--side); }
   gap: 12px;
   height: var(--topbar);
   padding: 0 20px;
-  background: color-mix(in srgb, var(--bg) 62%, transparent);
-  -webkit-backdrop-filter: var(--blur, blur(18px));
-  backdrop-filter: var(--blur, blur(18px));
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  -webkit-backdrop-filter: var(--blur-bar, blur(20px));
+  backdrop-filter: var(--blur-bar, blur(20px));
   border-bottom: 1px solid var(--glass-edge, var(--line));
   font-family: var(--font);
   view-transition-name: topbar;
@@ -183,9 +183,10 @@ body:has(> .site-frame) { padding-left: var(--side); }
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--panel) 78%, transparent);
-  -webkit-backdrop-filter: var(--blur, blur(18px));
-  backdrop-filter: var(--blur, blur(18px));
+  /* nearly solid: inside the blurred top bar its own blur can't reach the page */
+  background: color-mix(in srgb, var(--panel) 95%, transparent);
+  -webkit-backdrop-filter: var(--blur-bar, blur(20px));
+  backdrop-filter: var(--blur-bar, blur(20px));
   border-color: var(--glass-edge, var(--line));
   box-shadow: var(--shadow);
   font-family: var(--font);
@@ -296,9 +297,9 @@ body:has(> .site-frame) { padding-left: var(--side); }
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     padding-bottom: env(safe-area-inset-bottom);
-    background: color-mix(in srgb, var(--panel) 68%, transparent);
-    -webkit-backdrop-filter: var(--blur, blur(18px));
-    backdrop-filter: var(--blur, blur(18px));
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+    -webkit-backdrop-filter: var(--blur-bar, blur(20px));
+    backdrop-filter: var(--blur-bar, blur(20px));
     border-top: 1px solid var(--glass-edge, var(--line));
     font-family: var(--font);
     view-transition-name: tabbar;
@@ -325,10 +326,15 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .tabbar .side-icon { width: 22px; height: 22px; }
   body:has(> .site-frame) { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
-@media (prefers-reduced-motion: reduce) { .tabbar { backdrop-filter: none; } }
+/* blur isn't motion: only visitors who ask for less transparency get a solid bar */
+@media (prefers-reduced-transparency: reduce) { .tabbar { background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 
 /* the cart count bumps when something is added (GS.showCartCount) */
 @media (prefers-reduced-motion: no-preference) {
   .cart-count.bump { animation: count-bump .42s var(--snap); }
 }
 @keyframes count-bump { 30% { transform: scale(1.45); color: var(--teal); } }
+
+/* the store's notice (js/site-notice.js, set in Control Center › Settings › Switches): one calm line above the page */
+.site-notice { margin: 0; padding: 10px 20px; text-align: center; font-family: var(--font); font-size: .92rem; font-weight: 600;
+  color: var(--text); background: color-mix(in srgb, var(--amber) 22%, var(--panel)); border-bottom: 1px solid var(--line); }

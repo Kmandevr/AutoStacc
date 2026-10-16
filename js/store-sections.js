@@ -22,7 +22,7 @@
 
   const row = (id, title, reason, products, opts = {}) => `<section class="store-section" aria-labelledby="sec-${e(id)}" data-section="${e(id)}">
       <div class="store-section-head"><h2 id="sec-${e(id)}">${e(title)}</h2>${reason ? `<p class="small-print">${e(reason)}</p>` : ""}</div>
-      <div class="store-row">${products.map((p) => card(p, { level: 3, why: p.why || "", dismissable: Boolean(opts.dismissable), wish: !p.draft })).join("")}</div></section>`;
+      <div class="store-row">${products.map((p) => card(p, { level: 3, why: p.why || "", dismissable: Boolean(opts.dismissable), wish: !p.draft, mixed: true })).join("")}</div></section>`;
 
   function controls() {
     const on = taste.enabled();

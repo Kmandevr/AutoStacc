@@ -116,6 +116,13 @@ export const sellersOfProducts = (db, productIds) => productIds.length
       WHERE p.id IN (${productIds.map(() => "?").join(",")})`, ...productIds)
   : Promise.resolve([]);
 
+// The upload limit paid storage gives a creator (server/billing/ is the only caller; null takes it away). A statement for
+// a batch, so the plan and the limit change together; whilePlan: only if the plan (storage_plans) is then in that
+// status, so a change that lost a race to another can't leave the limit behind.
+export const paidStorageStmt = (db, creatorId, bytes, whilePlan = null) => whilePlan
+  ? stmt(db, "UPDATE creators SET storage_paid_bytes = ? WHERE id = ? AND EXISTS (SELECT 1 FROM storage_plans WHERE creator_id = ? AND status = ?)", bytes, creatorId, creatorId, whilePlan)
+  : stmt(db, "UPDATE creators SET storage_paid_bytes = ? WHERE id = ?", bytes, creatorId);
+
 export const publicCreator = (c) => ({ id: c.id, slug: c.slug, name: c.name, status: c.status, trusted: Boolean(c.trusted), source: c.source });
 export const publicProject = (p) => ({ id: p.id, slug: p.slug, name: p.name, published: Boolean(p.published), source: p.source });
 

@@ -7,7 +7,7 @@ export const WEIGHTS = {
   search: 0.20,     // how well it matches the words of the current (or recent) search
   behavior: 0.18,   // how close it is to products the person saved, carted, previewed or opened
   price: 0.07,      // closeness to the prices the person explores (only a fit; a stated budget is a hard limit)
-  quality: 0.05,    // trust: a verified creator (reviews would join here once the store has them)
+  quality: 0.05,    // trust: a verified creator, and buyers' reviews as a confidence-adjusted average (RATING)
   popularity: 0.08, // confirmed purchases, saves and views, on a log scale and capped by this small weight
   freshness: 0.05,  // released or added in the last FRESH_DAYS
   discovery: 0.07   // room for the unfamiliar: outside the person's usual kinds and genres, or rarely seen yet
@@ -34,3 +34,9 @@ export const POLICY = {
   candidates: 400,       // eligible products scored per request, the most-sold and newest first
   bestsellerMin: 3       // confirmed purchases (90 days) before a product may sit in "Bestselling"
 };
+
+// Buyers' reviews (server/reviews/) as a Bayesian average: a product's mean stars pulled toward `prior` as if it had
+// `weight` more reviews of that score, so one 5-star review doesn't outrank twenty 4.6s and new products aren't
+// penalised for having none (they sit at the prior).
+export const RATING = { prior: 3.5, weight: 5 };
+export const ratingScore = (count, average) => (RATING.prior * RATING.weight + (count || 0) * (average || 0)) / (RATING.weight + (count || 0));
