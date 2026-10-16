@@ -492,3 +492,17 @@ The owner set the next step as a support wiki and a community page, and chose: a
 
 Same day, the owner widened it ("like Reddit but less of a do-what-you-want"). Besides AutoStacc's space and project spaces, there are communities any verified account can start straight away, without being a creator. Every space has channels. Creators' updates and polls are post types in their space, so Studio creators get news and polls too: polls are posted by creators and community moderators, not members. Communities about a creator are allowed but marked Unofficial. AutoStacc's base rules (nothing illegal, no threats, harassment and the like) apply everywhere and can't be loosened. Each space may add stricter rules, which its own team enforces, while AutoStacc enforces the base rules and handles appeals. The reason: communities can grow without creators, while the platform keeps one floor of rules. Guardrails against squatting and spam are proposed in [community](community.md) for the owner to confirm.
 
+Later the same day, asked one question at a time, the owner added a place to ask questions, get answers and have fun, plus ways to show off an account and connect:
+- **Q&A:** a Question post type in spaces plus a central Q&A page, accepted answers, and Helpful votes (up only).
+- **Votes and ranking:** thread upvotes, no downvotes, because bad posts are handled by reports.
+- **Fun:** challenges (hosted by creators and moderators, who choose audio uploads, links or both, and how to judge; prizes are store items only), Show your Stacc, games and events, badges and streaks.
+- **Profiles:** Steam-style profiles with points earned from purchases, badges, helping and taking part, spent on profile items creators make. Creators get about half the points spent on their items. Points never have money value. Item files over a set size count toward the creator's storage cap.
+- **Connecting:** friends, a friends-only feed and collab requests; no direct messages.
+- **Age:** 16+, self-declared, with no verification system.
+- **Accounts:** deleted accounts' posts stay as "deleted user", and a founder's community passes to a moderator.
+- **Notifications:** emails for answers, replies, updates, friends and collabs, each configurable.
+- **News:** first-party news moves to Updates, keeping its addresses.
+- **Communities:** a cap of 3 per account that AutoStacc can adjust (creator and project spaces don't count), name checks, and abandoned communities handed over.
+
+Plans: [community](community.md), [profiles](profiles.md).
+
