@@ -16,7 +16,7 @@ Everyone 16+ with a confirmed email can have a public profile. **Every part is o
 - **Showcase of their Stacc**: favourite items they own, plus counts (packs owned, projects followed). Never prices, orders or dates of purchase.
 - **Badges and achievements**: challenge entries and wins, accepted answers, streaks (weekly prompts), collecting (for example "owns every pack of a project"), years on AutoStacc.
 - **Creations**: challenge entries, Show your Stacc posts, and links to their own creator projects.
-- **Customisation**: free choices are decent on their own (banner, accent colour, featured badge, short bio, layout from presets). Point items add more. No custom HTML or CSS, ever: everything is preset blocks and checked files.
+- **Customisation**: free choices are decent on their own (an uploaded avatar, preset banners, accent colour, featured badge, short bio, layout from presets). Regular users upload an **avatar only**; banners come from presets and point items ([community safety](community-safety.md)). Point items add more. No custom HTML or CSS, ever: everything is preset blocks and checked files.
 - Address: proposed `/u/<display-name>` (so it never collides with `/<creator>`), `noindex` unless the person opts in to search.
 
 ## Points

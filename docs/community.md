@@ -6,7 +6,7 @@ updated: 2026-10-16
 
 # Community
 
-> **PLANNED / NOT IMPLEMENTED.** Nothing here exists yet. This turns the open question "community features" in [vision](vision.md) §8 into what the owner chose on 2026-10-16 ([decisions](decisions.md#2026-10-16-guides-and-community-forum-planned-owner)). Profiles, points, friends and collab requests are in [profiles](profiles.md). Support articles are in [guides](guides.md).
+> **PLANNED / NOT IMPLEMENTED.** Nothing here exists yet. This turns the open question "community features" in [vision](vision.md) §8 into what the owner chose on 2026-10-16 ([decisions](decisions.md#2026-10-16-guides-and-community-forum-planned-owner)). Profiles, points, friends and collab requests are in [profiles](profiles.md). Support articles are in [guides](guides.md). Legal and security requirements (launch gates, copyright strikes, urgent reports, contest rules) are in [community safety](community-safety.md).
 
 "Like Reddit, but less of a do-what-you-want" (owner): a place to ask questions and get answers, share and have fun, and grow communities without needing a creator, inside rules AutoStacc sets and enforces.
 
@@ -108,7 +108,7 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 1. Architect review. Draft base rules, privacy and terms text (16+, challenge entries) for the owner, then migrations.
 2. Read side: spaces, channels, threads rendered on the server, sitemap, SEO tests.
 3. Posting: display names, age declaration, the formatter, Discussion and Question, accepted answers, Helpful votes, upvotes and sorting, limits, edit and delete.
-4. Moderation: routed reports, blocks, space bans, Control Center queue, suspensions, audit. **The whole feature stays behind a switch (`community.forum`, off) until this step is done.**
+4. Moderation: routed reports, urgent reports with false-report filtering, blocks, space bans, copyright notices and strikes, Control Center queue, suspensions, audit. **The whole feature stays behind a switch (`community.forum`, off) until this step and the launch gates in [community safety](community-safety.md) are done.**
 5. Project spaces and Updates (Official marks, team roles, news pages and dashboards from Updates; then move `data/news.js` with addresses kept).
 6. Polls from the Studio and communities; the central Q&A page.
 7. Communities anyone can start: cap setting, name checks, founders and moderators, Unofficial marks, hand-over and archive.

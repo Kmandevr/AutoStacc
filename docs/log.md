@@ -8,6 +8,7 @@ updated: 2026-10-16
 
 Newest first.
 
+- 2026-10-16: Community legal and security plan with the owner (LLC, DMCA agent and tiered strikes, CSAM scanning, UK/EU duties, contest rules, urgent reports, retention, legal requests, Turnstile, security design rules). Nothing built. Notes: community-safety (new), community, profiles, decisions, index.
 - 2026-10-16: Community plan completed with the owner: Q&A, upvotes, challenges, games, 16+, notifications, news to Updates, community caps; new plan for Steam-style profiles, points, creator point items, friends and collab requests. Nothing built. Notes: community, profiles (new), decisions, index.
 - 2026-10-16: Planned with the owner: guides and a creator manual at `/guide`, and a community forum at `/community` and per project. Nothing built. Notes: guides (new), community (new), decisions, index.
 - 2026-10-16: Community plan widened with the owner: user-started communities, channels, updates and polls as post types, base rules plus stricter space rules, Unofficial fan communities. Nothing built. Notes: community, decisions, index.
