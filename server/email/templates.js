@@ -95,6 +95,21 @@ export const templates = {
     };
   },
 
+  // A creator's paid storage (server/billing/): a statement to pay, a statement past its grace period, or a payment.
+  "storage-billing": ({ stage, period, amountCents, currency, dueAt, studioUrl }) => {
+    const due = String(dueAt || "").slice(0, 10);
+    const head = stage === "issued" ? `Your AutoStacc storage statement for ${period}: ${money(amountCents, currency)}`
+      : stage === "past_due" ? `Your storage statement for ${period} is overdue` : `Thanks: your storage statement for ${period} is paid`;
+    const body = stage === "issued" ? `It's for what you stored above your free storage in ${period}, measured once a day. Pay it in the Studio by ${due}. The daily figures are there too.`
+      : stage === "past_due" ? "Your paid storage limit is paused until it's paid, so new uploads stop once you're over your free storage. Nothing you've stored is deleted or hidden, and buyers keep their downloads."
+        : "Your paid storage limit is in place.";
+    return {
+      subject: `${head} — AutoStacc`,
+      text: `${head}.\n${body}\n\nThe Studio: ${studioUrl}`,
+      html: layout(head, para(body) + button(studioUrl, "Open the Studio"))
+    };
+  },
+
   // To the admins: something in the Control Center is waiting for them.
   "admin-alert": ({ title, lines, adminUrl }) => ({
     subject: `Store alert: ${title}`,

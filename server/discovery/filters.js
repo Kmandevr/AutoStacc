@@ -4,7 +4,7 @@
 import { fail } from "../lib/http.js";
 import { FACETS, canonical } from "./vocabulary.js";
 
-export const SORTS = ["relevance", "bestselling", "newest", "price-asc", "price-desc", "discount", "name"];
+export const SORTS = ["relevance", "bestselling", "rating", "newest", "price-asc", "price-desc", "discount", "name"];
 export const PAGE = { per: 24, maxPer: 48, maxPage: 200 };
 export const NEW_DAYS = 30;
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -61,13 +61,16 @@ export function parseFilters(params, kinds) {
   const bpmMax = whole(params.get("bpm_max"), "bpm_max", 1, 400);
   if (bpmMin !== null && bpmMax !== null && bpmMin > bpmMax) fail(400, "invalid_filter", "The lowest BPM is above the highest.", { field: "bpm_min" });
 
+  // Buyers' reviews: at least this many stars on average (products without reviews drop out).
+  const ratingMin = whole(params.get("rating_min"), "rating_min", 1, 5);
+
   const sort = params.get("sort") || "relevance";
   if (!SORTS.includes(sort)) fail(400, "invalid_filter", `sort is one of ${SORTS.join(", ")}.`, { field: "sort" });
   const page = whole(params.get("page"), "page", 1, PAGE.maxPage) || 1;
   const per = whole(params.get("per"), "per", 1, PAGE.maxPer) || PAGE.per;
 
   return {
-    q, words, categories, facets, creators, priceMin, priceMax, bpmMin, bpmMax,
+    q, words, categories, facets, creators, priceMin, priceMax, bpmMin, bpmMax, ratingMin,
     free: flag(params.get("free"), "free"), sale: flag(params.get("sale"), "sale"), recent: flag(params.get("new"), "new"),
     sort, page, per, ignored
   };
@@ -75,4 +78,4 @@ export function parseFilters(params, kinds) {
 
 // Anything the person narrowed by (a query, a filter): personal ranking then never reorders their results.
 export const isNarrowed = (f) => Boolean(f.words.length || f.categories.length || Object.keys(f.facets).length || f.creators.length
-  || f.priceMin !== null || f.priceMax !== null || f.bpmMin !== null || f.bpmMax !== null || f.free !== null || f.sale || f.recent);
+  || f.priceMin !== null || f.priceMax !== null || f.bpmMin !== null || f.bpmMax !== null || f.ratingMin != null || f.free !== null || f.sale || f.recent);

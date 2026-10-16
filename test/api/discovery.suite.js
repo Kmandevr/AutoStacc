@@ -91,7 +91,7 @@ export default (ctx) => describe("store discovery", () => {
   test("sorting is stable and complete; best-selling counts confirmed purchases only", async () => {
     const all = await search(scoped);
     assert.equal(all.total, 7);
-    for (const sort of ["relevance", "bestselling", "newest", "price-asc", "price-desc", "discount", "name"]) {
+    for (const sort of ["relevance", "bestselling", "rating", "newest", "price-asc", "price-desc", "discount", "name"]) {
       const d = await search(`${scoped}&sort=${sort}`);
       assert.deepEqual([...ids(d)].sort(), [...ids(all)].sort(), `${sort} returns the same set`);
       assert.deepEqual(ids(d), ids(await search(`${scoped}&sort=${sort}`)), `${sort} is stable`);
@@ -102,6 +102,31 @@ export default (ctx) => describe("store discovery", () => {
     sql(ctx.mock.stateDir, [grant(1, "dx-midi-pop"), grant(2, "dx-midi-pop"), grant(3, "dx-loops-house"), grant(4, "dx-loops-house", "revoked"),
       grant(5, "dx-loops-house", "revoked")].join(";\n"));
     assert.deepEqual(ids(await search(`${scoped}&sort=bestselling`)).slice(0, 2), ["dx-midi-pop", "dx-loops-house"], "revoked (refunded) purchases don't count");
+  });
+
+  // Buyers' reviews (server/reviews/, #96): only owners' unhidden reviews count; sorting uses a confidence-adjusted
+  // average (weights.js RATING: prior 3.5 as if 5 reviews), so one 5-star review doesn't beat four averaging 4.5.
+  test("ratings: shown reviews only, a confidence-adjusted 'Top rated', a 4-star filter and its count", async () => {
+    const rows = [];
+    const review = (i, product, rating, { owned = true, hidden = false } = {}) => {
+      rows.push(`INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt") VALUES ('u_dxr${i}', 'R${i}', 'dxr${i}@test.dev', 1, ${q(NOW)}, ${q(NOW)})`,
+        `INSERT INTO entitlements (id, user_id, email, product_id, source_type, source_id, status, granted_at) VALUES ('ent_dxr${i}', 'u_dxr${i}', 'dxr${i}@test.dev', ${q(product)}, 'manual', 'dxr${i}', ${q(owned ? "active" : "revoked")}, ${q(ago(200))})`,
+        `INSERT INTO product_reviews (id, product_id, user_id, rating, body, created_at, updated_at, hidden_at) VALUES ('rv_dxr${i}', ${q(product)}, 'u_dxr${i}', ${rating}, '', ${q(NOW)}, ${q(NOW)}, ${hidden ? q(NOW) : "NULL"})`);
+    };
+    review(1, "dx-midi-pop", 5);
+    [5, 4, 5, 4].forEach((r, i) => review(10 + i, "dx-loops-house", r));
+    review(20, "dx-bare", 5, { owned: false }); // refunded: not shown
+    review(21, "dx-free-kit", 5, { hidden: true });
+    sql(ctx.mock.stateDir, rows.join(";\n"));
+    const top = await search(`${scoped}&sort=rating`);
+    assert.deepEqual(ids(top).slice(0, 2), ["dx-loops-house", "dx-midi-pop"], "four 4.5s beat one 5");
+    assert.deepEqual(top.products.find((p) => p.id === "dx-loops-house").rating, { average: 4.5, count: 4 });
+    assert.equal(top.products.find((p) => p.id === "dx-bare").rating, null, "a refunded buyer's review doesn't show");
+    assert.equal(top.products.find((p) => p.id === "dx-free-kit").rating, null, "nor a hidden one");
+    const rated = await search(`${scoped}&rating_min=4`);
+    assert.deepEqual([...ids(rated)].sort(), ["dx-loops-house", "dx-midi-pop"]);
+    assert.equal((await search(scoped)).toggles.rated, 2);
+    for (const bad of ["0", "6", "4.5", "x"]) assert.equal((await c.get(`/api/store/search?rating_min=${bad}`)).status, 400, bad);
   });
 
   test("search combines with filters; products without details are neutral, not hidden, until a filter needs the detail", async () => {

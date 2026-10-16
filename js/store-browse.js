@@ -13,9 +13,9 @@
   const root = $("[data-browse]");
   if (!root || !GS.productCard || !GS.storeFilters) return;
   const card = GS.productCard, F = GS.storeFilters;
-  const KEYS = new Set(["q", "category", "creator", "price_min", "price_max", "free", "sale", "new", "bpm_min", "bpm_max", "sort", "page",
+  const KEYS = new Set(["q", "category", "creator", "price_min", "price_max", "free", "sale", "new", "rating_min", "bpm_min", "bpm_max", "sort", "page",
     ...Object.keys((window.VOCABULARY || {}).facets || {})]);
-  const SORTS = [["relevance", "Relevance"], ["bestselling", "Best-selling"], ["newest", "Newest"], ["price-asc", "Price: low to high"],
+  const SORTS = [["relevance", "Relevance"], ["bestselling", "Best-selling"], ["rating", "Top rated"], ["newest", "Newest"], ["price-asc", "Price: low to high"],
     ["price-desc", "Price: high to low"], ["discount", "Biggest discount"], ["name", "Name"]];
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -185,6 +185,7 @@
       if (t.checked && key !== "creator") taste({ t: "filter", facet: key, value: v });
       return go();
     }
+    if (t.matches("[data-rating]")) { t.checked ? params.set("rating_min", "4") : params.delete("rating_min"); return go(); }
     if (t.matches("[data-flag]")) { t.checked ? params.set(t.dataset.flag, "1") : params.delete(t.dataset.flag); return go(); }
     if (t.matches("[data-free]")) { t.dataset.free ? params.set("free", t.dataset.free) : params.delete("free"); return go(); }
   });
@@ -201,7 +202,7 @@
     if (chip) {
       const key = chip.dataset.chip;
       const rest = listOf(key).filter((x) => x !== chip.dataset.chipValue);
-      if (rest.length && !["q", "price_min", "price_max", "bpm_min", "bpm_max", "free", "sale", "new"].includes(key)) setList(key, rest);
+      if (rest.length && !["q", "price_min", "price_max", "bpm_min", "bpm_max", "free", "sale", "new", "rating_min"].includes(key)) setList(key, rest);
       else params.delete(key);
       go();
       return $(".browse-results-head", root).focus({ preventScroll: true });

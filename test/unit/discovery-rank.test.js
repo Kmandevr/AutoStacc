@@ -86,3 +86,10 @@ test("similarity: same kind and shared details count; nothing in common is near 
   assert.ok(similarity(a, b) > 0.8);
   assert.ok(similarity(a, c) < 0.1);
 });
+
+test("quality: buyers' stars count as a confidence-adjusted average; no reviews sits at the prior", async () => {
+  const { ratingScore, RATING } = await import("../../server/discovery/weights.js");
+  assert.equal(ratingScore(0, null), RATING.prior);
+  assert.ok(ratingScore(4, 4.5) > ratingScore(1, 5), "four 4.5s beat one 5");
+  assert.ok(ratingScore(50, 2) < RATING.prior, "many low reviews pull it down");
+});

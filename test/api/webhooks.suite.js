@@ -134,6 +134,24 @@ export default (ctx) => describe("webhooks", () => {
     assert.deepEqual(await owned(c), []);
   });
 
+  // Managed Payments adds sales tax on top of the order total, and Stripe's refund amounts include it: the store records
+  // the order's own (pre-tax) share, never more than the order total, so creators' shares and receipts stay right (#129).
+  test("a taxed order's refunds are recorded before tax, never above the order total", async () => {
+    const { c, email, order } = await buyer("refund-tax");
+    const { session } = await stripePay(ctx, c, order);
+    const charged = session.amount_total;
+    assert.ok(charged > 999, "the fake adds tax");
+    const charge = (refunded, amount) => ({ id: eventId(), object: "event", type: "charge.refunded", livemode: false, created: Math.floor(Date.now() / 1000),
+      data: { object: { id: "ch_t", object: "charge", payment_intent: session.payment_intent, amount: charged, amount_refunded: amount, refunded, currency: "usd" } } });
+    const refunded = () => sql(ctx.stripe.stateDir, `SELECT refunded_cents FROM orders WHERE id = '${order.orderId}'`)[0].refunded_cents;
+    await sendWebhook(c, charge(false, Math.round(charged / 2)), WEBHOOK_SECRET);
+    assert.equal(refunded(), Math.round((Math.round(charged / 2) * 999) / charged));
+    await sendWebhook(c, charge(true, charged), WEBHOOK_SECRET);
+    assert.equal(refunded(), 999);
+    const mail = (await outbox(ctx.stripe.url, email)).find((m) => m.kind === "refund-confirmation");
+    assert.ok(mail && /\$9\.99/.test(mail.subject + mail.body_text), "the refund email names the order's amount");
+  });
+
   test("a late webhook is covered by reconciliation with Stripe", async () => {
     const { c, order } = await buyer("reconcile");
     ctx.stripe.fake.pay(order.sessionId); // paid at Stripe, webhook never arrives

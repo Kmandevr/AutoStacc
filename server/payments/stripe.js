@@ -2,7 +2,7 @@
 // library (signature + timestamp tolerance), and session lookups for reconciliation. Normalizes Stripe events into the
 // provider-neutral shape that server/payments/events.js processes.
 import Stripe from "stripe";
-import { taxCodeFor } from "./tax-codes.js";
+import { taxCodeFor, STORAGE_TAX_CODE } from "./tax-codes.js";
 
 // Two Stripe accounts: "main" (AutoStacc's own products, Managed Payments) and "marketplace" (creators' products and their
 // Connect payouts). Each has its own key, webhook secret and live/test mode.
@@ -69,6 +69,25 @@ const makeProvider = (account) => ({
     return { sessionId: session.id, url: session.url };
   },
 
+  // A creator's storage statement (server/billing/payments.js): one line at what's left to pay. The caller's key is new
+  // for every request (the SDK's own retries reuse it).
+  async createStorageCheckout(app, { statement, key, email, creatorName, successUrl, cancelUrl }) {
+    const { config } = app;
+    const session = await stripeClient(config, account).checkout.sessions.create({
+      mode: "payment",
+      client_reference_id: statement.id,
+      customer_email: email,
+      metadata: { storage_statement_id: statement.id },
+      payment_intent_data: { metadata: { storage_statement_id: statement.id } },
+      line_items: [{ quantity: 1, price_data: { currency: statement.currency.toLowerCase(), unit_amount: statement.amount_cents,
+        product_data: { name: `AutoStacc storage, ${statement.period} (${creatorName})`, tax_code: STORAGE_TAX_CODE, metadata: { storage_statement_id: statement.id } } } }],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      expires_at: expiresAtFor(config)
+    }, { idempotencyKey: key });
+    return { sessionId: session.id, url: session.url };
+  },
+
   // Full refund of a paid order, to the card it was paid with. The key makes a repeated click the same refund.
   async refund(app, order) {
     return stripeClient(app.config, account).refunds.create({ payment_intent: order.provider_payment_id, reason: "requested_by_customer", metadata: { order_id: order.id } },
@@ -103,7 +122,9 @@ function normalizeSession(s, type) {
   return {
     type,
     sessionId: s.id,
-    orderId: (s.metadata && s.metadata.order_id) || s.client_reference_id || null,
+    // A creator's storage statement carries its own id instead of an order's (server/billing/payments.js).
+    statementId: (s.metadata && s.metadata.storage_statement_id) || null,
+    orderId: (s.metadata && s.metadata.order_id) || (s.metadata && s.metadata.storage_statement_id ? null : s.client_reference_id) || null,
     paymentId: typeof s.payment_intent === "string" ? s.payment_intent : s.payment_intent && s.payment_intent.id,
     // Before tax: the live account sells through Managed Payments, which adds sales tax on top of our prices, so the
     // session's total is the order total plus tax. The subtotal is what we asked for (our prices, discounts already in).
@@ -132,6 +153,8 @@ export function normalizeEvent(event) {
         type: o.refunded ? "refunded" : "partial_refund",
         paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null,
         amount: o.amount_refunded,
+        // What the charge took in all, tax included (server/payments/events.js scales the refund back to before tax).
+        chargedAmount: o.amount,
         currency: String(o.currency || "").toUpperCase()
       };
     case "charge.dispute.created":

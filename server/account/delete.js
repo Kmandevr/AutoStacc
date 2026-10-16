@@ -11,6 +11,7 @@ import { passwordMatches } from "../auth/password.js";
 import { eraseUserStmts, expiredAuthCookies } from "../auth/erase.js";
 import { anonymiseOrdersStmt, hasOpenCheckout } from "../orders/orders.js";
 import { eraseEntitlementsStmt } from "../entitlements/grants.js";
+import { eraseReviewsStmt } from "../reviews/reviews.js";
 import { anonymiseEmailLogStmt } from "../email/index.js";
 import { anonymiseDownloadsStmt } from "../downloads/routes.js";
 import { erasePreferencesStmt, getPreferences } from "../email/preferences.js";
@@ -56,6 +57,7 @@ async function deleteAccount(app) {
     removeWishlistStmt(db, user.id),
     ...eraseCollectionsStmts(db, user.id),
     removeVotesStmt(db, user.id),
+    eraseReviewsStmt(db, user.id),
     ...leaveAllCreatorsStmts(db, user.id, email),
     forgetActorStmt(db, user.id),
     ...eraseUserStmts(db, user.id)

@@ -49,6 +49,7 @@
         <div class="stat"><span class="stat-label">Ready to pay out</span><span class="stat-value">${cents(x.availableCents)}</span></div>
         <div class="stat"><span class="stat-label">Paid out</span><span class="stat-value">${cents(x.paidOutCents)}</span></div>
       </div>
+      ${x.deductedCents ? `<p class="small-print">${cents(x.deductedCents)} of your earnings paid your storage statements (Storage, above).</p>` : ""}
       <p class="small-print">${x.salesCount} sales · AutoStacc's fee ${(x.feeBps || 0) / 100}% (${cents(x.platformFeeCents)}). Sales are held for a refund window before they can be paid out.</p>
       ${x.balanceCents < 0 ? `<p class="msg" role="status">${cents(-x.balanceCents)} of sales you were already paid for were refunded. It comes out of your next sales before anything more is paid out.</p>` : ""}
       ${accountPanel(acct, creatorId)}

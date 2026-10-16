@@ -9,6 +9,8 @@ import promotions from "./promotions.suite.js";
 import selling from "./selling.suite.js";
 import refunds from "./refunds.suite.js";
 import payouts from "./payouts.suite.js";
+import storageBilling from "./storage-billing.suite.js";
+import { SWEEP_TOKEN } from "./packs.suite.js";
 
-runGroup({ name: "payments", ports: { mock: 8804, stripe: 8802, fakeStripe: 8812 } },
-  [commerce, webhooks, impersonation, promotions, selling, refunds, payouts]);
+runGroup({ name: "payments", ports: { mock: 8804, stripe: 8802, fakeStripe: 8812 }, vars: { SWEEP_TOKEN } },
+  [commerce, webhooks, impersonation, promotions, selling, refunds, payouts, storageBilling]);

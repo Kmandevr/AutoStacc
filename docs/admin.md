@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, server/settings/, data/workspaces.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Control Center
@@ -97,6 +97,14 @@ The **Community library** section (`js/admin-library.js`, `server/library/admin.
 ## Usage and storage
 
 The budget guard ([packs](packs.md#staying-inside-the-5-workers-paid-plan-owner-try-not-to-charge-me-v-amounts-r-design)): this month's Container time, storage writes (Class A) and storage against Cloudflare's free allowance, with how many Pac versions wait for it. From 80% the admins get an email and Pac processing stops listening to audio; from 95% new processing waits for next month. **Allow spending this month** lets it go on past the allowance until the month ends (paid at Cloudflare's rates; audited `usage.spending_allowed`, taken back with `usage.spending_stopped`). **Storage for creators** sets how much AutoStacc may store before creators' uploads are refused (default 9 GB; audited `usage.storage_cap_set`). `GET|PUT /api/admin/usage` (`server/admin/usage.js`, `js/admin-usage.js`). The meters are the store's own estimates; Cloudflare's billing is the record.
+
+## Paid storage
+
+Paid creator storage ([creators](creators.md#paid-storage-built-2026-10-16-off)): the switches (on needs a rate, in hundredths of a cent per GB-month; audited `storage_billing.on`, `.off`, `.rate_set`), paid limits held against AutoStacc's own storage cap (red when they exceed it), statements with **Waive** (open or carried) and **Refund** (paid, in full through Stripe), each with a note the creator sees (audited `storage_billing.waived`, `.refunded`; a refund Stripe refuses changes nothing and answers 503 `refund_failed`), every plan with its latest measurement, one creator's day-by-day figures and log for a dispute, and the billing log. `GET|PUT /api/admin/storage-billing`, `GET …/creators/:id?period=`, `POST …/statements/:id/waive|refund` (`server/admin/storage-billing.js`, `js/admin-storage-billing.js`). Storage payment events show with the others in the payment alerts.
+
+## Reviews
+
+Buyers' reviews (`GET /api/admin/reviews`, `POST …/:id/hide` with a note, `…/:id/show`; `server/admin/reviews.js`, `js/admin-reviews.js`): the latest ones with product, stars and text, never who wrote them. Hiding is audited (`review.hidden`, `review.shown`); an edit doesn't unhide a review. Only owners of a product can review it, and a review shows only while they still own it ([store](store.md)).
 
 ## Payouts
 

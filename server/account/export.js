@@ -1,5 +1,6 @@
 // "Download your data": everything the store holds about the signed-in account, as one JSON file. A POST (the
 // impersonation policy refuses it, so support can't take it) that each module answers for its own tables.
+import { reviewsOfUser } from "../reviews/reviews.js";
 import { json, fail } from "../lib/http.js";
 import { requireUser, impersonationIdOf } from "../auth/session.js";
 import { listDevices, iso } from "../auth/devices.js";
@@ -20,7 +21,7 @@ export async function collect(app, user) {
   const db = app.db;
   const email = String(user.email).toLowerCase();
   // Every section reads only its own tables, so they are read together.
-  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches] = await Promise.all([
+  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches, reviews] = await Promise.all([
     twoFactorEnabled(db, user.id),
     getPreferences(db, user.id),
     listDevices(db, user.id),
@@ -34,7 +35,8 @@ export async function collect(app, user) {
     listCollections(db, user.id),
     itemsOf(db, user.id),
     tagsOf(db, user.id),
-    searchesOf(db, user.id)
+    searchesOf(db, user.id),
+    reviewsOfUser(db, user.id)
   ]);
   return {
     exportedAt: new Date().toISOString(),
@@ -54,6 +56,7 @@ export async function collect(app, user) {
       items: items.filter((i) => i.collection_id === c.id).map((i) => ({ item: i.item_key, addedAt: i.added_at })) })),
     tags: tags.map((t) => ({ item: t.item_key, tag: t.tag, addedAt: t.created_at })),
     savedSearches: searches.map((s) => ({ name: s.name, query: s.query, savedAt: s.created_at })),
+    reviews: reviews.map((r) => ({ productId: r.product_id, rating: r.rating, text: r.body, writtenAt: r.created_at, changedAt: r.updated_at, hiddenByAutoStacc: Boolean(r.hidden_at) })),
     pollVotes: pollVotes.map((v) => ({ pollId: v.poll_id, optionId: v.option_id, votedAt: v.created_at, changedAt: v.updated_at })),
     creators: creators.map((c) => ({ id: c.id, slug: c.slug, name: c.name, role: c.role })),
     emailsSent: emailsSent.map((m) => ({ kind: m.kind, subject: m.subject, status: m.status, at: m.created_at }))

@@ -2,7 +2,7 @@
 // so it is tested directly (test/unit/discovery-rank.test.js). Eligibility (visible, purchasable, within stated limits,
 // not owned or dismissed) is decided before this, in SQL (server/discovery/recommend.js); this only orders what is left
 // and keeps the result varied. Every component is 0..1; weights and policy are server/discovery/weights.js.
-import { WEIGHTS, EVIDENCE, TASTE_FACETS, POLICY } from "./weights.js";
+import { WEIGHTS, EVIDENCE, TASTE_FACETS, POLICY, ratingScore } from "./weights.js";
 import { label } from "./vocabulary.js";
 
 const DAY = 86400000;
@@ -90,7 +90,8 @@ export function score(c, ctx) {
   const unlike = Math.max(0, ...ctx.dismissedLike.map((d) => similarity(c, d)));
   // Price: closeness on a log scale to the middle of the prices explored; free products fit anyone's budget.
   parts.price = ctx.priceMid === null ? 0 : c.eff === 0 ? 0.8 : clamp(1 - Math.abs(Math.log1p(c.eff) - Math.log1p(ctx.priceMid)) / 2);
-  parts.quality = c.verified ? 1 : 0.5;
+  // Half trust in the creator, half buyers' stars (1..5 → 0..1, confidence-adjusted: weights.js RATING).
+  parts.quality = 0.5 * (c.verified ? 1 : 0.5) + 0.5 * ((ratingScore(c.reviews, c.rating) - 1) / 4);
   parts.popularity = ctx.popTop ? ctx.pop(c) / ctx.popTop : 0;
   const age = (ctx.at - Date.parse(c.released || 0)) / DAY;
   parts.freshness = age >= 0 && age < POLICY.freshDays ? 1 - age / POLICY.freshDays : 0;

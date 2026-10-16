@@ -2,7 +2,7 @@
 title: Shop
 summary: The catalogue: products, types, prices and what is still placeholder. How selling works is in store.md.
 covers: [data/products.js, data/product-types.js, data/stacclets.js, data/pacs.js, shop/]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Shop

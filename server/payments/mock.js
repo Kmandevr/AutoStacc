@@ -12,6 +12,12 @@ export const mockProvider = {
     return { sessionId, url: `${app.config.siteUrl}/checkout?order=${order.id}&mock=${sessionId}` };
   },
 
+  // A storage statement's test page is the Studio itself; POST /api/dev/mock-storage-payment plays the outcome.
+  async createStorageCheckout(app, { statement, successUrl }) {
+    const sessionId = `mock_cs_${randomToken(12)}`;
+    return { sessionId, url: `${successUrl}&mock=${sessionId}&statement=${statement.id}` };
+  },
+
   // Nothing to send anywhere: the order is changed by the refund event the caller processes next.
   async refund() {
     return { id: "mock_re" };

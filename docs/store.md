@@ -1,7 +1,7 @@
 ---
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
-covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, server/settings/, server/collections/, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
+covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, server/settings/, server/collections/, server/billing/, server/reviews/, js/product-reviews.js, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
 updated: 2026-10-16
 ---
 
@@ -59,6 +59,8 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `packs/` | the Pack Builder: Pac versions, resumable ZIP uploads, processing by the engine, import, publish, and the Pac editor (drafts, additions, tree edits, read me, previews; [packs](packs.md)) | `/api/admin/packs/*` (any Pac, admins), `/api/studio/packs/products/:id/*` (the creator's own products) |
 | `blobs/` | stored originals, one per owner and SHA-256, and their retention | (used by packs, files, downloads) |
 | `usage/` | the budget guard: monthly meters of processing and storage against the free allowance, the storage cap creators' uploads stop at ([packs](packs.md)) | (used by packs and studio; admin: `/api/admin/usage`) |
+| `billing/` | paid creator storage: plans, daily measurements, monthly statements, paying one on the main Stripe account, waivers and refunds ([creators](creators.md#paid-storage-built-2026-10-16-off)) | `/api/studio/creators/:id/storage*`; admin: `/api/admin/storage-billing` |
+| `reviews/` | reviews from confirmed buyers: 1 to 5 stars and optional text, one per account and product, shown without a name only while the author still owns the product; hidden by an admin (audited); in the data download, deleted with the account (#96) | `/api/products/:id/reviews`, `PUT|DELETE /api/products/:id/review`; admin: `/api/admin/reviews` |
 | `maintenance/` | the daily retention sweep (also: removed files' bytes, older files' checksums, waiting processing jobs), asked for by the engine Worker's cron with `SWEEP_TOKEN` | `POST /api/internal/sweep` |
 | `dev/` | test-mode helpers | `GET /api/dev/outbox` |
 | `lib/` | config, HTTP, DB, crypto, router, rate limits | |

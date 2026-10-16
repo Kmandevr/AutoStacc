@@ -330,6 +330,7 @@ function productPage(SITE, data, p) {
     </section>
 
     <section class="contents-section" data-product-contents="${esc(p.id)}" hidden></section>
+    <section class="reviews-section" data-reviews="${esc(p.id)}" hidden></section>
     <section class="similar-section" data-similar="${esc(p.id)}" hidden></section>
 ${others.length ? `
     <section class="alt">
@@ -340,7 +341,7 @@ ${others.length ? `
     </section>
 ` : ""}`;
   return { file: `shop/${p.id}.html`, page, html: shell(SITE, { page, section: "shop", styles: ["shop", "store", "detail"],
-    scripts: ["data/product-types.js", "data/vocabulary.js", "js/product-card.js", "js/taste.js", "data/features.js", "js/product-contents.js", "js/similar.js", "js/wishlist.js", "js/store.js"], main, look: creator }) };
+    scripts: ["data/product-types.js", "data/vocabulary.js", "js/product-card.js", "js/taste.js", "data/features.js", "js/product-contents.js", "js/product-reviews.js", "js/similar.js", "js/wishlist.js", "js/store.js"], main, look: creator }) };
 }
 
 // ---------- news post ----------

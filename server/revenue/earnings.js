@@ -1,10 +1,12 @@
 // What a creator has earned, from the split already written on each order line (server/revenue/split.js): the creator's
 // share, less any refund, counted only for real-money orders (a test store's never count). A sale is "on hold" for
 // SELLING.holdDays (the refund and chargeback window); after that it is "cleared" and can be paid out. Payout requests
-// (server/revenue/payouts.js) take from what has cleared. Pure arithmetic in shareAfterRefund and summarise, SQL in earningsOf.
+// (server/revenue/payouts.js) take from what has cleared, as do deductions (deductions.js: paid storage settled from
+// earnings), counted like money paid out. Pure arithmetic in shareAfterRefund and summarise, SQL in earningsOf.
 // Nothing here reveals who bought: only the product, the date and the amounts.
 import { all, first } from "../lib/db.js";
 import { SELLING, feeBpsOf } from "../creators/policy.js";
+import { deductedCents } from "./deductions.js";
 
 // A line's share after refunds: a full refund (order status "refunded") leaves nothing, a partial one takes its
 // proportion of the order off every line.
@@ -16,7 +18,7 @@ export function shareAfterRefund({ creatorShareCents, orderTotalCents, orderRefu
 }
 
 // Lines (as earningsOf reads them) → totals, per product and the latest sales. nowMs is injected so tests can age sales.
-export function summarise(lines, { nowMs, holdDays = SELLING.holdDays, paidOutCents = 0, requestedCents = 0 }) {
+export function summarise(lines, { nowMs, holdDays = SELLING.holdDays, paidOutCents = 0, requestedCents = 0, deductedCents = 0 }) {
   const holdUntil = (paidAt) => Date.parse(paidAt) + holdDays * 86400000;
   let net = 0, fee = 0, share = 0, onHold = 0;
   const byProduct = new Map();
@@ -34,23 +36,24 @@ export function summarise(lines, { nowMs, holdDays = SELLING.holdDays, paidOutCe
   const cleared = share - onHold;
   return {
     salesCount: lines.length, netCents: net, platformFeeCents: fee, shareCents: share, onHoldCents: onHold, clearedCents: cleared,
-    paidOutCents, requestedCents, availableCents: Math.max(0, cleared - paidOutCents - requestedCents),
+    paidOutCents, requestedCents, deductedCents, availableCents: Math.max(0, cleared - paidOutCents - requestedCents - deductedCents),
     // Negative when sales were refunded after being paid out: that amount is taken from the next sales before anything is available.
-    balanceCents: cleared - paidOutCents - requestedCents,
+    balanceCents: cleared - paidOutCents - requestedCents - deductedCents,
     products: [...byProduct.values()].sort((a, b) => b.shareCents - a.shareCents), recent: sales.slice(0, 30)
   };
 }
 
 export async function earningsOf(db, creator, { livemode, nowMs = Date.now() }) {
-  const [rows, payouts] = await Promise.all([
+  const [rows, payouts, deducted] = await Promise.all([
     all(db, `SELECT oi.product_id, p.title, oi.net_cents, oi.platform_fee_cents, oi.creator_share_cents, o.id AS order_id, o.paid_at, o.total_cents, o.refunded_cents, o.status
      FROM order_items oi JOIN orders o ON o.id = oi.order_id LEFT JOIN products p ON p.id = oi.product_id
      WHERE oi.creator_id = ? AND o.status IN ('paid', 'refunded') AND o.livemode = ? AND o.paid_at IS NOT NULL ORDER BY o.paid_at DESC`, creator.id, livemode ? 1 : 0),
     first(db, `SELECT COALESCE(SUM(CASE WHEN status = 'paid' THEN amount_cents END), 0) AS paid,
-      COALESCE(SUM(CASE WHEN status = 'requested' THEN amount_cents END), 0) AS requested FROM payout_requests WHERE creator_id = ?`, creator.id)
+      COALESCE(SUM(CASE WHEN status = 'requested' THEN amount_cents END), 0) AS requested FROM payout_requests WHERE creator_id = ?`, creator.id),
+    deductedCents(db, creator.id, livemode)
   ]);
   const lines = rows.map((r) => ({ productId: r.product_id, title: r.title, netCents: r.net_cents || 0, platformFeeCents: r.platform_fee_cents || 0, creatorShareCents: r.creator_share_cents || 0,
       orderId: r.order_id, paidAt: r.paid_at, orderTotalCents: r.total_cents, orderRefundedCents: r.refunded_cents || 0, orderStatus: r.status }));
-  return { ...summarise(lines, { nowMs, paidOutCents: payouts.paid, requestedCents: payouts.requested }),
+  return { ...summarise(lines, { nowMs, paidOutCents: payouts.paid, requestedCents: payouts.requested, deductedCents: deducted }),
     feeBps: feeBpsOf(creator), holdDays: SELLING.holdDays, minPayoutCents: SELLING.minPayoutCents, currency: "USD" };
 }

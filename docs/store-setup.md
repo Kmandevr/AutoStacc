@@ -2,7 +2,7 @@
 title: Store setup
 summary: The owner's checklist to switch the store on: Cloudflare token permissions, secrets, Stripe and Brevo setup, first admin, uploading files, going live.
 covers: [.github/workflows/deploy.yml, scripts/cloudflare.js, scripts/deploy-check.js, server/lib/config.js, wrangler.toml, server/payments/stripe.js, server/payments/tax-codes.js, server/email/providers.js]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Store setup (owner)
@@ -51,7 +51,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 2. Developers → Webhooks → Add endpoint: `https://autostacc.com/api/webhooks/stripe`, events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed` (a lost dispute is recorded against its order; what it does to balances is still the owner's call, #129).
    Copy its signing secret into `STRIPE_WEBHOOK_SECRET`.
-3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above. The code expects this account to sell through Stripe's Managed Payments: each Checkout line carries a digital-goods tax code per product type (`server/payments/tax-codes.js`, to confirm with your tax adviser; site templates use the general code), and the store checks the total before tax.
+3. Payment methods: cards work out of the box; delayed methods (bank debits) are supported through the async events above. The code expects this account to sell through Stripe's Managed Payments: each Checkout line carries a digital-goods tax code per product type (`server/payments/tax-codes.js`, to confirm with your tax adviser; site templates use the general code, and so does paid creator storage, `STORAGE_TAX_CODE`, until confirmed: #142), and the store checks the total before tax. Paid storage statements are paid on this account and confirmed by the same webhook (`checkout.session.*`, `charge.refunded`, `charge.dispute.*`); no new event is needed.
 4. Customers can refund an order themselves within 14 days if they haven't downloaded anything from it (Settings › Orders, or the order's checkout result page for a guest holding its key); other refunds are done in the Stripe dashboard. Either way the webhook revokes access automatically. A chargeback suspends access until it's resolved. If the store ever refuses a paid event (it should not), every `ADMIN_EMAILS` address gets a "Store alert" mail and `/admin` shows it at the top.
 
 ## 4. Brevo

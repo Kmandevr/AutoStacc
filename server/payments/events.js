@@ -9,6 +9,8 @@ import { getOrderBySession, getOrderByPayment, transition, recordRefund } from "
 import { fulfil, unfulfil, restore, sendRefundNotice } from "../orders/fulfilment.js";
 import { sendEmail } from "../email/index.js";
 import { checkDoublePurchase } from "../orders/double-purchase.js";
+import { applyStatementEvent, statementByPayment } from "../billing/payments.js";
+import { preTaxRefund } from "./refund-amount.js";
 
 export async function processPaymentEvent(app, ev) {
   const { db } = app;
@@ -52,14 +54,19 @@ async function alertAdmins(app, ev, outcome) {
 
 const reject = (detail, orderId = null) => ({ outcome: "rejected", detail, orderId });
 
+
 async function apply(app, ev) {
   const { db } = app;
   if (["ignored", "awaiting", "pending"].includes(ev.type)) return { outcome: "ignored", detail: ev.type };
+  // A creator's storage statement, not an order (server/billing/payments.js).
+  if (ev.statementId) return applyStatementEvent(app, ev);
 
   const order = ["refunded", "partial_refund", "disputed", "dispute_won", "dispute_lost"].includes(ev.type)
     ? ev.paymentId && (await getOrderByPayment(db, ev.provider, ev.paymentId))
     : ev.sessionId && (await getOrderBySession(db, ev.provider, ev.sessionId));
   if (!order) {
+    // A refund or dispute of a paid storage statement (found by its payment).
+    if (ev.paymentId && (await statementByPayment(db, ev.provider, ev.paymentId))) return applyStatementEvent(app, ev);
     // A refund can beat its payment (webhooks arrive in any order). Park it by payment id; the paid event applies it.
     if (ev.type === "refunded" && ev.paymentId) return { outcome: "refund waiting for payment", detail: ev.paymentId };
     if (ev.type === "disputed" && ev.paymentId) return { outcome: "dispute waiting for payment", detail: ev.paymentId };
@@ -105,9 +112,9 @@ async function apply(app, ev) {
       return { outcome: (await transition(db, order.id, "cancelled")) ? "cancelled" : `no change (${order.status})`, orderId: order.id };
     case "refunded": {
       const moved = await transition(db, order.id, "refunded");
-      if (moved || order.status === "refunded") await recordRefund(db, order.id, ev.amount ?? order.total_cents, true);
+      if (moved || order.status === "refunded") await recordRefund(db, order.id, preTaxRefund(order.total_cents, ev), true);
       if (moved || order.status === "refunded") await unfulfil(app, order.id, "refunded");
-      if (moved) await sendRefundNotice(app, order.id, ev.amount ?? order.total_cents);
+      if (moved) await sendRefundNotice(app, order.id, preTaxRefund(order.total_cents, ev));
       return { outcome: moved ? "refunded" : `no change (${order.status})`, orderId: order.id };
     }
     // Chargeback opened: access goes until it's resolved. Won: access comes back. Lost: stays revoked (see dispute_lost).
@@ -123,7 +130,7 @@ async function apply(app, ev) {
       return { outcome: "dispute closed, nothing changed", detail: `dispute ${ev.disputeStatus || "lost"}`, orderId: order.id };
     case "partial_refund":
       // Access stays: a partial refund is a goodwill gesture. Revoke by hand in the admin if needed.
-      await recordRefund(db, order.id, ev.amount, false);
+      await recordRefund(db, order.id, preTaxRefund(order.total_cents, ev), false);
       return { outcome: "partial refund noted", orderId: order.id };
     default:
       return { outcome: "ignored", detail: ev.type };
