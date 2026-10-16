@@ -131,6 +131,26 @@ export default (ctx) => describe("community pages (switched on)", () => {
     assert.doesNotMatch(r.data, /thr_hidden|thr_gone/);
   });
 
+  test("a hidden accepted answer doesn't mark the thread answered or count as an answer", async () => {
+    db("UPDATE community_posts SET state = 'hidden' WHERE id = 'pst_a2'");
+    const list = await anon().get("/community/autostacc/help");
+    assert.doesNotMatch(list.data, /Answered<\/span> How do I/);
+    const page = await anon().get("/community/t/thr_question-how-do-i-export-stems");
+    assert.match(page.data, /1 answer</);
+    assert.doesNotMatch(page.data, /Accepted answer/);
+    assert.doesNotMatch(page.data, /The <strong>accepted<\/strong> answer/);
+    db("UPDATE community_posts SET state = 'visible' WHERE id = 'pst_a2'");
+  });
+
+  test("HEAD answers without a body, and junk parameters still give the same page", async () => {
+    const head = await anon().req("HEAD", "/community");
+    assert.equal(head.status, 200);
+    assert.equal(head.data, "");
+    const junk = await anon().get("/community?x=123&sort=nonsense&page=-4");
+    assert.equal(junk.status, 200);
+    assert.match(junk.data, /<link rel="canonical"/);
+  });
+
   test("only GET and HEAD", async () => {
     const r = await anon().post("/community/autostacc", {});
     assert.notEqual(r.status, 200);

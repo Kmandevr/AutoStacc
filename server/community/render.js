@@ -28,7 +28,7 @@ function threadRow(t, { showSpace = null } = {}) {
     `by ${who(t.author)}`, day(t.lastPostAt)];
   if (showSpace) meta.unshift(`<a href="${esc(spacePath(showSpace))}">${esc(showSpace.name)}</a>`);
   return `<li class="cm-thread${t.pinned ? " cm-pinned" : ""}">
-            <a class="cm-thread-title" href="${esc(threadPath(t))}">${t.pinned ? '<span class="cm-badge">Pinned</span> ' : ""}${t.acceptedPostId ? '<span class="cm-badge cm-answered">Answered</span> ' : ""}${esc(t.title)}</a>
+            <a class="cm-thread-title" href="${esc(threadPath(t))}">${t.pinned ? '<span class="cm-badge">Pinned</span> ' : ""}${t.answered ? '<span class="cm-badge cm-answered">Answered</span> ' : ""}${esc(t.title)}</a>
             <p class="cm-meta">${meta.join(" · ")}</p>
           </li>`;
 }
@@ -77,16 +77,17 @@ function post(p, { accepted = false, opening = false } = {}) {
 // in order.
 export function threadMain(thread, posts) {
   const [opening, ...replies] = posts;
+  const shown = replies.filter((p) => p.state === "visible");
   let ordered = replies;
   if (thread.type === "question") {
     const accepted = replies.find((p) => p.id === thread.acceptedPostId);
     const rest = replies.filter((p) => p !== accepted).sort((a, b) => (b.helpful - a.helpful) || a.createdAt.localeCompare(b.createdAt));
-    ordered = accepted ? [accepted, ...rest] : rest;
+    ordered = accepted && accepted.state === "visible" ? [accepted, ...rest] : [...(accepted ? [accepted] : []), ...rest];
   }
   const label = thread.type === "question" ? "answer" : "repl";
-  const count = replies.length;
+  const count = shown.length;
   return `${opening ? post(opening, { opening: true }) : ""}
         <h2 class="cm-replies-title">${count} ${label}${label === "repl" ? (count === 1 ? "y" : "ies") : count === 1 ? "" : "s"}</h2>
-        ${ordered.map((p) => post(p, { accepted: p.id === thread.acceptedPostId })).join("\n")}
+        ${ordered.map((p) => post(p, { accepted: p.id === thread.acceptedPostId && p.state === "visible" })).join("\n")}
         ${thread.locked ? '<p class="cm-note" role="note">This thread is locked: no new replies.</p>' : ""}`;
 }

@@ -20,7 +20,12 @@ export async function onCommunityRequest(context) {
   try {
     const app = { env: context.env, config: loadConfig(context.env), ctx: context, request: context.request, db: context.env.DB };
     if (!isOn(app, "community.forum")) return atRoot ? context.next() : notFound(context);
-    const template = async () => (await context.env.ASSETS.fetch(new URL("/community", context.request.url))).text();
+    // The template must be the generated page with its markers; anything else (an error page, a stale deploy) is a 404.
+    const template = async () => {
+      const page = await context.env.ASSETS.fetch(new URL("/community", context.request.url));
+      const html = page.ok ? await page.text() : "";
+      return /<!-- community:main:start -->/.test(html) && /<!-- seo:start/.test(html) ? html : null;
+    };
     res = await communityPage(app, template);
   } catch (e) {
     console.error("community page", e && e.stack ? e.stack : e);

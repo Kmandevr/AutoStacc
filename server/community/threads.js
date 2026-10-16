@@ -11,7 +11,8 @@ export const SORTS = ["hot", "new", "top"];
 
 const THREAD_COLS = `t.id, t.space_id AS spaceId, t.channel_id AS channelId, t.type, t.title, t.slug, t.state, t.locked, t.pinned,
   t.accepted_post_id AS acceptedPostId, t.score, t.reply_count AS replyCount, t.last_post_at AS lastPostAt, t.created_at AS createdAt,
-  m.display_name AS author`;
+  m.display_name AS author,
+  EXISTS (SELECT 1 FROM community_posts a WHERE a.id = t.accepted_post_id AND a.state = 'visible') AS answered`;
 
 // Hot: score over (age in hours + 2)^1.5, the usual decay; pinned threads first everywhere.
 export const hotness = (t, nowMs = Date.now()) => (t.score + 1) / Math.pow((nowMs - Date.parse(t.lastPostAt)) / 3600000 + 2, 1.5);

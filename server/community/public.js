@@ -112,16 +112,25 @@ export async function communityPage(app, template) {
   if (url.pathname !== url.pathname.toLowerCase() && !url.pathname.startsWith("/community/t/")) {
     return redirect(app.config.siteUrl, url.pathname.toLowerCase() + url.search);
   }
+  // The cache key is the path plus only the parameters that change the page (sort and page, normalised), so junk
+  // parameters can't skip the cache and reach the database; HEAD answers from the cache too.
   const cache = app.config.appEnv === "production" && typeof caches !== "undefined" ? caches.default : null;
-  const key = new Request(url.origin + url.pathname + url.search, { method: "GET" });
-  const hit = cache && request.method === "GET" ? await cache.match(key) : null;
-  if (hit) return hit;
+  const { sort, page: n } = listParams(url);
+  const keyQuery = /^\/community\/(t\/|sitemap\.xml$)/.test(url.pathname) ? "" : `?sort=${sort}&page=${n}`;
+  const key = new Request(url.origin + url.pathname + keyQuery, { method: "GET" });
+  const hit = cache ? await cache.match(key) : null;
+  if (hit) return request.method === "HEAD" ? new Response(null, { status: hit.status, headers: hit.headers }) : hit;
   const page = await resolve(app, url);
   if (!page) return null;
   if (page.redirect) return redirect(app.config.siteUrl, page.redirect);
-  const res = page.xml
-    ? new Response(request.method === "HEAD" ? null : page.xml, { headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=600" } })
-    : new Response(request.method === "HEAD" ? null : fill(await template(), app.config.siteUrl, page), { headers: headers() });
-  if (cache && request.method === "GET" && app.ctx && app.ctx.waitUntil) app.ctx.waitUntil(cache.put(key, res.clone()));
-  return res;
+  let body;
+  if (page.xml) body = page.xml;
+  else {
+    const html = await template();
+    if (!html) return null;
+    body = fill(html, app.config.siteUrl, page);
+  }
+  const res = new Response(body, { headers: page.xml ? { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=600" } : headers() });
+  if (cache && app.ctx && app.ctx.waitUntil) app.ctx.waitUntil(cache.put(key, res.clone()));
+  return request.method === "HEAD" ? new Response(null, { status: res.status, headers: res.headers }) : res;
 }
