@@ -51,7 +51,7 @@
       const v = opts.version();
       const audio = v && v.files ? v.files.filter((f) => AUDIO.test(f.filename)) : [];
       box.innerHTML = `<section class="panel pp" aria-labelledby="pp-h"><h3 id="pp-h">Previews</h3>
-        <p class="small-print">Up to ${max} short clips anyone can play on the product page and in Your Stacc. A clip picked from your files is its first ${SECONDS} seconds.</p>
+        <p class="small-print">Up to ${max} short clips anyone can play on the product page and in Your Stacc. A clip is public as soon as it's saved, even before you publish. A clip picked from your files is its first ${SECONDS} seconds.</p>
         <ul class="plain pp-list">${previews.map((p) => `<li><span>${e(p.title || "Preview")}</span><audio controls preload="none" src="${e(p.url)}"></audio>
           <button class="link-btn" type="button" data-pp-remove="${e(p.id)}" aria-label="Remove preview ${e(p.title || `${previews.indexOf(p) + 1}`)}">Remove</button></li>`).join("")}</ul>
         ${previews.length < max ? `<div class="pp-add">

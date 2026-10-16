@@ -17,12 +17,20 @@
   };
   const CHIP = { paid: "Paid", refunded: "Refunded" };
 
+  // Why a paid order can't be refunded here, by the store's reason code (server/orders/refunds.js).
+  const NO_REFUND = {
+    expired: "The 14-day refund window has closed.",
+    free: "Can't be refunded here.",
+    downloaded: "Downloaded, so it can't be refunded here.",
+    disputed: "In a payment dispute with your bank, so it can't be refunded here."
+  };
+
   // A paid order can be refunded here until 14 days after paying, if nothing from it has been downloaded.
   const refundNote = (o) => {
     const r = o.refund;
     if (!r || o.status !== "paid") return "";
     if (r.eligible) return `<p class="order-note"><button class="link-btn" type="button" data-refund="${escapeHTML(o.id)}">Refund this order</button> until ${day(r.until)}, if nothing has been downloaded.</p>`;
-    return r.reason === "downloaded" ? '<p class="order-note">Downloaded, so it can\'t be refunded here. Something wrong? <a href="/contact">Contact us</a>.</p>' : "";
+    return NO_REFUND[r.reason] ? `<p class="order-note">${NO_REFUND[r.reason]} Something wrong? <a href="/contact">Contact us</a>.</p>` : "";
   };
 
   const titles = (o) => o.items.map((i) => `<a href="${escapeHTML(i.path || `/shop/${i.productId}`)}">${escapeHTML(i.title)}</a>${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(", ");

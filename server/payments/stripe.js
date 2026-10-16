@@ -137,7 +137,9 @@ export function normalizeEvent(event) {
     case "charge.dispute.created":
       return { ...base, type: "disputed", paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null };
     case "charge.dispute.closed":
-      return { ...base, type: o.status === "won" ? "dispute_won" : "ignored", paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null };
+      // Anything but won (lost, or an inquiry closed as warning_closed) is recorded against its order as dispute_lost.
+      return { ...base, type: o.status === "won" ? "dispute_won" : "dispute_lost", disputeStatus: String(o.status || "unknown").slice(0, 40),
+        paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null };
     default:
       return { ...base, type: "ignored" };
   }

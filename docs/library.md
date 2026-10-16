@@ -50,6 +50,6 @@ A signed-in person can organize Your Stacc their own way (feature switch `librar
 
 ## Follows and Auto-Stacc
 
-On `/projects` (or any project card: home page, dashboard) a signed-in customer can follow a project and switch Auto-Stacc on. Your Stacc then lists the followed projects' published products they don't own yet ("New from projects you follow"). With Auto-Stacc on, free products of that project are granted automatically (on follow, and every time the library opens), so they appear as owned with the source "auto". Paid products are never granted by following. Unfollowing keeps what was already added.
+On `/projects` (or any project card: home page, dashboard) a signed-in customer can follow a project and switch Auto-Stacc on. Your Stacc then lists the followed projects' published products they don't own yet ("New from projects you follow"). With Auto-Stacc on, free products of that project are granted automatically (on follow, and every time the library opens), so they appear as owned with the source "auto" (shown as "added by Auto-Stacc"). Auto-Stacc is off until switched on, per project; the follow control, Help and the Your Stacc intro say that following never unlocks paid products. Paid products are never granted by following. Unfollowing keeps what was already added.
 
 API: `GET /api/projects` (published projects, plus your follows when signed in), `PUT /api/follows/:projectId {autoStacc}`, `DELETE /api/follows/:projectId`. Tests: `test/api/platform.suite.js`.

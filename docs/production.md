@@ -18,7 +18,7 @@ updated: 2026-10-15
 | `/refunds` | `data/legal.js` | Refunds for digital downloads |
 | `/security` | `data/legal.js` | How accounts, payments and files are protected; reporting a problem |
 | `/contact` | `data/legal.js` | How to reach AutoStacc, and what people can do themselves |
-| `/help` | `data/help.js` | Questions and answers by topic |
+| `/help` | `data/help.js` | Questions and answers by topic (following, Auto-Stacc and release emails described as they work: opt-in, never paid items, announced releases only) |
 | `/license` | `data/licenses.js` | What buyers may do, per kind of product |
 
 - `scripts/build.js` writes them (`scripts/lib/trust-pages.js`; text markup in `scripts/lib/rich-text.js`: `[label](/path)`, `**bold**` and `{contact}` only, everything else escaped, a bad link fails the build). Never hand-edit the HTML.

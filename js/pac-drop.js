@@ -50,7 +50,7 @@
     if (!box || !window.GS.pacAdd) return;
     box.innerHTML = `<div class="pd" data-pd>
         <p class="pd-title">Drop files, a folder or a whole Pac (ZIP) here</p>
-        <p class="small-print">It all opens in the builder, where you can arrange it. Nothing reaches buyers until you publish.</p>
+        <p class="small-print">It all opens in the builder, where you can arrange it. Buyers get the files only when you publish (preview clips are public as soon as you save them).</p>
         <div class="actions"><button class="btn small" type="button" data-pd-pick="files">Choose files</button>
           <button class="btn ghost small" type="button" data-pd-pick="folder">Choose a folder</button>
           <input type="file" multiple hidden data-pd-files><input type="file" webkitdirectory multiple hidden data-pd-folder></div>
@@ -145,6 +145,9 @@
         const whole = s.zip && opts.upload && window.GS.packUpload && (choice === "replace" || !has);
         // Checked before the draft goes: a ZIP that can't be read changes nothing.
         if (s.zip) await list(s.zip);
+        // Replacing needs the draft gone first (one version in progress per Pac), so a draft with work in it is confirmed.
+        if (draft && (choice === "replace" || whole) && draft.stats && draft.stats.files > 0
+          && !confirm("Discard your unpublished draft first? Its arrangement, renames, folders, folder defaults and read me are lost, even if this upload then fails. Values you set on files stay with them. The live version buyers have doesn't change.")) return say("");
         if (draft && (choice === "replace" || whole)) {
           const gone = await api(`${opts.base}/versions/${encodeURIComponent(draft.id)}/discard`, { method: "POST", body: {} });
           if (!gone.ok) throw new Error(gone.error.message);
@@ -162,7 +165,7 @@
         const n = (out.addition.stats || {}).files || 0;
         say(`${n} file${n === 1 ? "" : "s"} added. Arrange them below, then publish.${refused}`, Boolean(refused));
       } catch (err) {
-        say(err.message, true);
+        say(discarded && !versionId ? `${err.message} Your earlier draft was already discarded; the live version is unchanged. Drop the files again to retry.` : err.message, true);
       } finally {
         busy = false;
         inputs().forEach((x) => { x.disabled = false; x.value = ""; });

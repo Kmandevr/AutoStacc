@@ -16,13 +16,13 @@
 
   async function preview(userId) {
     const el = $("#customer-preview");
-    el.innerHTML = `<p class="msg pending">Loading…</p>`;
+    el.innerHTML = `<p class="msg pending" role="status">Loading…</p>`;
     const res = await api(`/api/admin/customers/${encodeURIComponent(userId)}`);
     if (!res.ok) { el.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     const d = res.data, c = d.customer;
     const buyable = (await products).filter((p) => p.published && !p.salesPaused && !p.deleted && !p.free);
     el.innerHTML = `<div class="panel wide admin-preview" data-customer="${e(c.id)}">
-      <h2>${e(c.email)}</h2><p class="small-print">Customer preview · read-only · ${e(c.name)} · ${c.verified ? "verified" : "not verified"} · joined ${day(c.createdAt)}</p>
+      <h2 tabindex="-1" data-preview-heading>${e(c.email)}</h2><p class="small-print">Customer preview · read-only · ${e(c.name)} · ${c.verified ? "verified" : "not verified"} · joined ${day(c.createdAt)}</p>
       ${d.libraryNote ? `<p class="msg error">${e(d.libraryNote)}</p>` : ""}
       <h3>Library (what they see in Your Stacc)</h3>${list(d.library.map((p) => `<li>${e(p.title)} <span class="small-print">${e(p.type)}</span></li>`), "Nothing yet.")}
       <h3>Orders</h3>${list(d.orders.map((o) => `<li>${e(o.id)} · ${e(o.status)} · ${cents(o.totalCents, o.currency)} · ${day(o.createdAt)}${o.livemode ? "" : " · test"}${o.impersonationId ? " · placed by an admin" : ""}</li>`), "No orders.")}
@@ -33,7 +33,7 @@
       ${d.canImpersonate ? `<div class="admin-danger">
         <h3>Impersonate customer</h3>
         <p>See the store exactly as ${e(c.email)} does, for up to 2 hours (30 min idle). Changes to their account, votes, follows and live payments stay blocked; everything you do is recorded under your name.</p>
-        <label for="imp-note">Reason (for the audit log)</label><input id="imp-note" type="text" maxlength="200" placeholder="e.g. can't see their pack">
+        <label for="imp-note">Reason (for the audit log)</label><input id="imp-note" type="text" maxlength="200" placeholder="e.g. can't see their Pac">
         <div class="actions"><button class="btn danger" type="button" data-impersonate>Impersonate customer</button><span class="msg" role="status"></span></div></div>` : `<p class="small-print">Admin accounts can't be impersonated.</p>`}
       ${d.canImpersonate && d.testPurchases ? `<div class="admin-test">
         <h3>Test purchase <span class="admin-mode test"><strong>TEST</strong></span></h3>
@@ -41,6 +41,10 @@
         <label for="tp-product">Product</label><select id="tp-product" data-tp-product>${buyable.map((p) => `<option value="${e(p.id)}">${e(p.title)} · ${cents(p.priceCents, p.currency)}</option>`).join("")}</select>
         <div class="actions"><button class="btn" type="button" data-test-purchase ${buyable.length ? "" : "disabled"}>Start test purchase</button><span class="msg" role="status"></span></div></div>` : ""}
     </div>`;
+    // It opens under the customer list (or from an order's details), so it is brought into view with focus on its heading.
+    const h = $("[data-preview-heading]", el);
+    h.scrollIntoView({ block: "start" });
+    h.focus({ preventScroll: true });
   }
 
   async function go(btn, path, body) {

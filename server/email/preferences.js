@@ -1,6 +1,6 @@
 // Which optional emails an account wants (email_preferences). Receipts and security mail (verification, password
 // reset) are always sent and have no switch here. Every switch is off until the person turns it on, and no row means
-// all off, so a sender for an optional kind checks wants() first. Nothing sends these kinds yet (docs/store.md#email).
+// all off, so a sender for an optional kind checks wants() first. Only the Control Center sends them (server/admin/news.js; docs/store.md#email).
 import { first, run, stmt, now } from "../lib/db.js";
 
 // Optional kinds: the API name and its column.

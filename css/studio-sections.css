@@ -97,6 +97,8 @@
 
 /* ---------- Pac Builder: the Pack Builder drawn inside the section, without its own back bar ---------- */
 .spc-pack .studio-packs > .studio-bar { display: none; }
+/* Grid items default to min-width:auto, so a wide review table would widen the section; this lets it scroll in its box. */
+.spc-pack, .spc-pack .studio-packs { min-width: 0; }
 .spc-files { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 .spc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .spc-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }

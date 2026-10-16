@@ -9,7 +9,7 @@
   if (!root) return;
 
   const KINDS = [
-    ["newReleases", "New releases from projects you follow", "When a project you follow puts out something new."],
+    ["newReleases", "New releases from projects you follow", "When AutoStacc announces a new release from a project you follow. Not every release is announced."],
     ["platformNews", "AutoStacc news", "New features and the occasional announcement. Rarely."]
   ];
 

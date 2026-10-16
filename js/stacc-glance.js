@@ -27,7 +27,7 @@
       <ul class="meters">${groups.map((g) => `<li data-track="${e(g.kind)}"><span class="meter-label">${e(g.label)}</span>
         <span class="meter" aria-hidden="true"><span style="--level:${(g.assets.length / max).toFixed(3)}"></span></span><span class="meter-count">${g.assets.length}</span></li>`).join("")}</ul>
       <h3 class="dash-sub">Latest</h3>
-      <ul class="dash-recent">${recent.map((it) => `<li><a href="/library">${e(it.title)}</a><span class="small-print">${e(projectName(it.projectId, it))}${it.sources.includes("auto") ? " · auto-stacc'd" : ""}</span></li>`).join("")}</ul>`;
+      <ul class="dash-recent">${recent.map((it) => `<li><a href="/library">${e(it.title)}</a><span class="small-print">${e(projectName(it.projectId, it))}${it.sources.includes("auto") ? " · added by Auto-Stacc" : ""}</span></li>`).join("")}</ul>`;
   }
 
   boxes.forEach((box) => wear(box, box.dataset.project));

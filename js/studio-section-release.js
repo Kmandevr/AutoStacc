@@ -24,6 +24,9 @@
             : blocked ? "A draft. Fix what's listed below, then publish." : "A draft, ready to publish."}</p></div>
         ${K.checkout(data.checkout)}${K.readiness(data.readiness)}
         <div class="sr-controls">${controls.join("")}</div>
+        <p class="small-print">Publishing puts the product on sale; it doesn't email your followers.${p.priceCents === 0
+          ? " A free product goes straight into the libraries of followers who switched on Auto-Stacc, and stays there if you later charge for it." : ""}
+          Its files come from the Pac Builder: publish a Pac version there to change what buyers download.</p>
         <h3>Final preview</h3>
         ${P ? P.html(data) : ""}
         <h3>Release history</h3>

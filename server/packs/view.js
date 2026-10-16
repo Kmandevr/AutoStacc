@@ -13,6 +13,8 @@ export async function versionView(db, versionId) {
   // A ready version may have been built or edited in steps: its diff and revision risk as they stand now (final-review.js).
   const stats = v.status === "ready" ? await refreshedStats(db, v) : parseJson(v.stats, {});
   const out = { id: v.id, pacId: v.pac_id, productId: v.product_id, number: v.number, status: v.status, note: v.review_note || null,
+    // Failed by an admin's rejection (reviewed_by set) rather than by processing: the creator sees the difference.
+    rejected: v.status === "failed" && Boolean(v.reviewed_by),
     stats, engineVersion: v.engine_version || null, editable: v.status === "ready" };
   if (["ready", "in_review", "published", "superseded"].includes(v.status)) {
     const m = await loadManifest(db, v.id);

@@ -2,7 +2,7 @@
 // per issue however often it's sent; new-release mail only to followers who want it, once per product; admins only.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { outbox } from "../support/client.js";
+import { outbox, sql } from "../support/client.js";
 import { newBuyer, adminClient } from "../support/flows.js";
 
 export default (ctx) => describe("notifications", () => {
@@ -55,5 +55,19 @@ export default (ctx) => describe("notifications", () => {
     assert.equal((await mails(fanUser.email, "new-release")).length, 1);
     assert.equal((await mails(quietUser.email, "new-release")).length, 0, "following alone isn't asking for email");
     assert.equal((await admin.post("/api/admin/products/no-such-product/announce", {})).status, 404);
+  });
+
+  test("a deleted account's address leaves the email log, dedupe keys included", async () => {
+    const admin = await adminClient(ctx.mock.url);
+    const { c, user } = await newBuyer(ctx.mock.url, "leaving-fan");
+    await c.req("PUT", "/api/follows/glitches-and-stitches", { body: {} });
+    await c.req("PUT", "/api/account/email-preferences", { body: { newReleases: true } });
+    const r = await admin.post("/api/admin/products/dev-free/announce", {});
+    assert.equal(r.status, 200);
+    assert.equal(r.data.failed, 0, "the log provider accepts every send");
+    assert.equal((await mails(user.email, "new-release")).length, 1);
+    assert.equal((await c.post("/api/account/delete", { confirm: user.email, password: "correct-horse-battery" })).status, 200);
+    const left = sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM email_events WHERE dedupe_key LIKE '%${user.email}%' OR to_email = '${user.email}'`);
+    assert.equal(left[0].n, 0);
   });
 });

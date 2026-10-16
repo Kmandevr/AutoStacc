@@ -8,6 +8,7 @@ import { first, run, now } from "../lib/db.js";
 import { getOrderBySession, getOrderByPayment, transition, recordRefund } from "../orders/orders.js";
 import { fulfil, unfulfil, restore, sendRefundNotice } from "../orders/fulfilment.js";
 import { sendEmail } from "../email/index.js";
+import { checkDoublePurchase } from "../orders/double-purchase.js";
 
 export async function processPaymentEvent(app, ev) {
   const { db } = app;
@@ -55,7 +56,7 @@ async function apply(app, ev) {
   const { db } = app;
   if (["ignored", "awaiting", "pending"].includes(ev.type)) return { outcome: "ignored", detail: ev.type };
 
-  const order = ["refunded", "partial_refund", "disputed", "dispute_won"].includes(ev.type)
+  const order = ["refunded", "partial_refund", "disputed", "dispute_won", "dispute_lost"].includes(ev.type)
     ? ev.paymentId && (await getOrderByPayment(db, ev.provider, ev.paymentId))
     : ev.sessionId && (await getOrderBySession(db, ev.provider, ev.sessionId));
   if (!order) {
@@ -90,10 +91,13 @@ async function apply(app, ev) {
           order.id, ev.provider, ev.paymentId);
         return { outcome: `paid, then ${parked.outcome.split(" ")[0]} (arrived first)`, orderId: order.id };
       }
+      // Already owned through another paid order (two tabs, two carts): still granted (it was paid for), but recorded
+      // and the admins alerted once, to refund one by hand (server/orders/double-purchase.js).
       // Grants and the receipt are idempotent (the receipt has a once-per-order key), so every paid event runs them:
-      // a retry after a failure half-way still finishes the job.
+      // a retry after a failure half-way still finishes the job. The double-purchase check comes after and can't fail it.
       await fulfil(app, order.id);
-      return { outcome: moved ? "paid" : "already paid", orderId: order.id };
+      const double = await checkDoublePurchase(app, order).catch((e) => (console.error("double-purchase check", e && e.message), null));
+      return { outcome: moved ? "paid" : "already paid", detail: double, orderId: order.id };
     }
     case "failed":
       return { outcome: (await transition(db, order.id, "failed")) ? "failed" : `no change (${order.status})`, orderId: order.id };
@@ -106,13 +110,17 @@ async function apply(app, ev) {
       if (moved) await sendRefundNotice(app, order.id, ev.amount ?? order.total_cents);
       return { outcome: moved ? "refunded" : `no change (${order.status})`, orderId: order.id };
     }
-    // Chargeback opened: access goes until it's resolved. Won: access comes back. Lost: stays revoked.
+    // Chargeback opened: access goes until it's resolved. Won: access comes back. Lost: stays revoked (see dispute_lost).
     case "disputed":
       await unfulfil(app, order.id, "disputed");
       return { outcome: "disputed, access suspended", orderId: order.id };
     case "dispute_won":
       if (order.status === "paid") await restore(app, order.id);
       return { outcome: "dispute won, access restored", orderId: order.id };
+    // Lost (or closed without a win): recorded against the order only. The order, access (still suspended from the
+    // dispute) and earnings stay as they are; what a lost chargeback does to them is the owner's call.
+    case "dispute_lost":
+      return { outcome: "dispute closed, nothing changed", detail: `dispute ${ev.disputeStatus || "lost"}`, orderId: order.id };
     case "partial_refund":
       // Access stays: a partial refund is a goodwill gesture. Revoke by hand in the admin if needed.
       await recordRefund(db, order.id, ev.amount, false);

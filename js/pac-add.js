@@ -55,7 +55,7 @@
       res = await api(`${base}/additions/${encodeURIComponent(addition.id)}`);
       if (!res.ok) throw new Error(res.error.message);
     }
-    if (res.data.addition.status === "failed") throw new Error(`Those files couldn't be added (${res.data.addition.error || "check failed"}).`);
+    if (res.data.addition.status === "failed") throw new Error(`Those files couldn't be added (${window.GS.packVersion ? window.GS.packVersion.noteText(res.data.addition.error || "processing_failed") : res.data.addition.error || "check failed"}). The rest of the draft is unchanged: drop them again to retry.`);
     return res.data;
   }
 

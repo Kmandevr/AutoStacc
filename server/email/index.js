@@ -36,6 +36,10 @@ export async function sendEmail(app, kind, to, data, { dedupeKey } = {}) {
 export const emailsTo = (db, email) =>
   all(db, "SELECT kind, status, subject, created_at FROM email_events WHERE to_email = ? ORDER BY created_at", email);
 
-// Account deletion: the log keeps that a mail went out, not to whom or what it said.
+// Account deletion: the log keeps that a mail went out, not to whom or what it said. Dedupe keys of opt-in mail embed the
+// address (new-release:<product>:<email>), so those are replaced too; keys without it (receipts per order) are kept so a
+// replayed webhook still can't mail twice.
 export const anonymiseEmailLogStmt = (db, email, anon) =>
-  stmt(db, "UPDATE email_events SET to_email = ?, body_text = NULL WHERE to_email = ?", anon, email);
+  stmt(db, `UPDATE email_events SET to_email = ?, body_text = NULL,
+      dedupe_key = CASE WHEN instr(dedupe_key, ?) > 0 THEN 'erased:' || id ELSE dedupe_key END
+    WHERE to_email = ?`, anon, email, email);
