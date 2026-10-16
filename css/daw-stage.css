@@ -7,6 +7,8 @@
   --daw-lane: max(56px, calc((100svh - 60px) / 8));
   --daw-bg: #e4e7ee; --daw-glow: #f6f7fa; --daw-panel: #f2f4f8; --daw-line: #cfd4de; --daw-text: #586174; --daw-ink: #161a22;
   --daw-meter: #d3d8e1;
+  /* the playhead: a soft see-through teal in light, so it never reads as a grey rule through the hero's words */
+  --daw-head: color-mix(in srgb, var(--teal) 40%, transparent); --daw-head-glow: transparent;
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -47,8 +49,8 @@
   background: color-mix(in srgb, var(--track) 22%, var(--daw-bg)); border: 1px solid color-mix(in srgb, var(--track) 60%, transparent); }
 .daw-clip::before { content: ""; height: 8px; flex: none; background: color-mix(in srgb, var(--track) 70%, transparent); }
 .daw-clip svg { display: block; flex: 1; width: 100%; height: auto; min-height: 0; fill: color-mix(in srgb, var(--track) 85%, var(--daw-glow)); opacity: .85; }
-.daw-playhead { position: absolute; top: 0; bottom: 0; left: 62%; width: 2px; background: var(--daw-ink); box-shadow: 0 0 12px color-mix(in srgb, var(--daw-ink) 50%, transparent); }
-.daw-playhead::before { content: ""; position: absolute; top: 0; left: -6px; border-inline: 7px solid transparent; border-top: 9px solid var(--daw-ink); }
+.daw-playhead { position: absolute; top: 0; bottom: 0; left: 62%; width: 2px; background: var(--daw-head); box-shadow: 0 0 12px var(--daw-head-glow); }
+.daw-playhead::before { content: ""; position: absolute; top: 0; left: -6px; border-inline: 7px solid transparent; border-top: 9px solid var(--daw-head); }
 
 .daw-mixer { display: flex; align-items: stretch; gap: 6px; padding: 34px 14px 14px; background: var(--daw-panel); border-left: 1px solid var(--daw-line); }
 .daw-meter { position: relative; width: 10px; border-radius: 3px; background: var(--daw-meter); overflow: hidden; }
@@ -60,12 +62,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .daw-stage {
   --daw-bg: #0c0e13; --daw-glow: #1a1f2b; --daw-panel: #14171e; --daw-line: #232833; --daw-text: #9aa3b2; --daw-ink: #eef1f6;
-  --daw-meter: #0a0c10;
+  --daw-meter: #0a0c10; --daw-head: #fff; --daw-head-glow: rgba(255, 255, 255, .7);
   }
 }
 :root[data-theme="dark"] .daw-stage {
   --daw-bg: #0c0e13; --daw-glow: #1a1f2b; --daw-panel: #14171e; --daw-line: #232833; --daw-text: #9aa3b2; --daw-ink: #eef1f6;
-  --daw-meter: #0a0c10;
+  --daw-meter: #0a0c10; --daw-head: #fff; --daw-head-glow: rgba(255, 255, 255, .7);
 }
 
 /* keeps the hero's words readable over the moving picture */
@@ -88,6 +90,6 @@
   .daw-body { grid-template-columns: 0 minmax(0, 1fr); padding-left: 0; }
   .daw-heads { overflow: hidden; border: 0; }
   .daw-top { padding-left: 12px; }
-  .daw-playhead { left: 78%; }
+  .daw-playhead { left: 78%; opacity: .6; }
   .daw-shade { background: linear-gradient(180deg, color-mix(in srgb, var(--daw-bg) 55%, transparent) 0%, color-mix(in srgb, var(--daw-bg) 82%, transparent) 45%, color-mix(in srgb, var(--daw-bg) 95%, transparent) 100%); }
 }
