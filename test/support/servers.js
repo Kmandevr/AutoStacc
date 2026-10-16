@@ -46,7 +46,7 @@ export async function startStores({ mock = true, stripe = true, name = "", ports
       const s = start({ port: stripePort, stateDir, vars: {
         APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, PAYMENT_PROVIDER: "stripe", STRIPE_SECRET_KEY: "sk_test_fake_key_for_tests",
         STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET, STRIPE_API_BASE: fake.url,
-        STRIPE_MARKETPLACE_KEY: MARKETPLACE_KEY, STRIPE_MARKETPLACE_WEBHOOK_SECRET: MARKETPLACE_WEBHOOK_SECRET
+        STRIPE_MARKETPLACE_KEY: MARKETPLACE_KEY, STRIPE_MARKETPLACE_WEBHOOK_SECRET: MARKETPLACE_WEBHOOK_SECRET, ...extraVars
       } });
       Object.assign(out.stripe, { url: await s.ready, log: s.log });
     })()

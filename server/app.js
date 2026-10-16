@@ -48,6 +48,8 @@ import { routes as adminPayouts } from "./admin/payouts.js";
 import { routes as adminCreators } from "./admin/creators.js";
 import { routes as adminCreatorSales } from "./admin/creator-sales.js";
 import { routes as adminUsage } from "./admin/usage.js";
+import { routes as adminStorageBilling } from "./admin/storage-billing.js";
+import { routes as studioStorage } from "./studio/storage.js";
 import { routes as adminFiles } from "./admin/files.js";
 import { routes as newsletter } from "./newsletter/routes.js";
 import { routes as adminNews } from "./admin/news.js";
@@ -61,7 +63,7 @@ import { routes as maintenance } from "./maintenance/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountTwoFactor, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, adminLibrary, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, adminLibrary, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, studioStorage, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

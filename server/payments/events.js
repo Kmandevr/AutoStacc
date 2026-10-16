@@ -9,6 +9,7 @@ import { getOrderBySession, getOrderByPayment, transition, recordRefund } from "
 import { fulfil, unfulfil, restore, sendRefundNotice } from "../orders/fulfilment.js";
 import { sendEmail } from "../email/index.js";
 import { checkDoublePurchase } from "../orders/double-purchase.js";
+import { applyStatementEvent, statementByPayment } from "../billing/payments.js";
 
 export async function processPaymentEvent(app, ev) {
   const { db } = app;
@@ -55,11 +56,15 @@ const reject = (detail, orderId = null) => ({ outcome: "rejected", detail, order
 async function apply(app, ev) {
   const { db } = app;
   if (["ignored", "awaiting", "pending"].includes(ev.type)) return { outcome: "ignored", detail: ev.type };
+  // A creator's storage statement, not an order (server/billing/payments.js).
+  if (ev.statementId) return applyStatementEvent(app, ev);
 
   const order = ["refunded", "partial_refund", "disputed", "dispute_won", "dispute_lost"].includes(ev.type)
     ? ev.paymentId && (await getOrderByPayment(db, ev.provider, ev.paymentId))
     : ev.sessionId && (await getOrderBySession(db, ev.provider, ev.sessionId));
   if (!order) {
+    // A refund or dispute of a paid storage statement (found by its payment).
+    if (ev.paymentId && (await statementByPayment(db, ev.provider, ev.paymentId))) return applyStatementEvent(app, ev);
     // A refund can beat its payment (webhooks arrive in any order). Park it by payment id; the paid event applies it.
     if (ev.type === "refunded" && ev.paymentId) return { outcome: "refund waiting for payment", detail: ev.paymentId };
     if (ev.type === "disputed" && ev.paymentId) return { outcome: "dispute waiting for payment", detail: ev.paymentId };

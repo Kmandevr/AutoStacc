@@ -1,0 +1,120 @@
+// Paid creator storage, the daily steps (part of the daily sweep, server/maintenance/sweep.js) and the statements
+// (D1 storage_usage_days, storage_statements). Each step is safe to repeat: a day is measured once (its primary key),
+// a month's statement is issued once (unique per creator and month), and plan moves are compare-and-set.
+//   1. measure: what each creator with a plan stores today, split by part, with the allowance and rate that apply;
+//      a cancelled plan back under the allowance ends here (nothing more is charged);
+//   2. issue: last month's statement for every creator measured in it;
+//   3. past due: an open statement past its grace period withdraws the paid limit (uploads stop; nothing is deleted).
+import { all, first, run, stmt, newId, now } from "../lib/db.js";
+import { storageByPart } from "../creators/storage.js";
+import { includedQuotaOf } from "../creators/policy.js";
+import { paidStorageStmt } from "../creators/creators.js";
+import { sendEmail } from "../email/index.js";
+import { BILLING, billableBytes, dayOf, periodOf, previousPeriod, daysInPeriod, usageCents, statementOf } from "./policy.js";
+import { billingSettings, plansToMeasure, logStmt } from "./plans.js";
+
+const BATCH = 200;
+
+export async function measure(app, nowMs) {
+  const { db } = app;
+  const settings = await billingSettings(db);
+  const day = dayOf(nowMs);
+  let measured = 0, ended = 0;
+  for (const plan of await plansToMeasure(db, day, BATCH)) {
+    const parts = await storageByPart(db, plan.creator_id);
+    const usedBytes = Object.values(parts).reduce((a, b) => a + Number(b), 0);
+    const includedBytes = includedQuotaOf(plan);
+    const charged = settings.on;
+    const res = await run(db, `INSERT INTO storage_usage_days (creator_id, day, used_bytes, included_bytes, billable_bytes, rate, by_part, measured_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(creator_id, day) DO NOTHING`,
+    plan.creator_id, day, usedBytes, includedBytes, billableBytes({ usedBytes, includedBytes, charged }), charged ? settings.rate : null, JSON.stringify(parts), now());
+    measured += res.meta.changes;
+    if (plan.status === "cancelled" && usedBytes <= includedBytes) {
+      const done = await run(db, "UPDATE storage_plans SET status = 'ended', ended_at = ?, updated_at = ?, updated_by = 'system' WHERE creator_id = ? AND status = 'cancelled'", now(), now(), plan.creator_id);
+      if (done.meta.changes) { ended++; await logStmt(db, plan.creator_id, "system", "plan.ended", { usedBytes, includedBytes }).run(); }
+    }
+  }
+  return { measured, ended };
+}
+
+const ownerEmail = async (db, creatorId) => (await first(db,
+  `SELECT u.email FROM creator_members m JOIN "user" u ON u.id = m.user_id WHERE m.creator_id = ? AND m.role = 'owner'`, creatorId) || {}).email || null;
+
+export const mailOwner = async (app, creatorId, stage, s) => {
+  const to = await ownerEmail(app.db, creatorId);
+  if (to) await sendEmail(app, "storage-billing", to, { stage, period: s.period, amountCents: s.amount_cents, currency: s.currency, dueAt: s.due_at, studioUrl: `${app.config.siteUrl}/studio` },
+    { dedupeKey: `storage-billing:${stage}:${s.id}` });
+};
+
+/** Issues last month's statements (each once). */
+export async function issue(app, nowMs) {
+  const { db } = app;
+  const period = previousPeriod(periodOf(nowMs));
+  const due = await all(db, `SELECT creator_id FROM storage_usage_days d WHERE day LIKE ? || '-%'
+    AND NOT EXISTS (SELECT 1 FROM storage_statements s WHERE s.creator_id = d.creator_id AND s.period = ?) GROUP BY creator_id LIMIT ?`, period, period, BATCH);
+  let issued = 0;
+  for (const { creator_id: creatorId } of due) {
+    const days = await all(db, "SELECT billable_bytes, rate FROM storage_usage_days WHERE creator_id = ? AND day LIKE ? || '-%'", creatorId, period);
+    const prior = await first(db, "SELECT id, amount_cents FROM storage_statements WHERE creator_id = ? AND period = ? AND status = 'carried'", creatorId, previousPeriod(period));
+    const usage = usageCents(days, period);
+    const carriedIn = prior ? prior.amount_cents : 0;
+    const { amount, status } = statementOf({ usage, carriedIn });
+    const issuedAt = new Date(nowMs).toISOString();
+    const dueAt = new Date(nowMs + BILLING.graceDays * 86400000).toISOString();
+    const id = newId("ss");
+    const [ins] = await db.batch([
+      stmt(db, `INSERT INTO storage_statements (id, creator_id, period, days_in_period, days_measured, billable_byte_days, usage_cents, carried_in_cents, amount_cents,
+          currency, status, issued_at, due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(creator_id, period) DO NOTHING`,
+      id, creatorId, period, daysInPeriod(period), days.length, days.reduce((a, d) => a + d.billable_bytes, 0), usage, carriedIn, amount, BILLING.currency, status, issuedAt, dueAt)
+    ]);
+    if (!ins.meta.changes) continue;
+    issued++;
+    await db.batch([
+      logStmt(db, creatorId, "system", "statement.issued", { period, usageCents: usage, carriedInCents: carriedIn, amountCents: amount, status }, id),
+      ...(prior ? [stmt(db, "UPDATE storage_statements SET note = ? WHERE id = ?", `Carried into ${period}.`, prior.id)] : [])
+    ]);
+    if (status === "open") await mailOwner(app, creatorId, "issued", { id, period, amount_cents: amount, currency: BILLING.currency, due_at: dueAt });
+  }
+  return issued;
+}
+
+/** Open statements past their grace period put their creators' plans past due. */
+export async function markPastDue(app, nowMs) {
+  const { db } = app;
+  const t = new Date(nowMs).toISOString();
+  const late = await all(db, `SELECT s.* FROM storage_statements s JOIN storage_plans p ON p.creator_id = s.creator_id
+    WHERE s.status = 'open' AND s.due_at < ? AND p.status = 'active' LIMIT ?`, t, BATCH);
+  let n = 0;
+  for (const s of late) {
+    const res = await run(db, "UPDATE storage_plans SET status = 'past_due', updated_at = ?, updated_by = 'system' WHERE creator_id = ? AND status = 'active'", now(), s.creator_id);
+    if (!res.meta.changes) continue;
+    n++;
+    await db.batch([paidStorageStmt(db, s.creator_id, null, "past_due"), logStmt(db, s.creator_id, "system", "plan.past_due", { period: s.period, amountCents: s.amount_cents }, s.id)]);
+    await mailOwner(app, s.creator_id, "past_due", s);
+  }
+  return n;
+}
+
+export async function runStorageBilling(app, { nowMs = Date.now() } = {}) {
+  const m = await measure(app, nowMs);
+  const issued = await issue(app, nowMs);
+  const pastDue = await markPastDue(app, nowMs);
+  return { ...m, issued, pastDue };
+}
+
+export const statementsOf = (db, creatorId) => all(db, "SELECT * FROM storage_statements WHERE creator_id = ? ORDER BY period DESC LIMIT 36", creatorId);
+export const statementOfCreator = (db, creatorId, id) => first(db, "SELECT * FROM storage_statements WHERE id = ? AND creator_id = ?", id, creatorId);
+export const daysOf = (db, creatorId, period) => all(db,
+  "SELECT day, used_bytes, included_bytes, billable_bytes, rate, by_part FROM storage_usage_days WHERE creator_id = ? AND day LIKE ? || '-%' ORDER BY day", creatorId, period);
+
+/** This month so far: what's measured and what it comes to now (the statement adds any carried amount). */
+export async function monthToDate(db, creatorId, nowMs = Date.now()) {
+  const period = periodOf(nowMs);
+  const days = await daysOf(db, creatorId, period);
+  return { period, daysMeasured: days.length, daysInPeriod: daysInPeriod(period), usageCents: usageCents(days, period),
+    billableByteDays: days.reduce((a, d) => a + d.billable_bytes, 0) };
+}
+
+export const publicStatement = (s) => ({ id: s.id, period: s.period, status: s.status, daysInPeriod: s.days_in_period, daysMeasured: s.days_measured,
+  billableByteDays: s.billable_byte_days, usageCents: s.usage_cents, carriedInCents: s.carried_in_cents, amountCents: s.amount_cents, currency: s.currency,
+  issuedAt: s.issued_at, dueAt: s.due_at, paidAt: s.paid_at, refundedCents: s.refunded_cents, note: s.note });
