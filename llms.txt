@@ -10,6 +10,7 @@ AutoStacc is the site at https://autostacc.com: a store for music, samples, pres
 - [Store](https://autostacc.com/shop): digital downloads, delivered right after checkout (payments by Stripe)
 - [About](https://autostacc.com/about): how AutoStacc works and what its words mean
 - [Projects](https://autostacc.com/projects): every project on AutoStacc
+- [Guides](https://autostacc.com/guide): step-by-step help for buying, Your Stacc and refunds, and the creator manual for the Studio, selling, packs and payouts
 
 ## Words
 

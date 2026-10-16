@@ -18,6 +18,7 @@ updated: 2026-10-16
 | `/refunds` | `data/legal.js` | Refunds for digital downloads |
 | `/security` | `data/legal.js` | How accounts, payments and files are protected; reporting a problem |
 | `/contact` | `data/legal.js` | How to reach AutoStacc, and what people can do themselves |
+| `/guide` | `data/guides.js` | Step-by-step guides and the creator manual, searchable together with `/help` ([guides](guides.md)) |
 | `/help` | `data/help.js` | Questions and answers by topic (following, Auto-Stacc and release emails described as they work: opt-in, never paid items, announced releases only) |
 | `/license` | `data/licenses.js` | What buyers may do, per kind of product |
 

@@ -7,7 +7,7 @@ const ROOT = path.resolve(__dirname, "../..");
 
 function loadData(root = ROOT) {
   const window = {};
-  for (const f of ["site", "creators", "projects", "stacclets", "pacs", "content-types", "music", "product-types", "products", "news", "shows", "polls", "relationships", "licenses", "legal", "help"]) {
+  for (const f of ["site", "creators", "projects", "stacclets", "pacs", "content-types", "music", "product-types", "products", "news", "shows", "polls", "relationships", "licenses", "legal", "help", "guides"]) {
     const file = path.join(root, "data", f + ".js");
     if (fs.existsSync(file)) vm.runInNewContext(fs.readFileSync(file, "utf8"), { window }, { filename: file });
   }
@@ -35,6 +35,7 @@ function loadData(root = ROOT) {
     licenses: window.LICENSES || {},
     legal: window.LEGAL || [],
     help: window.HELP || [],
+    guides: window.GUIDES || { sections: [], articles: [] },
     // Every release and news post, drafts included, for link checks.
     allReleases: MUSIC.releases || [],
     allNews: window.NEWS || []

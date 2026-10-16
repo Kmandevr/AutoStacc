@@ -259,11 +259,12 @@ window.LEGAL = [
     title: "Contact",
     description: "How to reach AutoStacc for help with purchases, downloads, accounts, refunds or security, and where to find quick answers first.",
     summary: "Questions about a purchase, a download or your account? Most answers are in Help. For everything else, here's how to reach AutoStacc.",
-    updated: "2026-10-08",
+    updated: "2026-10-16",
     review: "",
     sections: [
       { id: "first", heading: "Quick answers", body: [
-        "The [help pages](/help) cover downloads, guest purchases, payments, refunds and accounts."
+        "The [help pages](/help) cover downloads, guest purchases, payments, refunds and accounts.",
+        "The [guides](/guide) go step by step through buying, Your Stacc and refunds, and the creator manual covers the Studio, selling, packs and payouts."
       ] },
       { id: "write", heading: "Write to AutoStacc", body: [
         "{contact}",

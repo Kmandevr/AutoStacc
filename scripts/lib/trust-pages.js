@@ -1,9 +1,10 @@
 // Templates for the trust pages, all from data/: each legal document in data/legal.js (/privacy, /terms, /refunds,
-// /security, /contact), the help centre (/help, data/help.js) and the licences (/license, data/licenses.js). Their
+// /security, /contact), the help centre (/help, data/help.js, with the guides' search box from lib/guide-pages.js) and the licences (/license, data/licenses.js). Their
 // text markup is lib/rich-text.js. Returns { file, page, html } like lib/pages.js.
 const H = require("./head");
 const { shell, hero, clip, suffix } = require("./pages");
 const { contact, inline, blocks, kindsOf, licenseLists } = require("./rich-text");
+const { searchBox } = require("./guide-pages");
 
 const { esc } = H;
 const fmtDate = (s) => {
@@ -14,7 +15,7 @@ const fmtDate = (s) => {
 const toc = (items) => `<nav class="prose-toc" aria-label="On this page"><p class="prose-toc-title">On this page</p>
           <ol>${items.map(([id, label]) => `<li><a href="#${esc(id)}">${esc(label)}</a></li>`).join("")}</ol></nav>`;
 
-function platformPage(SITE, { id, title, description, intro, main }) {
+function platformPage(SITE, { id, title, description, intro, main, scripts = [] }) {
   const path = "/" + id;
   const crumbs = [["Home", "/"], [title, path]];
   const fullTitle = `${title}${suffix(SITE.name)}`;
@@ -23,7 +24,7 @@ function platformPage(SITE, { id, title, description, intro, main }) {
     path, title: fullTitle, description: desc, index: true, ogType: "website",
     schema: [H.webPage(SITE, { path, title: fullTitle, description: desc }, "WebPage", { breadcrumb: H.breadcrumbs(SITE, crumbs) })]
   };
-  const html = shell(SITE, { page, section: id, styles: ["prose"], scripts: [], main: `${hero(crumbs, "AutoStacc", title, intro)}\n\n${main}` });
+  const html = shell(SITE, { page, section: id, styles: ["prose", ...(scripts.length ? ["guide"] : [])], scripts, main: `${hero(crumbs, "AutoStacc", title, intro)}\n\n${main}` });
   return { file: id + ".html", page, html };
 }
 
@@ -48,7 +49,7 @@ ${doc.sections.map((s) => `          <section id="${esc(s.id)}" aria-labelledby=
 }
 
 // Every trust page links to the others, so none is an orphan.
-const RELATED = [["/help", "Help"], ["/contact", "Contact"], ["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/security", "Security"]];
+const RELATED = [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/security", "Security"]];
 const related = (id) => `<nav class="prose-related" aria-label="Help and policies"><p>See also</p><ul>${RELATED.filter(([p]) => p !== "/" + id)
   .map(([p, l]) => `<li><a href="${p}">${l}</a></li>`).join("")}</ul></nav>`;
 
@@ -57,6 +58,7 @@ function helpPage(SITE, data) {
       <div class="wrap prose-layout">
         ${toc(data.help.map((g) => [g.id, g.title]))}
         <div class="prose">
+          ${searchBox("Search help and guides")}
 ${data.help.map((g) => `          <section id="${esc(g.id)}" aria-labelledby="${esc(g.id)}-h">
           <h2 id="${esc(g.id)}-h">${esc(g.title)}</h2>
 ${g.items.map((q) => `          <h3 id="${esc(q.id)}">${esc(q.q)}</h3>
@@ -67,7 +69,8 @@ ${g.items.map((q) => `          <h3 id="${esc(q.id)}">${esc(q.q)}</h3>
       </div>
     </section>`;
   return platformPage(SITE, { id: "help", title: "Help", description: "Answers about downloads, guest purchases, accounts, passwords, payments, refunds, licences, following projects and Your Stacc on AutoStacc.",
-    intro: "Quick answers about buying, downloading, your account and Your Stacc. Can't find yours? See <a href=\"/contact\">Contact</a>.", main });
+    intro: "Quick answers about buying, downloading, your account and Your Stacc. Step by step: the <a href=\"/guide\">Guides</a>. Can't find yours? See <a href=\"/contact\">Contact</a>.", main,
+    scripts: ["data/guide-index.js", "js/guide-search.js"] });
 }
 
 function licensePage(SITE, data) {

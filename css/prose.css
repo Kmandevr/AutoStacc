@@ -1,5 +1,5 @@
-/* Long-form pages generated from data/ (scripts/lib/trust-pages.js): /privacy, /terms, /refunds, /security, /contact, */
-/* /help and /license. A readable column with an "On this page" list beside it on computers, above it on phones. */
+/* Long-form pages generated from data/ (scripts/lib/trust-pages.js, guide-pages.js): /privacy, /terms, /refunds, */
+/* /security, /contact, /help, /license and the guides. A readable column with an "On this page" list beside it on computers, above it on phones. */
 
 .prose-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; align-items: start; }
 .prose-toc { position: sticky; top: calc(var(--topbar, 58px) + 16px); font-size: .9rem; }
@@ -20,6 +20,9 @@
 .prose ul { padding-left: 20px; }
 .prose li + li { margin-top: 6px; }
 .prose a { display: inline-block; padding-block: 2px; overflow-wrap: anywhere; }
+.prose-steps { padding-left: 22px; }
+.prose-steps li + li { margin-top: 8px; }
+.prose-tip { padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--panel-2); }
 .prose-updated { color: var(--muted); font-size: .88rem; }
 .prose-notice { padding: 12px 14px; border-left: 3px solid var(--amber); background: color-mix(in srgb, var(--amber) 10%, transparent); }
 .prose-related { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); }
