@@ -54,6 +54,8 @@
   --snap: cubic-bezier(.2, .8, .2, 1);
   /* glass: frosted chrome (sidebar, top bar, menus, drawers) and see-through surfaces over the ambient light below */
   --blur: saturate(150%) blur(12px);
+  /* the bars, sidebar and drawers: a little stronger, so thin chrome still reads as frosted */
+  --blur-bar: saturate(160%) blur(20px);
   --glass-edge: color-mix(in srgb, var(--line) 70%, transparent);
 }
 

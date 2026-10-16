@@ -124,8 +124,8 @@
     max-height: none;
     padding: 16px 18px 28px;
     background: color-mix(in srgb, var(--bg) 84%, transparent);
-    -webkit-backdrop-filter: var(--blur, blur(18px));
-    backdrop-filter: var(--blur, blur(18px));
+    -webkit-backdrop-filter: var(--blur-bar, blur(20px));
+    backdrop-filter: var(--blur-bar, blur(20px));
     border-right: 1px solid var(--line);
     transform: translateX(-105%);
     visibility: hidden;
