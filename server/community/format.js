@@ -6,6 +6,11 @@
 
 export const MAX_BODY = 10000;
 
+// Direction controls (LRM, RLM, embeddings, overrides, isolates) can make a label or the shown domain read backwards;
+// they are dropped from everything an author writes.
+const BIDI = /[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+const clean = (s) => String(s || "").replace(BIDI, "");
+
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 // A link target: only absolute http(s) addresses without credentials. Returns the normalised URL or null.
@@ -13,13 +18,13 @@ export function safeUrl(raw) {
   let u;
   try { u = new URL(raw); } catch { return null; }
   if (u.protocol !== "https:" && u.protocol !== "http:") return null;
-  if (u.username || u.password) return null;
+  if (u.username || u.password || !u.hostname.replace(/^www\.?/, "")) return null;
   return u;
 }
 
 const host = (u) => u.hostname.replace(/^www\./, "");
 const anchor = (u, labelHtml) =>
-  `<a href="${esc(u.href)}" rel="ugc nofollow noopener">${labelHtml}</a> <span class="link-host">(${esc(host(u))})</span>`;
+  `<a href="${esc(u.href)}" rel="ugc nofollow noopener"><bdi>${labelHtml}</bdi></a> <span class="link-host">(${esc(host(u))})</span>`;
 
 // Bold and italic, on text that is already escaped (the markers survive escaping unchanged).
 const emphasis = (html) => html
@@ -30,6 +35,7 @@ const emphasis = (html) => html
 const TOKEN = /`([^`\n]+)`|\[([^\]\n]{1,200})\]\(([^)\s]{1,2000})\)|(https?:\/\/[^\s<>"'`]+)/g;
 
 export function inline(raw) {
+  raw = clean(raw);
   let out = "";
   let last = 0;
   for (const m of String(raw).matchAll(TOKEN)) {
@@ -41,9 +47,12 @@ export function inline(raw) {
       out += u ? anchor(u, emphasis(esc(m[2]))) : emphasis(esc(m[0]));
       continue;
     }
-    // A bare address: trailing punctuation belongs to the sentence, not the link.
-    const trail = m[4].match(/[.,;:!?)\]]+$/);
-    const addr = trail ? m[4].slice(0, -trail[0].length) : m[4];
+    // A bare address: trailing punctuation belongs to the sentence, not the link (trimmed with a loop: a regex anchored
+    // at the end is quadratic on long runs of dots).
+    let end = m[4].length;
+    while (end > 0 && ".,;:!?)]".includes(m[4][end - 1])) end--;
+    const addr = m[4].slice(0, end);
+    const trail = end < m[4].length ? [m[4].slice(end)] : null;
     const u = safeUrl(addr);
     out += u ? anchor(u, esc(addr)) : esc(addr);
     if (trail) out += esc(trail[0]);
@@ -56,7 +65,7 @@ const QUOTE = /^\s*>\s?(.*)$/;
 
 // A whole post: blocks split on blank lines; inside a block, list and quote lines group, other lines join with <br>.
 export function format(body) {
-  const text = String(body || "").replace(/\r\n?/g, "\n").slice(0, MAX_BODY).trim();
+  const text = clean(body).replace(/\r\n?/g, "\n").slice(0, MAX_BODY).trim();
   if (!text) return "";
   const html = [];
   for (const block of text.split(/\n\s*\n/)) {
@@ -83,8 +92,9 @@ export function format(body) {
   return html.join("\n");
 }
 
-// The plain text of a post (search, previews, notification emails): markup markers dropped, nothing rendered.
-export const plain = (body) => String(body || "").slice(0, MAX_BODY)
+// The plain text of a post (search, plain-text emails): markup markers dropped, nothing rendered and NOTHING ESCAPED.
+// Whatever puts it into HTML (a preview, an HTML email, a meta description) must escape it there.
+export const plain = (body) => clean(body).slice(0, MAX_BODY)
   .replace(/\[([^\]\n]{1,200})\]\(([^)\s]{1,2000})\)/g, "$1")
   .replace(/\*\*([^*]+)\*\*/g, "$1").replace(/`([^`\n]+)`/g, "$1")
   .replace(/\s+/g, " ").trim();

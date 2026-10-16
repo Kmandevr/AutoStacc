@@ -19,9 +19,9 @@ test("bold, italic and code", () => {
 
 test("links: http(s) only, domain shown, ugc nofollow", () => {
   assert.equal(inline("see https://example.com/a?b=1&c=2."),
-    'see <a href="https://example.com/a?b=1&amp;c=2" rel="ugc nofollow noopener">https://example.com/a?b=1&amp;c=2</a> <span class="link-host">(example.com)</span>.');
+    'see <a href="https://example.com/a?b=1&amp;c=2" rel="ugc nofollow noopener"><bdi>https://example.com/a?b=1&amp;c=2</bdi></a> <span class="link-host">(example.com)</span>.');
   assert.equal(inline("[my track](https://www.soundcloud.com/x)"),
-    '<a href="https://www.soundcloud.com/x" rel="ugc nofollow noopener">my track</a> <span class="link-host">(soundcloud.com)</span>');
+    '<a href="https://www.soundcloud.com/x" rel="ugc nofollow noopener"><bdi>my track</bdi></a> <span class="link-host">(soundcloud.com)</span>');
   // a label can't hide where a link goes
   assert.match(inline("[https://autostacc.com](https://evil.test/login)"), /\(evil\.test\)/);
 });
@@ -54,3 +54,23 @@ test("long bodies are cut at the limit and plain() drops markers", () => {
   assert.ok(format("a".repeat(MAX_BODY + 50)).length <= MAX_BODY + 7);
   assert.equal(plain("**Hi** see [this](https://x.test) and `code`\n\nok"), "Hi see this and code ok");
 });
+
+test("direction controls are dropped and labels are isolated", () => {
+  const html = inline("[\u202emoc.lapyap](https://evil.test) after");
+  assert.doesNotMatch(html, /[\u200e\u200f\u202a-\u202e\u2066-\u2069]/);
+  assert.match(html, /<bdi>moc\.lapyap<\/bdi><\/a> <span class="link-host">\(evil\.test\)<\/span> after/);
+  assert.doesNotMatch(format("a\u202eb"), /\u202e/);
+});
+
+test("long runs of punctuation after an address stay fast", () => {
+  const t0 = performance.now();
+  const html = inline("https://a.test/" + ".".repeat(MAX_BODY) + "x");
+  assert.ok(performance.now() - t0 < 50, "formatting took too long");
+  assert.match(html, /<a href=/);
+});
+
+test("an address with no real host stays text", () => {
+  assert.equal(safeUrl("https://www./"), null);
+  assert.doesNotMatch(inline("see https://www./ ok"), /<a /);
+});
+
