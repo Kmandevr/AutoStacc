@@ -11,12 +11,12 @@
   const M = () => window.GS.builderModel;
   const P = () => window.GS.builderPanel;
   const FL = () => window.GS.builderFiles;
-  const TABS = [["edit", "Edit"], ["add", "Add"], ["site", "Site"], ["files", "Files"], ["history", "History"]];
+  const TABS = [["edit", "Edit"], ["add", "Add"], ["library", "Library"], ["site", "Site"], ["files", "Files"], ["history", "History"]];
 
   function open(root, target, onBack) {
     const base = target.kind === "profile" ? `/api/studio/creators/${encodeURIComponent(target.id)}` : `/api/studio/projects/${encodeURIComponent(target.id)}`;
     let data = null, doc = null, hist = null, canvas = null, ed = null;
-    let pageIndex = 0, selection = null, device = "desktop", tab = "edit", dirty = false, versions = null, timer = 0;
+    let pageIndex = 0, selection = null, device = "desktop", tab = "edit", dirty = false, versions = null, timer = 0, lib = null;
 
     const say = (text, error = false) => { const m = $(".bx-status", root); if (m) { m.textContent = text; m.className = `bx-status msg${error ? " error" : ""}`; } };
     const ctx = () => ({
@@ -45,7 +45,8 @@
       if (tab === "site") html = P().sitePanel(doc, data);
       if (tab === "files") html = FL().filesPanel(data);
       if (tab === "history") html = FL().historyPanel(data, versions, mayPublish());
-      host.innerHTML = html;
+      if (tab === "library") html = lib.html();
+      host.innerHTML = lib.shareHtml() + html;
       root.querySelectorAll(".bx-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     }
 
@@ -218,15 +219,20 @@
           <aside class="bx-panel" aria-label="Editor"><div class="bx-tabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}">${l}</button>`).join("")}</div>
           <div class="bx-panel-body"></div></aside></div></div>`;
       canvas = window.GS.builderCanvas.create($(".bx-stage", root), { select, commit, redraw: drawCanvas, key: onKey, focusField: () => { tab = "edit"; drawPanel(); const f = $(".bx-panel-body textarea, .bx-panel-body input", root); if (f) f.focus(); } });
+      lib = window.GS.builderLibrary.controller({ api, data, root, doc: () => doc, pageIndex: () => pageIndex, selection: () => selection, commit, select, say,
+        setPage: (i) => { pageIndex = i; selection = null; drawAll(); }, redraw: () => drawPanel() });
       ed = window.GS.builderEdit.actions({ doc: () => doc, pageIndex: () => pageIndex, selection: () => selection, select, commit, setPage: (i) => { pageIndex = i; selection = null; drawAll(); } });
       root.onclick = (ev) => {
         const t = ev.target.closest("[data-tab]");
-        if (t) { tab = t.dataset.tab; if (tab === "history" && versions === null) loadVersions(); drawPanel(); return; }
+        if (t) { tab = t.dataset.tab; if (tab === "history" && versions === null) loadVersions(); if (tab === "library" && lib.lib.pieces === null) lib.load(); drawPanel(); return; }
         const b = ev.target.closest("button[data-action]");
+        if (b && lib.actions[b.dataset.action]) { b.disabled = true; Promise.resolve(lib.actions[b.dataset.action](b)).finally(() => { b.disabled = false; }); return; }
         if (b) act(b);
       };
+      root.onsubmit = (ev) => { const f = ev.target.closest("form[data-share]"); if (f) { ev.preventDefault(); lib.submit(f); } };
       root.oninput = (ev) => {
         const t = ev.target;
+        if (lib.onInput(t)) return;
         if (!t.dataset.path || t.dataset.action) return;
         ed.input(t);
         dirty = true;

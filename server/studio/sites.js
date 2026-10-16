@@ -26,6 +26,7 @@ import { listImages, imageSrc } from "../sites/images.js";
 import { listProjectProducts } from "../catalog/products.js";
 import { productPath } from "../creators/products.js";
 import { TEMPLATES, templateById } from "../sites/templates.js";
+import { installedFileList } from "../library/pieces.js";
 
 // The site a request is about, and the account's role in its creator, for a member who may do this (roles.js:
 // "site.edit" to see and change drafts, "site.publish" to put them live). Not a member: 404.
@@ -50,9 +51,10 @@ async function getSite(app, params) {
   const user = await requireUser(app);
   const { target, role } = await targetOf(app, params, user);
   const creator = target.creator;
-  const [site, files, projects, used] = await Promise.all([
+  const [site, files, shared, projects, used] = await Promise.all([
     first(app.db, `SELECT draft, draft_updated_at, published_at, version, scheduled_at FROM ${target.table} WHERE ${target.key} = ?`, target.id),
     listImages(app.db, creator.id),
+    installedFileList(app.db, creator.id),
     projectsOf(app.db, creator.id),
     storageUsed(app.db, creator.id)
   ]);
@@ -64,7 +66,10 @@ async function getSite(app, params) {
     creator: { id: creator.id, slug: creator.slug, name: creator.name, trusted: Boolean(creator.trusted) },
     role, capabilities: capabilitiesOf(role),
     document: draftOf(site, target),
-    files: files.map((i) => ({ id: i.id, src: imageSrc(i.id), filename: i.filename, contentType: i.content_type, sizeBytes: i.size_bytes })),
+    files: [...files.map((i) => ({ id: i.id, src: imageSrc(i.id), filename: i.filename, contentType: i.content_type, sizeBytes: i.size_bytes })),
+      ...shared.filter((f) => !files.some((i) => i.id === f.id))],
+    // Sharing to the community library: creators AutoStacc trusts, members whose role may share.
+    library: { canShare: Boolean(creator.trusted) && capabilitiesOf(role).includes("library.share"), canSell: capabilitiesOf(role).includes("products") },
     products: products.map((p) => ({ id: p.id, title: p.title, path: productPath(p), artwork: p.artwork, preview: p.preview || null })),
     projects: projects.map((p) => ({ id: p.id, name: p.name, path: `/${creator.slug}/${p.slug}`, published: Boolean(p.published) })),
     storage: { usedBytes: used, quotaBytes: quotaOf(creator) },

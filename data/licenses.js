@@ -4,6 +4,19 @@
 // Fields: title, summary (one line for product pages), allowed and notAllowed (lists shown as "You can" and
 // "You can't"). Text may use [label](/path) and **bold**.
 window.LICENSES = {
+  // Pieces sold in the Studio's community library (owner, 2026-10-15; docs/builder.md).
+  templates: {
+    title: "Site template licence",
+    summary: "Use it on any of your own sites on AutoStacc. It isn't yours to share or resell.",
+    allowed: [
+      "Install it into any profile or project site you can edit on AutoStacc, as often as you like.",
+      "Change its words, colours, images and layout to make it your own."
+    ],
+    notAllowed: [
+      "Share it to the community library, give it away or sell it, changed or not.",
+      "Copy it to another website builder or service."
+    ]
+  },
   sounds: {
     title: "Sound licence",
     summary: "Royalty-free in your own music, including music you sell or stream. The files themselves stay yours alone.",

@@ -21,7 +21,7 @@
   function elementPanel(el, path, data) {
     const label = (M().ELEMENTS[el.type] || {}).label || el.type;
     const s = el.style || {};
-    return `<div class="bx-head"><h3>${e(label)}</h3>${btn("duplicate", "Duplicate")}${btn("delete", "Delete", "", "btn ghost small danger")}</div>
+    return `<div class="bx-head"><h3>${e(label)}</h3>${btn("duplicate", "Duplicate")}${data.library.canShare ? btn("share", "Share", ` data-kind="element" data-id="${e(el.id)}"`) : ""}${btn("delete", "Delete", "", "btn ghost small danger")}</div>
       ${F().form(el, path, data)}
       ${group("Position and size", `<div class="bx-row">${num("Column (0–11)", `${path}.box.x`, el.box.x, 0, 11)}${num("Row", `${path}.box.y`, el.box.y, 0, 199)}</div>
         <div class="bx-row">${num("Width (1–12)", `${path}.box.w`, el.box.w, 1, 12)}${num("Height (rows)", `${path}.box.h`, el.box.h, 1, 100)}</div>
@@ -44,7 +44,7 @@
   function sectionPanel(sec, path, data) {
     const bg = sec.background || {};
     const pics = data.files.filter((f) => f.contentType.startsWith("image/"));
-    return `<div class="bx-head"><h3>Section</h3>${btn("section-up", "Move up")}${btn("section-down", "Move down")}${btn("duplicate", "Duplicate")}${btn("delete", "Delete", "", "btn ghost small danger")}</div>
+    return `<div class="bx-head"><h3>Section</h3>${btn("section-up", "Move up")}${btn("section-down", "Move down")}${btn("duplicate", "Duplicate")}${data.library.canShare ? btn("share", "Share", ` data-kind="section" data-id="${e(sec.id)}"`) : ""}${btn("delete", "Delete", "", "btn ghost small danger")}</div>
       ${num("Height (rows of 24px)", `${path}.rows`, sec.rows, 1, 200)}
       ${F().check("Full width (edge to edge)", `${path}.full`, sec.full)}
       ${group("Background", `${color("Colour", `${path}.background.color`, bg.color)}
@@ -76,7 +76,7 @@
     const nav = doc.nav.items.map((n, i) => `<div class="bx-item">${F().text("Label", `nav.items.${i}.label`, n.label, { max: 40 })}
       ${n.url !== undefined ? F().text("Link", `nav.items.${i}.url`, n.url, { max: 500 }) : F().select("Page", `nav.items.${i}.page`, n.page, doc.pages.map((p) => [p.slug, p.title]))}
       <div class="bx-row">${btn("nav-up", "Up", ` data-index="${i}"`)}${btn("list-remove", "Remove", ` data-path="nav.items" data-index="${i}"`, "btn ghost small danger")}</div></div>`).join("");
-    return `<div class="bx-head"><h3>Site</h3></div>
+    return `<div class="bx-head"><h3>Site</h3>${data.library.canShare ? btn("share", "Share as a template", ' data-kind="template"') : ""}</div>
       ${group("Look", `<fieldset class="bx-swatches"><legend>Style</legend>${swatches}</fieldset>
         ${F().field("Accent colour", (id) => `<input id="${id}" type="color" data-path="theme.accent" value="${e(t.accent)}">`)}
         ${F().select("Font", "theme.font", t.font, data.options.fonts.map((f) => [f.id, f.label]))}
