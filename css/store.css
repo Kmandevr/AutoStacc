@@ -109,7 +109,7 @@
 .store-section-head h2 { margin: 0; font-size: 1.25rem; }
 .store-section-head p { margin: 0; }
 .store-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, calc((100% - 44px) / 3)); gap: 22px; overflow-x: auto;
-  padding: 6px 2px 14px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+  padding: 16px 12px 24px; margin-inline: -10px; margin-block: -10px; scroll-padding-inline: 12px; /* room for a hovered card to grow */ scroll-snap-type: x proximity; scrollbar-width: thin; }
 .store-row > .card { scroll-snap-align: start; }
 
 /* ---------- tablets and phones: the filters become a drawer ---------- */

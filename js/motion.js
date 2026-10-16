@@ -1,4 +1,5 @@
-// Motion: scroll reveals, typed [data-type] text, the occasional glitch "zap", and ambient effects that keep their place across pages.
+// Motion: scroll reveals, typed [data-type] text, the occasional glitch "zap", clickable cards that tilt toward the
+// pointer (css/platform.css), and ambient effects that keep their place across pages.
 // Needs nothing; load it after the scripts that render content. Does nothing for reduced-motion users.
 (function () {
   "use strict";
@@ -77,4 +78,23 @@
       if (n < text.length) setTimeout(tick, 28 + Math.random() * 36);
     }, Number(el.dataset.type) || 0);
   });
+  // Clickable cards lean toward a mouse pointer: --tilt-x/--tilt-y feed the hover transform in css/platform.css.
+  // Mouse only (touch has no hover); one listener for the whole page, so cards drawn later tilt too.
+  const tiltCards = ".card, .project-card, .tile, .pcard, .ex-item, .home-doors a, .stacc-stacclet, .vault-item";
+  if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    let tilted = null;
+    const settle = () => { if (tilted) { tilted.style.removeProperty("--tilt-x"); tilted.style.removeProperty("--tilt-y"); tilted = null; } };
+    main.addEventListener("pointermove", (e) => {
+      const card = e.target.closest(tiltCards);
+      if (card !== tilted) settle();
+      if (!card || !(card.matches("a[href]") || card.querySelector("a[href]"))) return;
+      const box = card.getBoundingClientRect();
+      const x = (e.clientX - box.left) / box.width - .5;
+      const y = (e.clientY - box.top) / box.height - .5;
+      card.style.setProperty("--tilt-x", (x * 8).toFixed(2) + "deg");
+      card.style.setProperty("--tilt-y", (y * -8).toFixed(2) + "deg");
+      tilted = card;
+    });
+    main.addEventListener("pointerleave", settle);
+  }
 })();
