@@ -38,4 +38,7 @@
 }
 @media (max-width: 600px) {
   .cover-actions .btn { flex: 1 1 auto; }
+  /* on a phone the copy can run to the foot of the hero, so the scroll cue follows it instead of sitting on top of it */
+  .cover-hero { padding-bottom: 20px; }
+  .cover-scroll { position: static; justify-self: center; margin-top: 28px; transform: none; }
 }
