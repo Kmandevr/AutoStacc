@@ -36,7 +36,8 @@ export async function openPayoutAccount(app, creator, { country }) {
       accountId = account.id;
     } catch (e) {
       console.error("payout account failed", e && e.type, e && e.code, e && e.message);
-      fail(502, "payout_account_failed", `Stripe couldn't open a payout account${e && e.message ? `: ${String(e.message).slice(0, 160)}` : "."}`);
+      // 503, not 502 (Cloudflare replaces a Function's 502 with its own page); Stripe's own words stay in the log.
+      fail(503, "payout_account_failed", "Stripe couldn't open a payout account just now. Try again in a minute, or contact support if it keeps happening.");
     }
     // Only the first writer wins; a second tab's account is simply never used.
     await run(app.db, "UPDATE creators SET stripe_account_id = ?, payout_country = ? WHERE id = ? AND stripe_account_id IS NULL", accountId, country, creator.id);

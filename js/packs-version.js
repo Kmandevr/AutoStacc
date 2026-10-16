@@ -10,20 +10,20 @@
   const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
   // Each flag of the automated review (server/packs/review.js), in plain words.
   const FLAGS = {
-    unsafe_entries: "Unsafe entries (names that climb out of the pack, links, archive bombs)",
+    unsafe_entries: "Unsafe entries (names that climb out of the Pac, links, archive bombs)",
     deceptive_files: "Files whose contents don't match their names",
     damaged_files: "Damaged files",
     encrypted_files: "Password-protected files",
     executables: "Programs or scripts",
     unsupported_files: "File types AutoStacc doesn't deliver",
-    nested_archives: "Archives inside the pack (their contents aren't checked)",
+    nested_archives: "Archives inside the Pac (their contents aren't checked)",
     mostly_unknown_formats: "Most files are in formats AutoStacc can't identify",
-    all_duplicates: "Every file is already in another of your packs",
+    all_duplicates: "Every file is already in another of your Pacs",
     big_revision: "This version removes a large part of the one that's live",
     silent_audio: "Much of the audio is silent",
     undecodable_audio: "Much of the audio can't be played"
   };
-  const STATE = { draft: "Draft", uploading: "Uploading", processing: "Checking", ready: "Checked", in_review: "Waiting for AutoStacc's review",
+  const STATE = { draft: "Draft", uploading: "Uploading", processing: "Checking", ready: "Draft, ready to publish", in_review: "Waiting for AutoStacc's review",
     published: "Published", superseded: "Replaced by a newer version", failed: "Failed", discarded: "Discarded" };
 
   function flags(review) {
@@ -39,7 +39,7 @@
     const removed = d.removed.map((r) => `<li><code>${e(r.folderPath ? `${r.folderPath}/` : "")}${e(r.filename)}</code></li>`).join("");
     return `<p>Compared with the live version: ${c.same} unchanged, ${c.moved} moved or renamed, ${c.replaced} replaced, ${c.added} new, ${c.removed} removed.
       Unchanged and moved files keep their values and stay the same files for buyers.</p>
-      ${c.removed + c.replaced ? `<p class="small-print">Buyers who already have this pack keep removed and replaced files for 30 days after you publish, with a notice in Your Stacc.</p>` : ""}
+      ${c.removed + c.replaced ? `<p class="small-print">Buyers who already have this product keep removed and replaced files for 30 days after you publish, with a notice in Your Stacc.</p>` : ""}
       ${removed ? `<details><summary>${plural(c.removed, "file")} removed</summary><ul>${removed}</ul>${c.removed > d.removed.length ? `<p class="small-print">and ${c.removed - d.removed.length} more</p>` : ""}</details>` : ""}`;
   }
 
@@ -47,8 +47,10 @@
     const s = v.stats || {};
     if (v.status === "ready") {
       const held = !admin && s.review && s.review.verdict === "hold";
-      return `<div class="actions"><button class="btn" type="button" data-pack-publish${s.files ? "" : " disabled"}>Publish ${plural(s.files || 0, "file")}</button>
-        <button class="btn ghost" type="button" data-pack-discard>Discard</button></div>
+      return `<p class="small-print">Not live yet: buyers keep the live version's files until you publish this one. Publishing changes which files
+          buyers download; whether the product is on sale is set in Release.</p>
+        <div class="actions"><button class="btn" type="button" data-pack-publish${s.files ? "" : " disabled"}>Publish this version (${plural(s.files || 0, "file")})</button>
+        <button class="btn ghost danger" type="button" data-pack-discard>Discard draft</button></div>
         ${held ? `<p class="small-print">Because of the flags above, AutoStacc reviews this version before buyers get it.</p>` : ""}`;
     }
     if (v.status === "in_review") {
@@ -66,12 +68,31 @@
     quota_exceeded: "the files don't fit in your storage",
     too_many_files: "more files than one version can hold",
     timed_out: "checking took too long",
-    not_queued: "checking couldn't start"
+    not_queued: "checking couldn't start",
+    processing_failed: "the files couldn't be checked",
+    import_failed: "the checked files couldn't be saved",
+    missing_files: "some uploaded files went missing before they were saved",
+    engine_unreachable: "the file checker couldn't be reached"
   };
+  // What to do after a failure: nothing changed for buyers, and a new upload starts a new version (no duplicates).
+  const NEXT = {
+    quota_exceeded: "Free some storage (remove files or Pacs you no longer sell), then upload again.",
+    too_many_files: "Split the files over more than one Pac, then upload again.",
+    storage_full: "Try again later; AutoStacc needs to make room first."
+  };
+  const noteText = (code) => (code ? NOTES[code] || code : "");
+  // A failed version (not a rejection) or one AutoStacc's review didn't accept: what happened and what to do next.
+  function recovery(v) {
+    if (v.status !== "failed") return "";
+    if (v.rejected) return `<p class="msg error">Not accepted by AutoStacc's review${v.note ? `: ${e(v.note)}` : "."} Nothing changed for buyers. Fix what the note says and upload again, or <a href="/contact">contact AutoStacc</a> if it's unclear.</p>`;
+    return `<p class="msg error">This version failed (${e(noteText(v.note) || "something went wrong")}). Nothing changed for buyers: the live version stays as it is.
+      ${e(NEXT[v.note] || "Drop or upload the files again to start a new version; files AutoStacc already has aren't stored twice.")}</p>`;
+  }
 
   function render(v, { admin = false } = {}) {
     const s = v.stats || {};
-    const head = `<p><strong>Version ${v.number}</strong> · ${e(STATE[v.status] || v.status)}${v.note ? ` (${e(NOTES[v.note] || v.note)})` : ""}</p>`;
+    const label = v.status === "failed" && v.rejected ? "Not accepted by review" : STATE[v.status] || v.status;
+    const head = `<p><strong>Version ${v.number}</strong> · ${e(label)}${v.note && !v.rejected ? ` (${e(noteText(v.note))})` : ""}</p>${recovery(v)}`;
     if (v.status === "processing" && v.note === "waiting_for_allowance") {
       return `${head}<div class="actions"><button class="btn ghost" type="button" data-pack-discard>Discard</button></div>`;
     }
@@ -89,5 +110,5 @@
       ${window.GS.packReview.render(v)}`;
   }
 
-  window.GS.packVersion = { render };
+  window.GS.packVersion = { render, noteText, STATE };
 })();

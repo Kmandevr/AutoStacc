@@ -23,7 +23,7 @@
         ${packs ? '<div class="spc-pack" data-spc-pack></div>' : ""}
         <section class="spc-files" aria-labelledby="spc-files-h"${editor && !older ? " hidden" : ""}>
           <h3 id="spc-files-h">${editor ? "Older single files" : packs ? "Single files" : "Files buyers get"}</h3>
-          ${editor ? '<p class="small-print">Files added before the Pac builder. New files go in by dropping them in above.</p>' : ""}
+          ${editor ? '<p class="small-print">Files added before the Pac Builder. New files go in by dropping them in above.</p>' : ""}
           <div data-spc-list></div>
           ${editor ? "" : '<label class="btn ghost small studio-upload">Add a file<input type="file" data-spc-upload hidden></label>'}
           <p class="msg" role="status"></p>
@@ -38,7 +38,7 @@
             <span class="tag" data-status="${e(f.status)}">${e(STATUS[f.status] || f.status)}</span>${f.note ? ` <span class="small-print">${e(f.note)}</span>` : ""}
             <button class="link-btn" type="button" data-spc-remove="${e(f.id)}" aria-label="Remove ${e(f.filename)}">Remove</button></li>`).join("")}
           ${p.packFiles ? `<li><span class="spc-name">${Number(p.packFiles)} file${p.packFiles === 1 ? "" : "s"} from your Pac</span></li>` : ""}</ul>
-          ${files.length || p.packFiles ? "" : '<p class="small-print">No files yet. A product needs at least one before it can go on sale.</p>'}`;
+          ${files.length || p.packFiles ? "" : '<p class="small-print">No files yet. Drop a ZIP, a folder or files above: a product needs at least one before it can go on sale.</p>'}`;
       }
       list();
       const refresh = async (note, error) => { await ctx.reload(); if (!el.isConnected) return; list(); if (note) window.GS.say(filesBox, note, error); };

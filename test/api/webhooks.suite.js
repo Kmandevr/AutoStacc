@@ -195,6 +195,46 @@ export default (ctx) => describe("webhooks", () => {
     assert.deepEqual(await owned(c), ["stems-patchwork"]);
   });
 
+  test("a lost chargeback is recorded against its order without changing the order, access or earnings", async () => {
+    const { c, order } = await buyer("dispute-lost");
+    const { session } = await stripePay(ctx, c, order);
+    const dispute = (type, status) => ({ id: eventId(), object: "event", type, livemode: false, created: Math.floor(Date.now() / 1000),
+      data: { object: { id: "dp_2", object: "dispute", payment_intent: session.payment_intent, status } } });
+    await sendWebhook(c, dispute("charge.dispute.created", "needs_response"), WEBHOOK_SECRET);
+    const before = sql(ctx.stripe.stateDir, `SELECT status, refunded_cents FROM orders WHERE id = '${order.orderId}'`)[0];
+    const ev = dispute("charge.dispute.closed", "lost");
+    const res = await sendWebhook(c, ev, WEBHOOK_SECRET);
+    assert.equal(res.status, 200);
+    assert.match(res.data.outcome, /dispute closed/);
+    const row = sql(ctx.stripe.stateDir, `SELECT order_id, type, detail FROM payment_events WHERE id = 'stripe:${ev.id}'`)[0];
+    assert.deepEqual([row.order_id, row.type, row.detail], [order.orderId, "charge.dispute.closed", "dispute lost"]);
+    assert.deepEqual(sql(ctx.stripe.stateDir, `SELECT status, refunded_cents FROM orders WHERE id = '${order.orderId}'`)[0], before);
+    assert.equal(before.status, "paid");
+    assert.deepEqual(sql(ctx.stripe.stateDir, `SELECT status, revoke_reason FROM entitlements WHERE source_id = '${order.orderId}'`).map((e) => [e.status, e.revoke_reason]), [["revoked", "disputed"]]);
+    assert.deepEqual(await owned(c), []);
+  });
+
+  test("paying for a product already owned through another paid order alerts the owner once and is recorded", async () => {
+    // Two tabs, two different carts both holding the same product, both paid.
+    const { c, email, order } = await buyer("double");
+    const second = await stripeCheckout(c, [{ productId: "stems-patchwork" }, { productId: "wallpapers" }], { email });
+    await stripePay(ctx, c, order);
+    const { ev, res } = await stripePay(ctx, c, second);
+    assert.equal(res.data.outcome, "paid");
+    const row = sql(ctx.stripe.stateDir, `SELECT detail FROM payment_events WHERE id = 'stripe:${ev.id}'`)[0];
+    assert.match(row.detail, new RegExp(`double purchase: stems-patchwork \\(also in ${order.orderId}\\)`));
+    assert.doesNotMatch(row.detail, /wallpapers/);
+    // A retry of the same payment under a new event id doesn't alert again.
+    await sendWebhook(c, sessionEvent("checkout.session.completed", ctx.stripe.fake.sessions.get(second.sessionId)), WEBHOOK_SECRET);
+    const alerts = (await outbox(ctx.stripe.url, "admin@autostacc.test")).filter((m) => m.kind === "admin-alert" && m.body_text.includes(second.orderId));
+    assert.equal(alerts.length, 1);
+    assert.match(alerts[0].body_text, new RegExp(`double purchase of .* by order ${second.orderId}`, "i"));
+    assert.ok(!(await outbox(ctx.stripe.url, email)).some((m) => m.kind === "admin-alert"), "the buyer gets no alert");
+    // The first order alone raised nothing.
+    const first = sql(ctx.stripe.stateDir, `SELECT detail FROM payment_events WHERE order_id = '${order.orderId}' AND type = 'checkout.session.completed'`)[0];
+    assert.equal(first.detail, null);
+  });
+
   test("a refused paid event alerts the owner", async () => {
     const { c, order } = await buyer("alert");
     await stripePay(ctx, c, order, { overrides: { amount_subtotal: 5, amount_total: 5 } });

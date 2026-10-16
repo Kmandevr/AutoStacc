@@ -14,6 +14,14 @@ import { productPath } from "../catalog/products.js";
 const BATCH = 25;
 const SUBSCRIBED = `FROM email_preferences p JOIN "user" u ON u.id = p.user_id WHERE p.platform_news = 1 AND u."emailVerified" = 1`;
 
+// Mails one batch and counts what the provider accepted: a refused send ("failed") is not "sent", so the page can stop and
+// say so instead of calling again forever while the provider is down.
+export async function sendAll(batch, mail) {
+  let sent = 0, failed = 0;
+  for (const { email } of batch) ((await mail(email)).status === "failed" ? failed++ : sent++);
+  return { sent, failed };
+}
+
 async function overview(app) {
   await requireAdmin(app);
   const row = await first(app.db, `SELECT COUNT(*) AS n ${SUBSCRIBED}`);
@@ -35,12 +43,12 @@ async function send(app) {
   const batch = await all(app.db,
     `SELECT u.email ${SUBSCRIBED} AND NOT EXISTS (SELECT 1 FROM email_events e WHERE e.dedupe_key = 'platform-news:' || ? || ':' || u.email AND e.status <> 'failed')
      ORDER BY u.id LIMIT ?`, issue, BATCH);
-  for (const { email } of batch) await sendEmail(app, "platform-news", email, data, { dedupeKey: key(email) });
+  const { sent, failed } = await sendAll(batch, (email) => sendEmail(app, "platform-news", email, data, { dedupeKey: key(email) }));
   const left = await first(app.db,
     `SELECT COUNT(*) AS n ${SUBSCRIBED} AND NOT EXISTS (SELECT 1 FROM email_events e WHERE e.dedupe_key = 'platform-news:' || ? || ':' || u.email AND e.status <> 'failed')`, issue);
-  if (batch.length) await audit(app, "news.sent", { targetType: "news", targetId: issue, detail: { subject, sent: batch.length } });
+  if (batch.length) await audit(app, "news.sent", { targetType: "news", targetId: issue, detail: { subject, sent, failed } });
   // Failed sends stay "left"; the page stops when a batch sends nothing new, so a Brevo outage can't loop forever.
-  return json({ ok: true, issue, sent: batch.length, left: left.n });
+  return json({ ok: true, issue, sent, failed, left: left.n });
 }
 
 
@@ -58,10 +66,10 @@ async function announce(app, { productId }) {
   const batch = await all(app.db, `SELECT u.email ${FOLLOWERS} ${pending} ORDER BY u.id LIMIT ?`, p.project_id, p.id, BATCH);
   const data = { project: p.project_name, title: p.title, description: p.description || "", url: `${app.config.siteUrl}${productPath(p)}`,
     settingsUrl: `${app.config.siteUrl}/settings/email` };
-  for (const { email } of batch) await sendEmail(app, "new-release", email, data, { dedupeKey: `new-release:${p.id}:${email}` });
+  const { sent, failed } = await sendAll(batch, (email) => sendEmail(app, "new-release", email, data, { dedupeKey: `new-release:${p.id}:${email}` }));
   const left = await first(app.db, `SELECT COUNT(*) AS n ${FOLLOWERS} ${pending}`, p.project_id, p.id);
-  if (batch.length) await audit(app, "product.announced", { targetType: "product", targetId: p.id, detail: { sent: batch.length } });
-  return json({ ok: true, sent: batch.length, left: left.n });
+  if (batch.length) await audit(app, "product.announced", { targetType: "product", targetId: p.id, detail: { sent, failed } });
+  return json({ ok: true, sent, failed, left: left.n });
 }
 
 export const routes = [

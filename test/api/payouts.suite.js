@@ -192,14 +192,14 @@ export default (ctx) => describe("payouts", () => {
     fake().failTransfers(true);
     const refused = await settle(id, "paid");
     fake().failTransfers(false);
-    assert.equal(refused.status, 502);
+    assert.equal(refused.status, 503);
     assert.equal(refused.data.error.code, "transfer_failed");
     assert.equal(db(`SELECT status FROM payout_requests WHERE id = '${id}'`)[0].status, "requested");
 
     fake().setBalance(500);
     const poor = await settle(id, "paid");
     fake().setBalance(1_000_000);
-    assert.equal(poor.status, 502);
+    assert.equal(poor.status, 503);
     assert.match(poor.data.error.message, /insufficient funds/i);
     assert.equal(db(`SELECT status FROM payout_requests WHERE id = '${id}'`)[0].status, "requested");
     assert.equal(fake().transfers.length, before, "nothing was sent");

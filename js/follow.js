@@ -20,7 +20,7 @@
     const f = follows[id];
     if (!f) return `<div class="actions"><button class="btn" type="button" data-follow="${e(id)}">Follow<span class="sr-only"> ${e(name)}</span></button></div>${note}`;
     return `<div class="actions">
-      <label class="auto-stacc"><input type="checkbox" data-auto="${e(id)}"${f.autoStacc ? " checked" : ""}> Auto-Stacc free releases</label>
+      <label class="auto-stacc"><input type="checkbox" data-auto="${e(id)}"${f.autoStacc ? " checked" : ""}> Auto-Stacc: add its free items to Your Stacc</label>
       <button class="btn ghost" type="button" data-unfollow="${e(id)}">Following ✓ · Unfollow<span class="sr-only"> ${e(name)}</span></button></div>${note}`;
   }
 
@@ -61,7 +61,7 @@
     const follow = ev.target.closest("[data-follow]");
     if (follow && !follow.disabled) {
       const id = follow.dataset.follow;
-      send(follow, id, put(id, false), (d) => { follows[d.follow.projectId] = d.follow; changed({ id, text: "Following. New releases show up in Your Stacc." }); });
+      send(follow, id, put(id, false), (d) => { follows[d.follow.projectId] = d.follow; changed({ id, text: "Following. Its new releases are listed on your dashboard and in Your Stacc; paid ones still need buying. Switch on Auto-Stacc to add the free ones for you." }); });
     }
     const unfollow = ev.target.closest("[data-unfollow]");
     if (unfollow && !unfollow.disabled) {

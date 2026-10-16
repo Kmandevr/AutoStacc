@@ -39,11 +39,21 @@
       <ul class="admin-kpis" aria-label="Store at a glance">${[["Environment", s.environment], ["Payments", s.paymentProvider], ["Products", s.products], ["Customers", s.customers],
         ["Paid orders", `${paid.n} · ${cents(paid.cents || 0)}`], ["Active entitlements", s.activeEntitlements]]
         .map(([k, v]) => `<li><span>${k}</span><strong>${escapeHTML(String(v))}</strong></li>`).join("")}</ul>
-      ${s.alerts.length ? `<div class="msg error" role="alert">Payment events that need a look (check them in Stripe too):<ul>${s.alerts.map((a) => `<li>${escapeHTML(a.received_at.slice(0, 16).replace("T", " "))} ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.order_id ? ` (${escapeHTML(a.order_id)})` : ""}</li>`).join("")}</ul></div>` : ""}
+      ${alerts(s.alerts.filter((a) => a.severity !== "info"), "msg error", "alert", "Payment events that need a look (check them in Stripe too):")}
+      ${alerts(s.alerts.filter((a) => a.severity === "info"), "msg", "status", "Payment events on hold:")}
       ${KEYS.map((k, i) => `<section class="admin-section" data-admin-section="${k}" aria-labelledby="admin-h-${k}"${i ? " hidden" : ""}>
         <h2 class="admin-section-title" id="admin-h-${k}" tabindex="-1" data-ws-heading>${escapeHTML(LABEL[k])}</h2>
         <div class="admin-panel" id="admin-${k}"></div></section>`).join("")}`;
   }
+
+  // The summary's payment alerts (ranked by server/admin/alerts.js): severity spelled out, the full time, the order id
+  // opening that order's details in Orders (js/admin-records.js answers [data-order]) and the next step.
+  const LEVEL = { critical: "Critical", warning: "Check", info: "Waiting" };
+  const when = (iso) => String(iso || "").replace("T", " ").replace(/\.\d+Z$|Z$/, " UTC");
+  const alerts = (list, cls, role, title) => (list.length ? `<div class="${cls} admin-alerts" role="${role}">${title}<ul>${list.map((a) => `<li data-severity="${escapeHTML(a.severity)}">
+    <strong class="admin-alert-level">${LEVEL[a.severity] || escapeHTML(a.severity)}</strong> <time datetime="${escapeHTML(a.receivedAt)}">${escapeHTML(when(a.receivedAt))}</time>
+    ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.orderId ? ` (order <a href="#orders" data-order="${escapeHTML(a.orderId)}">${escapeHTML(a.orderId)}</a>)` : ""}
+    <br><span class="small-print">${escapeHTML(a.next)}</span></li>`).join("")}</ul></div>` : "");
 
   // The open section lives in the address (/admin#orders), so a reload or a shared link lands on it.
   function show(key) {
@@ -53,8 +63,8 @@
   const selectTab = (key, focus) => ws.select(KEYS.includes(key) ? key : KEYS[0], { focus });
 
   // A product action that didn't go through says so beside the product instead of failing silently.
-  const act = async (el, path, body) => {
-    const res = await api(path, { method: "PATCH", body });
+  const act = async (el, path, body, method = "PATCH") => {
+    const res = await api(path, { method, body });
     if (!res.ok) {
       el.disabled = false;
       const row = el.closest("[data-product]");
@@ -172,6 +182,15 @@
   });
 
   root.addEventListener("click", async (e) => {
+    // A product id elsewhere (order details) opens that product's row in Products.
+    const showP = e.target.closest("[data-show-product]");
+    if (showP) {
+      e.preventDefault();
+      selectTab("products");
+      const row = [...root.querySelectorAll("[data-product]")].find((li) => li.dataset.product === showP.dataset.showProduct);
+      if (row) { row.tabIndex = -1; row.scrollIntoView({ block: "start" }); row.focus({ preventScroll: true }); }
+      return;
+    }
     const set = e.target.closest("[data-product-set]");
     if (set) {
       set.disabled = true;
@@ -196,13 +215,16 @@
       const li = announce.closest("[data-product]"), msg = $("[data-announce-msg]", li);
       if (!confirm(`Email "${li.querySelector("strong").textContent}" to its project's followers? Each follower gets it once.`)) return;
       announce.disabled = true;
+      // "Sent" means the email provider accepted it; refused sends stay pending and the loop stops instead of retrying forever.
       let total = 0;
       for (;;) {
         const res = await api(`/api/admin/products/${encodeURIComponent(li.dataset.product)}/announce`, { method: "POST", body: {} });
-        if (!res.ok) { msg.textContent = res.error.message; break; }
+        if (!res.ok) { msg.textContent = `Stopped after ${total}: ${res.error.message}`; break; }
         total += res.data.sent;
-        msg.textContent = res.data.left ? `Sent ${total}, ${res.data.left} left…` : `Sent to ${total} follower${total === 1 ? "" : "s"}.`;
-        if (!res.data.left || !res.data.sent) break;
+        const people = (n) => `${n} follower${n === 1 ? "" : "s"}`;
+        if (!res.data.left) { msg.textContent = total ? `Sent to ${people(total)}.` : "Nobody left to email: every follower who wants new-release emails already has this one."; break; }
+        if (!res.data.sent) { msg.textContent = `Sent to ${people(total)}; ${people(res.data.left)} couldn't be emailed (the email provider refused). See Emails in the dashboard, then press again to retry them.`; break; }
+        msg.textContent = `Sent ${total}, ${res.data.left} left…`;
       }
       announce.disabled = false;
       return;
@@ -211,8 +233,7 @@
     const pub = e.target.closest("[data-publish-file]");
     if (pub) {
       pub.disabled = true;
-      await api(`/api/admin/files/${encodeURIComponent(pub.dataset.publishFile)}`, { method: "PATCH", body: { status: "published" } });
-      return products();
+      return act(pub, `/api/admin/files/${encodeURIComponent(pub.dataset.publishFile)}`, { status: "published" });
     }
     // Rejecting takes a file away from owners for good (a creator's product with no file left goes back to draft).
     const rej = e.target.closest("[data-reject-file]");
@@ -220,13 +241,12 @@
       const note = prompt("Reject this file? Owners lose it and it can't be published again. Reason (optional; a creator sees it in the Studio):");
       if (note === null) return;
       rej.disabled = true;
-      await api(`/api/admin/files/${encodeURIComponent(rej.dataset.rejectFile)}`, { method: "PATCH", body: { status: "rejected", ...(note.trim() && { note: note.trim() }) } });
-      return products();
+      return act(rej, `/api/admin/files/${encodeURIComponent(rej.dataset.rejectFile)}`, { status: "rejected", ...(note.trim() && { note: note.trim() }) });
     }
     const rm = e.target.closest("[data-remove-file]");
-    if (rm && confirm("Deactivate this file? Owners lose the download link; the file stays in storage.")) {
-      await api(`/api/admin/files/${encodeURIComponent(rm.dataset.removeFile)}`, { method: "DELETE" });
-      products();
+    if (rm && !rm.disabled && confirm("Deactivate this file? Owners lose the download link; the file stays in storage.")) {
+      rm.disabled = true;
+      return act(rm, `/api/admin/files/${encodeURIComponent(rm.dataset.removeFile)}`, undefined, "DELETE");
     }
   });
 

@@ -8,7 +8,7 @@ window.WORKSPACES = {
     label: "Product Studio",
     sections: [
       { key: "overview", label: "Overview", hint: "Where this product stands, what's left to do and what changed lately." },
-      { key: "pacs", label: "Pac Builder", hint: "The files buyers get: upload a Pac as a ZIP, or single files." },
+      { key: "pacs", label: "Pac Builder", hint: "The files buyers download (this product's Pac): drop a ZIP, a folder or single files, arrange them, then publish a version." },
       { key: "store", label: "Store Page", hint: "What buyers see: name, description, cover art and details, with a live preview." },
       { key: "pricing", label: "Pricing", hint: "The price, sales and what you can expect to earn." },
       { key: "insights", label: "Insights", hint: "Orders, revenue, downloads and views for this product." },
@@ -22,7 +22,7 @@ window.WORKSPACES = {
       { label: "Store", items: [
         { key: "overview", label: "Overview" },
         { key: "products", label: "Products" },
-        { key: "packs", label: "Packs" },
+        { key: "packs", label: "Pacs" },
         { key: "promotions", label: "Promotions" },
         { key: "news", label: "News" }
       ] },

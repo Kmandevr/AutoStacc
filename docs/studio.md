@@ -104,7 +104,7 @@ Not tracked: traffic sources. The section says "not tracked yet" instead of show
 ### Release (Built; shared)
 
 - **Readiness** in two lists. *Blocking:* no title; no file buyers can get yet; a Pac version waiting for review (`in_review`) with no other deliverable file; a paid price outside the allowed range; the creator suspended. *Recommended:* a description shorter than 80 characters, no cover art, no preview clip, no tags, no store details, no "what's inside" lines.
-- **Controls:** Publish (put on sale), Back to draft, Pause and resume sales, and Remove (buyers keep their files). Saved edits to a published product are live as soon as they are saved, and the history records them.
+- **Controls:** Publish (put on sale), Back to draft, Pause and resume sales, and Remove (buyers keep their files). Saved edits to a published product are live as soon as they are saved, and the history records them. The section says that publishing doesn't email followers (only the Control Center's Email followers does), that a free product goes straight to followers with Auto-Stacc on, and that the files buyers download change only by publishing a Pac version in the Pac Builder.
 - **Release history:** every publish, unpublish, pause, resume, removal, price change, sale start or end, store preview clip added or removed, Pac version submitted, approved, refused or published, and file added or removed, with who did it and when (`product_events`).
 - **Rollback:** not supported yet. A superseded Pac version can't be restored; upload it again. Removed or replaced files stay delivered to earlier buyers for 30 days ([packs](packs.md)).
 
@@ -133,7 +133,7 @@ All routes need a signed-in member of the product's creator (owner or editor; ea
 
 ## Control Center version
 
-The same shell with these groups: **Store** (Overview, Products, Packs, Promotions, News), **People** (Orders, Customers, Entitlements, Creators, Payouts) and **Tools** (Test purchases, Usage and storage, Audit log). The header shows LIVE or TEST and the environment. Every panel keeps its id (`#admin-<key>`), so each tab's own script is unchanged.
+The same shell with these groups: **Store** (Overview, Products, Pacs, Promotions, News), **People** (Orders, Customers, Entitlements, Creators, Payouts) and **Tools** (Test purchases, Usage and storage, Audit log). The header shows LIVE or TEST and the environment. Every panel keeps its id (`#admin-<key>`), so each tab's own script is unchanged.
 
 ## Implementation order (from the brief) and where it stands
 

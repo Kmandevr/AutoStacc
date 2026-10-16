@@ -53,7 +53,7 @@ window.HELP = [
     title: "Products",
     items: [
       { id: "contents", q: "What's in a product?", a: [
-        "Each product page lists what's inside, its type and its format. Products are made of Pacs: folders of one kind of content (samples, loops, presets, stems and so on) grouped into Stacclets, so Your Stacc can sort everything you've Stacc'd by project, Stacclet, Pac and kind."
+        "Each product page lists what's inside, its type and its format. Products are made of Pacs: folders of files (samples, loops, presets, stems and so on) grouped into Stacclets. A product is what you buy; its Pacs are what you download, so Your Stacc can sort everything you've Stacc'd by project, Stacclet, Pac and kind."
       ] },
       { id: "formats", q: "Which file formats will I get?", a: [
         "It depends on the product; its page lists the formats where the creator has given them. Files arrive as normal downloads (usually ZIP archives) that open on any computer."
@@ -86,16 +86,16 @@ window.HELP = [
     title: "Projects and Your Stacc",
     items: [
       { id: "follow", q: "What does following a project do?", a: [
-        "Following puts a project's new releases on your [dashboard](/dashboard). Turn on Auto-Stacc as well, and its free releases are added to Your Stacc automatically, now and whenever new ones come out. Want an email too? Switch on new-release emails in [Settings › Emails](/settings/email). Follow from [Projects](/projects)."
+        "Following puts a project's new releases on your [dashboard](/dashboard). Following never unlocks paid products. Turn on Auto-Stacc as well, and its free releases are added to Your Stacc for you: the ones already out straight away, new ones the next time you open Your Stacc or your dashboard. Want an email too? Switch on new-release emails in [Settings › Emails](/settings/email). Follow from [Projects](/projects)."
       ] },
       { id: "your-stacc", q: "What is Your Stacc?", a: [
         "Your library: everything you've Stacc'd, sorted by project, Stacclet, Pac and kind, with downloads. It's at [Your Stacc](/library)."
       ] },
       { id: "free", q: "How do free releases work?", a: [
-        "Free products are claimed with an account and then live in Your Stacc like anything you bought. With Auto-Stacc on, a followed project's free releases arrive by themselves."
+        "Free products are claimed with an account and then live in Your Stacc like anything you bought. With Auto-Stacc on for a project you follow, its free releases arrive by themselves and are marked \"added by Auto-Stacc\". Auto-Stacc is off until you switch it on, project by project."
       ] },
       { id: "notifications", q: "Will I get emails about new releases?", a: [
-        "Only if you ask: switch them on in [Settings › Emails](/settings/email). None are being sent yet. Receipts and account emails always come."
+        "Only if you ask: switch them on in [Settings › Emails](/settings/email). New-release emails go out when AutoStacc announces a release from a project you follow; publishing alone doesn't send one. Receipts and account emails always come."
       ] }
     ]
   }

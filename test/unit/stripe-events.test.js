@@ -21,3 +21,13 @@ test("refunds and unknown events", () => {
   assert.equal(normalizeEvent(ev("charge.refunded", { payment_intent: "pi_1", refunded: false, amount_refunded: 1, currency: "usd" })).type, "partial_refund");
   for (const t of ["payment_intent.succeeded", "charge.succeeded", "customer.created", "invoice.paid"]) assert.equal(normalizeEvent(ev(t, session)).type, "ignored", t);
 });
+
+test("disputes: opened, won, and lost or closed are each recognized and tied to the payment", () => {
+  const d = (type, status) => normalizeEvent(ev(type, { id: "dp_1", payment_intent: "pi_1", status }));
+  assert.equal(d("charge.dispute.created", "needs_response").type, "disputed");
+  assert.equal(d("charge.dispute.closed", "won").type, "dispute_won");
+  const lost = d("charge.dispute.closed", "lost");
+  assert.deepEqual([lost.type, lost.paymentId, lost.disputeStatus], ["dispute_lost", "pi_1", "lost"]);
+  assert.equal(d("charge.dispute.closed", "warning_closed").type, "dispute_lost");
+  assert.equal(normalizeEvent(ev("charge.dispute.closed", { id: "dp_1", status: "lost" })).paymentId, null);
+});

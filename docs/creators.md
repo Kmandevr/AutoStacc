@@ -2,7 +2,7 @@
 title: Creators and the Studio
 summary: Creators own projects; addresses /<creator>/<project>; the Studio's free sites and profiles (the visual builder) and selling, how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
 covers: [data/creators.js, server/creators/, server/studio/, server/sites/, server/revenue/, server/files/, server/integrations/providers.js, server/lib/slugs.js, functions/[[path]].js, functions/media/sites/, functions/studio.js, studio.html, js/studio*.js, js/product-page.js, css/studio.css, css/creator-site.css, scripts/dist.js, scripts/lib/creator-page.js, db/migrations/0006_creators.sql, db/migrations/0009_creator_selling.sql, db/migrations/0011_marketplace_payouts.sql]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Creators and the Studio
@@ -45,7 +45,7 @@ Signed-in accounts with a confirmed email (the page is gated like `/dashboard`):
 
 Each product opens in its own workspace, the **Product Studio** (Overview, Pac Builder, Store Page, Pricing, Insights, Release; [studio](studio.md)); a project's Products page is a list of them with a short form for a new draft.
 
-Code: `studio.html`, `js/studio.js` (overview), the visual builder (`js/builder*.js`, `js/site-*.js`, `css/builder*.css`; [builder](builder.md)), `js/studio-products.js` (a project's product list), `js/studio-workspace.js` and `js/studio-section-*.js` (the Product Studio), `js/studio-packs.js` (the Pack Builder) with the Pac editor's `js/pac-*.js`, `js/studio-details.js` (store details), `js/studio-earnings.js` (earnings and payouts), `css/studio.css`. API: `server/studio/` (`creators.js`, `sites.js`, `site-files.js`, `products.js`, `product-files.js`, `earnings.js`, `payout-account.js`, and for the Product Studio `workspace.js`, `pricing.js`, `insights.js`, `insights-data.js`); the Pack Builder's `/api/studio/packs/…` routes are `server/packs/` (`access.js`).
+Code: `studio.html`, `js/studio.js` (overview), the visual builder (`js/builder*.js`, `js/site-*.js`, `css/builder*.css`; [builder](builder.md)), `js/studio-products.js` (a project's product list), `js/studio-workspace.js` and `js/studio-section-*.js` (the Product Studio), `js/studio-packs.js` (the Pac Builder: draft, ready-to-publish, published, failed or not-accepted versions, each with what to do next) with the Pac editor's `js/pac-*.js`, `js/studio-details.js` (store details), `js/studio-earnings.js` (earnings and payouts), `css/studio.css`. API: `server/studio/` (`creators.js`, `sites.js`, `site-files.js`, `products.js`, `product-files.js`, `earnings.js`, `payout-account.js`, and for the Product Studio `workspace.js`, `pricing.js`, `insights.js`, `insights-data.js`); the Pack Builder's `/api/studio/packs/…` routes are `server/packs/` (`access.js`).
 
 ## Teams (built 2026-10-15)
 

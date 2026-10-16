@@ -43,7 +43,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Listen player (`js/music.js`) | `[data-listen]` | `data-release` (a release page; counts a release view), else `featured` in `data/music.js` if it is the project's, else its newest; `data-project`; `data-links` (the release's streaming links under the player) |
 | Newsletter sign-up (`js/newsletter.js`) | `[data-newsletter]` holding a `<form>` and a `.form-msg` (an empty element gets the standard form) | `data-project` (the list it joins); reads `?newsletter=<result>` from the confirmation link |
 | Press contact (`js/press.js`) | `[data-press-contact]` | `data-project`; also wires `[data-copy="<id>"]` copy buttons |
-| Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link |
+| Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link; Auto-Stacc grants say "added by Auto-Stacc" |
 | Your Stacc (`js/library.js`) | `[data-stacc]` | `data-project` (starts filtered to it), `data-stacc-view="kinds"` (starts by content type); a receipt's guest key is redeemed once per page. Its inner file area is `[data-stacc-files]`. Signed in, it also shows the person's collections, tags and saved searches (`js/library-personal.js`). |
 | Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` | the page's `data-project` |
 

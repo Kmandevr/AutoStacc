@@ -11,7 +11,7 @@
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : b >= 1024 ? `${Math.round(b / 1024)} KB` : `${b} B`);
   const items = (n) => `${n} item${n === 1 ? "" : "s"}`;
   const files = (n) => `${n} file${n === 1 ? "" : "s"}`;
-  const SOURCES = { purchase: "bought", free: "free", auto: "auto-stacc'd", promo: "promo", manual: "gift", bundle: "bundle", subscription: "subscription", replacement: "replacement" };
+  const SOURCES = { purchase: "bought", free: "free", auto: "added by Auto-Stacc", promo: "promo", manual: "gift", bundle: "bundle", subscription: "subscription", replacement: "replacement" };
 
   // ctx: { catalog, selected: Set of asset ids, names: { project(id), stacclet(id), pac(id) } }, and optional hooks for a
   // person's own organization (js/library-personal.js): filters(facets), tools(count), chips(asset).
@@ -20,7 +20,7 @@
     const source = showSource ? `${e(ctx.names.project(a.projectId))} › ${e(where)} · ` : a.pacId ? `${e(a.productTitle)} · ` : "";
     return `<li class="stacc-asset">
       <label class="stacc-pick"><input type="checkbox" data-select="${e(a.id)}"${ctx.selected.has(a.id) ? " checked" : ""}>
-        <span class="stacc-name">${e(a.name)}<span class="small-print"> ${source}${e(a.format.toUpperCase() || "file")} · ${size(a.sizeBytes)}${a.sources.includes("auto") ? " · auto-stacc'd" : ""}${a.availableUntil ? ` · <strong>removed in an update; yours to download until ${e(fmtDate(a.availableUntil.slice(0, 10)))}</strong>` : ""}</span></span></label>
+        <span class="stacc-name">${e(a.name)}<span class="small-print"> ${source}${e(a.format.toUpperCase() || "file")} · ${size(a.sizeBytes)}${a.sources.includes("auto") ? " · added by Auto-Stacc (you follow this project)" : ""}${a.availableUntil ? ` · <strong>removed in an update; yours to download until ${e(fmtDate(a.availableUntil.slice(0, 10)))}</strong>` : ""}</span></span></label>
       ${ctx.chips ? ctx.chips(a) : ""}
       <button class="btn ghost" type="button" data-download="${e(a.id)}" data-product="${e(a.productId)}">Download</button>
     </li>`;

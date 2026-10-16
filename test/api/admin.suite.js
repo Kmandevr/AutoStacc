@@ -113,6 +113,26 @@ export default (ctx) => describe("admin", () => {
     assert.equal(d.data.entitlements.length, 1);
   });
 
+  test("summary alerts: a refused payment is critical, a parked refund only waits, and no customer email leaks", async () => {
+    const admin = await adminClient(ctx.mock.url);
+    const tag = unique("alert").replace(/[^a-z0-9]/gi, "");
+    const ids = [`mock:crit_${tag}`, `mock:wait_${tag}`, `mock:warn_${tag}`];
+    sql(ctx.mock.stateDir, `INSERT INTO payment_events (id, provider, type, order_id, livemode, outcome, detail, received_at) VALUES
+      ('${ids[0]}', 'mock', 'mock.paid', 'ord_${tag}', 0, 'rejected', 'amount mismatch for someone@example.com', '2099-01-01T00:00:03.000Z'),
+      ('${ids[1]}', 'mock', 'charge.refunded', NULL, 0, 'refund waiting for payment', 'pi_${tag}', '2099-01-01T00:00:02.000Z'),
+      ('${ids[2]}', 'mock', 'charge.refunded', 'ord_${tag}', 0, 'rejected', 'live/test mode mismatch', '2099-01-01T00:00:01.000Z')`);
+    try {
+      const alerts = (await admin.get("/api/admin/summary")).data.alerts.filter((a) => ids.includes(a.id));
+      assert.deepEqual(alerts.map((a) => [a.id, a.severity]), [[ids[0], "critical"], [ids[2], "warning"], [ids[1], "info"]], "most serious first");
+      assert.equal(alerts[0].orderId, `ord_${tag}`);
+      assert.equal(alerts[0].receivedAt, "2099-01-01T00:00:03.000Z", "the full time");
+      assert.ok(alerts.every((a) => a.next), "each kind says what to do next");
+      assert.doesNotMatch(JSON.stringify(alerts), /someone@example\.com/);
+    } finally {
+      sql(ctx.mock.stateDir, `DELETE FROM payment_events WHERE id IN ('${ids.join("', '")}')`);
+    }
+  });
+
   test("/admin is the site's 404 page unless you're signed in to an admin account", async () => {
     const notFound = (r, who) => {
       assert.equal(r.status, 404, who);
