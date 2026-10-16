@@ -119,6 +119,8 @@ export function cleanDocument(input) {
     if (!p || typeof p !== "object") bad(w, "must be a page");
     const slug = i === 0 ? "" : text(p.slug, `${w}.slug`, 40, { required: true }).toLowerCase();
     if (i > 0 && (!SLUG.test(slug) || slug === "home")) bad(`${w}.slug`, "use lowercase letters, numbers and hyphens (not \"home\": that's the first page)");
+    // A project's /community address belongs to its community space (docs/community.md), never to a page.
+    if (slug === "community") bad(`${w}.slug`, "\"community\" is kept for the project's community space; pick another address");
     if (seen.has(slug)) bad(`${w}.slug`, "two pages have this address");
     seen.add(slug);
     const ids = new Set();

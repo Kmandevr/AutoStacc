@@ -1,6 +1,7 @@
 ---
 title: Community
-summary: PLANNED / NOT IMPLEMENTED (owner, 2026-10-16): spaces for AutoStacc, each project and user-made communities, with channels; discussions, questions and answers, updates, polls and challenges; upvotes; AutoStacc base rules everywhere plus stricter local rules; moderation, age, notifications, build order.
+summary: PLANNED, foundations built (#135: switch off, tables, formatter, rules pages) (owner, 2026-10-16): spaces for AutoStacc, each project and user-made communities, with channels; discussions, questions and answers, updates, polls and challenges; upvotes; AutoStacc base rules everywhere plus stricter local rules; moderation, age, notifications, build order.
+covers: [server/community/, db/migrations/0031_community.sql, test/unit/community-format.test.js]
 updated: 2026-10-16
 ---
 
@@ -91,17 +92,29 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 - **Deleted accounts**: posts and answers stay, shown as "deleted user", so threads still make sense. Name, profile, points, friends and items are erased ([profiles](profiles.md)). The person can tick "delete my posts too".
 - **Email notifications**, each switchable in Settings: answers to your questions, replies to you (grouped, at most every few hours), updates from projects you follow, friend and collab requests, challenge results. All of them configurable (owner).
 
-## Design (to be reviewed by the `architect` agent before building)
+## Design (architect review 2026-10-16)
 
-**Rendering.** Threads are user content, so they can't be static pages. Pages Functions render them on the server as escaped HTML with the normal head (canonical, Open Graph, `DiscussionForumPosting` or `QAPage` JSON-LD). The browser script adds posting, voting and moderation controls. Thread URLs go into a sitemap the API generates. Hidden and removed threads are `noindex`, and user links carry `rel="ugc nofollow noopener"`.
+**Built so far (#135):** the `community.forum` switch (off), migration `0031_community.sql` (tables below), the formatter `server/community/format.js` with `test/unit/community-format.test.js`, the reserved page address `community` in project sites (`server/sites/document.js`), and the rules and copyright pages ([community safety](community-safety.md)). Nothing else exists yet; the tables stay empty while the switch is off.
 
-**Formatting.** One shared, tested renderer: paragraphs, bold, italic, links, lists, quotes and inline code. Everything else is escaped, so no HTML ever passes through ([creators](creators.md): no user code on autostacc.com).
+**Modules.** One area, `server/community/`, split by job: `spaces.js`, `access.js` (one check, scoped to a single space), `threads.js`, `posts.js`, `votes.js`, `format.js`, `render.js` and `public.js` (server-rendered pages), `sitemap.js`, `reports.js`, `moderation.js`, `erase.js` (account deletion and export), `routes.js`. It reuses `server/creators/roles.js` for project spaces (new capabilities such as `community.moderate`, `community.update`), `server/lib/ratelimit.js`, `server/email/`, `server/polls/`, and the impersonation policy (community writes never opt in, so support views stay read-only). It never imports `server/sites/` rendering, and orders, payments and entitlements never read community data. Wording: `server/library/` is the builder's "community library" of site pieces; the community is a different thing and keeps distinct names.
 
-**Data (D1, new migrations).** Spaces (kind, owner, official/unofficial, rules), channels, space roles, space bans, threads (type, tags, schedule), posts and edit history, votes (upvotes, Helpful), accepted answers, challenge settings and entries (with private R2 audio), reports (routed), blocks, suspensions, age declaration, notification preferences. Moderation goes in the existing audit log. Display names are chosen once and checked for impersonation, never the email.
+**Rendering.** Threads are user content, so they're rendered on the server by their own Pages Function for `/community` (planned, a thin entry calling the community area's public renderer), not the creators' catch-all, with the edge-cache pattern of `server/sites/public.js` (production, about a minute). The HTML is the same for everyone; votes and controls load from `/api/community/*`. Removing illegal content purges the cached page (one data centre per purge, so the cache stays short). Head: canonical, Open Graph, `DiscussionForumPosting` or `QAPage` JSON-LD. Thread URLs are listed in `/community/sitemap.xml` (a second `Sitemap:` line in `robots.txt`); hidden and removed threads are `noindex` and left out. User links carry `rel="ugc nofollow noopener"` and show their domain.
 
-**Posting limits.** A confirmed email is required. New accounts get few threads, replies, votes and links per day, and the limits loosen with age and a clean record. Authors can edit for a short window (with history) and delete their own posts.
+**Addresses.** A thread is `/community/t/<id>-<slug>`; the id is what counts, so an edited title redirects (301) to the new slug. Project spaces: in Studio projects, `community` can't be a page's address (refused since #135) and `server/sites/public.js` will hand that path to the community renderer. First-party projects' folders are excluded from Functions as a whole today (`scripts/dist.js`), so their `/community` needs per-project excludes there first (also needed when news moves to Updates).
 
-**Privacy and legal (same change).** `/privacy` (`data/legal.js`): display name, posts, votes, reports, blocks, roles, age declaration, challenge audio, notification choices. The terms: base rules, 16+ self-declaration, challenge entries (rights stay with the entrant; AutoStacc may host and stream them). Account export includes all of it.
+**Project spaces.** A project uses the community through its `"community"` feature; for first-party projects in `data/projects.js`, for creators a Studio switch that creates the space row. The team is the creator's team, read through the project, never copied.
+
+**Formatting.** `server/community/format.js`: paragraphs, line breaks, **bold**, *italic*, `code`, lists, quotes, and http(s) links (bare or `[label](url)`), each link followed by its domain. Everything else is escaped; other link schemes, credentials in links and broken addresses stay plain text. Direction-control characters are dropped and labels sit in `<bdi>`, so a label can't reverse the shown domain (security review, 2026-10-16). For the read side: style `.link-host` so the domain is clearly separate and never cut off, and escape `plain()` wherever it goes into HTML (it returns raw text by design).
+
+**Data (`0031_community.sql`).** `community_members` (display name, folded `name_key`, 16+ confirmation), `community_spaces` (kind platform / project / community, `project_id` for project spaces, state open / read_only / archived, last team activity), `community_space_roles` (founder, moderator), `community_channels` (allowed post types, who may start), `community_threads` and `community_posts` (state visible / hidden / removed and why, stored score and Helpful counters), `community_post_edits`, `community_votes`, `community_reports` (reason and route to the space or AutoStacc), `community_blocks`, `community_space_bans`, `community_suspensions`, and `community_mod_log` (append-only: what space teams did, so founders can see and undo it; AutoStacc's legal actions go to `admin_audit`). Authors become NULL ("deleted user") when an account is deleted, in code, since D1 doesn't enforce ON DELETE. Later migrations: tags, challenges, notification choices, strikes, profiles, points.
+
+**Display names** live in `community_members`, not the account name. The impersonation check will extend `server/creators/holds.js` to every creator, project, held name and reserved word, and fold look-alike characters first (today's `nameKey` drops non-Latin letters, so a Cyrillic "А" could slip past).
+
+**Polls** from the community need a `source` column so the catalog sync (which owns `data/polls.js` polls) leaves them alone, and an owner that can be a space (`polls.project_id` is required today).
+
+**Posting limits.** A confirmed email and the 16+ confirmation are required. New accounts get few threads, replies, votes and links per day (`server/lib/ratelimit.js`), and the limits loosen with age and a clean record. Authors can edit for a short window (with history) and delete their own posts.
+
+**Privacy and legal.** Published now (owner, 2026-10-16): [/community-rules](../data/legal.js) (marked "opening soon"), [/copyright](../data/legal.js) (it already applies to creators' uploads), the terms' pointer to both, and the privacy policy's legal requests. `/privacy`'s list of community data (display name, posts, votes, reports, blocks, roles, age confirmation) is added in the change that first collects it. Account export and deletion get hooks in `server/account/export.js` and `delete.js`.
 
 ## Open questions
 
@@ -112,8 +125,8 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 
 ## Build order
 
-1. Architect review. Draft base rules, privacy and terms text (16+, challenge entries) for the owner, then migrations.
-2. Read side: spaces, channels, threads rendered on the server, sitemap, SEO tests.
+1. ~~Architect review, rules and legal pages, migration, formatter~~ (done, #135).
+2. Read side: the community Function, spaces, channels, threads rendered on the server, `/community/sitemap.xml`, SEO tests, the `dist.js` change for first-party project spaces.
 3. Posting: display names, age declaration, the formatter, Discussion and Question, accepted answers, Helpful votes, upvotes and sorting, limits, edit and delete.
 4. Moderation: routed reports, urgent reports with false-report filtering, blocks, space bans, copyright notices and strikes, Control Center queue, suspensions, audit. **The whole feature stays behind a switch (`community.forum`, off) until this step and the launch gates in [community safety](community-safety.md) are done.**
 5. Project spaces and Updates (Official marks, team roles, news pages and dashboards from Updates; then move `data/news.js` with addresses kept).

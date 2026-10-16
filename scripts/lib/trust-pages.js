@@ -49,7 +49,7 @@ ${doc.sections.map((s) => `          <section id="${esc(s.id)}" aria-labelledby=
 }
 
 // Every trust page links to the others, so none is an orphan.
-const RELATED = [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/security", "Security"]];
+const RELATED = [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/security", "Security"], ["/copyright", "Copyright"], ["/community-rules", "Community rules"]];
 const related = (id) => `<nav class="prose-related" aria-label="Help and policies"><p>See also</p><ul>${RELATED.filter(([p]) => p !== "/" + id)
   .map(([p, l]) => `<li><a href="${p}">${l}</a></li>`).join("")}</ul></nav>`;
 

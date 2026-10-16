@@ -35,7 +35,11 @@ export const FEATURES = {
   // Two-step sign-in for admin accounts: authenticator-app codes (TOTP) and one-time backup codes, through Better
   // Auth's twoFactor plugin (server/auth/two-factor.js). Built but off by default (owner, 2026-10-15); off, the plugin
   // isn't loaded, so /api/auth/two-factor/* doesn't exist and sign-in is password only, exactly as before.
-  "auth.adminTwoFactor": { on: false, label: "Two-step sign-in for admins" }
+  "auth.adminTwoFactor": { on: false, label: "Two-step sign-in for admins" },
+  // The community (docs/community.md): spaces, threads, posting and moderation under /community and /api/community/*.
+  // Off until moderation and the launch gates are done (docs/community-safety.md); off, those addresses are 404 and
+  // nothing community-related shows. Its tables (migration 0031) exist either way and stay empty.
+  "community.forum": { on: false, label: "Community" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

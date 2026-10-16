@@ -1,6 +1,6 @@
 ---
 title: Community safety, legal and security
-summary: PLANNED / NOT IMPLEMENTED (owner, 2026-10-16): what the community and profiles must have before and after launch: the operator's legal setup and a DMCA agent, tiered copyright strikes, CSAM scanning, contest rules, UK/EU duties, urgent reports with false-report filtering, retention, legal requests, bot checks, and the security design rules.
+summary: PLANNED, rules and copyright pages published (owner, 2026-10-16): what the community and profiles must have before and after launch: the operator's legal setup and a DMCA agent, tiered copyright strikes, CSAM scanning, contest rules, UK/EU duties, urgent reports with false-report filtering, retention, legal requests, bot checks, and the security design rules.
 updated: 2026-10-16
 ---
 
@@ -15,7 +15,8 @@ updated: 2026-10-16
 - [ ] **The operator's legal setup** (owner, tracked privately): done before the community goes live; terms, privacy and the footer (`data/legal.js`) updated to match.
 - [ ] **DMCA designated agent** registered with the US Copyright Office ($6, renewed every 3 years), using a registered-agent or mail-service address (not the owner's home), and a dedicated copyright contact address. Without it, US protection for hosting uploads doesn't apply.
 - [ ] **Cloudflare CSAM Scanning Tool** on for the zone that serves uploads, with the owner's notification email set; the NCMEC reporting steps written for the owner.
-- [ ] Drafts published: base rules (`/community/rules`), community terms, copyright policy with notice and counter-notice, contest rules, law-enforcement policy, `/privacy` updates.
+- [x] Published (owner chose now, 2026-10-16): `/community-rules` (base rules, spaces, moderation, reports, 16+; marked "opening soon"), `/copyright` (notices, counter-notices, tiered strikes; it already covers creators' uploads; notices to the support address until the DMCA agent is registered), the terms' pointer to both, and the privacy policy's legal requests (`data/legal.js`).
+- [ ] Still to publish: contest rules (with challenges), and `/privacy`'s community data (with the change that first collects it).
 - [ ] Written risk assessments for UK and EU duties (below).
 - Lawyer review: later, by the owner's choice. Until then the terms keep saying they weren't drafted by a lawyer.
 
@@ -56,12 +57,12 @@ Content named in a valid notice is removed promptly; the uploader can counter-no
 - **Who gets which report** (owner: legal minimum for AutoStacc): rule-breaking, harassment and danger reports go to the **space team**; illegal-content notices, copyright, CSAM and impersonation go to **AutoStacc**.
 - **Danger reports** ("someone is in danger"): top of the space team's queue. People posting self-harm wording are shown crisis resources automatically (988 in the US, local lines elsewhere). No email to the owner (changed from the first plan).
 - **False reports filtered** (owner: "people will report for dumb things"): reporter trust (accounts older than 7 days; dismissed reports lower trust; abusers lose the danger option), a short written reason required, and keyword triage on our own server (nothing sent outside) to rank the queue.
-- **Automatic hiding**: a post reported by several trusted accounts is hidden until the space team decides.
+- **Automatic hiding**: a post reported by **3** different trusted reporters is hidden until the space team decides. A **trusted reporter** is an account 7+ days old with fewer than 3 dismissed reports in the last 90 days (owner, 2026-10-16; settings, adjustable).
 - **Inactive teams**: the space turns read-only by itself after 40 days ([community](community.md)), so reports never sit with nobody responsible.
 
 ## Records and requests
 
-- **Retention:** removed content and reports kept privately for **12 months**, then deleted; moderation log entries stay with the audit log; anything reported to NCMEC is preserved as US law requires.
+- **Retention:** removed content and reports kept privately for **12 months**, then deleted. **Account deletion wins** except for content removed for a legal reason (illegal-content notice, copyright, CSAM), which is kept privately for its 12 months or what US law requires; posts removed only for a space's rules go with the account (owner, 2026-10-16); moderation log entries stay with the audit log; anything reported to NCMEC is preserved as US law requires.
 - **Legal requests:** user data only for valid legal process (subpoena, court order); the user is told unless the law forbids it or someone is in danger; emergencies involving a threat to life can be answered faster. A yearly transparency note counts requests, removals and strikes.
 
 ## Security design rules

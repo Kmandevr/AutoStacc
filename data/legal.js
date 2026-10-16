@@ -1,4 +1,4 @@
-// Trust pages: /privacy, /terms, /refunds, /security and /contact. scripts/build.js turns each document into its page
+// Trust pages: /privacy, /terms, /refunds, /security, /contact, /copyright and /community-rules. scripts/build.js turns each document into its page
 // (scripts/lib/trust-pages.js); change the words here, rebuild, commit. Plain language, and only what the site really
 // does today (docs/production.md): when the code changes what's collected or kept, change the privacy policy with it.
 // Fields: id (the page address, permanent), title (heading), description (search), summary (the lede), updated
@@ -105,6 +105,9 @@ window.LEGAL = [
           "Abuse counters: only the latest count for each IP address and kind of request, deleted within a day of it."
         ] }
       ] },
+      { id: "legal-requests", heading: "Requests from police and courts", body: [
+        "AutoStacc gives information about an account only in answer to valid legal process, such as a subpoena or court order, and only what it asks for. You're told about the request unless the law forbids it or someone is in danger. Where someone's life is at risk, AutoStacc may answer an emergency request sooner. Material that exploits children is reported to the authorities as US law requires."
+      ] },
       { id: "rights", heading: "Your choices", body: [
         { list: [
           "See and download your data: [Settings › Privacy and data](/settings/privacy).",
@@ -156,6 +159,9 @@ window.LEGAL = [
           "write a review that isn't your own honest view of the product, or that is hateful, abusive or advertising. AutoStacc may hide reviews that break these rules."
         ] }
       ] },
+      { id: "community", heading: "Community and copyright", body: [
+        "The [community rules](/community-rules) apply to the community when it opens. The [copyright policy](/copyright) explains how to report infringement, how to answer a report, and what repeat infringement costs an account."
+      ] },
       { id: "creators", heading: "Artists and creators", body: [
         "Products and pages are made by the projects and creators named on them, who keep the rights in their work. AutoStacc sells and delivers it for them.",
         "If you make a creator space in the Studio, you're responsible for what you publish there and confirm you have the rights to it.",
@@ -183,6 +189,103 @@ window.LEGAL = [
         "These terms are governed by the laws of the State of Utah and the United States. This doesn't take away consumer protections you have where you live."
       ] },
       { id: "contact", heading: "Contact", body: ["{contact}"] }
+    ]
+  },
+  {
+    id: "copyright",
+    title: "Copyright policy",
+    description: "How to report something on AutoStacc that infringes your copyright, how to answer a report about your own upload, and what happens to accounts that infringe repeatedly.",
+    summary: "Found your work on AutoStacc without your permission? Here's how to report it, how creators can answer a report, and what repeat infringement costs an account.",
+    updated: "2026-10-16",
+    review: "",
+    sections: [
+      { id: "scope", heading: "What this covers", body: [
+        "Anything people upload or publish on AutoStacc: creators' products and packs, preview clips, creator pages and their images and fonts, shared site templates and reviews. AutoStacc respects copyright and expects everyone who uploads to have the rights to what they share ([terms](/terms#use))."
+      ] },
+      { id: "report", heading: "Reporting infringement", body: [
+        "If you own the copyright in something on AutoStacc (or act for the owner), write to {contact} with:",
+        { list: [
+          "your name, postal address, phone number and email;",
+          "the work you own, and the AutoStacc address (link) of each thing you say infringes it;",
+          "a statement that you believe in good faith the use isn't authorised by the owner, its agent or the law;",
+          "a statement that the information in your notice is accurate and, under penalty of perjury, that you are the owner or authorised to act for them;",
+          "your physical or electronic signature (typing your full name is enough)."
+        ] },
+        "AutoStacc removes or disables what a complete notice points to promptly and tells the person who uploaded it, with a copy of the notice. Sending a notice you know is false can make you liable for damages."
+      ] },
+      { id: "counter", heading: "If your upload was removed", body: [
+        "If you believe it was removed by mistake or you have the rights to it, you can send a counter-notice to {contact} with:",
+        { list: [
+          "your name, address, phone number and email;",
+          "what was removed and where it was;",
+          "a statement, under penalty of perjury, that you believe in good faith it was removed by mistake or misidentification;",
+          "your consent to the jurisdiction of the federal court for your address (or, outside the United States, any court where AutoStacc may be found), and that you'll accept service from the person who sent the notice;",
+          "your signature."
+        ] },
+        "AutoStacc passes the counter-notice to the person who sent the notice. Unless they tell AutoStacc within 10 to 14 business days that they've gone to court, the content is put back."
+      ] },
+      { id: "strikes", heading: "Repeat infringement", body: [
+        "A notice that leads to a removal and isn't successfully answered by a counter-notice is a strike against the account that uploaded it. Each strike expires 12 months after it was given.",
+        { list: [
+          "**1 strike:** a warning.",
+          "**2 strikes:** selling is paused. You can answer a strike, or fix or remove the content and ask for selling back.",
+          "**3 strikes:** the account can no longer sell, upload files or use the Studio. In serious cases AutoStacc may keep this in place after strikes expire."
+        ] },
+        "Strikes never take away what you bought: you can always buy, download and use your purchases."
+      ] },
+      { id: "buyers", heading: "If you bought something that was removed", body: [
+        "If a product you paid for is removed for infringement, see the [refund policy](/refunds)."
+      ] },
+      { id: "contact", heading: "Contact", body: ["Copyright notices and counter-notices: {contact}"] }
+    ]
+  },
+  {
+    id: "community-rules",
+    title: "Community rules",
+    description: "The rules for AutoStacc's community: what it's for, the base rules that apply everywhere, how each space can add its own, who moderates, and how reports work.",
+    summary: "AutoStacc's community is opening soon. These are the rules it will open with: a place for music and sound, run by the people in each space, inside a few rules that apply everywhere.",
+    updated: "2026-10-16",
+    review: "",
+    sections: [
+      { id: "status", heading: "Opening soon", body: [
+        "The community isn't open yet. These rules apply from the day it opens, and this page will say so."
+      ] },
+      { id: "about", heading: "What it's for", body: [
+        "Making, sharing and talking about music and sound: production, sound design, gear and software, the creators and projects on AutoStacc, challenges, and ideas about AutoStacc and its products. It isn't a general social site; chat that has nothing to do with that belongs in a space's off-topic channel, and off-topic spaces and threads can be removed.",
+        "Be welcoming. Everyone started somewhere, and basic questions are welcome."
+      ] },
+      { id: "spaces", heading: "Spaces", body: [
+        "The community is made of spaces: AutoStacc's own, an **official** space for each project that turns one on, and communities anyone can start. A community about a creator it doesn't belong to is marked **unofficial** and can't use the creator's name on its own, logo or artwork."
+      ] },
+      { id: "base", heading: "Rules for everyone", body: [
+        "These apply in every space, and no space can loosen them:",
+        { list: [
+          "Nothing illegal.",
+          "No threats, harassment or hate aimed at anyone.",
+          "No doxxing: never share someone's private information.",
+          "No sexual content involving anyone under 18, ever.",
+          "No spam, scams or misleading links.",
+          "No piracy: don't share paid packs or anyone's files without the right to.",
+          "Don't pretend to be someone else, including AutoStacc or a creator."
+        ] }
+      ] },
+      { id: "space-rules", heading: "Each space's own rules", body: [
+        "A space can add its own rules, for example about its topic, self-promotion or spoilers. They're shown beside its threads. They can only add limits, never allow what the rules above forbid."
+      ] },
+      { id: "moderation", heading: "Who moderates", body: [
+        "Each space is run by its team: the founder and the moderators they choose, or for a project's official space, the creator's team. They can pin, lock, hide or remove posts, move threads and ban people from their space, and they handle appeals of their own decisions. When a post of yours is hidden or removed, you're told why.",
+        "AutoStacc steps in where the law requires it: illegal content, copyright ([copyright policy](/copyright)), material that exploits children, and impersonation of creators. It can suspend accounts from the whole community for those, and remove a space or moderator that leaves illegal content up after being told.",
+        "Some help is automatic everywhere: spam filters and limits for new accounts, and a post reported by several trusted members is hidden until the space's team looks at it. A space whose team hasn't been active for 40 days, or has left reports unhandled that long, becomes read-only until its team comes back."
+      ] },
+      { id: "reports", heading: "Reporting", body: [
+        "Anyone signed in can report a post. Rule-breaking, harassment and posts where someone may be in danger go to the space's team, danger reports first. Illegal content, copyright and impersonation go to AutoStacc. You can also block a person so you don't see their posts.",
+        "Reports need a reason. Reports made in bad faith lower your standing, and repeat false reports lose you the danger option.",
+        "If someone's life is at risk, contact your local emergency services first. In the United States you can call or text 988 for crisis support."
+      ] },
+      { id: "age", heading: "Age", body: [
+        "You must be 16 or older to post, vote, start a space or connect with people in the community. You confirm this yourself, and you're responsible for confirming truthfully. Anyone can read. If AutoStacc learns an account belongs to someone under 16, it removes that account's community activity."
+      ] },
+      { id: "contact", heading: "Contact", body: ["Questions about these rules: {contact}"] }
     ]
   },
   {
