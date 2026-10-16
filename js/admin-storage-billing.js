@@ -27,12 +27,12 @@
       <h3>Statements</h3>
       <div class="admin-table"><table><thead><tr><th>Creator</th><th>Month</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>${x.statements.map((s) => `<tr>
         <td><button class="btn ghost small" type="button" data-creator="${e(s.creatorId)}" data-period="${e(s.period)}">${e(s.name)}</button></td><td>${e(s.period)}</td>
-        <td>${cents(s.amountCents, s.currency)}</td><td>${e(s.status)}${s.overdue ? " · overdue" : s.status === "open" ? ` · due ${e(day(s.dueAt))}` : ""}</td>
-        <td>${["open", "carried"].includes(s.status) ? `<button class="btn ghost small" type="button" data-act="waive" data-id="${e(s.id)}">Waive</button>` : ""}
-          ${s.status === "paid" ? `<button class="btn ghost small danger" type="button" data-act="refund" data-id="${e(s.id)}">Refund</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="5">None yet.</td></tr>'}</tbody></table></div>
+        <td>${cents(s.amountCents, s.currency)}${s.earningsCents ? ` <span class="small-print">+ ${cents(s.earningsCents)} from earnings</span>` : ""}</td><td>${e(s.status)}${s.overdue ? " · overdue" : s.status === "open" ? ` · due ${e(day(s.dueAt))}` : ""}</td>
+        <td>${["open", "carried", "disputed"].includes(s.status) ? `<button class="btn ghost small" type="button" data-act="waive" data-id="${e(s.id)}">Waive</button>` : ""}
+          ${s.status === "paid" && (s.amountCents || s.earningsCents) ? `<button class="btn ghost small danger" type="button" data-act="refund" data-id="${e(s.id)}">Refund</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="5">None yet.</td></tr>'}</tbody></table></div>
       <h3>Plans</h3>
-      <div class="admin-table"><table><thead><tr><th>Creator</th><th>Status</th><th>Limit</th><th>Last measured</th></tr></thead><tbody>${x.plans.map((p) => `<tr>
-        <td>${e(p.name)} <span class="small-print">/${e(p.slug)}</span></td><td>${e(p.status)}</td><td>${e(size(p.capBytes))}</td><td>${e(size(p.lastUsedBytes))} ${e(p.lastDay || "")}</td></tr>`).join("") || '<tr><td colspan="4">None yet.</td></tr>'}</tbody></table></div>
+      <div class="admin-table"><table><thead><tr><th>Creator</th><th>Status</th><th>Monthly cap</th><th>Limit</th><th>Last measured</th></tr></thead><tbody>${x.plans.map((p) => `<tr>
+        <td>${e(p.name)} <span class="small-print">/${e(p.slug)}</span></td><td>${e(p.status)}</td><td>${cents(p.capCents)}</td><td>${e(size(p.capBytes))}</td><td>${e(size(p.lastUsedBytes))} ${e(p.lastDay || "")}</td></tr>`).join("") || '<tr><td colspan="5">None yet.</td></tr>'}</tbody></table></div>
       <div data-detail></div>
       <details><summary>Billing log</summary><ul>${x.log.map((l) => `<li>${e(day(l.at))} ${e(l.name)}: ${e(l.action)} (${e(l.actor === "system" ? "system" : "account")})</li>`).join("")}</ul></details>`;
   }

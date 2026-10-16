@@ -2,15 +2,18 @@
 // creator pays is measured, never estimated: once a day the sweep records what they store (server/creators/storage.js,
 // each stored original once), and a month's charge is the sum of that month's days of storage above the free allowance,
 // each day a 1/(days in the month) share of a GB-month at that day's rate. A day without a measurement is never charged.
-// The rate is the owner's (store setting storage_rate, hundredths of a cent per GB-month); nothing here holds a price.
+// The rate is the owner's (store setting storage_rate, hundredths of a cent per GB-month: $0.05, owner 2026-10-16).
+// A creator caps what they spend a month in dollars; the cap buys an upload limit at the rate, so in the usual case a
+// month can't cost more than the cap (storage above a lowered cap is still charged until it's back under: owner).
 // docs/creators.md, "Paid storage".
 
 export const GB = 1024 ** 3;
 
 export const BILLING = {
   currency: "USD",
-  // The largest storage limit a creator can choose, in whole GB (keeps a typo from becoming a large bill).
-  maxCapGb: 200,
+  // The spending caps a creator can choose a month, in cents: $1 to $100 (keeps a typo from becoming a large bill).
+  minCapCents: 100,
+  maxCapCents: 10000,
   // Days after a statement is issued before an unpaid one withdraws the paid limit (the grace period).
   graceDays: 14,
   // The smallest amount charged: Stripe's card minimum in USD. Less is added to the next month's statement.
@@ -45,13 +48,18 @@ export function usageCents(days, period) {
   return Number((hundredths * 2n + denom) / (denom * 2n));
 }
 
-/** What a statement says: its charge plus anything carried in, and whether it's charged, carried or nothing. */
-export function statementOf({ usage, carriedIn }) {
-  const amount = usage + carriedIn;
-  const status = amount === 0 ? "nothing_due" : amount < BILLING.minChargeCents ? "carried" : "open";
-  return { amount, status };
+/**
+ * What a statement says: its charge plus anything carried in, settled first from the creator's earnings ready to pay
+ * out (owner, 2026-10-16), the rest left for the card: paid (earnings covered it), carried (too small to charge), open
+ * or nothing due.
+ */
+export function statementOf({ usage, carriedIn, availableEarnings = 0 }) {
+  const total = usage + carriedIn;
+  const earnings = Math.min(total, Math.max(0, availableEarnings));
+  const amount = total - earnings;
+  const status = total === 0 ? "nothing_due" : amount === 0 ? "paid" : amount < BILLING.minChargeCents ? "carried" : "open";
+  return { total, earnings, amount, status };
 }
 
-/** The most a month can cost at a limit and rate: what the Studio shows next to the limit a creator picks. */
-export const maxMonthlyCents = (capBytes, includedBytes, rate) =>
-  rate ? Math.ceil((Math.max(0, capBytes - includedBytes) * rate) / GB / 100) : 0;
+/** The upload limit a monthly spending cap buys at a rate: the free storage plus what the cap pays for all month. */
+export const capBytesFor = (capCents, includedBytes, rate) => includedBytes + Math.floor((capCents * 100 * GB) / rate);

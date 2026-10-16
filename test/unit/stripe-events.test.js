@@ -33,8 +33,8 @@ test("disputes: opened, won, and lost or closed are each recognized and tied to 
 });
 
 test("refunds are recorded before tax and never above the order total (#129)", async () => {
-  const { preTaxRefund } = await import("../../server/payments/events.js");
-  const order = { total_cents: 1000 };
+  const { preTaxRefund } = await import("../../server/payments/refund-amount.js");
+  const order = 1000;
   assert.equal(preTaxRefund(order, { amount: 1070, chargedAmount: 1070 }), 1000, "full refund of a taxed charge");
   assert.equal(preTaxRefund(order, { amount: 535, chargedAmount: 1070 }), 500, "half of it");
   assert.equal(preTaxRefund(order, { amount: 300, chargedAmount: 1000 }), 300, "untaxed: as given");

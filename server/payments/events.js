@@ -10,6 +10,7 @@ import { fulfil, unfulfil, restore, sendRefundNotice } from "../orders/fulfilmen
 import { sendEmail } from "../email/index.js";
 import { checkDoublePurchase } from "../orders/double-purchase.js";
 import { applyStatementEvent, statementByPayment } from "../billing/payments.js";
+import { preTaxRefund } from "./refund-amount.js";
 
 export async function processPaymentEvent(app, ev) {
   const { db } = app;
@@ -53,14 +54,6 @@ async function alertAdmins(app, ev, outcome) {
 
 const reject = (detail, orderId = null) => ({ outcome: "rejected", detail, orderId });
 
-// How much of the order a refund gave back, in the order's own (pre-tax) money. Managed Payments adds tax on top of
-// the order total and Stripe's refund amounts include it, so a refund is scaled by total / charged; never more than
-// the order total (#129). Without the charged amount (mock events, older events) the refund is taken as given.
-export const preTaxRefund = (order, ev) => {
-  const given = ev.amount ?? order.total_cents;
-  const scaled = ev.chargedAmount > order.total_cents ? Math.round((given * order.total_cents) / ev.chargedAmount) : given;
-  return Math.min(order.total_cents, Math.max(0, scaled));
-};
 
 async function apply(app, ev) {
   const { db } = app;
@@ -119,9 +112,9 @@ async function apply(app, ev) {
       return { outcome: (await transition(db, order.id, "cancelled")) ? "cancelled" : `no change (${order.status})`, orderId: order.id };
     case "refunded": {
       const moved = await transition(db, order.id, "refunded");
-      if (moved || order.status === "refunded") await recordRefund(db, order.id, preTaxRefund(order, ev), true);
+      if (moved || order.status === "refunded") await recordRefund(db, order.id, preTaxRefund(order.total_cents, ev), true);
       if (moved || order.status === "refunded") await unfulfil(app, order.id, "refunded");
-      if (moved) await sendRefundNotice(app, order.id, preTaxRefund(order, ev));
+      if (moved) await sendRefundNotice(app, order.id, preTaxRefund(order.total_cents, ev));
       return { outcome: moved ? "refunded" : `no change (${order.status})`, orderId: order.id };
     }
     // Chargeback opened: access goes until it's resolved. Won: access comes back. Lost: stays revoked (see dispute_lost).
@@ -137,7 +130,7 @@ async function apply(app, ev) {
       return { outcome: "dispute closed, nothing changed", detail: `dispute ${ev.disputeStatus || "lost"}`, orderId: order.id };
     case "partial_refund":
       // Access stays: a partial refund is a goodwill gesture. Revoke by hand in the admin if needed.
-      await recordRefund(db, order.id, preTaxRefund(order, ev), false);
+      await recordRefund(db, order.id, preTaxRefund(order.total_cents, ev), false);
       return { outcome: "partial refund noted", orderId: order.id };
     default:
       return { outcome: "ignored", detail: ev.type };

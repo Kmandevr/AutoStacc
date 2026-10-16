@@ -11,10 +11,10 @@ export const SETTINGS = {
   usage_override: { valid: (v) => v === "none" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v), default: "none" },
   storage_cap_gb: { valid: (v) => /^[1-9]\d{0,3}$/.test(v), default: "9" },
   // Paid creator storage (server/billing/): whether creators can take it and are charged ("off" until the owner turns
-  // it on), and the price in hundredths of a cent per GB-month ("500" = $0.05), "unset" until the owner sets one.
-  // Nothing in code holds a price: billing can't be turned on while the rate is unset.
+  // it on), and the price in hundredths of a cent per GB-month: "500" = $0.05 (owner, 2026-10-16), "unset" to take it
+  // away. Billing can't be turned on while the rate is unset.
   storage_billing: { values: ["off", "on"], default: "off" },
-  storage_rate: { valid: (v) => v === "unset" || /^[1-9]\d{0,5}$/.test(v), default: "unset" }
+  storage_rate: { valid: (v) => v === "unset" || /^[1-9]\d{0,5}$/.test(v), default: "500" }
 };
 
 const ok = (key, value) => typeof value === "string" && (SETTINGS[key].values ? SETTINGS[key].values.includes(value) : SETTINGS[key].valid(value));

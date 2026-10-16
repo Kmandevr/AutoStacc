@@ -492,11 +492,13 @@ The owner decided not to create the private repository `Kmandevr/AutoStacc-priva
 
 ## 2026-10-16: Paid creator storage is built and off; a refund is recorded before tax (Claude)
 
-The task asked for creator storage billing on top of the existing quotas, without enabling a price that isn't approved. Built ([creators](creators.md#paid-storage-built-2026-10-16-off)), off, no rate in code. Choices made by Claude, open to the owner (#142):
-- **Usage, not the limit, is charged.** The limit only stops uploads, so upgrades and downgrades need no proration and can't cost more than what is stored.
+The task asked for creator storage billing on top of the existing quotas, without enabling a price that isn't approved. Built ([creators](creators.md#paid-storage-built-2026-10-16-off)), off. Choices made by Claude first, then the owner's answers (below):
+- **Usage, not the limit, is charged.** The limit only stops uploads, so changing it needs no proration and can't cost more than what is stored.
 - **Measured once a day; monthly statements paid on a Stripe page**, on the main account (AutoStacc's own service), instead of Stripe Billing subscriptions: the server stays the only source of the figures, and the existing webhook, event-once and compare-and-set code covers it. Automatic card charges can come later.
 - **Overdue pauses the paid limit and nothing else.** Files are never deleted or hidden for billing.
 - **Cancelling keeps charging above the allowance until it's back under**, so storage can't be filled under a plan and kept free.
 - **Each stored original counts once.** This fixed a double count of files two products share (or re-added with the same bytes), and rejected Pac files' originals now count (they were stored but counted nowhere).
+
+Owner's answers the same day: the rate is **$0.05 per GB a month**; the owner switches billing on in the Control Center; a creator sets **a monthly cap in dollars**, which buys the upload limit at the rate; storage above a lowered cap (or after cancelling) **keeps being charged until it's back under**, with a Studio notice linking to support; statements are settled **from earnings ready to pay out first, then by card** for the rest; long-unpaid statements **only pause uploads**; the Stripe account was left to Claude (the main one: AutoStacc's own service, existing webhook and tax setup). After a security review: a payment on an earlier page is matched by the statement id it carries (it was refused, so a creator could pay twice), a chargeback makes the statement unpaid and pauses the limit until won, two clicks can't close each other's page, and the overdue step can't override a payment that lands at the same moment.
 
 Also fixed (#129, taxed orders): Stripe's refund amounts include the tax Managed Payments adds on top of the order, so `refunded_cents` could exceed the order total and a partial refund cut the creator's share too far. Refunds are now scaled back to the order's own (pre-tax) money and never exceed its total (`preTaxRefund`, `server/payments/events.js`). The refund email names the same amount.

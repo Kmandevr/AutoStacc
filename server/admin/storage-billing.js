@@ -8,7 +8,7 @@ import { audit } from "../audit/log.js";
 import { all, first } from "../lib/db.js";
 import { setSetting } from "../settings/settings.js";
 import { capBytes } from "../usage/usage.js";
-import { billingSettings, planOf, logOf } from "../billing/plans.js";
+import { billingSettings, planOf, logOf, rescalePlans } from "../billing/plans.js";
 import { statementsOf, daysOf, publicStatement } from "../billing/statements.js";
 import { waive, refund } from "../billing/payments.js";
 
@@ -16,12 +16,12 @@ async function state(app) {
   const { db } = app;
   const [settings, plans, statements, log, cap] = await Promise.all([
     billingSettings(db),
-    all(db, `SELECT p.creator_id, p.status, p.cap_bytes, p.started_at, c.name, c.slug,
+    all(db, `SELECT p.creator_id, p.status, p.cap_cents, p.cap_bytes, p.started_at, c.name, c.slug,
         (SELECT used_bytes FROM storage_usage_days d WHERE d.creator_id = p.creator_id ORDER BY day DESC LIMIT 1) AS last_used_bytes,
         (SELECT day FROM storage_usage_days d WHERE d.creator_id = p.creator_id ORDER BY day DESC LIMIT 1) AS last_day
       FROM storage_plans p JOIN creators c ON c.id = p.creator_id ORDER BY p.updated_at DESC LIMIT 500`),
     all(db, `SELECT s.*, c.name FROM storage_statements s JOIN creators c ON c.id = s.creator_id
-      WHERE s.status IN ('open', 'carried') OR s.issued_at > ? ORDER BY s.issued_at DESC LIMIT 200`, new Date(Date.now() - 90 * 86400000).toISOString()),
+      WHERE s.status IN ('open', 'carried', 'disputed') OR s.issued_at > ? ORDER BY s.issued_at DESC LIMIT 200`, new Date(Date.now() - 90 * 86400000).toISOString()),
     all(db, "SELECT l.*, c.name FROM storage_billing_log l JOIN creators c ON c.id = l.creator_id ORDER BY l.at DESC LIMIT 100"),
     capBytes(db)
   ]);
@@ -31,8 +31,8 @@ async function state(app) {
     settings,
     // Paid limits only help while AutoStacc's own storage cap (Usage and storage) leaves room for them.
     platform: { capBytes: cap, activePaidLimitBytes: activeCaps },
-    plans: plans.map((p) => ({ creatorId: p.creator_id, name: p.name, slug: p.slug, status: p.status, capBytes: p.cap_bytes, startedAt: p.started_at, lastUsedBytes: p.last_used_bytes, lastDay: p.last_day })),
-    statements: statements.map((s) => ({ ...publicStatement(s), creatorId: s.creator_id, name: s.name, overdue: s.status === "open" && s.due_at < now })),
+    plans: plans.map((p) => ({ creatorId: p.creator_id, name: p.name, slug: p.slug, status: p.status, capCents: p.cap_cents, capBytes: p.cap_bytes, startedAt: p.started_at, lastUsedBytes: p.last_used_bytes, lastDay: p.last_day })),
+    statements: statements.map((s) => ({ ...publicStatement(s), creatorId: s.creator_id, name: s.name, overdue: s.status === "disputed" || (s.status === "open" && s.due_at < now) })),
     log: log.map((l) => ({ at: l.at, creatorId: l.creator_id, name: l.name, actor: l.actor, action: l.action, statementId: l.statement_id, detail: JSON.parse(l.detail || "{}") }))
   };
 }
@@ -55,7 +55,9 @@ async function change(app) {
   if ((body.state ?? current.state) === "on" && !rate) fail(409, "rate_unset", "Set a rate before turning paid storage on.");
   if (body.rate !== undefined) {
     await setSetting(app.db, "storage_rate", rate === null ? "unset" : String(rate), user.id);
-    await audit(app, "storage_billing.rate_set", { targetType: "setting", targetId: "storage_rate", detail: { rate, was: current.rate } });
+    // Every plan's monthly cap buys a different limit at the new rate (logged for each creator).
+    const plans = rate === current.rate ? 0 : await rescalePlans(app.db, rate, user.id);
+    await audit(app, "storage_billing.rate_set", { targetType: "setting", targetId: "storage_rate", detail: { rate, was: current.rate, plans } });
   }
   if (body.state !== undefined) {
     await setSetting(app.db, "storage_billing", body.state, user.id);

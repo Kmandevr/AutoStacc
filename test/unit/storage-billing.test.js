@@ -2,7 +2,7 @@
 // partial months, rate changes mid-month, rounding, the card minimum and carrying, and the most a limit can cost.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GB, BILLING, billableBytes, usageCents, statementOf, periodOf, previousPeriod, daysInPeriod, dayOf, maxMonthlyCents } from "../../server/billing/policy.js";
+import { GB, BILLING, billableBytes, usageCents, statementOf, periodOf, previousPeriod, daysInPeriod, dayOf, capBytesFor } from "../../server/billing/policy.js";
 
 const MB = 1024 ** 2;
 const FREE = 550 * MB;
@@ -49,10 +49,19 @@ test("huge stores stay exact (no floating point)", () => {
 });
 
 test("under the card minimum is carried; with the carry it's charged", () => {
-  assert.deepEqual(statementOf({ usage: 0, carriedIn: 0 }), { amount: 0, status: "nothing_due" });
-  assert.deepEqual(statementOf({ usage: 30, carriedIn: 0 }), { amount: 30, status: "carried" });
-  assert.deepEqual(statementOf({ usage: 30, carriedIn: 30 }), { amount: 60, status: "open" });
-  assert.deepEqual(statementOf({ usage: BILLING.minChargeCents, carriedIn: 0 }), { amount: 50, status: "open" });
+  const of = (x) => { const r = statementOf(x); return [r.amount, r.status]; };
+  assert.deepEqual(of({ usage: 0, carriedIn: 0 }), [0, "nothing_due"]);
+  assert.deepEqual(of({ usage: 30, carriedIn: 0 }), [30, "carried"]);
+  assert.deepEqual(of({ usage: 30, carriedIn: 30 }), [60, "open"]);
+  assert.deepEqual(of({ usage: BILLING.minChargeCents, carriedIn: 0 }), [50, "open"]);
+});
+
+test("earnings ready to pay out settle a statement first; the card pays the rest", () => {
+  assert.deepEqual(statementOf({ usage: 150, carriedIn: 0, availableEarnings: 1000 }), { total: 150, earnings: 150, amount: 0, status: "paid" });
+  assert.deepEqual(statementOf({ usage: 150, carriedIn: 0, availableEarnings: 60 }), { total: 150, earnings: 60, amount: 90, status: "open" });
+  assert.deepEqual(statementOf({ usage: 150, carriedIn: 0, availableEarnings: 120 }), { total: 150, earnings: 120, amount: 30, status: "carried" }, "a remainder under the minimum carries");
+  assert.deepEqual(statementOf({ usage: 0, carriedIn: 0, availableEarnings: 500 }), { total: 0, earnings: 0, amount: 0, status: "nothing_due" });
+  assert.equal(statementOf({ usage: 150, carriedIn: 0, availableEarnings: -5 }).earnings, 0, "a negative balance takes nothing");
 });
 
 test("periods: month boundaries in UTC, the month before January, days in a month", () => {
@@ -65,7 +74,9 @@ test("periods: month boundaries in UTC, the month before January, days in a mont
   assert.equal(daysInPeriod("2026-12"), 31);
 });
 
-test("the most a month can cost at a limit", () => {
-  assert.equal(maxMonthlyCents(10 * GB, FREE, RATE), Math.ceil(((10 * GB - FREE) * RATE) / GB / 100));
-  assert.equal(maxMonthlyCents(10 * GB, FREE, null), 0);
+test("a monthly spending cap buys an upload limit at the rate, so a full month at the limit costs the cap", () => {
+  const limit = capBytesFor(200, FREE, RATE); // $2 at $0.05 = 40 GB above the free storage
+  assert.equal(limit, FREE + 40 * GB);
+  const days = Array.from({ length: 30 }, () => ({ billable_bytes: billableBytes({ usedBytes: limit, includedBytes: FREE, charged: true }), rate: RATE }));
+  assert.equal(usageCents(days, "2026-11"), 200);
 });

@@ -69,9 +69,9 @@ const makeProvider = (account) => ({
     return { sessionId: session.id, url: session.url };
   },
 
-  // A creator's storage statement (server/billing/payments.js): one line at the statement's amount. A new attempt gets a
-  // new key, since the last page may have expired.
-  async createStorageCheckout(app, { statement, attempt, email, creatorName, successUrl, cancelUrl }) {
+  // A creator's storage statement (server/billing/payments.js): one line at what's left to pay. The caller's key is new
+  // for every request (the SDK's own retries reuse it).
+  async createStorageCheckout(app, { statement, key, email, creatorName, successUrl, cancelUrl }) {
     const { config } = app;
     const session = await stripeClient(config, account).checkout.sessions.create({
       mode: "payment",
@@ -84,7 +84,7 @@ const makeProvider = (account) => ({
       success_url: successUrl,
       cancel_url: cancelUrl,
       expires_at: expiresAtFor(config)
-    }, { idempotencyKey: `storage-${statement.id}-${attempt}` });
+    }, { idempotencyKey: key });
     return { sessionId: session.id, url: session.url };
   },
 

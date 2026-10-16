@@ -1,10 +1,10 @@
 // Paid creator storage (server/billing/; docs/creators.md "Paid storage"): off until the owner sets a rate and turns it
 // on; a creator's chosen limit raises only their upload quota; what's stored is counted once (shared originals,
 // several products, retired files) and measured once a day; a month's statement is issued once, from the days measured,
-// with the card minimum carried; paying goes through a verified event matching the statement (amount, session, mode),
+// settled first from earnings ready to pay out, with the card minimum carried; paying goes through a verified event matching the statement (amount, session, mode),
 // once per event; an unpaid statement past its grace withdraws the paid limit without touching files; waivers and
-// refunds are audited; other creators and members who aren't the owner see nothing of it. The rate used here is the
-// owner's proposal ($0.05 per GB-month), for tests only. Each test makes its own creators; the switches go back off.
+// refunds are audited; other creators and members who aren't the owner see nothing of it. The rate is the owner's
+// ($0.05 per GB-month); a creator caps what they spend a month in dollars ($1 buys 20 GB above the free storage). Each test makes its own creators; the switches go back off.
 import { describe, test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
@@ -19,6 +19,7 @@ const slug = (tag) => `${tag}-${Date.now().toString(36)}${Math.random().toString
 const prevPeriod = () => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - 1); return d.toISOString().slice(0, 7); };
 const daysIn = (p) => { const [y, m] = p.split("-").map(Number); return new Date(Date.UTC(y, m, 0)).getUTCDate(); };
 const hex = () => crypto.randomBytes(32).toString("hex");
+const limitOf = (capCents) => 10 * MB + Math.floor((capCents * 100 * GB) / RATE); // with the tests' 10 MB of free storage
 
 export default (ctx) => describe("paid creator storage", () => {
   const stores = () => [ctx.mock, ctx.stripe].filter(Boolean);
@@ -58,6 +59,15 @@ export default (ctx) => describe("paid creator storage", () => {
     }
     return p;
   }
+  // A creator's sale, paid long enough ago to have cleared the 14-day hold, worth shareCents to them.
+  function clearedSale(store, creatorId, productId, shareCents) {
+    const id = `ord_t${crypto.randomBytes(8).toString("hex")}`;
+    const paidAt = new Date(Date.now() - 30 * 86400000).toISOString();
+    db(store, `INSERT INTO orders (id, email, status, currency, subtotal_cents, total_cents, provider, livemode, created_at, updated_at, paid_at, payment_account)
+      VALUES ('${id}', 'sb-sale@test.dev', 'paid', 'USD', ${shareCents}, ${shareCents}, 'mock', 0, '${paidAt}', '${paidAt}', '${paidAt}', 'marketplace')`);
+    db(store, `INSERT INTO order_items (id, order_id, product_id, title, unit_price_cents, quantity, line_total_cents, creator_id, net_cents, platform_fee_cents, creator_share_cents)
+      VALUES ('oi_t${crypto.randomBytes(8).toString("hex")}', '${id}', '${productId}', 'Kit', ${shareCents}, 1, ${shareCents}, '${creatorId}', ${shareCents}, 0, ${shareCents})`);
+  }
   const statement = (store, creatorId, period) => db(store, `SELECT * FROM storage_statements WHERE creator_id = '${creatorId}' AND period = '${period}'`)[0];
 
   before(async () => { for (const s of stores()) await setBilling(s, { state: "off", rate: null }); });
@@ -68,8 +78,8 @@ export default (ctx) => describe("paid creator storage", () => {
     const got = await o.c.get(o.api);
     assert.equal(got.status, 200);
     assert.equal(got.data.billing.available, false);
-    assert.equal(got.data.billing.rate, null, "no price in code");
-    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 2 } })).data.error.code, "storage_billing_off");
+    assert.equal(got.data.billing.rate, null, "the suite took the rate away");
+    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 200 } })).data.error.code, "storage_billing_off");
     assert.equal((await o.c.req("PUT", "/api/admin/storage-billing", { body: { state: "on", rate: 1 } })).status, 404, "customers can't");
     assert.equal((await setBilling(ctx.mock, { state: "on" })).data.error.code, "rate_unset");
     assert.equal((await setBilling(ctx.mock, { rate: 0 })).status, 400);
@@ -92,33 +102,38 @@ export default (ctx) => describe("paid creator storage", () => {
     assert.equal(list.storage.usedBytes, s.usedBytes, "the Studio's other figure is the same measure");
   });
 
-  test("a plan raises only this creator's upload limit; lowering it or cancelling stops new uploads, never files", async () => {
+  test("a monthly cap buys only this creator's upload limit; lowering it or cancelling stops new uploads, never files", async () => {
     await setBilling(ctx.mock, { state: "on", rate: RATE });
     const o = await creator(ctx.mock, "sb-plan");
-    for (const bad of [0, 1.5, "2", 10000]) assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: bad } })).status, 400, String(bad));
-    const up = await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 2 } });
+    for (const bad of [0, 99, 150.5, "200", 10001]) assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: bad } })).status, 400, String(bad));
+    const up = await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 100 } });
     assert.equal(up.status, 200, JSON.stringify(up.data));
-    assert.equal((await o.c.get(o.api)).data.storage.quotaBytes, 2 * GB);
-    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 5 } })).data.plan.capBytes, 5 * GB, "upgrade");
+    assert.equal((await o.c.get(o.api)).data.storage.quotaBytes, limitOf(100), "$1 at $0.05 = 20 GB above the free storage");
+    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 200 } })).data.plan.capBytes, limitOf(200), "raise");
     original(ctx.mock, o.creator.id, 12 * MB);
-    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 1 } })).status, 200, "downgrade, still above what's stored");
+    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 100 } })).status, 200, "lower, still above what's stored");
+    // A new rate buys a different limit for the same cap (admin, audited, in the creator's log).
+    await setBilling(ctx.mock, { rate: 1000 });
+    assert.equal((await o.c.get(o.api)).data.storage.quotaBytes, 10 * MB + 10 * GB);
+    await setBilling(ctx.mock, { rate: RATE });
     const cancel = await o.c.req("DELETE", `${o.api}/plan`, { body: {} });
     assert.equal(cancel.data.plan.status, "cancelled");
     const after = (await o.c.get(o.api)).data.storage;
     assert.equal(after.quotaBytes, 10 * MB, "back to the free storage");
     assert.equal(after.usedBytes, 12 * MB, "nothing was deleted");
+    assert.equal(after.overLimit, true, "the Studio shows the over-limit notice");
     // Over the free storage now: a new upload is refused.
     const png = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7d6a4a60000000049454e44ae426082", "hex");
     const put = await o.c.req("PUT", `/api/studio/creators/${o.creator.id}/images?filename=a.png`, { raw: png, headers: { "Content-Type": "image/png" } });
     assert.equal(put.data.error.code, "quota_exceeded");
     const actions = (await o.c.get(o.api)).data.log.map((l) => l.action);
-    for (const a of ["plan.started", "plan.changed", "plan.cancelled"]) assert.ok(actions.includes(a), a);
+    for (const a of ["plan.started", "plan.changed", "plan.rate_changed", "plan.cancelled"]) assert.ok(actions.includes(a), a);
   });
 
   test("measured once a day; a cancelled plan is still charged above the allowance until it's back under, then ends", async () => {
     await setBilling(ctx.mock, { state: "on", rate: RATE });
     const o = await creator(ctx.mock, "sb-measure");
-    await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 2 } });
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 100 } });
     const big = original(ctx.mock, o.creator.id, 14 * MB);
     await o.c.req("DELETE", `${o.api}/plan`, { body: {} });
     await sweep(ctx.mock);
@@ -138,7 +153,7 @@ export default (ctx) => describe("paid creator storage", () => {
   test("a month's statement is issued once, from its measured days; small amounts carry into the next", async () => {
     await setBilling(ctx.mock, { state: "on", rate: RATE });
     const o = await creator(ctx.mock, "sb-issue");
-    await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 50 } });
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
     const p = lastMonth(ctx.mock, o.creator.id, 30 * GB);
     await sweep(ctx.mock);
     await sweep(ctx.mock);
@@ -154,7 +169,7 @@ export default (ctx) => describe("paid creator storage", () => {
 
     // 6 GB for 10 days = under 50¢: carried, and added to the month after.
     const small = await creator(ctx.mock, "sb-carry");
-    await small.c.req("PUT", `${small.api}/plan`, { body: { capGb: 50 } });
+    await small.c.req("PUT", `${small.api}/plan`, { body: { capCents: 500 } });
     const pp = lastMonth(ctx.mock, small.creator.id, 6 * GB, { days: 10 });
     await sweep(ctx.mock);
     const carried = statement(ctx.mock, small.creator.id, pp);
@@ -165,7 +180,7 @@ export default (ctx) => describe("paid creator storage", () => {
   test("paying: only a matching event pays, once; a failed payment leaves it open; other creators can't see or pay it", async () => {
     await setBilling(ctx.mock, { state: "on", rate: RATE });
     const o = await creator(ctx.mock, "sb-pay");
-    await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 50 } });
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
     const s = statement(ctx.mock, o.creator.id, (lastMonth(ctx.mock, o.creator.id, 30 * GB), await sweep(ctx.mock), prevPeriod()));
     const stranger = await creator(ctx.mock, "sb-stranger");
     assert.equal((await stranger.c.get(`/api/studio/creators/${o.creator.id}/storage`)).status, 404);
@@ -191,7 +206,7 @@ export default (ctx) => describe("paid creator storage", () => {
   test("unpaid past the grace period: the paid limit pauses, files stay; paying restores it", async () => {
     await setBilling(ctx.mock, { state: "on", rate: RATE });
     const o = await creator(ctx.mock, "sb-late");
-    await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 50 } });
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
     const file = original(ctx.mock, o.creator.id, 12 * MB);
     lastMonth(ctx.mock, o.creator.id, 30 * GB);
     await sweep(ctx.mock);
@@ -202,26 +217,26 @@ export default (ctx) => describe("paid creator storage", () => {
     assert.equal(got.plan.status, "past_due");
     assert.equal(got.storage.quotaBytes, 10 * MB, "uploads stop above the free storage");
     assert.equal(db(ctx.mock, `SELECT COUNT(*) AS n FROM blobs WHERE id = '${file}'`)[0].n, 1, "nothing deleted");
-    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 100 } })).data.error.code, "storage_past_due");
+    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 1000 } })).data.error.code, "storage_past_due");
     const co = await o.c.post(`${o.api}/statements/${s.id}/checkout`, {});
     const sessionId = new URL(co.data.url.replace("#", "?")).searchParams.get("mock");
     await o.c.post("/api/dev/mock-storage-payment", { statementId: s.id, sessionId, outcome: "paid" });
     got = (await o.c.get(o.api)).data;
-    assert.deepEqual([got.plan.status, got.storage.quotaBytes], ["active", 50 * GB]);
+    assert.deepEqual([got.plan.status, got.storage.quotaBytes], ["active", limitOf(500)]);
     assert.ok((await outbox(ctx.mock.url, o.user.email)).some((m) => m.kind === "storage-billing" && /overdue/.test(m.subject)));
   });
 
   test("members who aren't the owner see storage, not billing; AutoStacc can waive, audited and in the creator's log", async () => {
     await setBilling(ctx.mock, { state: "on", rate: RATE });
     const o = await creator(ctx.mock, "sb-team");
-    await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 50 } });
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
     const m = await newBuyer(ctx.mock.url, "sb-member");
     await o.c.post(`/api/studio/creators/${o.creator.id}/invites`, { email: m.user.email, role: "admin" });
     const token = new URL(linkIn((await outbox(ctx.mock.url, m.user.email)).find((x) => x.kind === "creator-invite"))).hash.replace("#invite=", "");
     await m.c.post("/api/studio/invites/accept", { token });
     const seen = (await m.c.get(o.api)).data;
     assert.ok(seen.storage && !seen.billing && !seen.statements, "storage only");
-    assert.equal((await m.c.req("PUT", `${o.api}/plan`, { body: { capGb: 100 } })).status, 404);
+    assert.equal((await m.c.req("PUT", `${o.api}/plan`, { body: { capCents: 1000 } })).status, 404);
     assert.equal((await m.c.req("DELETE", `${o.api}/plan`, { body: {} })).status, 404);
     lastMonth(ctx.mock, o.creator.id, 30 * GB);
     await sweep(ctx.mock);
@@ -245,7 +260,7 @@ export default (ctx) => describe("paid creator storage", () => {
     if (!ctx.stripe) return;
     await setBilling(ctx.stripe, { state: "on", rate: RATE });
     const o = await creator(ctx.stripe, "sb-stripe");
-    await o.c.req("PUT", `${o.api}/plan`, { body: { capGb: 50 } });
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
     lastMonth(ctx.stripe, o.creator.id, 30 * GB);
     await sweep(ctx.stripe);
     const s = statement(ctx.stripe, o.creator.id, prevPeriod());
@@ -282,5 +297,79 @@ export default (ctx) => describe("paid creator storage", () => {
     assert.equal((await sendWebhook(client, refunded, WEBHOOK_SECRET)).status, 200);
     assert.equal(statement(ctx.stripe, o.creator.id, s.period).refunded_cents, 150);
     assert.equal((await admin.post(`/api/admin/storage-billing/statements/${s.id}/refund`, { note: "twice" })).data.error.code, "not_refundable");
+  });
+
+  test("earnings ready to pay out settle a statement first; the card pays the rest; a refund gives earnings back", async () => {
+    await setBilling(ctx.mock, { state: "on", rate: RATE });
+    const rich = await creator(ctx.mock, "sb-earn", 1);
+    await rich.c.req("PUT", `${rich.api}/plan`, { body: { capCents: 500 } });
+    clearedSale(ctx.mock, rich.creator.id, rich.products[0].id, 1000);
+    const before = (await rich.c.get(`/api/studio/creators/${rich.creator.id}/earnings`)).data.earnings.availableCents;
+    lastMonth(ctx.mock, rich.creator.id, 30 * GB);
+    await sweep(ctx.mock);
+    await sweep(ctx.mock);
+    const s = statement(ctx.mock, rich.creator.id, prevPeriod());
+    assert.deepEqual([s.status, s.earnings_cents, s.amount_cents], ["paid", 150, 0], "all from earnings");
+    assert.equal(db(ctx.mock, `SELECT COUNT(*) AS n FROM earnings_deductions WHERE ref = 'storage:${s.id}'`)[0].n, 1, "taken once");
+    const e1 = (await rich.c.get(`/api/studio/creators/${rich.creator.id}/earnings`)).data.earnings;
+    assert.deepEqual([e1.availableCents, e1.deductedCents, e1.paidOutCents], [before - 150, 150, 0], "not shown as a payout");
+    const admin = await adminClient(ctx.mock.url);
+    assert.equal((await admin.post(`/api/admin/storage-billing/statements/${s.id}/refund`, { note: "Goodwill" })).status, 200);
+    assert.equal((await rich.c.get(`/api/studio/creators/${rich.creator.id}/earnings`)).data.earnings.availableCents, before, "given back");
+
+    // Money still on hold is never used; what's ready covers part, the card the rest.
+    const some = await creator(ctx.mock, "sb-part", 1);
+    await some.c.req("PUT", `${some.api}/plan`, { body: { capCents: 500 } });
+    clearedSale(ctx.mock, some.creator.id, some.products[0].id, 60);
+    db(ctx.mock, `INSERT INTO orders (id, email, status, currency, subtotal_cents, total_cents, provider, livemode, created_at, updated_at, paid_at, payment_account)
+      VALUES ('ord_thold${Date.now()}', 'x@test.dev', 'paid', 'USD', 5000, 5000, 'mock', 0, 'x', 'x', '${new Date().toISOString()}', 'marketplace');
+      INSERT INTO order_items (id, order_id, product_id, title, unit_price_cents, quantity, line_total_cents, creator_id, net_cents, platform_fee_cents, creator_share_cents)
+      VALUES ('oi_thold${Date.now()}', 'ord_thold${Date.now()}', '${some.products[0].id}', 'Kit', 5000, 1, 5000, '${some.creator.id}', 5000, 0, 5000)`);
+    lastMonth(ctx.mock, some.creator.id, 30 * GB);
+    await sweep(ctx.mock);
+    const p = statement(ctx.mock, some.creator.id, prevPeriod());
+    assert.deepEqual([p.status, p.earnings_cents, p.amount_cents], ["open", 60, 90]);
+    const co = await some.c.post(`${some.api}/statements/${p.id}/checkout`, {});
+    const sessionId = new URL(co.data.url.replace("#", "?")).searchParams.get("mock");
+    assert.equal((await some.c.post("/api/dev/mock-storage-payment", { statementId: p.id, sessionId, outcome: "paid" })).data.outcome, "storage statement paid", "the card pays 90¢");
+  });
+
+  test("a payment on an earlier page still counts once; a second payment is refused for the admins", async () => {
+    await setBilling(ctx.mock, { state: "on", rate: RATE });
+    const o = await creator(ctx.mock, "sb-twopages");
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
+    lastMonth(ctx.mock, o.creator.id, 30 * GB);
+    await sweep(ctx.mock);
+    const s = statement(ctx.mock, o.creator.id, prevPeriod());
+    const page = async () => new URL((await o.c.post(`${o.api}/statements/${s.id}/checkout`, {})).data.url.replace("#", "?")).searchParams.get("mock");
+    const first = await page();
+    const second = await page();
+    assert.notEqual(first, second);
+    const pay = (sessionId) => o.c.post("/api/dev/mock-storage-payment", { statementId: s.id, sessionId, outcome: "paid" });
+    // The first page was paid after the second opened: found by the statement id it carries.
+    assert.equal((await pay(first)).data.outcome, "storage statement paid");
+    assert.equal(statement(ctx.mock, o.creator.id, s.period).status, "paid");
+    assert.equal((await pay(second)).data.outcome, "rejected", "paid twice: refused, so the admins refund it");
+    assert.equal((await o.c.post(`${o.api}/statements/${s.id}/checkout`, {})).data.error.code, "not_payable");
+  });
+
+  test("a chargeback makes the statement unpaid and pauses the limit; winning it restores both", async () => {
+    await setBilling(ctx.mock, { state: "on", rate: RATE });
+    const o = await creator(ctx.mock, "sb-dispute");
+    await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 500 } });
+    lastMonth(ctx.mock, o.creator.id, 30 * GB);
+    await sweep(ctx.mock);
+    const s = statement(ctx.mock, o.creator.id, prevPeriod());
+    const co = await o.c.post(`${o.api}/statements/${s.id}/checkout`, {});
+    const sessionId = new URL(co.data.url.replace("#", "?")).searchParams.get("mock");
+    await o.c.post("/api/dev/mock-storage-payment", { statementId: s.id, sessionId, outcome: "paid" });
+    const play = (outcome) => o.c.post("/api/dev/mock-storage-payment", { statementId: s.id, sessionId, outcome });
+    assert.match((await play("disputed")).data.outcome, /disputed/);
+    let got = (await o.c.get(o.api)).data;
+    assert.deepEqual([got.statements[0].status, got.plan.status, got.storage.quotaBytes], ["disputed", "past_due", 10 * MB]);
+    assert.equal((await o.c.req("PUT", `${o.api}/plan`, { body: { capCents: 1000 } })).data.error.code, "storage_past_due");
+    assert.match((await play("dispute_won")).data.outcome, /won/);
+    got = (await o.c.get(o.api)).data;
+    assert.deepEqual([got.statements[0].status, got.plan.status, got.storage.quotaBytes], ["paid", "active", limitOf(500)]);
   });
 });
