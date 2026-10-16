@@ -99,7 +99,7 @@
     const from = (d.page - 1) * d.per;
     $(".browse-count", root).textContent = d.total ? `${d.total} product${d.total === 1 ? "" : "s"}${d.pages > 1 ? ` · ${from + 1}–${from + d.products.length}` : ""}` : "No products match";
     $(".browse-results-head", root).textContent = narrowed() ? "Results" : "All products";
-    grid.innerHTML = d.products.length ? d.products.map((p) => card(p, { level: 3, wish: true })).join("") : empty(chips);
+    grid.innerHTML = d.products.length ? d.products.map((p) => card(p, { level: 3, wish: true, mixed: true })).join("") : empty(chips);
     $(".browse-pages", root).innerHTML = pages(d);
     if (d.ignored && d.ignored.length) $(".browse-count", root).textContent += ` (some filters from this link no longer exist and were left out)`;
     grid.setAttribute("aria-busy", "false");
@@ -131,7 +131,7 @@
   // Offline (or the store API failing): AutoStacc's own catalog from data/, without filters.
   function offline() {
     const all = window.PRODUCTS || [];
-    grid.innerHTML = all.map((p) => card(p, { level: 3 })).join("") || `<p class="empty">Nothing here yet.</p>`;
+    grid.innerHTML = all.map((p) => card(p, { level: 3, mixed: true })).join("") || `<p class="empty">Nothing here yet.</p>`;
     $(".browse-count", root).textContent = "Search and filters are offline right now; here is AutoStacc's own catalog.";
     $("[data-panel]", root).innerHTML = "";
     dispatchEvent(new CustomEvent("gs:cards"));

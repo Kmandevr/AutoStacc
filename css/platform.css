@@ -53,7 +53,7 @@
   --msg-pending: "";
   --snap: cubic-bezier(.2, .8, .2, 1);
   /* glass: frosted chrome (sidebar, top bar, menus, drawers) and see-through surfaces over the ambient light below */
-  --blur: saturate(160%) blur(18px);
+  --blur: saturate(160%) blur(28px);
   --glass-edge: color-mix(in srgb, var(--line) 70%, transparent);
 }
 
@@ -124,7 +124,7 @@ body:has(> .site-frame)::before {
 .platform .page-hero { padding: 40px 0 20px; }
 .platform .page-hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
 .platform section { padding: 40px 0; }
-.platform .alt { background: color-mix(in srgb, var(--panel) 45%, transparent); border-block: 1px solid var(--glass-edge); }
+.platform .alt { background: color-mix(in srgb, var(--panel) 70%, transparent); border-block: 1px solid var(--glass-edge); }
 
 /* section titles carry a small track-colour chip, like a track header */
 .platform .section-head h2 { display: inline-flex; align-items: center; gap: .5em; }
@@ -148,9 +148,22 @@ body:has(> .site-frame)::before {
   box-shadow: var(--shadow);
   transition: border-color .18s, box-shadow .2s var(--snap), transform .2s var(--snap);
 }
-.platform .card:hover, .platform .card:focus-within, .platform .project-card:hover { border-color: color-mix(in srgb, var(--teal) 55%, var(--line)); box-shadow: 0 10px 28px color-mix(in srgb, var(--teal) 14%, rgba(0, 0, 0, .12)); transform: translateY(-3px); }
-@media (prefers-reduced-motion: reduce) {
-  .platform .card:hover, .platform .card:focus-within, .platform .project-card:hover { transform: none; }
+/* clickable cards sit up off the page like things you can pick up; hovering one lifts it, grows it a little and tints
+   its edge, and with a mouse it leans toward the pointer (--tilt-x/--tilt-y from js/motion.js) */
+.platform :is(.card, .project-card, .tile, .pcard, .ex-item, .home-doors a, .stacc-stacclet, .vault-item):is(a[href], :has(a[href])) {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 18px rgba(0, 0, 0, .10);
+}
+.platform :is(.card, .project-card, .tile, .pcard, .ex-item, .home-doors a, .stacc-stacclet, .vault-item):is(a[href], :has(a[href])):is(:hover, :focus-within) {
+  border-color: color-mix(in srgb, var(--teal) 55%, var(--line));
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .08), 0 18px 40px color-mix(in srgb, var(--teal) 18%, rgba(0, 0, 0, .16));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .platform :is(.card, .project-card, .tile, .pcard, .ex-item, .home-doors a, .stacc-stacclet, .vault-item):is(a[href], :has(a[href])) {
+    transition: border-color .18s, box-shadow .25s var(--snap), transform .25s var(--snap);
+  }
+  .platform :is(.card, .project-card, .tile, .pcard, .ex-item, .home-doors a, .stacc-stacclet, .vault-item):is(a[href], :has(a[href])):is(:hover, :focus-within) {
+    transform: perspective(900px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg)) translateY(-4px) scale(1.04);
+  }
 }
 
 /* meters and counts read as hardware */
@@ -168,10 +181,10 @@ body:has(> .site-frame)::before {
 /* ---------- glass surfaces: AutoStacc's own panels and cards let the ambient light through (a project's look keeps
    its own solid surfaces, so it stays itself) ---------- */
 .platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]) {
-  background-color: color-mix(in srgb, var(--panel) 72%, transparent);
+  background-color: color-mix(in srgb, var(--panel) 76%, transparent);
   border-color: var(--glass-edge);
 }
-.platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 82%, transparent); }
+.platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 88%, transparent); }
 
 /* ---------- feedback: quiet, quick, the same everywhere ---------- */
 .platform .btn { transition: transform .16s var(--snap), box-shadow .2s var(--snap), background-color .16s, border-color .16s, color .16s, opacity .16s; }
