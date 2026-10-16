@@ -1,6 +1,6 @@
 ---
 title: Community safety, legal and security
-summary: PLANNED / NOT IMPLEMENTED (owner, 2026-10-16): what the community and profiles must have before and after launch: an LLC and DMCA agent, tiered copyright strikes, CSAM scanning, contest rules, UK/EU duties, urgent reports with false-report filtering, retention, legal requests, bot checks, and the security design rules.
+summary: PLANNED / NOT IMPLEMENTED (owner, 2026-10-16): what the community and profiles must have before and after launch: the operator's legal setup and a DMCA agent, tiered copyright strikes, CSAM scanning, contest rules, UK/EU duties, urgent reports with false-report filtering, retention, legal requests, bot checks, and the security design rules.
 updated: 2026-10-16
 ---
 
@@ -12,8 +12,8 @@ updated: 2026-10-16
 
 ## Before launch (gates: the `community.forum` switch stays off until these are done)
 
-- [ ] **An LLC** (owner, planned): formed before the community goes live; terms, privacy and the footer then name the company instead of "an individual based in Utah County" (`data/legal.js`).
-- [ ] **DMCA designated agent** registered with the US Copyright Office ($6, renewed every 3 years), using the LLC's registered-agent address (not the owner's home), and a dedicated copyright contact address. Without it, US protection for hosting uploads doesn't apply.
+- [ ] **The operator's legal setup** (owner, tracked privately): done before the community goes live; terms, privacy and the footer (`data/legal.js`) updated to match.
+- [ ] **DMCA designated agent** registered with the US Copyright Office ($6, renewed every 3 years), using a registered-agent or mail-service address (not the owner's home), and a dedicated copyright contact address. Without it, US protection for hosting uploads doesn't apply.
 - [ ] **Cloudflare CSAM Scanning Tool** on for the zone that serves uploads, with the owner's notification email set; the NCMEC reporting steps written for the owner.
 - [ ] Drafts published: base rules (`/community/rules`), community terms, copyright policy with notice and counter-notice, contest rules, law-enforcement policy, `/privacy` updates.
 - [ ] Written risk assessments for UK and EU duties (below).

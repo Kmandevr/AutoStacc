@@ -30,7 +30,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Product Studio](studio.md): one workspace per product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared shell the Control Center also uses; names, data ownership, API contracts, built vs planned
 - [Guides and creator manual](guides.md): PLANNED: long-form support articles at /guide beside /help, with a full Studio manual
 - [Community](community.md): PLANNED: spaces for AutoStacc, projects and user-made communities, with channels; discussions, Q&A, updates, polls and challenges; upvotes; base rules plus stricter local rules; moderation, 16+, build order
-- [Community safety](community-safety.md): PLANNED: legal and security for the community: launch gates (LLC, DMCA agent, CSAM scanning), copyright strikes, UK/EU duties, contests, urgent reports, retention, security rules
+- [Community safety](community-safety.md): PLANNED: legal and security for the community: launch gates (legal setup, DMCA agent, CSAM scanning), copyright strikes, UK/EU duties, contests, urgent reports, retention, security rules
 - [Profiles, points and friends](profiles.md): PLANNED: Steam-style profiles, points spent on profile items creators make, friends, a friends-only feed, collab requests
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
 - [Control Center](admin.md): the owner's admin: statistics and their sources, sales and promo codes, customer preview, support impersonation, test purchases, audit log
