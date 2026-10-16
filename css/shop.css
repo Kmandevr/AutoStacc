@@ -187,18 +187,25 @@ a.cover:hover { color: #fff; }
   .card.feature .cover { aspect-ratio: 1 / 1; min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
 }
 
-/* capsule: the artwork alone; the title, maker, price and buy button rise over its foot on hover or keyboard focus.
-   Phones can't hover, so there the title and price always sit on a strip. Screen readers always get all of it. */
-.card.capsule .cover { border-bottom: 0; }
+/* capsule: the artwork with its name and price always on a strip at its foot; hovering (or keyboard focus) slides out
+   the short description and the buy button. Phones can't hover, so there the buy button always shows. Screen readers
+   always get all of it. */
+.card.capsule .cover { flex: 1 0 auto; border-bottom: 0; }
 .card.capsule .card-badges { top: 12px; bottom: auto; }
-.card.capsule .card-body { position: absolute; inset: auto 0 0; z-index: 2; gap: 6px; padding: 14px;
-  background: linear-gradient(to top, color-mix(in srgb, var(--panel) 96%, transparent) 70%, color-mix(in srgb, var(--panel) 0%, transparent)); }
-.card.capsule .card-body :is(.tag, .card-desc, .card-labels, .card-why) { display: none; }
+/* a generated cover's own title moves to the top, clear of the name strip */
+.card.capsule .cover:not(.has-art) > span { align-self: start; }
+.card.capsule .card-body { position: absolute; inset: auto 0 0; z-index: 2; gap: 6px; padding: 12px 14px;
+  background: linear-gradient(to top, color-mix(in srgb, var(--panel) 96%, transparent) 75%, color-mix(in srgb, var(--panel) 0%, transparent)); }
+.card.capsule .card-body :is(.tag, .card-by, .card-labels, .card-why) { display: none; }
+.card.capsule .card-desc { flex: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: .88rem; }
+.card.capsule .card-foot { margin-top: 0; }
 @media (hover: hover) {
-  .card.capsule .card-body { opacity: 0; transform: translateY(12px); transition: opacity .2s var(--snap), transform .25s var(--snap); }
-  .card.capsule:is(:hover, :focus-within) .card-body { opacity: 1; transform: none; }
+  .card.capsule :is(.card-desc, .buy) { max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height .3s var(--snap), opacity .2s var(--snap); }
+  .card.capsule:is(:hover, :focus-within) .card-desc { max-height: 5em; opacity: 1; }
+  .card.capsule:is(:hover, :focus-within) .buy { max-height: 4em; opacity: 1; }
 }
 @media (hover: none) {
-  .card.capsule .card-by { display: none; }
+  .card.capsule .card-desc { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .card.capsule .card-body { transition: none; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .card.capsule :is(.card-desc, .buy) { transition: none; } }
