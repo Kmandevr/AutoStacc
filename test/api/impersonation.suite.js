@@ -97,7 +97,7 @@ export default (ctx) => describe("impersonation", () => {
 
     const exit = await admin.post("/api/impersonation/exit", {});
     assert.equal(exit.status, 200);
-    assert.equal(exit.data.redirect, "/admin");
+    assert.equal(exit.data.redirect, "/admin/daily#customers", "back to Customers, where impersonating starts");
     assert.ok(!admin.jar.has(COOKIE));
     const back = (await admin.get("/api/account")).data;
     assert.equal(back.user.email, ADMIN);

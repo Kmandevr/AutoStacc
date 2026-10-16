@@ -23,3 +23,9 @@
 /settings/orders  /settings  200
 /settings/email  /settings  200
 /settings/privacy  /settings  200
+# The Control Center's sub-pages (/admin/stats, ...) are one page too: functions/admin/[[path]].js gates and serves
+# them with the store on; with it off, this serves the page (which then says it can't check access).
+/admin/stats  /admin  200
+/admin/daily  /admin  200
+/admin/manage  /admin  200
+/admin/settings  /admin  200

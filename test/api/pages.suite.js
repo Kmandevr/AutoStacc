@@ -4,6 +4,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
+import { adminClient } from "../support/flows.js";
 
 const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/about"];
 const GATED = ["/dashboard", "/settings", "/settings/profile", "/settings/security", "/settings/orders", "/settings/email", "/settings/privacy", "/studio"];
@@ -46,6 +47,28 @@ export default (ctx) => describe("pages", () => {
       assert.doesNotMatch(String(r.data), /settings-app/, p);
     }
     goesToLogin(await anon.req("HEAD", "/dashboard"), "/dashboard");
+  });
+
+  test("the Control Center and its sub-pages don't exist for anyone but a signed-in admin", async () => {
+    const SUBPAGES = ["/admin", "/admin/stats", "/admin/daily", "/admin/manage", "/admin/settings"];
+    const anon = new Client(ctx.mock.url);
+    const shopper = new Client(ctx.mock.url);
+    await verifiedUser(shopper, unique("gate-admin"));
+    for (const c of [anon, shopper]) {
+      for (const p of [...SUBPAGES, "/admin/nope"]) {
+        const r = await c.get(p);
+        assert.equal(r.status, 404, p);
+        assert.doesNotMatch(String(r.data), /admin-app/, `${p}: never the Control Center`);
+      }
+    }
+    const admin = await adminClient(ctx.mock.url);
+    for (const p of SUBPAGES) {
+      const r = await admin.get(p);
+      assert.equal(r.status, 200, p);
+      assert.match(r.data, /id="admin-app"/, p);
+      assert.equal(r.headers.get("cache-control"), "no-store", p);
+    }
+    assert.equal((await admin.get("/admin/nope")).status, 404, "an unknown sub-page is the 404, even for an admin");
   });
 
   test("forged, expired and signed-out sessions are no session to the gate", async () => {

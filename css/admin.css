@@ -110,6 +110,16 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 
 /* ---------- at a glance, section headings, jump bar, destructive actions ---------- */
 .admin-section-title { margin: 0 0 14px; font-size: var(--section-size); }
+/* the sub-page tabs (Stats, Daily, Manage, Settings): a row of pills above the page; the open one is filled, and
+   Stats carries a count of payment alerts that need a look. Scrolls sideways on a narrow phone instead of wrapping. */
+.admin-pages { margin: 0 0 20px; overflow-x: auto; }
+.admin-pages ul { display: flex; gap: 8px; margin: 0; padding: 2px; list-style: none; }
+.admin-pages a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 18px; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--panel); color: var(--text); font-weight: 650; text-decoration: none; white-space: nowrap; }
+.admin-pages a:hover { border-color: var(--teal); color: var(--text); }
+.admin-pages a[aria-current="page"] { background: var(--teal); border-color: var(--teal); color: var(--on-accent); }
+.admin-badge { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--coral); color: #fff; font-size: .78rem; font-weight: 750; }
 .admin-kpis { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; margin: 0 0 22px; padding: 0; }
 .admin-kpis li { display: grid; gap: 2px; padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .admin-kpis span { color: var(--muted); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }

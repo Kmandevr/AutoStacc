@@ -8,6 +8,7 @@ updated: 2026-10-16
 
 Newest first.
 
+- 2026-10-16: Control Center split into sub-pages (owner): Stats, Daily, Manage and Settings at /admin/<page>, gated like /admin; figures and payment alerts on Stats with a count on its tab; leaving an impersonation returns to Daily › Customers.
 - 2026-10-16: Top bar blur restored: its frosting is back on the bar itself (a view-transition name makes the bar a backdrop root, so a layer or menu inside it cannot blur the page); the account menu is nearly solid instead.
 - 2026-10-16: UI pass (owner): readable frosted glass, home backdrop follows the theme, phone scroll cue fixed, clickable cards lift, grow and tilt on hover, store-style card sizes (featured banners, artwork capsules) with a faint ring so artwork never blends into the page.
 - 2026-10-16: Paid storage: owner's answers (rate $0.05, monthly cap in dollars, earnings first then card, charged above a lowered cap until back under) and the security review's fixes. Reviews from confirmed buyers (stars and optional text, server/reviews/, migration 0030, #96). Notes: creators, store, admin, decisions.
