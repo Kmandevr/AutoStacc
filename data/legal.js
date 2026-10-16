@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-15",
+    updated: "2026-10-16",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -38,6 +38,7 @@ window.LEGAL = [
         "What you own is recorded separately, so your library knows which files you can download.",
         "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, once you set up payouts, the reference of your Stripe payout account, the country of its bank account and whether it is ready (Stripe, not AutoStacc, collects and keeps your ID, tax and bank details; see [Stripe's privacy policy](https://stripe.com/privacy)). Each payout is recorded with its amount and Stripe's transfer reference. If payouts are still sent by hand, the payment details you type in (for example a PayPal address) are kept with the payout record, visible only to you and AutoStacc.",
         "If you make a creator space in the Studio: its name and address, the profile and pages you design there and the images and fonts you upload for them (published pages are public), and who is on its team with which role. If someone invites you to a team, AutoStacc keeps your email address with the invitation until you accept it, it is withdrawn, or it expires after 7 days. Team members see each other's names; the owner and admins also see members' email addresses. Pieces you share to the community library are public to everyone using the Studio, with your creator name; AutoStacc records which creators install them. If you report a piece, AutoStacc keeps your report and who sent it, and doesn't show it to the creator. The last 20 published versions of each page are kept, with when they were published and whether by you, a member of your creator space or a schedule you set, so you can restore one; a file a published page or a kept version still uses stays until nothing does. For each of your products the Studio keeps a history of changes (what changed, such as the price or putting it on sale, when, and which member of your creator space did it), visible to your creator space and AutoStacc. Files you upload to sell are checked automatically by AutoStacc's own systems (that each is what its name says, undamaged and safe; for audio, its tempo and key are estimated and a waveform drawn), and a checksum of each is kept so it can be delivered byte for byte. Nothing you upload is sent to anyone else for this. Files you remove are deleted from storage a day later.",
+        "Storage: what your creator space stores is measured once a day (how much in all, split into paid files, Pac files, uploads in progress, preview clips and site files; a file several products or versions use counts once). If you take paid storage, AutoStacc keeps the limit you chose, each day's measurement, a monthly statement worked out from those days (what was stored above your free storage, the rate, the amount), whether and when it was paid with Stripe's reference for the payment, and a history of every change (who in your creator space or at AutoStacc made it, when). Only your creator space's owner and AutoStacc see the statements and history; your team sees the storage figures. They are kept as billing records, like orders.",
         "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link for 30 days."
       ] },
       { id: "payments", heading: "Payments", body: [
@@ -96,6 +97,7 @@ window.LEGAL = [
           "Records of emails sent: kept so receipts can be resent; when an account is deleted, the address in them is removed.",
           "The audit log of what AutoStacc's staff did (including viewing the store as your account): kept and never changed.",
           "Orders: kept as sales records even after an account is deleted (tax, refunds and disputes need them), but no longer linked to you.",
+          "Storage measurements, statements and their history (creators with paid storage): kept as billing records, like orders.",
           "Visit counts: kept as anonymous totals.",
           "Project mailing lists: at Brevo until you unsubscribe.",
           "Abuse counters: only the latest count for each IP address and kind of request, deleted within a day of it."
@@ -121,7 +123,7 @@ window.LEGAL = [
     title: "Terms of service",
     description: "The general rules for using AutoStacc: accounts, buying and downloading digital products, licences, acceptable use, and what happens when things go wrong.",
     summary: "The general rules for using AutoStacc, in plain words. What you can buy, what you can do with it, and what AutoStacc promises.",
-    updated: "2026-10-08",
+    updated: "2026-10-16",
     review: "",
     sections: [
       { id: "about", heading: "About these terms", body: [
@@ -154,7 +156,9 @@ window.LEGAL = [
       { id: "creators", heading: "Artists and creators", body: [
         "Products and pages are made by the projects and creators named on them, who keep the rights in their work. AutoStacc sells and delivers it for them.",
         "If you make a creator space in the Studio, you're responsible for what you publish there and confirm you have the rights to it.",
-        "Creators can sell products in the Studio. Sales of creators' products are taken on a separate Stripe account from AutoStacc's own, which is also why a cart holding both is paid in two steps. A sale is held for 14 days (the refund window) before it can be paid out. To be paid you connect a Stripe account; Stripe verifies you and its [connected account terms](https://stripe.com/legal/connect-account) apply to it. AutoStacc sends a payout when you ask and AutoStacc approves it. If a sale is refunded after you were paid for it, that amount is taken from your next sales. Sales tax on creators' products is worked out and collected at checkout by Stripe Tax; creators are responsible for their own income taxes. AutoStacc's fee, if any, is shown in the Studio before you sell."
+        "Creators can sell products in the Studio. Sales of creators' products are taken on a separate Stripe account from AutoStacc's own, which is also why a cart holding both is paid in two steps. A sale is held for 14 days (the refund window) before it can be paid out. To be paid you connect a Stripe account; Stripe verifies you and its [connected account terms](https://stripe.com/legal/connect-account) apply to it. AutoStacc sends a payout when you ask and AutoStacc approves it. If a sale is refunded after you were paid for it, that amount is taken from your next sales. Sales tax on creators' products is worked out and collected at checkout by Stripe Tax; creators are responsible for their own income taxes. AutoStacc's fee, if any, is shown in the Studio before you sell.",
+        "Each creator space gets free storage (shown in the Studio). Where AutoStacc offers paid storage, you choose a storage limit above it and pay, at the rate shown in the Studio when you choose, only for what you actually store above your free storage, measured once a day; a day without a measurement isn't charged. Statements come after each month, are paid by card through Stripe and are due 14 days after they're issued; amounts under $0.50 are added to the next month's statement. If one isn't paid by then, your paid limit pauses: new uploads stop while you're over your free storage, but nothing you've stored is deleted or hidden and buyers keep their downloads. If you cancel, the limit goes at once and storage above your free storage is still charged until you're back within it. You can see every day's measurement behind a statement in the Studio; write to AutoStacc if you think one is wrong.",
+        "AutoStacc's own storage has a ceiling too. While it's full, new uploads wait for everyone, paid storage included."
       ] },
       { id: "ip", heading: "Rights in the site", body: [
         "AutoStacc's name, logo, design and code belong to AutoStacc. Artists' and creators' names, artwork and music belong to them."

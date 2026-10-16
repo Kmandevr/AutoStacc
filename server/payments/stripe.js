@@ -153,6 +153,8 @@ export function normalizeEvent(event) {
         type: o.refunded ? "refunded" : "partial_refund",
         paymentId: typeof o.payment_intent === "string" ? o.payment_intent : null,
         amount: o.amount_refunded,
+        // What the charge took in all, tax included (server/payments/events.js scales the refund back to before tax).
+        chargedAmount: o.amount,
         currency: String(o.currency || "").toUpperCase()
       };
     case "charge.dispute.created":

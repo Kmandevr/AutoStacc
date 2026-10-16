@@ -266,6 +266,11 @@ export default (ctx) => describe("paid creator storage", () => {
     const row = statement(ctx.stripe, o.creator.id, s.period);
     assert.equal(row.status, "paid");
     const admin = await adminClient(ctx.stripe.url);
+    ctx.stripe.fake.failRefunds(true);
+    const refused = await admin.post(`/api/admin/storage-billing/statements/${s.id}/refund`, { note: "Billing error" });
+    ctx.stripe.fake.failRefunds(false);
+    assert.deepEqual([refused.status, refused.data.error.code], [503, "refund_failed"]);
+    assert.equal(statement(ctx.stripe, o.creator.id, s.period).status, "paid", "nothing changed");
     const sent = ctx.stripe.fake.refunds.length;
     assert.equal((await admin.post(`/api/admin/storage-billing/statements/${s.id}/refund`, { note: "Billing error" })).status, 200);
     assert.equal(ctx.stripe.fake.refunds.length, sent + 1);

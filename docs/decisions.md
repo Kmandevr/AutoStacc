@@ -489,3 +489,14 @@ Before going public, the owner asked for the old commits to stop showing their p
 ## 2026-10-15: No private tracker (owner)
 
 The owner decided not to create the private repository `Kmandevr/AutoStacc-private` planned in the entry on private reports above. Security problems still go to private security advisories. Other private work (operational notes, incidents, owner-only decisions) is told to the owner in the session and never written into the public repository (the `tasks` skill, "What stays private").
+
+## 2026-10-16: Paid creator storage is built and off; a refund is recorded before tax (Claude)
+
+The task asked for creator storage billing on top of the existing quotas, without enabling a price that isn't approved. Built ([creators](creators.md#paid-storage-built-2026-10-16-off)), off, no rate in code. Choices made by Claude, open to the owner (#142):
+- **Usage, not the limit, is charged.** The limit only stops uploads, so upgrades and downgrades need no proration and can't cost more than what is stored.
+- **Measured once a day; monthly statements paid on a Stripe page**, on the main account (AutoStacc's own service), instead of Stripe Billing subscriptions: the server stays the only source of the figures, and the existing webhook, event-once and compare-and-set code covers it. Automatic card charges can come later.
+- **Overdue pauses the paid limit and nothing else.** Files are never deleted or hidden for billing.
+- **Cancelling keeps charging above the allowance until it's back under**, so storage can't be filled under a plan and kept free.
+- **Each stored original counts once.** This fixed a double count of files two products share (or re-added with the same bytes), and rejected Pac files' originals now count (they were stored but counted nowhere).
+
+Also fixed (#129, taxed orders): Stripe's refund amounts include the tax Managed Payments adds on top of the order, so `refunded_cents` could exceed the order total and a partial refund cut the creator's share too far. Refunds are now scaled back to the order's own (pre-tax) money and never exceed its total (`preTaxRefund`, `server/payments/events.js`). The refund email names the same amount.

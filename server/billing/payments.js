@@ -99,7 +99,14 @@ export async function waive(app, s, adminId, note) {
 /** Refunds a paid statement in full to the card it was paid with (the provider's key makes a repeat the same refund). */
 export async function refund(app, s, adminId, note) {
   if (s.status !== "paid" || !s.provider_payment_id) fail(409, "not_refundable", "Only a paid statement can be refunded.");
-  await providerForAccount(app, ACCOUNT).refund(app, { id: s.id, provider_payment_id: s.provider_payment_id });
+  try {
+    await providerForAccount(app, ACCOUNT).refund(app, { id: s.id, provider_payment_id: s.provider_payment_id });
+  } catch (e) {
+    // Nothing changed: the statement stays paid and the log says why (Stripe's words stay out of the answer).
+    console.error("storage refund", e && e.message);
+    await logStmt(app.db, s.creator_id, adminId, "payment.refund_failed", { note }, s.id).run();
+    fail(503, "refund_failed", "Stripe refused the refund, so nothing changed. Check the payment in Stripe.");
+  }
   const res = await run(app.db, "UPDATE storage_statements SET status = 'refunded', refunded_cents = amount_cents, note = ? WHERE id = ? AND status = 'paid'", note, s.id);
   if (res.meta.changes) await logStmt(app.db, s.creator_id, adminId, "payment.refunded", { amountCents: s.amount_cents, note }, s.id).run();
 }
