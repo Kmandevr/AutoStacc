@@ -1,0 +1,53 @@
+/* The community (/community and everything under it; scripts/lib/community-page.js builds the frame, */
+/* server/community/render.js the content). Lists of spaces and threads, a thread's posts, and the "opening soon" page. */
+
+.community-main { padding-block: 8px 40px; }
+.community-closed { max-width: 62ch; }
+.community-closed a, .cm-small a, .cm-meta a { display: inline-block; padding-block: 4px; }
+.cm-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 32px; align-items: start; }
+.cm-col { min-width: 0; }
+.cm-col > h2 { margin: 8px 0 4px; }
+
+.cm-sort { display: flex; gap: 6px; margin: 8px 0 14px; }
+.cm-sort a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); text-shadow: none; font-size: .9rem; }
+.cm-sort a[aria-current] { border-color: var(--accent); color: var(--accent); }
+
+.cm-threads, .cm-spaces, .cm-aside ul { list-style: none; margin: 0; padding: 0; }
+.cm-threads { display: grid; gap: 8px; }
+.cm-thread { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.cm-thread-title { display: block; font-weight: 600; color: var(--text); text-shadow: none; overflow-wrap: anywhere; }
+.cm-meta { margin: 4px 0 0; color: var(--muted); font-size: .86rem; }
+.cm-meta a { color: inherit; text-decoration: underline; }
+.cm-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; border: 1px solid var(--line); color: var(--muted); vertical-align: 1px; }
+.cm-official { border-color: var(--accent); color: var(--accent); }
+.cm-unofficial { border-style: dashed; }
+.cm-answered { border-color: var(--accent); color: var(--accent); }
+.cm-empty, .cm-small { color: var(--muted); }
+.cm-small { font-size: .86rem; }
+.cm-deleted { font-style: italic; }
+.cm-pager { display: flex; justify-content: space-between; margin-top: 14px; }
+.cm-pager a { min-height: 44px; display: inline-flex; align-items: center; }
+
+.cm-aside { display: grid; gap: 14px; position: sticky; top: calc(var(--topbar, 58px) + 16px); }
+.cm-aside-title { margin: 0 0 6px; font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.cm-aside nav a, .cm-space > a { display: block; padding: 6px 10px; border-radius: 8px; color: var(--text); text-shadow: none; }
+.cm-aside nav a[aria-current] { background: var(--panel-2); }
+.cm-space p { margin: 0 10px 8px; color: var(--muted); font-size: .88rem; }
+.cm-note { padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--panel-2); margin: 0; }
+.cm-rules summary { cursor: pointer; min-height: 32px; }
+
+.cm-post { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); margin-bottom: 10px; scroll-margin-top: calc(var(--topbar, 58px) + 16px); }
+.cm-opening { border-width: 2px; }
+.cm-accepted { border-color: var(--accent); }
+.cm-post-gone { background: transparent; border-style: dashed; }
+.cm-body { line-height: 1.65; overflow-wrap: anywhere; }
+.cm-body blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); }
+.cm-body code { padding: 1px 5px; border-radius: 5px; background: var(--panel-2); font-family: var(--mono); font-size: .9em; }
+/* A link's domain is always shown in full and set apart, so a label can't pass for another site. */
+.cm-body .link-host { color: var(--muted); font-size: .85em; white-space: nowrap; }
+.cm-replies-title { margin: 22px 0 10px; font-size: 1.1rem; }
+
+@media (max-width: 860px) {
+  .cm-layout { grid-template-columns: minmax(0, 1fr); }
+  .cm-aside { position: static; }
+}

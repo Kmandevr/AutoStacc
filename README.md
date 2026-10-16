@@ -31,10 +31,11 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `product.html` (`/product?p=<id>`) | A Studio creator's product, fetched from the store API (kept out of search) |
 | `privacy.html`, `terms.html`, `refunds.html`, `security.html`, `contact.html`, `copyright.html`, `community-rules.html`, `help.html`, `license.html` | Trust pages generated from `data/legal.js`, `data/help.js` and `data/licenses.js` ([docs/production.md](docs/production.md)). Don't edit them; change the data and rebuild |
 | `404.html` | Shown for any address that doesn't exist |
+| `community.html` | Generated from `scripts/lib/community-page.js`: the "opening soon" page at `/community`, and the frame its Function (`functions/community.js`) fills with spaces and threads once the community is switched on ([docs/community.md](docs/community.md)) |
 | `guide.html`, `guide/` | Generated guides from `data/guides.js`: `/guide` and one page per article (`/guide/<id>`), buying, Your Stacc and refunds, and the creator manual ([docs/guides.md](docs/guides.md)). Don't edit them; change the data and rebuild |
 | `shop/`, `<creator>/<project>/music/`, `<creator>/<project>/news/` | Generated: one page per product (`/shop/<id>`), release and news post. Don't edit them; change `data/` and rebuild |
 
-Studio creators' pages aren't files: they're stored in the database and rendered by `functions/[[path]].js`. Old addresses (`/music`, `/news`, `/press`) redirect to the project's own (`_redirects`).
+Studio creators' pages aren't files: they're stored in the database and rendered by `functions/[[path]].js`. Community pages (switched off for now) are rendered by `functions/community.js` and `functions/community/[[path]].js`. Old addresses (`/music`, `/news`, `/press`) redirect to the project's own (`_redirects`).
 
 Also published:
 - `img/`: icons, the link-preview image and release artwork;

@@ -63,7 +63,7 @@ Keep: skip link, one `h1`, landmarks, labels on every field, errors announced (`
 
 ## Footer and navigation
 
-The platform footer has Explore (Store, Projects, Releases, news and shows, About, Studio), Help (Help, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
+The platform footer has Explore (Store, Projects, Releases, news and shows, About, Community, Studio), Help (Help, Guides, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences, Copyright, Community rules); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
 
 ## Not built yet (on purpose)
 

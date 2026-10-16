@@ -16,6 +16,7 @@ const { llmsTxt } = require("./lib/llms");
 const { creatorPage, projectCard } = require("./lib/creator-page");
 const { trustPages } = require("./lib/trust-pages");
 const { guidePages } = require("./lib/guide-pages");
+const { communityPage } = require("./lib/community-page");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -103,7 +104,8 @@ const generated = [
   ...data.products.map((x) => P.productPage(SITE, data, x)),
   ...data.news.map((n) => P.newsPage(SITE, data, n)),
   ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c)),
-  ...trustPages(SITE, data)
+  ...trustPages(SITE, data),
+  communityPage(SITE)
 ];
 const guides = guidePages(SITE, data);
 generated.push(...guides.pages);

@@ -7,7 +7,7 @@ updated: 2026-10-16
 
 # Google Search Console and profile checklist
 
-The website side is done: clean addresses, canonical links, a sitemap (with the trust pages, guides, `/copyright` and `/community-rules`), robots.txt and structured data saying who AutoStacc and each project are (details in [seo](seo.md)). Two things only the owner can do: tell Google the site is yours, and make every official profile link back to it. No one can guarantee a #1 result; these steps give Google every legitimate reason to treat autostacc.com as AutoStacc's site and its Glitches & Stitches page as the artist's official home.
+The website side is done: clean addresses, canonical links, a sitemap (with the trust pages, guides, `/community`, `/copyright` and `/community-rules`; the community's threads get their own sitemap when it opens), robots.txt and structured data saying who AutoStacc and each project are (details in [seo](seo.md)). Two things only the owner can do: tell Google the site is yours, and make every official profile link back to it. No one can guarantee a #1 result; these steps give Google every legitimate reason to treat autostacc.com as AutoStacc's site and its Glitches & Stitches page as the artist's official home.
 
 ## Before you start: quick checks (2 minutes)
 

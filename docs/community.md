@@ -1,7 +1,7 @@
 ---
 title: Community
 summary: PLANNED, foundations built (#135: switch off, tables, formatter, rules pages) (owner, 2026-10-16): spaces for AutoStacc, each project and user-made communities, with channels; discussions, questions and answers, updates, polls and challenges; upvotes; AutoStacc base rules everywhere plus stricter local rules; moderation, age, notifications, build order.
-covers: [server/community/, db/migrations/0031_community.sql, test/unit/community-format.test.js]
+covers: [server/community/, functions/community.js, functions/community/, scripts/lib/community-page.js, css/community.css, db/migrations/0031_community.sql, db/migrations/0032_community_platform_space.sql, test/unit/community-format.test.js, test/api/community.suite.js, test/api/community.test.js]
 updated: 2026-10-16
 ---
 
@@ -94,6 +94,8 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 
 ## Design (architect review 2026-10-16)
 
+**Read side (#136, built, switch off):** `/community` is a generated page (`scripts/lib/community-page.js`) that says "opening soon" while the switch is off. With it on, `functions/community.js` and `functions/community/[[path]].js` (→ `server/community/entry.js`) fetch that page from the static site as a template and `server/community/page.js` fills its head, heading and main areas with what `public.js` builds from the database: `/community` (spaces and the hottest threads), `/community/<space>`, `/community/<space>/<channel>` (sorted hot, new or top, 25 a page; only the default view is indexed), `/community/t/<id>-<slug>` (a missing or old slug redirects; a question shows its accepted answer first, then answers by Helpful votes; hidden and removed posts are placeholders; `QAPage` or `DiscussionForumPosting` JSON-LD) and `/community/sitemap.xml`. Hidden, removed and unknown threads are the site's 404. Pages carry the store's strict policy (this site's scripts only, no framing) and are cached a minute at the edge in production. AutoStacc's own space and its five channels are created by migration `0032_community_platform_space.sql`. Tests: `test/api/community.suite.js` (switched on, its own store; switched off in the accounts group). The edge cache is keyed by path plus the normalised sort and page only, so junk parameters can't reach the database; HEAD answers from it too. Not yet: `robots.txt`'s second `Sitemap:` line (at launch), first-party project spaces (`dist.js`). **For the write side** (security review, 2026-10-16): a moderation action must purge the thread's, its space's and channel's, the home page's and the sitemap's cache keys (until then a hidden thread can stay cached up to a minute, the sitemap ten); and thread slugs are made on write from the title as lowercase letters, digits and hyphens only, since the address accepts nothing else.
+
 **Built so far (#135):** the `community.forum` switch (off), migration `0031_community.sql` (tables below), the formatter `server/community/format.js` with `test/unit/community-format.test.js`, the reserved page address `community` in project sites (`server/sites/document.js`), and the rules and copyright pages ([community safety](community-safety.md)). Nothing else exists yet; the tables stay empty while the switch is off.
 
 **Modules.** One area, `server/community/`, split by job: `spaces.js`, `access.js` (one check, scoped to a single space), `threads.js`, `posts.js`, `votes.js`, `format.js`, `render.js` and `public.js` (server-rendered pages), `sitemap.js`, `reports.js`, `moderation.js`, `erase.js` (account deletion and export), `routes.js`. It reuses `server/creators/roles.js` for project spaces (new capabilities such as `community.moderate`, `community.update`), `server/lib/ratelimit.js`, `server/email/`, `server/polls/`, and the impersonation policy (community writes never opt in, so support views stay read-only). It never imports `server/sites/` rendering, and orders, payments and entitlements never read community data. Wording: `server/library/` is the builder's "community library" of site pieces; the community is a different thing and keeps distinct names.
@@ -126,7 +128,7 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 ## Build order
 
 1. ~~Architect review, rules and legal pages, migration, formatter~~ (done, #135).
-2. Read side: the community Function, spaces, channels, threads rendered on the server, `/community/sitemap.xml`, SEO tests, the `dist.js` change for first-party project spaces.
+2. ~~Read side: the community Function, spaces, channels, threads rendered on the server, `/community/sitemap.xml`~~ (done, #136; first-party project spaces and the `robots.txt` line still to do).
 3. Posting: display names, age declaration, the formatter, Discussion and Question, accepted answers, Helpful votes, upvotes and sorting, limits, edit and delete.
 4. Moderation: routed reports, urgent reports with false-report filtering, blocks, space bans, copyright notices and strikes, Control Center queue, suspensions, audit. **The whole feature stays behind a switch (`community.forum`, off) until this step and the launch gates in [community safety](community-safety.md) are done.**
 5. Project spaces and Updates (Official marks, team roles, news pages and dashboards from Updates; then move `data/news.js` with addresses kept).
