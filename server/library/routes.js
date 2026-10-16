@@ -70,7 +70,7 @@ async function remove(app, { creatorId, pieceId }) {
   const user = await requireUser(app);
   const { creator } = await requireCreator(app.db, creatorId, user, rolesFor("library.share"));
   const piece = await getPiece(app.db, pieceId);
-  if (!piece || piece.creator_id !== creator.id || piece.status !== "active") fail(404, "not_found", "Nothing here.");
+  if (!piece || piece.creator_id !== creator.id || !["active", "pending"].includes(piece.status)) fail(404, "not_found", "Nothing here.");
   await setStatus(app.db, piece.id, "deleted");
   // Off sale; people who bought it keep it (and can still install it).
   if (piece.product_id) {
