@@ -29,6 +29,7 @@
 .admin-alerts [data-severity="critical"] .admin-alert-level { color: var(--on-accent); background: var(--coral); border-color: var(--coral); }
 .admin-alerts [data-severity="warning"] .admin-alert-level { color: var(--accent-2); }
 .admin-alerts [data-severity="info"] .admin-alert-level { color: var(--muted); }
+#order-detail { max-width: 100%; overflow-x: auto; }
 #order-detail h2 { overflow-wrap: anywhere; }
 #order-detail h2:focus, .admin-preview h2:focus, .admin-product:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 
