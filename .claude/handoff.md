@@ -1,27 +1,10 @@
-# Handoff
-Commit: eabb7bc
-Branch: ccr-0cc8daba-j2q8kb
+# Handoff: guides (#134), paused by the owner 2026-10-16
 
-## Goal
-Pack Builder and Pac editor (plan: docs/packs.md). Phases 0–9 and the Pac editor are merged (#109, #110, #114, #115):
-one drop zone (file, folder or ZIP) that opens in the visual builder and waits for Publish; replace-or-add for a whole
-Pac; file cards, drag and drop, previews, read me. Owner's answers: docs/decisions.md (2026-10-15 entries).
+The owner paused this to fix dependencies first. Resume only when they say so.
 
-## Done and verified
-- PR #115 merged with CI green (store, store-browser, browser, test, image, seo, docs).
-- After it: limits and warnings (4 GB per file in `server/packs/accept.js`, browser checks in `js/pac-drop.js`,
-  preview cutting up to 200 MB in `js/pac-previews.js`, builder note in `js/pac-editor.js`), previews GET makes no Pac
-  (`server/packs/previews.js`), repo-map rules in `.claude/tools/tree.sh`, CLAUDE.md at 1,100 words.
-- npm test 140/140; packs API group 43/43.
-
-## Open
-- Owner decisions and setup: #111. Phase 10 (optional previews, fingerprints): #112. Analysis calibration: #113.
-- Not done from review (judged not worth it now): `prompt()`/`confirm()` dialogs in the builder; the part-upload retry
-  loop is duplicated in `js/pac-add.js` and `js/packs-upload.js`; GET of an addition merges a finished job (as the
-  version poll does). `js/pac-editor.js` is about 195 lines.
-
-## Next
-Run the full suites, open a PR for the limits and hygiene work, merge on green. Then pick from #111–#113.
-
-## Read first
-docs/packs.md ("Pac editor"), docs/decisions.md (last entries), server/packs/editor-routes.js, js/pac-drop.js
+- Branch `ccr-4c5e875c-kzqkhd`, PR #141. It started as the docs-only plan (community, profiles, safety, guides). The guide work is now on it too, so #141 isn't docs-only any more: either finish the guide and retitle it, or split it.
+- Squash-merge #141: earlier commits named the owner's private legal plans (since reworded in the notes).
+- Built: `data/guides.js` (12 articles), `scripts/lib/guide-pages.js`, `data/guide-index.js` (generated), `js/guide-search.js`, `css/guide.css`, extra blocks in `scripts/lib/rich-text.js`, links (footer, help, contact, Studio), reserved slugs, `scripts/dist.js` ships `guide/`, `scripts/seo-test.js` covers `/guide`.
+- Checked: `node scripts/build.js`, `node scripts/seo-test.js` (0 fail), `npm test` (159 pass), `node scripts/docs-test.js`.
+- Next: merge `main` in, rebuild, review each article against the code (`docs/guides.md` names the source notes), run `verify-site`, `npm run test:store` (the reserved-slug unit test is in it), `release-check`, then update #141 and close #134.
+- Issues #135–#140: the community and profiles build steps, after the guide.

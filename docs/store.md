@@ -51,7 +51,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `promotions/` | sales and promo codes: what's running and what it takes off | `GET`/`POST /api/admin/promotions`, `POST /api/admin/promotions/:id/end` |
 | `projects/` | projects (synced, plus Studio ones), follows, the projects browser | `GET /api/projects`, `GET /api/projects/browse` ([browse](browse.md)), `PUT`/`DELETE /api/follows/:projectId` |
 | `polls/` | generic polls and votes | `GET /api/polls/:pollId`, `POST /api/polls/:pollId/vote` |
-| `creators/` | creators, members, Studio projects, slug holds, free-plan limits ([creators](creators.md)) | (used by studio, sites, revenue, admin) |
+| `creators/` | creators, members, Studio projects, slug holds and reserved names (`server/lib/slugs.js`), free-plan limits ([creators](creators.md)) | (used by studio, sites, revenue, admin) |
 | `studio/` | the Studio API: claim a creator, projects, site drafts, preview, publish, images, products and their files, sales, insights, earnings and payout requests, the payout account | `/api/studio/*` |
 | `sites/` | creator sites: the document, blocks, embeds, themes, rendering, publishing, images, public pages | `/<creator>[/<project>[/<page>]]` (`functions/[[path]].js`), `/media/sites/:id` |
 | `revenue/` | who sold each order line and how its money splits (`split.js`), creators' earnings and the 14-day hold (`earnings.js`), payout requests (`payouts.js`) | (used by checkout, studio, admin) |

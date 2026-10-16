@@ -2,7 +2,7 @@
 title: Production requirements
 summary: What makes AutoStacc fit to run as a public store (trust pages, licences, support, privacy, security, accessibility, SEO) and the rules every change must keep.
 covers: [data/legal.js, data/help.js, data/licenses.js, data/product-types.js, data/site.js, scripts/lib/trust-pages.js, scripts/lib/rich-text.js, scripts/seo-test.js, _headers, server/files/policy.js, server/sites/images.js, server/sites/render.js, server/auth/index.js, server/lib/ratelimit.js, server/account/, server/email/preferences.js, server/analytics/routes.js, server/downloads/, server/impersonation/, server/packs/review.js, js/layout.js, SECURITY.md, LICENSE]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Production requirements
@@ -18,6 +18,7 @@ updated: 2026-10-15
 | `/refunds` | `data/legal.js` | Refunds for digital downloads |
 | `/security` | `data/legal.js` | How accounts, payments and files are protected; reporting a problem |
 | `/contact` | `data/legal.js` | How to reach AutoStacc, and what people can do themselves |
+| `/guide` | `data/guides.js` | Step-by-step guides and the creator manual, searchable together with `/help` ([guides](guides.md)) |
 | `/help` | `data/help.js` | Questions and answers by topic (following, Auto-Stacc and release emails described as they work: opt-in, never paid items, announced releases only) |
 | `/license` | `data/licenses.js` | What buyers may do, per kind of product |
 
