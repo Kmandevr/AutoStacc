@@ -123,7 +123,7 @@
     width: min(88vw, 360px);
     max-height: none;
     padding: 16px 18px 28px;
-    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
     -webkit-backdrop-filter: var(--blur, blur(18px));
     backdrop-filter: var(--blur, blur(18px));
     border-right: 1px solid var(--line);

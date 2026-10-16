@@ -124,7 +124,7 @@ body:has(> .site-frame)::before {
 .platform .page-hero { padding: 40px 0 20px; }
 .platform .page-hero h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
 .platform section { padding: 40px 0; }
-.platform .alt { background: color-mix(in srgb, var(--panel) 45%, transparent); border-block: 1px solid var(--glass-edge); }
+.platform .alt { background: color-mix(in srgb, var(--panel) 70%, transparent); border-block: 1px solid var(--glass-edge); }
 
 /* section titles carry a small track-colour chip, like a track header */
 .platform .section-head h2 { display: inline-flex; align-items: center; gap: .5em; }
@@ -168,10 +168,10 @@ body:has(> .site-frame)::before {
 /* ---------- glass surfaces: AutoStacc's own panels and cards let the ambient light through (a project's look keeps
    its own solid surfaces, so it stays itself) ---------- */
 .platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]) {
-  background-color: color-mix(in srgb, var(--panel) 72%, transparent);
+  background-color: color-mix(in srgb, var(--panel) 90%, transparent);
   border-color: var(--glass-edge);
 }
-.platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 82%, transparent); }
+.platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 94%, transparent); }
 
 /* ---------- feedback: quiet, quick, the same everywhere ---------- */
 .platform .btn { transition: transform .16s var(--snap), box-shadow .2s var(--snap), background-color .16s, border-color .16s, color .16s, opacity .16s; }

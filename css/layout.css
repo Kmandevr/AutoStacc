@@ -37,7 +37,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   gap: 18px;
   padding: 16px 12px 24px;
   overflow-y: auto;
-  background: color-mix(in srgb, var(--panel) 66%, transparent);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
   -webkit-backdrop-filter: var(--blur, blur(18px));
   backdrop-filter: var(--blur, blur(18px));
   border-right: 1px solid var(--glass-edge, var(--line));
@@ -128,7 +128,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   gap: 12px;
   height: var(--topbar);
   padding: 0 20px;
-  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
   -webkit-backdrop-filter: var(--blur, blur(18px));
   backdrop-filter: var(--blur, blur(18px));
   border-bottom: 1px solid var(--glass-edge, var(--line));
@@ -183,7 +183,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--panel) 78%, transparent);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
   -webkit-backdrop-filter: var(--blur, blur(18px));
   backdrop-filter: var(--blur, blur(18px));
   border-color: var(--glass-edge, var(--line));
@@ -296,7 +296,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     padding-bottom: env(safe-area-inset-bottom);
-    background: color-mix(in srgb, var(--panel) 68%, transparent);
+    background: color-mix(in srgb, var(--panel) 90%, transparent);
     -webkit-backdrop-filter: var(--blur, blur(18px));
     backdrop-filter: var(--blur, blur(18px));
     border-top: 1px solid var(--glass-edge, var(--line));
