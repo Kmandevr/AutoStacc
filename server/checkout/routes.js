@@ -4,6 +4,7 @@
 // as the order is written (trigger promotions_limit), so concurrent checkouts can't overspend one.
 // Nothing is owned until a verified payment event arrives (server/payments/events.js).
 import { json, readJson, fail, email as emailField, str } from "../lib/http.js";
+import { isOpen } from "../settings/settings.js";
 import { sha256 } from "../lib/crypto.js";
 import { parseItems, priceCart, publicCart as publicView } from "../cart/pricing.js";
 import { currentUser, impersonationIdOf } from "../auth/session.js";
@@ -29,6 +30,8 @@ const PROMO_PROBLEMS = {
 async function checkout(app) {
   const { db, config, request } = app;
   await limit(app, "checkout", 12, 60);
+  // Settings › Switches: with sales paused nothing can be bought (the cart keeps its items).
+  if (!(await isOpen(db, "store_sales"))) fail(503, "sales_paused", "Sales are paused for a moment. Your cart is saved; try again soon.");
   const body = await readJson(app.request);
   const items = parseItems(body.items);
   const user = await currentUser(app);
