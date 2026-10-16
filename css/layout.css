@@ -334,3 +334,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .cart-count.bump { animation: count-bump .42s var(--snap); }
 }
 @keyframes count-bump { 30% { transform: scale(1.45); color: var(--teal); } }
+
+/* the store's notice (js/site-notice.js, set in Control Center › Settings › Switches): one calm line above the page */
+.site-notice { margin: 0; padding: 10px 20px; text-align: center; font-family: var(--font); font-size: .92rem; font-weight: 600;
+  color: var(--text); background: color-mix(in srgb, var(--amber) 22%, var(--panel)); border-bottom: 1px solid var(--line); }

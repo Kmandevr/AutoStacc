@@ -2,6 +2,7 @@
 // account that owns the product right now writes, edits or deletes its own one. "mine" tells the page whether the
 // visitor may review and what they wrote. Admin hiding is server/admin/reviews.js.
 import { json, readJson, fail, id, int } from "../lib/http.js";
+import { isOpen } from "../settings/settings.js";
 import { currentUser, requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
 import { getProduct, isVisible } from "../catalog/products.js";
@@ -30,6 +31,7 @@ async function write(app, { productId }) {
   const user = await requireUser(app);
   const p = await visibleProduct(app, productId);
   await limit(app, "review-write", 20, 3600);
+  if (!(await isOpen(app.db, "reviews"))) fail(503, "reviews_paused", "Reviews are paused for now. Try again later.");
   if (!(await owns(app.db, user, p.id))) fail(403, "not_a_buyer", "Only people who own this product can review it.");
   const body = await readJson(app.request, 4096);
   const rating = int(body.rating, "rating", { min: 1, max: 5 });

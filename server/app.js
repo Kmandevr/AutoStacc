@@ -49,6 +49,9 @@ import { routes as adminCreators } from "./admin/creators.js";
 import { routes as adminCreatorSales } from "./admin/creator-sales.js";
 import { routes as adminUsage } from "./admin/usage.js";
 import { routes as adminStorageBilling } from "./admin/storage-billing.js";
+import { routes as adminSwitches } from "./admin/switches.js";
+import { routes as siteStatus } from "./settings/status.js";
+import { isOpen } from "./settings/settings.js";
 import { routes as studioStorage } from "./studio/storage.js";
 import { routes as reviews } from "./reviews/routes.js";
 import { routes as adminReviews } from "./admin/reviews.js";
@@ -65,7 +68,7 @@ import { routes as maintenance } from "./maintenance/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountTwoFactor, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, adminLibrary, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, studioStorage, reviews, adminReviews, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, adminLibrary, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, reviews, adminReviews, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;
@@ -83,6 +86,10 @@ export async function handleApi(request, env, ctx) {
     const match = auth ? null : router.match(request.method, path);
     // While an impersonation cookie is present, decide before anything runs (server/impersonation/policy.js).
     const gate = await impersonationGate(app, { auth, route: match && match.route });
+    // Settings › Switches: with sign-ups closed, no new account is made (existing ones still sign in).
+    if (auth && path === "/api/auth/sign-up/email" && !(await isOpen(app.db, "signups"))) {
+      throw new HttpError(403, "signups_closed", "New accounts are closed for now. If you already have one, log in.");
+    }
     if (auth) return await createAuth(app).handler(request);
     if (!match) throw new HttpError(404, "not_found", "Nothing here.");
     if (match.methodNotAllowed) throw new HttpError(405, "method_not_allowed", "That method isn't allowed here.");

@@ -48,7 +48,10 @@ window.WORKSPACES = {
           { key: "entitlements", label: "Entitlements" }
         ] }
       ] },
-      { id: "settings", label: "Settings", hint: "Test purchases, paid storage and the audit log", groups: [
+      { id: "settings", label: "Settings", hint: "Store-wide switches, test purchases, paid storage and the audit log", groups: [
+        { label: "Store", items: [
+          { key: "switches", label: "Switches" }
+        ] },
         { label: "Tools", items: [
           { key: "tests", label: "Test purchases" },
           { key: "storage-billing", label: "Paid storage" },

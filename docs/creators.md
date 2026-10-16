@@ -36,7 +36,7 @@ Both live in D1 `creators`. Projects point at their creator (`projects.creator_i
 
 Signed-in accounts with a confirmed email (the page is gated like `/dashboard`):
 
-1. **Claim a creator name.** It's free with no plan or card, one creator per account for now.
+1. **Claim a creator name.** It's free with no plan or card, one creator per account for now (unless the owner has closed new creators in Control Center › Settings › Switches).
 2. **Create projects** (up to 10) and open one in the editor.
 3. **Design the profile and each project's site in the visual builder** ([builder](builder.md)): start from a template or a blank page, then edit on the page itself (select, drag and resize on a 12-column grid, type into headings), with a side panel for each element's fields, style, motion and phone settings, sections with backgrounds, up to 12 pages with a menu, the look (style preset, accent, font or an uploaded WOFF2 font, logo), the creator's own CSS, undo and redo and a phone view. Elements: heading, text (paragraphs, **bold**, *italic*, links), button, image, gallery (with a lightbox), slideshow, music or video embed (YouTube, Spotify, SoundCloud, Apple Music share links), an audio player for a product's preview clip, events, tabs, FAQ / accordion, countdown, social links, products, projects, a Follow button and a cart link (both links to AutoStacc's own pages), divider and box.
 4. **Files:** upload PNG, JPEG, GIF or WebP images and WOFF2 fonts. Delete one and its storage is freed at once, unless a published page or a kept version still uses it (then it stays until nothing does).

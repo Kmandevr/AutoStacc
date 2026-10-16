@@ -17,7 +17,8 @@ import emailChange from "./email-change.suite.js";
 import projects from "./projects.suite.js";
 import collections from "./collections.suite.js";
 import reviews from "./reviews.suite.js";
+import switches from "./switches.suite.js";
 import { switchedOff as twoFactorOff } from "./two-factor.suite.js";
 
 runGroup({ name: "accounts", ports: { mock: 8801 }, stripe: false },
-  [auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account, newsletter, notifications, emailChange, projects, collections, reviews, twoFactorOff]);
+  [auth, downloads, guests, hygiene, admin, platform, pages, stats, creators, account, newsletter, notifications, emailChange, projects, collections, reviews, switches, twoFactorOff]);
