@@ -69,6 +69,9 @@
 
   addEventListener("gs:admin", () => {
     orders(); customers(); entitlements();
+    // A payment alert on Stats links here as /admin/daily#order=<id>: open that order's details at once.
+    const asked = location.hash.match(/^#order=(.+)$/);
+    if (asked) orderDetail(decodeURIComponent(asked[1]));
     const root = $("#admin-app");
     root.addEventListener("click", async (e) => {
       const o = e.target.closest("[data-order]");

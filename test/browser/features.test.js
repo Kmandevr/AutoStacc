@@ -26,7 +26,7 @@ describe("features in the browser", () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, "owner@browser.test");
     const id = sql(t.stateDir, `SELECT id FROM "user" WHERE email = '${customer}'`)[0].id;
-    await page.goto("/admin");
+    await page.goto("/admin/daily");
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
@@ -42,8 +42,8 @@ describe("features in the browser", () => {
       assert.ok(top >= await bar.evaluate((b) => b.offsetHeight), path);
     }
     await page.click("[data-imp-exit]");
-    await page.waitForURL((u) => u.pathname === "/admin");
-    await page.waitForSelector('[data-ws-item="overview"][aria-current="page"]');
+    await page.waitForURL((u) => u.pathname === "/admin/daily");
+    await page.waitForSelector('[data-ws-item="customers"][aria-current="page"]');
     assert.equal(await page.locator("#impersonation-bar").count(), 0);
 
     // Ended elsewhere (here: its time limit): the page says so instead of quietly turning back into the admin.
@@ -55,7 +55,7 @@ describe("features in the browser", () => {
     await page.waitForSelector("#impersonation-bar.imp-ended");
     assert.match(await page.title(), /^\[IMPERSONATION ENDED\]/);
     await page.click("[data-imp-exit]");
-    await page.waitForURL((u) => u.pathname === "/admin");
+    await page.waitForURL((u) => u.pathname === "/admin/daily");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

@@ -58,7 +58,7 @@
       btn.textContent = "Exit failed, try again";
       return;
     }
-    location.replace(res.data.redirect || "/admin");
+    location.replace(res.data.redirect || "/admin/daily#customers");
   });
 
   draw({ active: false, reason: "checking" });

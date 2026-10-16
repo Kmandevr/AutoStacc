@@ -28,7 +28,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | --- | --- | --- |
 | `auth/` | Better Auth config, `currentUser`, `requireUser`, `requireAdmin` | `/api/auth/*` (Better Auth) |
 | `account/` | who is signed in; Settings: devices, email preferences, the data export, deleting the account ([below](#accounts)) | `GET /api/account`, `/api/account/devices` (+ `/:id/sign-out`, `/sign-out-others`), `GET`/`PUT /api/account/email-preferences`, `POST /api/account/email` (+ `/confirm`), `POST /api/account/export`, `POST /api/account/delete` |
-| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/settings` and `/settings/<section>`, `/studio`, `/admin` (Pages Functions in `functions/`) |
+| `pages/` | the server-side gates: account pages (login redirect) and `/admin` (404 unless admin) | `/dashboard`, `/settings` and `/settings/<section>`, `/studio`, `/admin` and `/admin/<page>` (stats, daily, manage, settings) (Pages Functions in `functions/`) |
 | `catalog/` | reading products (price, availability; `state` with `ids` also gives each product's download size from its published files; `:id` adds its store details) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `discovery/` | store search, filters and counts, autocomplete, similar products, recommendations; the metadata vocabulary ([discovery](discovery.md)) | `GET /api/store/search`, `/api/store/suggest`, `/api/store/similar/:id`, `/api/products/:id/contents` (What's inside), `POST /api/store/recommendations` |
 | `wishlist/` | a signed-in person's saved products | `GET /api/wishlist`, `PUT`/`DELETE /api/wishlist/:id` |

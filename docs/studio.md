@@ -15,7 +15,7 @@ updated: 2026-10-16
 | --- | --- |
 | **Creator Dashboard** (`/studio`) | Everything that belongs to the creator as a whole: the creator name and public profile, all projects and their sites (block editor), each project's list of products, earnings across all products, the payout account, and payout requests. This page already exists as `/studio`. |
 | **Product Studio** (`/studio#product=<id>`, plus `&section=<key>`) | One product, opened from its project's product list. It has a persistent sidebar of sections and a compact header. Every section works on the same product record. |
-| **Control Center** (`/admin`) | The owner's admin, in the same workspace shell (sidebar, compact header, drawer on phones) with its own sections. |
+| **Control Center** (`/admin`) | The owner's admin, in the same workspace shell (sidebar, compact header, drawer on phones), split into sub-pages (Stats, Daily, Manage, Settings at `/admin/<page>`; `data/workspaces.js` `control.pages`), each with its own sections ([admin](admin.md)). |
 
 **Why one product, not one project** (owner, 2026-10-10). In AutoStacc a *Project* (for example Glitches & Stitches) is a creative identity that holds many products. The brief's "project studio" manages one sellable thing: one Pac, one store page, one price. So its unit is the **product**. Project-level work (the site, the product list, project follows) stays on the Creator Dashboard.
 

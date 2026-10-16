@@ -15,19 +15,35 @@
   const PACS = window.PACS || [];
   const KINDS = window.CONTENT_TYPES || {};
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
-  // Sections and their groups come from data/workspaces.js; optional features switched off (data/features.js) leave none behind.
-  const GROUPS = ((window.WORKSPACES || {}).control || { groups: [] }).groups
-    .map((g) => ({ ...g, items: g.items.filter((it) => it.key !== "packs" || (window.FEATURES || {})["packs.builder"] !== false) }))
-    .filter((g) => g.items.length);
-  const KEYS = GROUPS.flatMap((g) => g.items.map((it) => it.key));
-  const LABEL = Object.fromEntries(GROUPS.flatMap((g) => g.items.map((it) => [it.key, it.label])));
+  // Sub-pages, their sidebar groups and sections come from data/workspaces.js; optional features switched off
+  // (data/features.js) leave none behind. The address picks the sub-page (/admin/<id>; plain /admin is the first, Stats).
+  const keep = (it) => it.key !== "packs" || (window.FEATURES || {})["packs.builder"] !== false;
+  const PAGES = (((window.WORKSPACES || {}).control || {}).pages || [])
+    .map((pg) => ({ ...pg, groups: pg.groups.map((g) => ({ ...g, items: g.items.filter(keep) })).filter((g) => g.items.length) }))
+    .filter((pg) => pg.groups.length);
+  const keysOf = (pg) => pg.groups.flatMap((g) => g.items.map((it) => it.key));
+  const PAGE = PAGES.find((pg) => pg.id === (location.pathname.match(/^\/admin\/([a-z]+)\/?$/) || [])[1]) || PAGES[0];
+  const GROUPS = PAGE.groups;
+  const KEYS = keysOf(PAGE);
+  // Every section's panel is drawn on every sub-page (hidden), so each tab's script finds its panel wherever it runs.
+  const ALL = PAGES.flatMap(keysOf);
+  const LABEL = Object.fromEntries(PAGES.flatMap((pg) => pg.groups.flatMap((g) => g.items.map((it) => [it.key, it.label]))));
+  const pageOf = (key) => PAGES.find((pg) => keysOf(pg).includes(key));
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
   let ws = null;
 
-  // The workspace shell (js/workspace.js): LIVE or TEST in the header, the environment under the title, the figures and
-  // payment alerts above every section, and one panel per section (#admin-<key>, which each tab's own script fills).
+  // The sub-page tabs: Stats carries a count of the payment alerts that need a look, so they're seen from every page.
+  const pageTabs = (urgent) => `<nav class="admin-pages" aria-label="Control Center pages"><ul>${PAGES.map((pg) => `<li>
+    <a href="/admin/${pg.id}"${pg === PAGE ? ' aria-current="page"' : ""} title="${escapeHTML(pg.hint || "")}">${escapeHTML(pg.label)}${pg.id === "stats" && urgent
+      ? ` <span class="admin-badge">${urgent}<span class="sr-only"> payment alert${urgent === 1 ? "" : "s"} to check</span></span>` : ""}</a></li>`).join("")}</ul></nav>`;
+
+  // The workspace shell (js/workspace.js): LIVE or TEST in the header, the environment under the title, the sub-page
+  // tabs, the figures and payment alerts on Stats, and one panel per section (#admin-<key>, which each tab's own
+  // script fills).
   function shell(s) {
     const paid = (s.orders.find((o) => o.status === "paid") || { n: 0, cents: 0 });
+    const urgent = s.alerts.filter((a) => a.severity !== "info").length;
+    const stats = PAGE.id === "stats";
     ws = window.GS.workspace.mount(root, {
       label: "Control Center", title: "AutoStacc store",
       subtitle: `${s.environment} · ${s.livePayments ? "Real payments. Test purchases are off here." : "Test payments only: nothing here is real revenue."}`,
@@ -35,24 +51,24 @@
       groups: GROUPS, current: KEYS[0],
       onSelect: (key) => show(key)
     });
-    ws.body.innerHTML = `
-      <ul class="admin-kpis" aria-label="Store at a glance">${[["Environment", s.environment], ["Payments", s.paymentProvider], ["Products", s.products], ["Customers", s.customers],
+    ws.body.innerHTML = `${pageTabs(urgent)}
+      ${stats ? `<ul class="admin-kpis" aria-label="Store at a glance">${[["Environment", s.environment], ["Payments", s.paymentProvider], ["Products", s.products], ["Customers", s.customers],
         ["Paid orders", `${paid.n} · ${cents(paid.cents || 0)}`], ["Active entitlements", s.activeEntitlements]]
         .map(([k, v]) => `<li><span>${k}</span><strong>${escapeHTML(String(v))}</strong></li>`).join("")}</ul>
       ${alerts(s.alerts.filter((a) => a.severity !== "info"), "msg error", "alert", "Payment events that need a look (check them in Stripe too):")}
-      ${alerts(s.alerts.filter((a) => a.severity === "info"), "msg", "status", "Payment events on hold:")}
-      ${KEYS.map((k, i) => `<section class="admin-section" data-admin-section="${k}" aria-labelledby="admin-h-${k}"${i ? " hidden" : ""}>
+      ${alerts(s.alerts.filter((a) => a.severity === "info"), "msg", "status", "Payment events on hold:")}` : ""}
+      ${ALL.map((k) => `<section class="admin-section" data-admin-section="${k}" aria-labelledby="admin-h-${k}"${k === KEYS[0] ? "" : " hidden"}>
         <h2 class="admin-section-title" id="admin-h-${k}" tabindex="-1" data-ws-heading>${escapeHTML(LABEL[k])}</h2>
         <div class="admin-panel" id="admin-${k}"></div></section>`).join("")}`;
   }
 
   // The summary's payment alerts (ranked by server/admin/alerts.js): severity spelled out, the full time, the order id
-  // opening that order's details in Orders (js/admin-records.js answers [data-order]) and the next step.
+  // opening that order's details in Orders on Daily (#order=<id>, which js/admin-records.js opens) and the next step.
   const LEVEL = { critical: "Critical", warning: "Check", info: "Waiting" };
   const when = (iso) => String(iso || "").replace("T", " ").replace(/\.\d+Z$|Z$/, " UTC");
   const alerts = (list, cls, role, title) => (list.length ? `<div class="${cls} admin-alerts" role="${role}">${title}<ul>${list.map((a) => `<li data-severity="${escapeHTML(a.severity)}">
     <strong class="admin-alert-level">${LEVEL[a.severity] || escapeHTML(a.severity)}</strong> <time datetime="${escapeHTML(a.receivedAt)}">${escapeHTML(when(a.receivedAt))}</time>
-    ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.orderId ? ` (order <a href="#orders" data-order="${escapeHTML(a.orderId)}">${escapeHTML(a.orderId)}</a>)` : ""}
+    ${escapeHTML(a.type)} → ${escapeHTML(a.outcome)}${a.detail ? `: ${escapeHTML(a.detail)}` : ""}${a.orderId ? ` (order <a href="#order=${encodeURIComponent(a.orderId)}">${escapeHTML(a.orderId)}</a>)` : ""}
     <br><span class="small-print">${escapeHTML(a.next)}</span></li>`).join("")}</ul></div>` : "");
 
   // The open section lives in the address (/admin#orders), so a reload or a shared link lands on it.
@@ -60,7 +76,14 @@
     root.querySelectorAll("[data-admin-section]").forEach((el) => { el.hidden = el.dataset.adminSection !== key; });
     if (location.hash.slice(1) !== key) history.replaceState(null, "", key === KEYS[0] ? location.pathname : `#${key}`);
   }
-  const selectTab = (key, focus) => ws.select(KEYS.includes(key) ? key : KEYS[0], { focus });
+  // A section on another sub-page (a link like #products from Daily, or #order=<id> from a Stats alert) opens that page
+  // in place of this one, so Back doesn't bounce through it.
+  const selectTab = (hash, focus) => {
+    const key = hash.startsWith("order=") ? "orders" : hash;
+    const home = pageOf(key);
+    if (home && home !== PAGE) return location.replace(`/admin/${home.id}#${hash}`);
+    ws.select(KEYS.includes(key) ? key : KEYS[0], { focus });
+  };
 
   // A product action that didn't go through says so beside the product instead of failing silently.
   const act = async (el, path, body, method = "PATCH") => {
