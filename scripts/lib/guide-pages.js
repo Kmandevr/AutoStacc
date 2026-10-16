@@ -4,7 +4,7 @@
 const H = require("./head");
 const { abs } = require("./data");
 const { shell, hero, clip, suffix } = require("./pages");
-const { blocks, inline } = require("./rich-text");
+const { blocks } = require("./rich-text");
 
 const { esc } = H;
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -97,17 +97,18 @@ function articlePage(SITE, guides, a) {
   return { file: `guide/${a.id}.html`, page: p, html: shell(SITE, { page: p, section: "guide", styles: ["prose", "guide"], scripts: [], main }) };
 }
 
-// Plain text of a body, for the search index: markup and link targets dropped.
-const plain = (SITE, body, where) => body.map((b) => (typeof b === "string" ? [b] : b.list || b.steps || [b.note || b.heading || ""]))
-  .flat().map((t) => inline(SITE, t, where).replace(/<[^>]+>/g, "")).join(" ")
-  .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
+// Plain text of a body, for the search index, read straight from the source markup (never from HTML): a link keeps
+// its label, **bold** its words, {contact} becomes "contact support". The index is shown with textContent only.
+const plainLine = (t) => String(t).replace(/\[([^\]]+)\]\([^)\s]+\)/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\{contact\}/g, "contact support");
+const plain = (body) => body.map((b) => (typeof b === "string" ? [b] : b.list || b.steps || [b.note || b.heading || ""]))
+  .flat().map(plainLine).join(" ").replace(/\s+/g, " ").trim();
 
 // One entry per guide and per help answer: title, where it is, its path and its text.
 function searchIndex(SITE, guides, help) {
   const sectionTitle = Object.fromEntries(guides.sections.map((s) => [s.id, s.title]));
   return [
-    ...guides.articles.map((a) => ({ t: a.title, s: sectionTitle[a.section], p: articlePath(a), x: `${a.summary} ${plain(SITE, a.body, `data/guides.js ${a.id}`)}` })),
-    ...help.flatMap((g) => g.items.map((q) => ({ t: q.q, s: "Help", p: `/help#${q.id}`, x: plain(SITE, q.a, `data/help.js #${q.id}`) })))
+    ...guides.articles.map((a) => ({ t: a.title, s: sectionTitle[a.section], p: articlePath(a), x: `${a.summary} ${plain(a.body)}` })),
+    ...help.flatMap((g) => g.items.map((q) => ({ t: q.q, s: "Help", p: `/help#${q.id}`, x: plain(q.a) })))
   ];
 }
 
