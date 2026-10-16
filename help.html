@@ -71,6 +71,7 @@
   <link rel="stylesheet" href="/css/platform.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/prose.css">
+  <link rel="stylesheet" href="/css/guide.css">
 </head>
 <body data-page="help-item" data-section="help">
   <header id="site-header"></header>
@@ -81,7 +82,7 @@
         <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li aria-current="page">Help</li></ol></nav>
         <p class="detail-kicker">AutoStacc</p>
         <h1 class="glitch" data-text="Help">Help</h1>
-        <p>Quick answers about buying, downloading, your account and Your Stacc. Can't find yours? See <a href="/contact">Contact</a>.</p>
+        <p>Quick answers about buying, downloading, your account and Your Stacc. Step by step: the <a href="/guide">Guides</a>. Can't find yours? See <a href="/contact">Contact</a>.</p>
       </div>
     </div>
 
@@ -90,6 +91,11 @@
         <nav class="prose-toc" aria-label="On this page"><p class="prose-toc-title">On this page</p>
           <ol><li><a href="#purchases">Purchases and downloads</a></li><li><a href="#accounts">Accounts</a></li><li><a href="#products">Products</a></li><li><a href="#payments">Payments and refunds</a></li><li><a href="#autostacc">Projects and Your Stacc</a></li></ol></nav>
         <div class="prose">
+          <form class="guide-search" role="search" data-guide-search hidden>
+          <label for="guide-q">Search help and guides</label>
+          <input id="guide-q" type="search" name="q" autocomplete="off" placeholder="Try: download, refund, payouts">
+          <ul class="guide-results" aria-live="polite"></ul>
+        </form>
           <section id="purchases" aria-labelledby="purchases-h">
           <h2 id="purchases-h">Purchases and downloads</h2>
           <h3 id="how-downloads-work">How do downloads work?</h3>
@@ -149,7 +155,7 @@
           <h3 id="notifications">Will I get emails about new releases?</h3>
           <p>Only if you ask: switch them on in <a href="/settings/email">Settings › Emails</a>. New-release emails go out when AutoStacc announces a release from a project you follow; publishing alone doesn't send one. Receipts and account emails always come.</p>
           </section>
-          <nav class="prose-related" aria-label="Help and policies"><p>See also</p><ul><li><a href="/contact">Contact</a></li><li><a href="/terms">Terms</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/refunds">Refunds</a></li><li><a href="/license">Licences</a></li><li><a href="/security">Security</a></li></ul></nav>
+          <nav class="prose-related" aria-label="Help and policies"><p>See also</p><ul><li><a href="/guide">Guides</a></li><li><a href="/contact">Contact</a></li><li><a href="/terms">Terms</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/refunds">Refunds</a></li><li><a href="/license">Licences</a></li><li><a href="/security">Security</a></li></ul></nav>
         </div>
       </div>
     </section>
@@ -159,9 +165,11 @@
 
   <script src="/data/site.js"></script>
   <script src="/data/projects.js"></script>
+  <script src="/data/guide-index.js"></script>
   <script src="/js/util.js"></script>
   <script src="/js/layout.js"></script>
   <script src="/js/account-nav.js"></script>
+  <script src="/js/guide-search.js"></script>
   <script src="/js/motion.js"></script>
 </body>
 </html>

@@ -37,6 +37,7 @@ function llmsTxt(data) {
     `- [Store](${url("/shop")}): digital downloads, delivered right after checkout (payments by Stripe)`,
     `- [About](${url("/about")}): how ${SITE.name} works and what its words mean`,
     `- [Projects](${url("/projects")}): every project on ${SITE.name}`,
+    `- [Guides](${url("/guide")}): step-by-step help for buying, Your Stacc and refunds, and the creator manual for the Studio, selling, packs and payouts`,
     "",
     "## Words",
     "",

@@ -11,7 +11,7 @@ const OUT = path.resolve(ROOT, process.argv[2] || "dist");
 const ROOT_FILES = ["_redirects", "_headers", "robots.txt", "sitemap.xml", "llms.txt"];
 const { loadData } = require("./lib/data");
 const CREATORS = loadData().creators.map((c) => c.id);
-const DIRS = ["css", "js", "data", "img", "shop", ...CREATORS];
+const DIRS = ["css", "js", "data", "img", "shop", "guide", ...CREATORS];
 // Editor-only files and folder notes stay out of the public site.
 const SKIP = (name) => name === ".purpose" || name.endsWith(".d.ts") || name === "jsconfig.json" || name.startsWith(".");
 

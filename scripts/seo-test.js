@@ -32,7 +32,7 @@ const buildCheck = new Promise((resolve) =>
 // ---------- pages ----------
 const htmlUnder = (dir) => (exists(dir) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
+const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("guide"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
 const urlPath = (f) => (f === "index.html" ? "/" : "/" + f.replace(/\.html$/, ""));
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));
@@ -214,8 +214,8 @@ locs.forEach((u, i) => {
 for (const [f, p] of Object.entries(pages)) if (!p.noindex && !locs.includes(ORIGIN + p.path)) add("FAIL", "sitemap-missing", `${ORIGIN + p.path} not in sitemap.xml`, f);
 if (locs.length && !out.some((l) => l.startsWith("FAIL sitemap"))) add("PASS", "sitemap", `${locs.length} canonical public URLs, valid XML`);
 // The trust pages a public store needs (docs/production.md) are always published and indexable.
-for (const p of ["/privacy", "/terms", "/refunds", "/license", "/help", "/contact", "/security"]) {
-  if (!locs.includes(ORIGIN + p)) add("FAIL", "trust-page", `${p} must be a public page in sitemap.xml (data/legal.js, data/help.js, data/licenses.js)`);
+for (const p of ["/privacy", "/terms", "/refunds", "/license", "/help", "/guide", "/contact", "/security"]) {
+  if (!locs.includes(ORIGIN + p)) add("FAIL", "trust-page", `${p} must be a public page in sitemap.xml (data/legal.js, data/help.js, data/guides.js, data/licenses.js)`);
 }
 
 // ---------- robots.txt ----------

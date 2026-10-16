@@ -1,0 +1,21 @@
+/* Guides (/guide and /guide/<id>, scripts/lib/guide-pages.js) and the search box /guide and /help share */
+/* (js/guide-search.js). Article text itself uses css/prose.css. */
+
+.guide-home { display: grid; gap: 8px; }
+.guide-section { scroll-margin-top: calc(var(--topbar, 58px) + 16px); }
+.guide-section h2 { margin: 28px 0 4px; }
+.guide-intro { margin: 0 0 14px; color: var(--muted); max-width: 70ch; }
+.guide-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.guide-card { display: grid; gap: 6px; height: 100%; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--text); text-shadow: none; }
+.guide-card:hover, .guide-card:focus-visible { border-color: var(--accent); color: var(--text); }
+.guide-card span { color: var(--muted); font-size: .92rem; line-height: 1.5; }
+
+.guide-search { position: relative; max-width: 640px; margin-bottom: 8px; }
+.guide-search label { display: block; margin-bottom: 6px; font-family: var(--mono); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.guide-search input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--text); font: inherit; }
+.guide-results { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.guide-results:empty { display: none; }
+.guide-results a { display: grid; gap: 2px; padding: 10px 12px; border-radius: 8px; background: var(--panel-2); color: var(--text); text-shadow: none; }
+.guide-results a:hover, .guide-results a:focus-visible { outline: 1px solid var(--accent); }
+.guide-results span, .guide-empty { color: var(--muted); font-size: .85rem; }
+.guide-empty { padding: 10px 12px; }
