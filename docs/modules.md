@@ -21,7 +21,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 
 | Module | Element | Options |
 | --- | --- | --- |
-| Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`; each card opens the product's own page |
+| Product grid (`js/shop.js` + `js/product-card.js`) | `[data-shop]` | `data-project`, `data-featured`, `data-limit`, `data-level`, `data-mixed` (store-style sizes: featured products as wide banner cards with a Preview button when they have a clip, the rest as artwork-only capsules whose title rises on hover and always shows on phones; the store uses them too); each card opens the product's own page |
 | The store page (`js/store-browse.js`, `js/store-filters.js`, `js/store-suggest.js`, `js/store-sections.js`) | `[data-browse]`, `[data-store-sections]` | none: one per page, state in the address ([discovery](discovery.md)); sections elsewhere take `data-sections`, `data-brief`, `data-fallback` |
 | Wishlist hearts (`js/wishlist.js`) | `[data-wish]` | the product id |
 | What's inside (`js/product-contents.js`) | `[data-product-contents]` | the product id (else `?p=` in the address); hidden unless its files came from the Pack Builder ([discovery](discovery.md)) |

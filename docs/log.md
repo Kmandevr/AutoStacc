@@ -8,6 +8,7 @@ updated: 2026-10-16
 
 Newest first.
 
+- 2026-10-16: UI pass (owner): readable frosted glass, home backdrop follows the theme, account menu blurs, phone scroll cue fixed, clickable cards lift, grow and tilt on hover, store-style card sizes (featured banners, artwork capsules) with a faint ring so artwork never blends into the page.
 - 2026-10-16: Paid storage: owner's answers (rate $0.05, monthly cap in dollars, earnings first then card, charged above a lowered cap until back under) and the security review's fixes. Reviews from confirmed buyers (stars and optional text, server/reviews/, migration 0030, #96). Notes: creators, store, admin, decisions.
 - 2026-10-16: Paid creator storage built and off (server/billing/, Studio storage panel, Control Center Paid storage, migration 0029, #142); each stored original now counts once; taxed orders' refunds recorded before tax (#129); /privacy and /terms describe storage billing.
 - 2026-10-16: Community library, second security review: paid pieces stay pending until their product is on sale; self-refunds claim their order (migration 0028) so a refund and a template's use can't both succeed; a deleted piece's files used elsewhere keep counting against their creator until swept; guest-bought and expiring entitlements handled for installed files. Notes: builder, store, decisions.
