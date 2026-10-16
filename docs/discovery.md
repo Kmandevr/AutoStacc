@@ -2,7 +2,7 @@
 title: Store discovery
 summary: How the store is searched, filtered and personalized - the metadata vocabulary, the search API and its query semantics, the recommendation score and its weights, the on-device history and its privacy rules, wishlists, and the limits.
 covers: [server/discovery/, server/wishlist/, data/vocabulary.js, js/product-contents.js, db/migrations/0020_product_contents.sql, js/store-browse.js, js/store-filters.js, js/store-suggest.js, js/store-sections.js, js/taste.js, js/wishlist.js, js/similar.js, js/studio-details.js, css/store.css, db/migrations/0012_discovery.sql]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Store discovery
