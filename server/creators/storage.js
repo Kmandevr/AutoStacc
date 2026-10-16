@@ -4,8 +4,8 @@
 // mark it aborted once its bytes are gone) for a version not yet published, discarded or failed; every stored original
 // of theirs no delivered file already counts (a draft's files, one copied from the live version adding only what's
 // new, and files removed from a draft until the sweep deletes them: blobs/sweep.js); their Pacs' preview clips; and their
-// site files (images and fonts, also those only old versions or their shared pieces still use; not files of a piece they
-// deleted that other creators' sites still use: sites/images.js). inUseSql(p) is the expression with the creator id bound as parameter p, for use inside the insert
+// site files (images and fonts, also those only old versions or their shared pieces still use, and files of a piece they
+// deleted that other creators' sites still use, until the daily sweep deletes them: sites/images.js). inUseSql(p) is the expression with the creator id bound as parameter p, for use inside the insert
 // that takes the room, so two uploads at once can't both squeeze under.
 import { first } from "../lib/db.js";
 
@@ -20,6 +20,6 @@ export const inUseSql = (p) => `((SELECT COALESCE(SUM(f.size_bytes), 0) FROM pro
     AND b.id NOT IN (SELECT f.blob_id FROM product_files f JOIN products p ON p.id = f.product_id JOIN projects j ON j.id = p.project_id
       WHERE j.creator_id = ${p} AND f.blob_id IS NOT NULL AND f.active = 1))
   + (SELECT COALESCE(SUM(pp.size_bytes), 0) FROM pac_previews pp JOIN pacs pc ON pc.id = pp.pac_id JOIN projects j ON j.id = pc.project_id WHERE j.creator_id = ${p})
-  + (SELECT COALESCE(SUM(a.size_bytes), 0) FROM site_assets a WHERE a.creator_id = ${p} AND a.status = 'active' AND a.released_at IS NULL))`;
+  + (SELECT COALESCE(SUM(a.size_bytes), 0) FROM site_assets a WHERE a.creator_id = ${p} AND a.status = 'active'))`;
 
 export const storageUsed = async (db, creatorId) => (await first(db, `SELECT ${inUseSql("?1")} AS n`, creatorId)).n;

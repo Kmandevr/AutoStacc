@@ -84,6 +84,10 @@ export default (ctx) => describe("community library", () => {
     assert.equal(order.pay.status, 200, JSON.stringify(order.pay.data));
     assert.equal((await u.c.post(`/api/studio/creators/${u.creator.id}/library/${made.data.piece.id}/install`, {})).status, 200);
     assert.equal((await s.c.post(`/api/studio/creators/${s.creator.id}/library/${made.data.piece.id}/install`, {})).status, 200, "its creator uses it free");
+    // A refund that claimed the order first wins over a use at the same moment.
+    sql(ctx.mock.stateDir, `UPDATE orders SET refund_claimed_at = '2026-01-01T00:00:00.000Z' WHERE id = '${order.orderId}'`);
+    assert.equal((await u.c.post(`/api/studio/creators/${u.creator.id}/library/${made.data.piece.id}/install`, {})).data.error.code, "refund_in_progress");
+    sql(ctx.mock.stateDir, `UPDATE orders SET refund_claimed_at = NULL WHERE id = '${order.orderId}'`);
     // Using it counts like a download: the buyer can't refund it and keep it.
     const back = await u.c.post(`/api/orders/${order.orderId}/refund`, {});
     assert.equal(back.status, 409);
@@ -105,7 +109,8 @@ export default (ctx) => describe("community library", () => {
     assert.equal((await s.c.req("DELETE", `/api/studio/creators/${s.creator.id}/images/${s.image.id}`, { body: {} })).data.kept, true);
     assert.equal((await s.c.req("DELETE", `/api/studio/creators/${s.creator.id}/library/${id}`, { body: {} })).status, 200);
     assert.ok(!(await u.c.get(`/api/studio/library?creatorId=${u.creator.id}`)).data.pieces.some((p) => p.id === id), "no longer listed");
-    assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/site`)).data.storage.usedBytes, before - PNG.length, "released from its creator's storage");
+    assert.equal((await s.c.get(`/api/studio/creators/${s.creator.id}/site`)).data.storage.usedBytes, before, "still counted for its creator until the sweep deletes it");
+    assert.ok(!(await s.c.get(`/api/studio/creators/${s.creator.id}/site`)).data.files.some((f) => f.id === s.image.id), "but no longer theirs to use");
     assert.equal((await new Client(base()).get(s.image.src)).status, 200, "still served for the site that installed it");
     assert.equal((await u.c.post(`/api/studio/creators/${u.creator.id}/library/${id}/install`, {})).status, 200, "who installed it can still use it");
     // Installing your own piece and deleting it frees nothing: only other creators' installs keep files.

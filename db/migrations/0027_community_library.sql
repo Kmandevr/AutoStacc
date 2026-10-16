@@ -1,7 +1,7 @@
 -- The community library (owner, 2026-10-15; docs/builder.md, phase 8): sections, elements and whole-site templates
 -- that trusted creators share with every creator, free or for sale. A piece is a checked fragment of a site document
 -- (server/library/pieces.js); its images stay the seller's files and count against the seller only.
--- status: active (listed), deleted (by its creator: no longer listed; sites that installed it keep it), removed (taken
+-- status: pending (a paid piece until its product is on sale: never listed or installable), active (listed), deleted (by its creator: no longer listed; sites that installed it keep it), removed (taken
 -- down by AutoStacc: unlisted, its product off sale and its images no longer shown anywhere).
 -- product_id: the store product a paid piece is sold as (type 'template'); owning it lets a buyer install the piece.
 CREATE TABLE library_pieces (
@@ -15,7 +15,7 @@ CREATE TABLE library_pieces (
   size_bytes INTEGER NOT NULL DEFAULT 0,
   price_cents INTEGER NOT NULL DEFAULT 0,
   product_id TEXT,
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'deleted', 'removed')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('pending', 'active', 'deleted', 'removed')),
   removed_note TEXT,
   -- At a takedown: the status it had and whether its product was on sale, so a restore puts back exactly that.
   removed_from TEXT,

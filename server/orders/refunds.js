@@ -3,7 +3,7 @@
 // the library and the creators' earnings then change through the same refund event a provider webhook would send
 // (server/payments/events.js), so the two can arrive in either order and only the first changes anything.
 // Anything else (downloaded, too old, free) is a conversation with support, not a button.
-import { first } from "../lib/db.js";
+import { first, run, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { providerForOrder } from "../payments/index.js";
 import { processPaymentEvent } from "../payments/events.js";
@@ -31,11 +31,20 @@ const MESSAGES = {
 };
 
 export async function refundOrder(app, order) {
+  const refuse = (state) => fail(409, "not_refundable", MESSAGES[state.reason] || "This order can't be refunded here.", { reason: state.reason });
   const state = await refundStatus(app.db, order);
-  if (!state.eligible) fail(409, "not_refundable", MESSAGES[state.reason] || "This order can't be refunded here.", { reason: state.reason });
+  if (!state.eligible) refuse(state);
+  // Claim the order, then check again: a download (or a site template's use) logged meanwhile wins, and one that comes
+  // after sees the claim and stops (library/routes.js). Two refunds at once: the second finds the claim.
+  const claimed = await run(app.db, "UPDATE orders SET refund_claimed_at = ? WHERE id = ? AND refund_claimed_at IS NULL", now(), order.id);
+  if (!claimed.meta.changes) fail(409, "not_refundable", "A refund for this order is already under way.", { reason: "in-progress" });
+  const release = () => run(app.db, "UPDATE orders SET refund_claimed_at = NULL WHERE id = ?", order.id);
+  const again = await refundStatus(app.db, order);
+  if (!again.eligible) { await release(); refuse(again); }
   try {
     await providerForOrder(app, order).refund(app, order);
   } catch (e) {
+    await release();
     console.error("refund failed", e && e.type, e && e.code, e && e.message);
     fail(503, "refund_unavailable", "The payment service couldn't refund this just now. Nothing changed; try again in a minute or contact support.");
   }

@@ -2,7 +2,7 @@
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
 covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, server/settings/, server/collections/, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Store
@@ -123,7 +123,7 @@ All outcomes go through `server/payments/events.js`, which accepts only verified
 
 Handled Stripe events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`. Others are logged and ignored. If a webhook is late, the checkout page calls `POST /api/orders/:id/reconcile`, which asks Stripe directly with the secret key and feeds the answer through the same pipeline. The browser's "success" page never changes anything.
 
-Customer refunds: `POST /api/orders/:id/refund` refunds a paid order itself, within 14 days of payment and only if nothing from it was downloaded (`server/orders/refunds.js`; anything else goes to support). The money goes back through the provider, and the order, library and creators' earnings change through the same refund event a webhook would bring, so whichever arrives first wins. The order pages show whether an order can be refunded.
+Customer refunds: `POST /api/orders/:id/refund` refunds a paid order itself, within 14 days of payment and only if nothing from it was downloaded or used (`server/orders/refunds.js`; it claims the order (`orders.refund_claimed_at`, migration 0028) and checks again before calling the provider, and a site template's use checks the claim after logging itself, so a refund and a use at the same moment can't both succeed; anything else goes to support). The money goes back through the provider, and the order, library and creators' earnings change through the same refund event a webhook would bring, so whichever arrives first wins. The order pages show whether an order can be refunded.
 
 ## Entitlements
 

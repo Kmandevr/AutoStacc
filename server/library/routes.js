@@ -3,7 +3,7 @@
 // also needs the role that runs products), install one into your own sites (a paid one only once you own it), delete
 // your own, and report any. AutoStacc's takedowns are in library/admin.js.
 import { json, readJson, fail, str, int } from "../lib/http.js";
-import { first } from "../lib/db.js";
+import { first, run } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
 import { SELLING } from "../creators/policy.js";
@@ -14,7 +14,7 @@ import { createProduct, updateProduct } from "../creators/products.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { stillUsed, purge, releaseFile } from "../sites/images.js";
 import { getProject } from "../creators/creators.js";
-import { KINDS, browse, getPiece, share, linkProduct, install, setStatus, report, discard } from "./pieces.js";
+import { KINDS, browse, getPiece, share, linkProduct, install, setStatus, report, discard, activate } from "./pieces.js";
 import { activeEntitlements } from "../entitlements/grants.js";
 import { logEvent } from "../downloads/events.js";
 
@@ -46,15 +46,18 @@ async function create(app, { creatorId }) {
   if (n >= PIECES_PER_CREATOR) fail(409, "limit_reached", `Up to ${PIECES_PER_CREATOR} shared pieces per creator. Delete one first.`);
   const project = priceCents ? (await requireProject(app.db, str(body.projectId, "projectId", { max: 80 }), user, rolesFor("products"))).project : null;
   if (project && project.creator_id !== creator.id) fail(404, "not_found", "Nothing here.");
-  const pieceId = await share(app.db, { creator, user, kind: body.kind, title, description, raw: body.piece });
+  const pieceId = await share(app.db, { creator, user, kind: body.kind, title, description, raw: body.piece, pending: Boolean(priceCents) });
   if (priceCents) {
     // Shared and on sale together, or neither: a product that can't be made or put on sale takes the piece back.
     let product = null;
     try {
       product = await createProduct(app.db, { creator, project, user, input: { title, description, type: "template", priceCents } });
       await linkProduct(app.db, pieceId, product.id, priceCents);
+      // The product's readiness needs its piece listed: activate, then put on sale; a failure takes both back.
+      await activate(app.db, pieceId);
       await updateProduct(app.db, { product, project, creator, input: { published: true }, user });
     } catch (e) {
+      await run(app.db, "UPDATE library_pieces SET status = 'pending' WHERE id = ? AND installs = 0", pieceId);
       await discard(app.db, pieceId);
       if (product) await updateProduct(app.db, { product, project, creator, input: { deleted: true }, user }).catch(() => {});
       throw e;
@@ -94,7 +97,7 @@ async function use(app, { creatorId, pieceId }) {
   await limit(app, "library-install", 60, 600);
   const { creator } = await requireCreator(app.db, creatorId, user, rolesFor("site.edit"));
   const piece = await getPiece(app.db, pieceId);
-  if (!piece || piece.status === "removed") fail(404, "not_found", "This piece isn't available.");
+  if (!piece || piece.status === "removed" || piece.status === "pending") fail(404, "not_found", "This piece isn't available.");
   const seller = await getCreator(app.db, piece.creator_id);
   const mine = piece.creator_id === creator.id;
   const bought = piece.product_id && (await owned(app, user)).has(piece.product_id);
@@ -105,7 +108,12 @@ async function use(app, { creatorId, pieceId }) {
   // Using a bought piece is like downloading it: its order can't be refunded by the buyer afterwards (orders/refunds.js).
   if (piece.product_id && !mine) {
     const [ent] = await activeEntitlements(app.db, { user, guestOrderIds: [] }, piece.product_id);
-    if (ent) await logEvent(app, "served", { productId: piece.product_id, entitlementId: ent.id, subject: `u:${user.id}`, reason: "library-install" });
+    if (ent) {
+      await logEvent(app, "served", { productId: piece.product_id, entitlementId: ent.id, subject: `u:${user.id}`, reason: "library-install" });
+      // A refund that claimed the order first wins (orders/refunds.js).
+      const refunding = await first(app.db, "SELECT 1 FROM orders WHERE id = ? AND refund_claimed_at IS NOT NULL", ent.source_id);
+      if (refunding) fail(409, "refund_in_progress", "This purchase is being refunded, so it can't be used.");
+    }
   }
   return json(await install(app.db, piece, creator.id, user));
 }
@@ -114,7 +122,7 @@ async function flag(app, { pieceId }) {
   const user = await requireUser(app);
   await limit(app, "library-report", 10, 3600);
   const piece = await getPiece(app.db, pieceId);
-  if (!piece || piece.status === "removed") fail(404, "not_found", "Nothing here.");
+  if (!piece || piece.status === "removed" || piece.status === "pending") fail(404, "not_found", "Nothing here.");
   const reason = str((await readJson(app.request)).reason, "reason", { min: 3, max: 500 });
   await report(app.db, piece, user, reason);
   return json({ ok: true });

@@ -88,7 +88,8 @@ export async function browse(db, { kind, q, creatorId, owned }) {
 
 export const getPiece = (db, id) => first(db, `${SELECT} WHERE p.id = ?`, id);
 
-export async function share(db, { creator, user, kind, title, description, raw }) {
+// A paid piece starts pending: nobody can see or use it until its product is linked and on sale (activate).
+export async function share(db, { creator, user, kind, title, description, raw, pending = false }) {
   const { fragment, assets } = cleanFragment(kind, raw);
   if (assets.length) {
     const own = new Set((await ownImages(db, creator.id, assets)).map((a) => a.id));
@@ -97,13 +98,14 @@ export async function share(db, { creator, user, kind, title, description, raw }
   const id = newId("lp");
   const json = JSON.stringify(fragment);
   const t = now();
-  await run(db, `INSERT INTO library_pieces (id, creator_id, kind, title, description, fragment, assets, size_bytes, created_by, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, creator.id, kind, title, description, json, JSON.stringify(assets), json.length, user.id, t, t);
+  await run(db, `INSERT INTO library_pieces (id, creator_id, kind, title, description, fragment, assets, size_bytes, status, created_by, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, creator.id, kind, title, description, json, JSON.stringify(assets), json.length, pending ? "pending" : "active", user.id, t, t);
   return id;
 }
 
 export const linkProduct = (db, pieceId, productId, priceCents) =>
   run(db, "UPDATE library_pieces SET product_id = ?, price_cents = ?, updated_at = ? WHERE id = ?", productId, priceCents, now(), pieceId);
+export const activate = (db, pieceId) => run(db, "UPDATE library_pieces SET status = 'active', updated_at = ? WHERE id = ? AND status = 'pending'", now(), pieceId);
 
 // Records an install (once per creator) and returns what the editor needs to insert it.
 export async function install(db, piece, creatorId, user) {
@@ -122,7 +124,7 @@ export const takeDown = (db, piece, note, productWasLive) => run(db,
   piece.status, productWasLive ? 1 : 0, note, now(), piece.id);
 
 // Deletes a piece that was never shared (its product couldn't be made).
-export const discard = (db, pieceId) => run(db, "DELETE FROM library_pieces WHERE id = ? AND installs = 0", pieceId);
+export const discard = (db, pieceId) => run(db, "DELETE FROM library_pieces WHERE id = ? AND status = 'pending'", pieceId);
 
 export async function report(db, piece, user, reason) {
   const res = await run(db, "INSERT INTO library_reports (id, piece_id, reporter_id, reason, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
@@ -134,7 +136,9 @@ export async function report(db, piece, user, reason) {
 // not their own (their own files are theirs already), and for a paid piece only while whoever installed it still owns
 // it (a refund ends it).
 const LIVE_INSTALL = `p.status IN ('active', 'deleted') AND p.creator_id <> i.creator_id
-  AND (p.product_id IS NULL OR EXISTS (SELECT 1 FROM entitlements e WHERE e.product_id = p.product_id AND e.user_id = i.installed_by AND e.status = 'active'))`;
+  AND (p.product_id IS NULL OR EXISTS (SELECT 1 FROM entitlements e JOIN "user" u ON u.id = i.installed_by
+    WHERE e.product_id = p.product_id AND e.status = 'active' AND (e.expires_at IS NULL OR e.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      AND (e.user_id = u.id OR (e.user_id IS NULL AND e.email = lower(u.email)))))`;
 
 // Files of the pieces this creator installed, among these ids: their sites may show them.
 export async function installedFiles(db, creatorId, ids) {
