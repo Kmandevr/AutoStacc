@@ -51,7 +51,9 @@
     const by = p.projectName || projectOf(project).name || "";
     const href = GS.shopItemPath(p);
     const b = p.badges || {};
-    const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : ""].filter(Boolean);
+    const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
+      // Buyers' reviews (server/reviews/), only when there are any.
+      p.rating ? `★ ${p.rating.average} (${p.rating.count} review${p.rating.count === 1 ? "" : "s"})` : ""].filter(Boolean);
     const art = p.artwork || (p.image && "/" + p.image.src.replace(/^\/+/, ""));
     const facts = [...labels(p).map((l) => `<li class="label-${l.facet}">${e(l.label)}</li>`),
       p.bpm ? `<li class="label-bpm">${p.bpm[0] === p.bpm[1] ? p.bpm[0] : `${p.bpm[0]}–${p.bpm[1]}`} BPM</li>` : ""];

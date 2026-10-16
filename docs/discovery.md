@@ -43,7 +43,7 @@ The store page (`/shop`) is a search over the real catalog in D1, with filters, 
 | search | 0.20 | Share of the recent search words found (title hit 1, elsewhere 0.5) |
 | behavior | 0.18 | Similarity to the closest product engaged with, times how much that engagement says |
 | price | 0.07 | 1 − (log-price distance from the middle of explored prices) / 2; 0 without price history |
-| quality | 0.05 | 1 for a verified creator, 0.5 otherwise (reviews would join here) |
+| quality | 0.05 | half the creator (1 verified, 0.5 otherwise), half buyers' stars as a confidence-adjusted average (`RATING`: the mean pulled toward 3.5 as if it had 5 more reviews; none sits at 3.5), scaled 1..5 → 0..1 |
 | popularity | 0.08 | log(1 + 3·purchases + 2·saves + 0.1·views), divided by the catalog's highest |
 | freshness | 0.05 | Linear from 1 (today) to 0 (60 days) |
 | discovery | 0.07 | 0.5 outside the visitor's usual kinds and genres + 0.3 if seldom viewed + 0.2 × a daily rotation per device |
@@ -68,7 +68,7 @@ The current search and filters always win: while the store is narrowed, the sect
 
 ## Limits and next steps
 
-- **No reviews or ratings yet:** there is no review data, so there is no rating filter, sort or badge; the quality component uses verified creators only. Reviews tied to confirmed purchases would slot into `quality` (issue #96).
+- **Ratings from buyers' reviews** ([store](store.md), `server/reviews/`, #96): the search CTE adds each product's shown reviews (owners only, not hidden: `RATINGS_SQL`), their average and the confidence-adjusted score. **Top rated** (`sort=rating`) orders by that score, so one 5-star review doesn't outrank four averaging 4.5; `rating_min=1..5` keeps products averaging at least that (none without reviews), with the "4 stars and up" count in `toggles.rated`; cards show `★ average (n reviews)` only when there are reviews. Creators' replies aren't built (not decided).
 - **Search is `LIKE` over `search_text`:** fine for thousands of products; move to D1's FTS5 if the catalog or latency grows (issue #97).
 - **Signals are cached 60 s per Worker instance;** best-selling counts are read live.
 - **Placeholder catalog:** AutoStacc's own products are drafts (not in the store database in production), so the live store shows Studio products plus a "Coming soon" row from `data/products.js`.

@@ -10,6 +10,10 @@ export const LIMITS = { bodyChars: 1000, shown: 20 };
 const SHOWN = `r.hidden_at IS NULL AND ${ownsNowSql("r.product_id", "r.user_id", "u.email")}`;
 const FROM = `product_reviews r JOIN "user" u ON u.id = r.user_id`;
 
+// Per product: how many shown reviews and their average, for the store's search (server/discovery/search.js puts it in
+// its CTE). One parameter: the current time.
+export const RATINGS_SQL = `SELECT r.product_id, COUNT(*) AS n, AVG(r.rating) AS avg FROM ${FROM} WHERE ${SHOWN} GROUP BY r.product_id`;
+
 /** What the product page shows: the average and count of shown reviews, and the latest ones. */
 export async function reviewsOf(db, productId) {
   const t = now();
