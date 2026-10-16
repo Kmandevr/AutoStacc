@@ -168,7 +168,7 @@ body:has(> .site-frame)::before {
 /* ---------- glass surfaces: AutoStacc's own panels and cards let the ambient light through (a project's look keeps
    its own solid surfaces, so it stays itself) ---------- */
 .platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]) {
-  background-color: color-mix(in srgb, var(--panel) 82%, transparent);
+  background-color: color-mix(in srgb, var(--panel) 76%, transparent);
   border-color: var(--glass-edge);
 }
 .platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 88%, transparent); }
