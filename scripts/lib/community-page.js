@@ -1,0 +1,42 @@
+// The /community page (docs/community.md): AutoStacc's ordinary page frame, built here like every platform page. While
+// the community is closed it is the "opening soon" page. Once the community.forum switch is on, its Function
+// (functions/community.js) fetches this page as a template and fills the marked parts on the server
+// (server/community/page.js): the seo block, the heading area and the main area. Returns { file, page, html }.
+const H = require("./head");
+const { shell, suffix } = require("./pages");
+
+const MARK = (name) => [`<!-- community:${name}:start -->`, `<!-- community:${name}:end -->`];
+
+function communityPage(SITE) {
+  const title = `Community${suffix(SITE.name)}`;
+  const description = "AutoStacc's community for music and sound: ask questions, share what you make and join the spaces of the creators you follow. Opening soon.";
+  const page = { path: "/community", title, description, index: true, ogType: "website",
+    schema: [H.webPage(SITE, { path: "/community", title, description }, "WebPage", { breadcrumb: H.breadcrumbs(SITE, [["Home", "/"], ["Community", "/community"]]) })] };
+  const [hs, he] = MARK("hero");
+  const [ms, me] = MARK("main");
+  const main = `    <div class="page-hero detail-hero community-hero">
+      <div class="wrap">
+        ${hs}
+        <p class="detail-kicker">AutoStacc</p>
+        <h1 class="glitch" data-text="Community">Community</h1>
+        <p>A place for music and sound: ask and answer questions, share what you make, and join the spaces of the projects you follow.</p>
+        ${he}
+      </div>
+    </div>
+
+    <section>
+      <div class="wrap community-main">
+        ${ms}
+        <div class="community-closed">
+          <h2>Opening soon</h2>
+          <p>The community isn't open yet. Its rules are already published: read the <a href="/community-rules">community rules</a>.</p>
+          <p>Until then: <a href="/guide">Guides</a>, <a href="/help">Help</a> and <a href="/projects">Projects</a>.</p>
+        </div>
+        ${me}
+      </div>
+    </section>`;
+  const html = shell(SITE, { page, section: "community", styles: ["community"], scripts: [], main });
+  return { file: "community.html", page, html };
+}
+
+module.exports = { communityPage, MARK };
