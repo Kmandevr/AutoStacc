@@ -44,7 +44,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `email/` | templates, providers (Brevo, log), send log | (used by auth, orders) |
 | `admin/` | owner tools, paid files and previews (`files.js`), creators (`creators.js`), payout requests (`payouts.js`), creator purchases switch (`creator-sales.js`; pausing expires open creator payment pages through the provider's `expireCheckout`), AutoStacc news and release mail (`news.js`), usage (`usage.js`), customer preview, test purchases ([control center](admin.md)) | `/api/admin/*` |
 | `analytics/` | daily counters | `POST /api/events` |
-| `settings/` | store-wide switches in `store_settings` (creator purchases, the budget guard's spending month and storage cap) | (used by payments, usage, admin) |
+| `settings/` | store-wide switches in `store_settings` (creator purchases, the budget guard's spending month and storage cap, paid storage, and the Switches: store sales, payout requests, sign-ups, new creators, reviews, the site notice; [admin](admin.md)) and the public status (`status.js`) | `GET /api/site-status` (also used by payments, usage, admin) |
 | `stats/` | admin statistics: sections of typed metrics | `GET /api/admin/stats`, `/api/admin/stats/:section` |
 | `impersonation/` | support impersonation: rules, the per-request policy, start and exit | `POST /api/admin/customers/:userId/impersonate`, `POST /api/impersonation/exit` |
 | `audit/` | the append-only admin audit log | `GET /api/admin/audit` |
