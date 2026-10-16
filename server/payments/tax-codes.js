@@ -11,6 +11,7 @@ export const TAX_CODES = {
   presets: "txcd_10000000",        // General, electronically supplied (preset files fit no narrower code)
   visuals: "txcd_10505001",        // Digital Finished Artwork, downloaded, permanent rights
   "vj-loops": "txcd_10402100",     // Digital Audio Visual Works, downloaded, permanent rights
+  template: "txcd_10000000",      // General, electronically supplied (a site design installed in the Studio)
   other: "txcd_10000000"
 };
 export const GENERAL_TAX_CODE = "txcd_10000000";

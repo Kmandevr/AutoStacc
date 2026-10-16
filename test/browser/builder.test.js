@@ -163,6 +163,47 @@ describe("the visual builder in the browser", () => {
     assert.deepEqual(guest.page.errors, []);
   });
 
+  test("community library: a trusted creator shares a section; another creator previews it and uses it", async () => {
+    const seller = await open(DESK);
+    await signUp(seller.page, unique("lib-seller"));
+    await seller.page.goto("/studio");
+    const sellerSlug = `vbl-${Date.now().toString(36)}`;
+    await seller.page.fill("#cr-name", "Library Seller");
+    await seller.page.fill("#cr-slug", sellerSlug);
+    await seller.page.click("form[data-form=creator] button[type=submit]");
+    await seller.page.waitForSelector("[data-profile]");
+    sql(t.stateDir, `UPDATE creators SET trusted = 1 WHERE slug = '${sellerSlug}'`);
+    await seller.page.click("[data-profile]");
+    await seller.page.waitForSelector(".bx-frame");
+    seller.page.once("dialog", (d) => d.accept());
+    await seller.page.click('[data-action="template"][data-id="dj"]');
+    await frame(seller.page).locator("text=YOUR DJ NAME").waitFor();
+    await frame(seller.page).locator("[data-sec]").first().click({ position: { x: 5, y: 5 } });
+    await seller.page.click('.bx-panel-body [data-action="share"][data-kind="section"]');
+    await seller.page.fill("form[data-share] [name=title]", "Neon DJ banner");
+    await seller.page.click("form[data-share] button[type=submit]");
+    await seller.page.waitForSelector(".bx-status:text('Shared')");
+    assert.deepEqual(seller.page.errors, []);
+
+    const { page } = await open(DESK);
+    await signUp(page, unique("lib-user"));
+    await page.goto("/studio");
+    await page.fill("#cr-name", "Library User");
+    await page.fill("#cr-slug", `vblu-${Date.now().toString(36)}`);
+    await page.click("form[data-form=creator] button[type=submit]");
+    await page.click("[data-profile]");
+    await page.waitForSelector(".bx-frame");
+    await page.click('.bx-tabs [data-tab="library"]');
+    const card = page.locator(".bx-pieces li", { hasText: "Neon DJ banner" });
+    await card.waitFor();
+    await card.locator('[data-action="lib-preview"]').click();
+    await page.frameLocator(".bx-piece-frame").locator("text=YOUR DJ NAME").waitFor();
+    await card.locator('[data-action="lib-use"]').click();
+    await frame(page).locator("text=YOUR DJ NAME").waitFor();
+    await page.waitForSelector(".bx-status:text('added')");
+    assert.deepEqual(page.errors, []);
+  });
+
   test("on a phone: the editor fits, the panel follows the page, nothing scrolls sideways", async () => {
     const { page } = await open(PHONE);
     await signUp(page, unique("builder-phone"));

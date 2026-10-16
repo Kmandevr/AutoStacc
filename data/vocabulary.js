@@ -344,6 +344,13 @@ window.VOCABULARY = {
    "bpm": false,
    "specs": []
   },
+  "template": {
+   "facets": [
+    "style"
+   ],
+   "bpm": false,
+   "specs": []
+  },
   "other": {
    "facets": [
     "genre",

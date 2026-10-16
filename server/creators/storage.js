@@ -4,7 +4,8 @@
 // mark it aborted once its bytes are gone) for a version not yet published, discarded or failed; every stored original
 // of theirs no delivered file already counts (a draft's files, one copied from the live version adding only what's
 // new, and files removed from a draft until the sweep deletes them: blobs/sweep.js); their Pacs' preview clips; and their
-// site files (images and fonts, also those only old versions or installed pieces still use: sites/images.js). inUseSql(p) is the expression with the creator id bound as parameter p, for use inside the insert
+// site files (images and fonts, also those only old versions or their shared pieces still use, and files of a piece they
+// deleted that other creators' sites still use, until the daily sweep deletes them: sites/images.js). inUseSql(p) is the expression with the creator id bound as parameter p, for use inside the insert
 // that takes the room, so two uploads at once can't both squeeze under.
 import { first } from "../lib/db.js";
 

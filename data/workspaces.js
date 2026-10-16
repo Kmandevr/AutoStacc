@@ -31,6 +31,7 @@ window.WORKSPACES = {
         { key: "customers", label: "Customers" },
         { key: "entitlements", label: "Entitlements" },
         { key: "creators", label: "Creators" },
+        { key: "library", label: "Community library" },
         { key: "payouts", label: "Payouts" }
       ] },
       { label: "Tools", items: [

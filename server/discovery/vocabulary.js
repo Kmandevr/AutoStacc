@@ -40,6 +40,7 @@ export const SCHEMAS = {
   music: { facets: ["genre", "style", "mood", "energy", "use", "contents", "format"], bpm: true, specs: ["sampleRate", "bitDepth"] },
   visuals: { facets: ["style", "use", "contents", "format", "plugin"], bpm: false, specs: [] },
   "vj-loops": { facets: ["style", "use", "contents", "format", "plugin"], bpm: false, specs: [] },
+  template: { facets: ["style"], bpm: false, specs: [] },
   other: { facets: ["genre", "use", "contents", "format"], bpm: false, specs: [] }
 };
 export const SPECS = { sampleRate: { label: "Sample rate", values: [44100, 48000, 88200, 96000], unit: "kHz" }, bitDepth: { label: "Bit depth", values: [16, 24, 32], unit: "-bit" } };

@@ -13,5 +13,8 @@ window.PRODUCT_TYPES = {
   presets: { label: "Presets", maxQuantity: 1, preview: "audio", track: "presets", license: "sounds" },
   visuals: { label: "Visuals", maxQuantity: 1, preview: "none", track: "", license: "visuals" },
   "vj-loops": { label: "VJ Loops", maxQuantity: 1, preview: "none", track: "", license: "visuals" },
+  // Site templates and sections sold in the Studio's community library (docs/builder.md): nothing to download; owning
+  // one lets you install it into your own sites.
+  template: { label: "Site templates", maxQuantity: 1, preview: "none", track: "", license: "templates" },
   other: { label: "Other", maxQuantity: 1, preview: "audio", track: "" }
 };
