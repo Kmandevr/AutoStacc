@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Decisions
@@ -485,3 +485,8 @@ Before going public, the owner asked for the old commits to stop showing their p
 ## 2026-10-15: No private tracker (owner)
 
 The owner decided not to create the private repository `Kmandevr/AutoStacc-private` planned in the entry on private reports above. Security problems still go to private security advisories. Other private work (operational notes, incidents, owner-only decisions) is told to the owner in the session and never written into the public repository (the `tasks` skill, "What stays private").
+
+## 2026-10-16: Guides and community forum planned (owner)
+
+The owner set the next step as a support wiki and a community page, and chose: a guide written only by AutoStacc at `/guide` (with a full creator manual) beside the quick answers in `/help`, rather than a wiki users can edit or support tickets, because users can talk in the forum instead and static pages stay cheap and safe. For community, on-site discussions rather than a read-only hub or comments on releases. It is platform-wide at `/community`, with a space each project can turn on, and no outside community. Accounts with a confirmed email post, and anyone can read. Creator teams moderate their own space and AutoStacc moderates everywhere. Posts are text and links only, no uploads. Threads are public and indexed. The forum stays behind a switch until reporting, blocking and moderation are built, as [vision](vision.md) §8 requires. Plans: [guides](guides.md), [community](community.md). Nothing is built yet.
+

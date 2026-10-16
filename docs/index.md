@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # AutoStacc vault
@@ -28,6 +28,8 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Visual builder](builder.md): phases 1–6 BUILT, roles and the community library planned: one Wix-like editor for creator profiles and project sites (free grid, templates, checked CSS, trusted interactive library, community library, roles, history, scheduling) and its build order
 - [Creator pages](creator-pages.md): PLANNED / NOT IMPLEMENTED: blueprint for sandboxed creator HTML/CSS (later JavaScript) on project pages
 - [Product Studio](studio.md): one workspace per product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared shell the Control Center also uses; names, data ownership, API contracts, built vs planned
+- [Guides and creator manual](guides.md): PLANNED: long-form support articles at /guide beside /help, with a full Studio manual
+- [Community forum](community.md): PLANNED: on-site discussions at /community and per project; who posts, moderation, privacy, build order
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)
 - [Control Center](admin.md): the owner's admin: statistics and their sources, sales and promo codes, customer preview, support impersonation, test purchases, audit log
 - [Store setup](store-setup.md): the owner's checklist to switch the store on (Cloudflare, Stripe, Brevo, secrets)
