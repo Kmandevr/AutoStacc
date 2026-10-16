@@ -128,12 +128,20 @@ body:has(> .site-frame) { padding-left: var(--side); }
   gap: 12px;
   height: var(--topbar);
   padding: 0 20px;
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
-  -webkit-backdrop-filter: var(--blur, blur(18px));
-  backdrop-filter: var(--blur, blur(18px));
   border-bottom: 1px solid var(--glass-edge, var(--line));
   font-family: var(--font);
   view-transition-name: topbar;
+}
+/* the frosting sits on a layer behind the bar, so the account menu inside it can blur the page too (a blurred element
+   stops its children's backdrop blur from reaching the page) */
+.topbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  -webkit-backdrop-filter: var(--blur, blur(18px));
+  backdrop-filter: var(--blur, blur(18px));
 }
 .menu-toggle, .topbar-brand { display: none; }
 .topbar-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
