@@ -1,13 +1,15 @@
 ---
 title: Log
 summary: Dated history of changes, newest first.
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Log
 
 Newest first.
 
+- 2026-10-16: Community library, second security review: paid pieces stay pending until their product is on sale; self-refunds claim their order (migration 0028) so a refund and a template's use can't both succeed; a deleted piece's files used elsewhere keep counting against their creator until swept; guest-bought and expiring entitlements handled for installed files. Notes: builder, store, decisions.
+- 2026-10-15: Visual builder phase 8, the community library: trusted creators share elements, sections and whole sites (`server/library/`, migration 0027), free or sold as the new `template` product kind (licence, tax code, store schema); the editor's Library tab and Share buttons (`js/builder-library.js`); installed pieces' files shown on installers' sites; deleting releases files from the seller's storage (daily sweep deletes them once unused); reports and the Control Center's takedown (`js/admin-library.js`); the Control Center's storage column counts everything under the one cap. `/privacy` updated. Notes: builder, creators, admin, decisions, discovery, packs, shop, store-setup, studio, creator-pages, development.
 - 2026-10-15: UX clarity and reliability audit (outside the site builder). Follower and news emails count only accepted sends and stop on provider failure; deleted accounts' addresses leave dedupe keys. Pac Builder: edits keep drafts from the 30-day sweep and block a stale publish, rejections are told apart from failures, every state and failure is worded with a next step, discard/publish/replace say what they keep. Checkout: a stuck confirmation offers Check again, split carts explain each payment, possible double purchases alert the admins. Refunds: reasons with a contact link, disputed orders not self-refundable, lost disputes recorded. Admin: payout failures 503 and audited, orphaned transfers flagged, payment alerts ranked by severity with next steps, refused actions shown, related records linked. Owner decisions: #129, #130, #131.
 - 2026-10-15: Visual builder phase 7, teams: Admin, Publisher, Store manager and Editor roles as capabilities (`server/creators/roles.js`), invitations by email (`server/creators/team.js`, `server/studio/members.js`, migration 0026), the Team panel and invitation page (`js/studio-team.js`), the editor hiding publishing for those who can't; the Studio meter shows all storage. Security review follow-up: CSS can't name the editor's `bx-` marks. Notes: builder, creators, decisions, store, production, payouts-setup, architecture, development; `/privacy`.
 - 2026-10-15: Visual builder phases 1–6 built: site document v2 (free 12-column grid, sections, phone settings, menu) converting old sites, shared renderer and CSS checker in `js/site-*.js`, the editor (`js/builder*.js`: edit on the page, drag and resize, undo / redo, phone view), four templates, creator profiles at `/<creator>`, AutoStacc's runtime as the only script on creator pages, uploaded fonts, last 20 versions with restore, scheduled publishing, one 550 MB storage cap; `/privacy` and `/security` updated. Notes: builder, creators, decisions, packs, production, development, architecture, store, seo, creator-pages, payouts-setup.

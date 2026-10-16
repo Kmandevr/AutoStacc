@@ -7,6 +7,7 @@ import { requireAdmin } from "../auth/session.js";
 import { audit } from "../audit/log.js";
 import { getCreator } from "../creators/creators.js";
 import { quotaOf, feeBpsOf } from "../creators/policy.js";
+import { inUseSql } from "../creators/storage.js";
 import { republishCreator } from "../sites/publish.js";
 
 async function list(app) {
@@ -15,7 +16,7 @@ async function list(app) {
       (SELECT COUNT(*) FROM creator_members m WHERE m.creator_id = c.id) AS members,
       (SELECT COUNT(*) FROM projects p WHERE p.creator_id = c.id AND p.deleted_at IS NULL) AS projects,
       (SELECT COUNT(*) FROM projects p WHERE p.creator_id = c.id AND p.deleted_at IS NULL AND p.published = 1) AS published_projects,
-      (SELECT COALESCE(SUM(size_bytes), 0) FROM site_assets a WHERE a.creator_id = c.id AND a.status = 'active') AS used_bytes
+      ${inUseSql("c.id")} AS used_bytes
     FROM creators c WHERE c.deleted_at IS NULL ORDER BY c.created_at DESC LIMIT 500`);
   return json({ creators: rows.map((c) => ({ id: c.id, slug: c.slug, name: c.name, source: c.source, status: c.status, trusted: Boolean(c.trusted), packReview: c.pack_review || "auto",
     members: c.members, projects: c.projects, publishedProjects: c.published_projects, usedBytes: c.used_bytes,

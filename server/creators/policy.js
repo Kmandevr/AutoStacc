@@ -44,7 +44,7 @@ export const SELLING = {
   holdDays: 14,
   minPayoutCents: 1000,
   // Kinds of product a creator can make: the keys of data/product-types.js (a unit test keeps them equal).
-  kinds: ["music", "stems", "samples", "sample-pack", "presets", "visuals", "vj-loops", "other"]
+  kinds: ["music", "stems", "samples", "sample-pack", "presets", "visuals", "vj-loops", "template", "other"]
 };
 
 // The platform's share of a sale, in basis points (1/100 of a percent), when a creator has none of its own: 20%, the

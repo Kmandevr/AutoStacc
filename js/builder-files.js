@@ -15,7 +15,7 @@
     const items = data.files.map((f) => `<li>${f.contentType.startsWith("image/") ? `<img src="${e(f.src)}" alt="" loading="lazy">` : '<span class="bx-font" aria-hidden="true">Aa</span>'}
       <span class="bx-file-name">${e(f.filename)}<small>${size(f.sizeBytes)}</small></span>
       <button class="btn ghost small" type="button" data-action="copy" data-text="${e(f.src)}">Copy address</button>
-      <button class="btn ghost small danger" type="button" data-action="file-delete" data-id="${e(f.id)}">Delete</button></li>`).join("");
+      ${f.shared ? '<span class="small-print">From the library</span>' : `<button class="btn ghost small danger" type="button" data-action="file-delete" data-id="${e(f.id)}">Delete</button>`}</li>`).join("");
     return `<div class="bx-head"><h3>Files</h3></div>
       <label class="btn small bx-upload">Upload image or font<input type="file" accept="image/png,image/jpeg,image/gif,image/webp,.woff2,font/woff2" data-action="upload" hidden></label>
       <p class="small-print">Images (PNG, JPEG, GIF, WebP) up to ${size(data.options.limits.imageBytes)}; fonts (.woff2) up to ${size(data.options.limits.fontBytes)}.</p>

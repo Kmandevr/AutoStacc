@@ -1,13 +1,13 @@
 ---
 title: Visual builder
-summary: Phases 1–7 BUILT, 8–9 planned (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
-covers: [js/builder*.js, js/site-*.js, css/builder.css, css/builder-canvas.css, css/creator-site.css, server/sites/, server/studio/sites.js, server/studio/site-files.js, server/creators/storage.js, db/migrations/0025_visual_builder.sql, test/unit/builder.test.js, test/api/builder.suite.js, test/browser/builder.test.js]
-updated: 2026-10-15
+summary: BUILT (phases 1–9, 2026-10-15) (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
+covers: [server/library/, js/admin-library.js, db/migrations/0027_community_library.sql, js/builder*.js, js/site-*.js, css/builder.css, css/builder-canvas.css, css/creator-site.css, server/sites/, server/studio/sites.js, server/studio/site-files.js, server/creators/storage.js, db/migrations/0025_visual_builder.sql, test/unit/builder.test.js, test/api/builder.suite.js, test/browser/builder.test.js]
+updated: 2026-10-16
 ---
 
 # Visual builder
 
-> **Phases 1–7 BUILT (2026-10-15); 8–9 PLANNED.** The owner's answers of 2026-10-15, turned into a build plan. The visual editor replaced the Studio's form-based block editor ([creators](creators.md#the-studio-studio)). Each phase below is marked; what isn't marked **Built** doesn't exist yet. Decisions: [decisions](decisions.md#2026-10-15-the-visual-builder).
+> **BUILT: every phase (2026-10-15).** The owner's answers of 2026-10-15, turned into a build plan. The visual editor replaced the Studio's form-based block editor ([creators](creators.md#the-studio-studio)). Each phase below is marked; what isn't marked **Built** doesn't exist yet. Decisions: [decisions](decisions.md#2026-10-15-the-visual-builder).
 
 ## What the owner asked for
 
@@ -42,7 +42,7 @@ updated: 2026-10-15
 - **Template images count only against the seller.** Buyers' sites point at the seller's copy; only what a buyer uploads or changes counts for them.
 - **History counts only unique files**: images that only old versions still use. Page layouts are free.
 - **At the cap only new uploads stop.** Live sites and products stay up.
-- **A deleted template's images stay** while any site still uses them, and stop counting against the seller once the template is deleted (proposed by Claude, following the rule that buyers keep what they own).
+- **A deleted template's images stay** while any other creator's site still uses them, and keep counting against the seller until the daily sweep deletes them (Claude first proposed they stop counting; changed after the security review showed two accounts could then pass the cap).
 
 ## How it stays safe
 
@@ -67,7 +67,7 @@ The rules in [creators](creators.md#how-creator-pages-stay-safe) still hold; the
 - **Files**: `site_assets` holds images and fonts; `hidden_at` marks a deleted file a published page or kept version still uses (still served and counted; released after the next publish that leaves nothing using it; `server/sites/images.js`). Storage: `inUseSql` in `server/creators/storage.js` now adds site files, and `quotaOf` in `server/creators/policy.js` is the one 550 MB cap for every kind of upload.
 - **Templates**: `server/sites/templates.js`, four documents with placeholder words only and no files (`GET /api/studio/templates/:id`).
 - **Roles** (built, phase 7): `creator_roles` beside `creator_members` (its CHECK allows only `owner` and `editor`, and migrations never rebuild tables), invitations in `creator_invites` ([creators](creators.md#teams-built-2026-10-15)). In the editor, members who can't publish see no Publish, Unpublish or schedule; the server refuses them anyway.
-- **Community library** (planned, phase 8): `library_pieces` (kind section, element or template; the checked fragment; trusted creators only), `library_installs`, `library_reports`. A paid piece is a store product of kind `template` with no file; owning it allows installing it.
+- **Community library**: see below (migration `0027_community_library.sql`).
 
 ## The editor (built)
 
@@ -86,11 +86,21 @@ The rules in [creators](creators.md#how-creator-pages-stay-safe) still hold; the
 5. **Built.** Trusted library: `js/site-runtime.js` and its pieces (motion, slideshow, tabs, accordion, lightbox, audio player with waveform, countdown, store-link pieces).
 6. **Built.** History and scheduling: last 20 publishes with restore, scheduled publishing.
 7. **Built.** Roles: the four roles across the Studio API (capabilities in `server/creators/roles.js`), invitations by email, the Team panel.
-8. Community library: share, browse, install, report, Control Center takedown; selling pieces as store products.
-9. Finish: `/privacy`, the terms and notes for roles and the library.
+8. **Built.** Community library: share, browse, install, report, Control Center takedown; selling pieces as store products.
+9. **Built.** Finish: `/privacy`, licences and notes for roles and the library.
 
 Phases 1–6 shipped together in one change, without the feature switch first planned: the new document would have broken the old form editor, so the editor replaced it in the same change.
 
+## Community library (built)
+
+- **Share** (`POST /api/studio/creators/:id/library`, `server/library/routes.js`): creators AutoStacc trusts, members whose role may share (`library.share`). An element, a section or the whole draft is checked like any document (`server/library/pieces.js` `cleanFragment`) and stripped of what is the creator's own (audio players, Follow buttons, the products a products element names); its images and fonts must be the creator's own files. Up to 50 shared pieces per creator, 100 KB each.
+- **Sell**: a price (and the role that runs products) makes the piece a store product (the piece stays `pending`, unlisted and unusable, until its product is on sale; if that fails, neither exists) of type `template` (`data/product-types.js`, licence `templates` in `data/licenses.js`: use on your own sites, never reshare or resell), created and put on sale at once; its deliverable is the piece (`server/library/links.js`, `creators/readiness.js`). It is bought like any product.
+- **Browse**: a paid piece you don't own comes as an outline only (its elements as plain boxes where they sit), never its words, settings or files; previews draw in a sandboxed frame.
+- **Use** (`…/library/:id/install`, members who edit sites): free pieces, your own, or paid ones you own (else `402 buy_first` with the product's address). Using a bought piece is logged like a download, so its order can't be refunded by the buyer afterwards (the refunds page says so); and an installer's sites show a paid piece's files only while whoever installed it still owns it (by account or by the email it bought with). A refund and a use at the same moment can't both succeed: the refund claims its order first, and a use checks for that claim. The editor gets the fragment and its files and inserts it (element into the selected section, section after it, template replacing the draft after asking; undoable). `library_installs` records which creators installed what: their sites may show the piece's files (`sites/context.js`), and the editor lists them under Files as "From the library".
+- **Storage**: a piece's files stay the seller's and count against them only. A file a shared piece uses is hidden, not deleted, if the seller deletes it. Deleting a piece takes its product off sale (buyers keep it, and can still use it); its files the seller's own sites don't use are released (no longer theirs to show or delete, `site_assets.released_at`, but still counted against them, so two accounts can't use it to pass the cap) while other creators' sites that installed it use them (installing your own piece counts for nothing), and deleted by the daily sweep once no site of a creator who installed it names them (`server/library/sweep.js`; pasting a file's public address into your own draft doesn't keep it); the seller can also delete a paid piece left pending; files of a piece nobody installed go at once.
+- **Report and takedown**: anyone signed in reports a piece once (`library_reports`); the Control Center's Community library section takes pieces down, including ones their creator already deleted, and restores them to what they were, their product back on sale only if it was and is still ready ([admin](admin.md#community-library)). A paid piece whose product can't be put on sale isn't shared at all. A taken-down piece's files stop showing everywhere; words already copied into drafts stay.
+- **Editor**: the Library tab (`js/builder-library.js`): search, filter, preview in its own frame, Use, Buy, Report, Delete your own; Share buttons on elements and sections and "Share as a template" under Site, for those who may share.
+
 ## Tests
 
-`test/unit/builder.test.js` (document, CSS checker, renderer, templates, fonts), `test/api/builder.suite.js` (profiles, ownership, the address space, history, scheduling, CSS, fonts, storage, kept files, templates) and `test/browser/builder.test.js` (template, edit, type, add, drag, undo / redo, phone view, publish, the public page's only script; CSS; the editor on a phone). `BUILDER_SHOTS=<folder>` saves its screenshots.
+`test/unit/builder.test.js` (document, CSS checker, renderer, templates, fonts), `test/api/builder.suite.js` (profiles, ownership, the address space, history, scheduling, CSS, fonts, storage, kept files, templates) `test/api/team.suite.js`, `test/api/library.suite.js` (trust, own files only, personal parts stripped, free and paid installs, deleting, reports and takedown) and `test/browser/builder.test.js` (template, edit, type, add, drag, undo / redo, phone view, publish, the public page's only script; CSS; teams; sharing and using a library piece; the editor on a phone). `BUILDER_SHOTS=<folder>` saves its screenshots.

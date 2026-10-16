@@ -83,7 +83,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | a project | one entry in `data/projects.js`; its content names it with `project:` ([projects](projects.md)) |
 | a Stacclet / Pac | entries in `data/stacclets.js` / `data/pacs.js`; list the Pac on a product |
 | a kind of content, or a file format | one entry in `KINDS` or `FORMATS` in `server/discovery/vocabulary.js` (then `node scripts/build.js`; `data/content-types.js` is generated) |
-| a kind of product | one entry in `data/product-types.js` |
+| a kind of product | one entry in `data/product-types.js` (plus its tax code, store schema and licence; `template`, the community library's site templates, was added this way) |
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |
 | a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` (a module with no routes of its own, like `server/usage/`, is called by the modules that need it; one area may wire more than one route table, like `server/packs/` or `server/account/`) |
