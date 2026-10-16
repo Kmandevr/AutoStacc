@@ -15,7 +15,7 @@ npm run dev            # site + store API on http://localhost:8788  (node script
 node scripts/serve.js  # static pages only, store "offline" (what the SEO and verify-site checks use)
 ```
 
-`npm run dev` builds (`scripts/build.js`), collects `dist/` (`scripts/dist.js`), creates `.dev.vars` with fresh local secrets if missing, applies migrations to a local D1 database, syncs the catalog, seeds test data and starts `wrangler pages dev`. Nothing touches Cloudflare. Local state lives in `.wrangler/state` (`--fresh` wipes it).
+`npm run dev` builds (`scripts/build.js`), collects `dist/` (`scripts/dist.js`: the static pages, `shop/`, `guide/` and the creators' folders), creates `.dev.vars` with fresh local secrets if missing, applies migrations to a local D1 database, syncs the catalog, seeds test data and starts `wrangler pages dev`. Nothing touches Cloudflare. Local state lives in `.wrangler/state` (`--fresh` wipes it).
 
 Test mode (local only):
 

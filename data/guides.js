@@ -75,12 +75,12 @@ window.GUIDES = {
         { heading: "Collections", id: "collections" },
         { steps: [
           "Tick the files you want.",
-          "Choose **Add to**, then an existing collection or a new one.",
+          "Under **Add to**, pick a collection, or **New collection…** and type its name, then choose **Add**.",
           "Use the **Collection** menu to see one collection. Inside it you can take files out, rename the collection or delete it; the files stay in Your Stacc."
         ] },
         "You can have up to 100 collections of up to 2,000 files each.",
         { heading: "Tags", id: "tags" },
-        "Tick files and choose **Tag** to label them with your own words: lowercase letters or numbers, up to 30 characters. Tags show on each file with ✕ to remove one, the **Tag** menu filters by one, and search finds them. Up to 20 tags per file.",
+        "Tick files, type a tag (a short word or two, up to 30 characters) and choose **Tag**. Tags show on each file with ✕ to remove one, the **Tag** menu filters by one, and search finds them. Up to 20 tags per file.",
         { heading: "Saved searches", id: "saved-searches" },
         "With a search or filter on, **Save search** keeps it as a link at the top of Your Stacc. Up to 50.",
         { heading: "When files leave", id: "leaving" },
@@ -117,7 +117,7 @@ window.GUIDES = {
         ] },
         { steps: [
           "Open [Settings › Orders](/settings/orders).",
-          "Find the order. If it can be refunded here it has a refund button; if not, it says why.",
+          "Find the order. If it can be refunded here it shows **Refund this order** and the last day; if not, it says why.",
           "Confirm. The files leave Your Stacc and the money goes back to how you paid."
         ] },
         "Everything else, like a duplicate charge, a broken file or a purchase you didn't make, is handled by support under the [refund policy](/refunds). {contact}"
@@ -215,7 +215,7 @@ window.GUIDES = {
       title: "Uploading packs with the Pac Builder",
       summary: "Upload a whole pack, review what AutoStacc suggests, publish, and update it later without losing your buyers' files.",
       body: [
-        "A pack of many files (a ZIP in folders) goes through the Pac Builder. Open it from a product's **Pac Builder** section in the Product Studio, or **Upload a whole pack** on a product card.",
+        "A pack of many files (a ZIP in folders) goes through the Pac Builder: open the product in the Product Studio and choose its **Pac Builder** section.",
         { steps: [
           "Drop a single file, a folder or a whole ZIP. Every file is checked to be what its name says.",
           "Review what AutoStacc suggests for each file (kind, instrument, tempo, key) and keep or change it.",
