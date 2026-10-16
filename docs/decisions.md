@@ -530,3 +530,13 @@ Also fixed (#129, taxed orders): Stripe's refund amounts include the tax Managed
 ## 2026-10-16: Reviews from confirmed buyers: stars and optional text (owner)
 
 The owner chose stars (1 to 5) with an optional short text for #96. Built (`server/reviews/`): one review per account and product, editable; only an account that owns the product right now can write one, and a review shows only while its author still owns it (read from entitlements at show time), so a refund or revoked grant takes it off without deleting it. Shown as "Verified buyer", never with a name or email. AutoStacc hides reviews with a note (audited); creators have no way to change them. In the data download, deleted with the account; `/privacy` and `/terms` updated. Then (same day) ratings joined the store: a "Top rated" sort and a "4 stars and up" filter, stars on cards, and half of the ranking's quality score, all from a confidence-adjusted average (prior 3.5 as if 5 reviews; Claude's choice, in `server/discovery/weights.js` `RATING`). Not built: replies from creators (not decided).
+
+## 2026-10-16: Community foundations: rules published early, retention, report thresholds (owner)
+
+For #135 the `architect` agent reviewed the community design. Its changes are recorded in [community](community.md#design-architect-review-2026-10-16): one `server/community/` area; a separate Pages Function for `/community` rather than the creators' catch-all; `community_mod_log` beside `admin_audit` (space teams must see and undo their own actions, while the admin audit log is admin-only); a `source` column before community polls (the catalog sync deletes other polls); per-project excludes in `scripts/dist.js` before first-party project spaces; and folding look-alike characters in display names. The owner then chose:
+- **Publish the rules now**: `/community-rules`, marked "opening soon", and `/copyright`, which already applies to creators' uploads. Copyright notices go to the support address until the DMCA agent is registered.
+- **Deleting an account wins** over the 12-month keeping of removed content, except for content removed for a legal reason (illegal content, copyright, CSAM).
+- **Report thresholds**: a trusted reporter is an account 7+ days old with fewer than 3 dismissed reports in 90 days, and 3 trusted reports hide a post until the team decides.
+
+Built and off: the `community.forum` switch, migration 0031, `server/community/format.js`, and `community` reserved as a project-site page address. `/privacy` lists community data in the change that first collects it.
+

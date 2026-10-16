@@ -151,7 +151,7 @@
         </div>
         ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/explore", "Releases, news and shows"], ["/about", "About"], ["/studio", "Studio"]])}
         ${col("Help", [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/security", "Security"]])}
-        ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"]])}
+        ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/copyright", "Copyright"], ["/community-rules", "Community rules"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>
       </div>`;
   }

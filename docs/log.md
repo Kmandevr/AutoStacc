@@ -8,6 +8,7 @@ updated: 2026-10-16
 
 Newest first.
 
+- 2026-10-16: Community foundations (#135): architect review folded into the notes; `/community-rules` and `/copyright` published, the terms point to them, privacy gains legal requests; the `community.forum` switch (off), migration 0031 (spaces, channels, threads, posts, votes, reports, blocks, bans, mod log), the post formatter with tests, and `community` reserved as a project page address. Notes: community, community-safety, decisions, production, seo, creators, builder, creator-pages, store, packs, development, autostacc, modules, search-console.
 - 2026-10-16: Control Center Settings › Switches (owner): store sales, payout requests, new accounts, new creators and reviews switches, enforced server-side and audited, with creator purchases, paid storage and the usage budget in the same list, and a site notice on every page.
 - 2026-10-16: Control Center split into sub-pages (owner): Stats, Daily, Manage and Settings at /admin/<page>, gated like /admin; figures and payment alerts on Stats with a count on its tab; leaving an impersonation returns to Daily › Customers.
 - 2026-10-16: Top bar blur restored: its frosting is back on the bar itself (a view-transition name makes the bar a backdrop root, so a layer or menu inside it cannot blur the page); the account menu is nearly solid instead.

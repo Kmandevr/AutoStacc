@@ -19,6 +19,8 @@ updated: 2026-10-16
 | `/security` | `data/legal.js` | How accounts, payments and files are protected; reporting a problem |
 | `/contact` | `data/legal.js` | How to reach AutoStacc, and what people can do themselves |
 | `/guide` | `data/guides.js` | Step-by-step guides and the creator manual, searchable together with `/help` ([guides](guides.md)) |
+| `/copyright` | `data/legal.js` | Copyright notices, counter-notices and tiered strikes for everything people upload ([community safety](community-safety.md)) |
+| `/community-rules` | `data/legal.js` | The community's rules, published before it opens ("opening soon") ([community](community.md)) |
 | `/help` | `data/help.js` | Questions and answers by topic (following, Auto-Stacc and release emails described as they work: opt-in, never paid items, announced releases only) |
 | `/license` | `data/licenses.js` | What buyers may do, per kind of product |
 

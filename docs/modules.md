@@ -46,7 +46,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Press contact (`js/press.js`) | `[data-press-contact]` | `data-project`; also wires `[data-copy="<id>"]` copy buttons |
 | Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link; Auto-Stacc grants say "added by Auto-Stacc" |
 | Your Stacc (`js/library.js`) | `[data-stacc]` | `data-project` (starts filtered to it), `data-stacc-view="kinds"` (starts by content type); a receipt's guest key is redeemed once per page. Its inner file area is `[data-stacc-files]`. Signed in, it also shows the person's collections, tags and saved searches (`js/library-personal.js`). |
-| Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` (link columns: Explore, Help with Guides, Legal) | the page's `data-project` |
+| Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` (link columns: Explore, Help with Guides, Legal with Copyright and Community rules) | the page's `data-project` |
 
 Store items wear their project's look in the store, the new releases feed (home page, dashboard) and on their product page; clicking one opens the store filtered to its project with it selected at the top.
 

@@ -29,7 +29,7 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `dashboard.html`, `library.html`, `settings.html`, `studio.html` | The signed-in app (kept out of search): dashboard, Your Stacc, Settings (one page for `/settings/profile`, `/security`, `/orders`, `/email`, `/privacy`), and the Studio (creator pages, products, the Pack Builder, earnings) |
 | `cart.html`, `login.html`, `checkout.html`, `admin.html` | Cart, sign-in, checkout status and the owner's Control Center (kept out of search) |
 | `product.html` (`/product?p=<id>`) | A Studio creator's product, fetched from the store API (kept out of search) |
-| `privacy.html`, `terms.html`, `refunds.html`, `security.html`, `contact.html`, `help.html`, `license.html` | Trust pages generated from `data/legal.js`, `data/help.js` and `data/licenses.js` ([docs/production.md](docs/production.md)). Don't edit them; change the data and rebuild |
+| `privacy.html`, `terms.html`, `refunds.html`, `security.html`, `contact.html`, `copyright.html`, `community-rules.html`, `help.html`, `license.html` | Trust pages generated from `data/legal.js`, `data/help.js` and `data/licenses.js` ([docs/production.md](docs/production.md)). Don't edit them; change the data and rebuild |
 | `404.html` | Shown for any address that doesn't exist |
 | `guide.html`, `guide/` | Generated guides from `data/guides.js`: `/guide` and one page per article (`/guide/<id>`), buying, Your Stacc and refunds, and the creator manual ([docs/guides.md](docs/guides.md)). Don't edit them; change the data and rebuild |
 | `shop/`, `<creator>/<project>/music/`, `<creator>/<project>/news/` | Generated: one page per product (`/shop/<id>`), release and news post. Don't edit them; change `data/` and rebuild |

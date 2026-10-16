@@ -13,7 +13,7 @@ test("each as its default; FEATURES_OFF switches named ones off, FEATURES_ON a d
   for (const name of Object.keys(FEATURES)) assert.equal(isOn(app(), name), FEATURES[name].on, name);
   // Only the switches kept off by default are off: deflated ZIPs (docs/packs.md §8) and admins' two-step sign-in
   // (built, not switched on; docs/decisions.md).
-  assert.deepEqual(Object.keys(FEATURES).filter((n) => !FEATURES[n].on), ["downloads.deflate", "auth.adminTwoFactor"]);
+  assert.deepEqual(Object.keys(FEATURES).filter((n) => !FEATURES[n].on), ["downloads.deflate", "auth.adminTwoFactor", "community.forum"]);
   assert.equal(isOn({ env: { FEATURES_ON: "downloads.deflate" } }, "downloads.deflate"), true);
   assert.equal(isOn({ env: { FEATURES_ON: "downloads.deflate", FEATURES_OFF: "downloads.deflate" } }, "downloads.deflate"), false, "off wins");
   assert.equal(isOn({ env: { FEATURES_ON: "made.up" } }, "made.up"), false);

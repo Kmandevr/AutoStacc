@@ -70,6 +70,11 @@ test("the menu points only at the site's own pages or safe links", () => {
   assert.match(html, /<a href="\/me\/tour">Dates<\/a><a href="\/shop">Shop<\/a>/);
 });
 
+test("a page can't take the address of the project's community space", () => {
+  const pages = [{ slug: "", title: "Home", sections: [] }, { slug: "community", title: "Community", sections: [] }];
+  assert.throws(() => cleanDocument({ version: 2, pages }), /community space/);
+});
+
 test("CSS stays inside the page: scoped, rebuilt, and refused when it could reach out or load anything", () => {
   const ok = checkCss(`.hero { color: red; background: url(/media/sites/${A("f")}) } @media (max-width: 600px) { h1 { font-size: 2rem } }`);
   assert.deepEqual(ok.problems, []);

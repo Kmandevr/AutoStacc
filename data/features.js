@@ -10,5 +10,6 @@ window.FEATURES = {
  "library.collections": true,
  "store.derivedFacets": true,
  "product.contentsTree": true,
- "auth.adminTwoFactor": false
+ "auth.adminTwoFactor": false,
+ "community.forum": false
 };
