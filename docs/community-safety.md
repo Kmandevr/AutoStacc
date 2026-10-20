@@ -37,6 +37,8 @@ A strike is a valid takedown notice that wasn't successfully disputed (counter-n
 | 2 | Selling is paused (Studio products, point items for sale). Can be disputed, and restored with some work (fix or remove the content, confirm the rules) |
 | 3 | Text posting only: no selling, no uploads, no challenge entries, no point items, no Studio; links are stripped from their posts. An admin can keep this past expiry in serious cases |
 
+**Who gets a strike (owner, 2026-10-20):** both the uploading account and the creator space it was uploaded for, but much more leniently for the space's owner when they aren't the one who caused the infringement (exact weighting to settle when strikes are built). **How notices arrive (owner, 2026-10-20):** a public form on `/copyright` (with the legal statements a notice needs) that lands in the Control Center for an admin to accept or reject, alongside notices to the support address until the DMCA agent is registered.
+
 Content named in a valid notice is removed promptly; the uploader can counter-notice, and the content is restored in the legal window if the claimant doesn't sue. Misleading notices are noted against the claimant.
 
 ## Uploads and child safety

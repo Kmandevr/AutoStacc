@@ -1,6 +1,7 @@
 // Telling people why, and letting them ask again (docs/community.md, "Who enforces what"; docs/community-safety.md,
 // the DSA's statement of reasons): the visitor's own takes and posts a space's team (or the automatic rules) hid or
-// removed in the last 12 months, each with the reason and whether it can still be appealed; one appeal per take or
+// removed in the last 12 months (AutoStacc's legal removals too), each with the reason and whether it can still be
+// appealed; one appeal per take or
 // post, to that space's team, which grants it (the post comes back) or refuses it, with a reason. Removals for a
 // legal reason aren't appealed here (/copyright has counter-notices). The team's log is listed here too.
 import { json, readJson, fail, id, str } from "../../../lib/http.js";
@@ -15,23 +16,23 @@ import { moderator, readReason } from "./actions.js";
 const YEAR_MS = 365 * 86400000;
 const NO_STORE = { "Cache-Control": "no-store" };
 const LAST_REASON = (type, col) => `(SELECT l.reason FROM community_mod_log l WHERE l.target_type = '${type}' AND l.target_id = ${col}
-  AND l.action IN ('hide', 'remove', 'auto_hide', 'report_upheld') ORDER BY l.at DESC LIMIT 1)`;
+  AND l.action IN ('hide', 'remove', 'auto_hide', 'report_upheld', 'legal_remove') ORDER BY l.at DESC LIMIT 1)`;
 
 async function moderated(app) {
   const user = await requireUser(app);
   const since = new Date(Date.now() - YEAR_MS).toISOString();
-  const rows = await all(app.db, `SELECT 'thread' AS type, t.id, t.id AS threadId, t.slug, t.title, t.state, s.name AS space, ${LAST_REASON("thread", "t.id")} AS reason,
+  const rows = await all(app.db, `SELECT 'thread' AS type, t.id, t.id AS threadId, t.slug, t.title, t.state, t.removed_reason AS why, s.name AS space, ${LAST_REASON("thread", "t.id")} AS reason,
       a.status AS appeal FROM community_threads t JOIN community_spaces s ON s.id = t.space_id
       LEFT JOIN community_appeals a ON a.target_type = 'thread' AND a.target_id = t.id
-      WHERE t.author_user_id = ?1 AND (t.state = 'hidden' OR t.removed_reason = 'space_rules') AND t.created_at > ?2
+      WHERE t.author_user_id = ?1 AND (t.state = 'hidden' OR t.removed_reason IN ('space_rules', 'legal')) AND t.created_at > ?2
     UNION ALL
-    SELECT 'post', p.id, t.id, t.slug, t.title, p.state, s.name, ${LAST_REASON("post", "p.id")}, a.status
+    SELECT 'post', p.id, t.id, t.slug, t.title, p.state, p.removed_reason, s.name, ${LAST_REASON("post", "p.id")}, a.status
       FROM community_posts p JOIN community_threads t ON t.id = p.thread_id JOIN community_spaces s ON s.id = t.space_id
       LEFT JOIN community_appeals a ON a.target_type = 'post' AND a.target_id = p.id
-      WHERE p.author_user_id = ?1 AND (p.state = 'hidden' OR p.removed_reason = 'space_rules') AND p.created_at > ?2
+      WHERE p.author_user_id = ?1 AND (p.state = 'hidden' OR p.removed_reason IN ('space_rules', 'legal')) AND p.created_at > ?2
     LIMIT 50`, user.id, since);
   return json({ items: rows.map((r) => ({ type: r.type, id: r.id, state: r.state, space: r.space, title: r.title, reason: r.reason || "",
-    path: r.type === "post" ? `${threadPath({ id: r.threadId, slug: r.slug })}#${r.id}` : null, appeal: r.appeal || null })) }, 200, NO_STORE);
+    path: r.type === "post" ? `${threadPath({ id: r.threadId, slug: r.slug })}#${r.id}` : null, appeal: r.appeal || null, legal: r.why === "legal" })) }, 200, NO_STORE);
 }
 
 async function appeal(app) {

@@ -158,3 +158,8 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 .admin-notice input { width: 100%; margin-top: 8px; }
 .admin-notice .actions { display: flex; gap: 8px; }
 @media (max-width: 600px) { .admin-switch-row { flex-direction: column; align-items: stretch; } }
+
+/* Community reports (js/admin-community.js): one card per reported take or post. */
+.admin-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 12px; background: var(--panel); overflow-wrap: anywhere; }
+.admin-card blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid var(--line); white-space: pre-wrap; max-height: 16em; overflow: auto; }
+.admin-card ul { margin: 6px 0; padding-left: 18px; }

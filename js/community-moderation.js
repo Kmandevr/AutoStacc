@@ -107,7 +107,8 @@
         el("p", {}, `In ${x.space}: `, x.path ? el("a", { href: x.path, text: x.title }) : x.title,
           ` was ${STATE[x.state] || "taken down"}${x.type === "post" ? " (your reply)" : ""}.`),
         x.reason ? el("p", { class: "cm-small", text: `Why: ${x.reason}` }) : "");
-      if (x.appeal) item.append(el("p", { class: "cm-small", text: x.appeal === "open" ? "Your appeal is with the team." : x.appeal === "granted" ? "Your appeal was granted." : "Your appeal was refused." }));
+      if (x.legal) item.append(el("p", { class: "cm-small" }, "AutoStacc removed this for a legal reason. To dispute a copyright removal, send a ", el("a", { href: "/copyright#counter", text: "counter-notice" }), "; for anything else, ", el("a", { href: "/contact", text: "contact support" }), "."));
+      else if (x.appeal) item.append(el("p", { class: "cm-small", text: x.appeal === "open" ? "Your appeal is with the team." : x.appeal === "granted" ? "Your appeal was granted." : "Your appeal was refused." }));
       else item.append(appealForm(x));
       box.append(item);
     });
