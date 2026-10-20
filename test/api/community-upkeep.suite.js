@@ -52,6 +52,17 @@ export default (ctx) => describe("community upkeep (switched on)", () => {
     assert.equal((await replyTo(b.c, t2, "fine at the top")).status, 201, "replying to someone else is fine");
     assert.equal((await replyTo(a.c, t, "a can still answer c", cPost)).status, 201);
     assert.equal((await a.c.req("DELETE", "/api/community/blocks", { body: { name: b.name } })).status, 200);
+    // Deeper in the branch: under someone else's reply to c's post is still below c (security review).
+    const d = await person();
+    const dUnder = (await replyTo(d.c, t2, "d answers c", cPost2)).data.post.id;
+    db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${b.user.id}'`);
+    assert.equal((await replyTo(b.c, t2, "sneaking in below", dUnder)).data.error.code, "blocked");
+    // The space's team is never stopped from replying in its own space.
+    const admin = await freshAdmin(ctx.mock.url);
+    await admin.req("PUT", "/api/community/me", { body: { displayName: "Team Admin", ageConfirmed: true } });
+    await block(b, "Team Admin");
+    const bTake = await take(b.c);
+    assert.equal((await replyTo(admin, bTake, "team reply")).status, 201);
     db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${b.user.id}'`); // three posts a minute (pace) counts tries
     assert.equal((await replyTo(b.c, t, "back in")).status, 201);
     assert.equal((await new Client(ctx.mock.url).get("/api/community/blocks")).status, 401);
@@ -110,12 +121,21 @@ export default (ctx) => describe("community upkeep (switched on)", () => {
     db(`UPDATE community_posts SET removed_at = '${OLD}' WHERE id IN ('${ruled}', '${own}')`);
     db(`INSERT INTO community_reports (id, target_type, target_id, space_id, reporter_user_id, reason, note, route, status, handled_at, created_at)
       VALUES ('rpt_old${n}', 'post', '${ruled}', 'spc_autostacc', '${a.user.id}', 'rules', 'old one', 'space', 'upheld', '${OLD}', '${OLD}')`);
+    // A legally removed reply inside a take its author deleted stays; so do AutoStacc's old reports.
+    const t3 = await take(a.c, "A second take to delete later");
+    const legal2 = (await replyTo((await person()).c, t3, "held for legal reasons")).data.post.id;
+    db(`UPDATE community_posts SET state = 'removed', removed_reason = 'legal', removed_at = '${OLD}' WHERE id = '${legal2}'`);
+    db(`UPDATE community_threads SET state = 'removed', removed_reason = 'author', removed_at = '${OLD}' WHERE id = '${t3.id}'`);
+    db(`INSERT INTO community_reports (id, target_type, target_id, space_id, reporter_user_id, reason, note, route, status, handled_at, created_at)
+      VALUES ('rpt_legal${n}', 'post', '${legal2}', 'spc_autostacc', '${a.user.id}', 'illegal', 'old one', 'autostacc', 'upheld', '${OLD}', '${OLD}')`);
     const r = await sweep();
     assert.ok(r.retention.postsCleared >= 2, JSON.stringify(r.retention));
     assert.equal(one(`SELECT body FROM community_posts WHERE id = '${ruled}'`).body, "");
     assert.equal(one(`SELECT body FROM community_posts WHERE id = '${own}'`).body, "");
     assert.equal(one(`SELECT body FROM community_posts WHERE id = '${legal}'`).body, "legally removed words");
     assert.equal(one(`SELECT COUNT(*) AS n FROM community_reports WHERE id = 'rpt_old${n}'`).n, 0);
+    assert.equal(one(`SELECT body FROM community_posts WHERE id = '${legal2}'`).body, "held for legal reasons");
+    assert.equal(one(`SELECT COUNT(*) AS n FROM community_reports WHERE id = 'rpt_legal${n}'`).n, 1);
     assert.equal((await admin.post(`/api/community/mod/posts/${ruled}`, { action: "restore" })).data.error.code, "not_changeable");
     assert.match((await new Client(ctx.mock.url).get(t.path)).data, /Removed\./);
   });

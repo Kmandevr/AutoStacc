@@ -74,7 +74,8 @@ export async function setState(app, target, to, { action, actorId = null, reason
   const db = app.db;
   const table = target.type === "thread" ? "community_threads" : "community_posts";
   await guarded(db, [
-    guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = ? AND COALESCE(removed_reason, '') = ?)`, target.id, target.state, target.removedReason || ""),
+    guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = ? AND COALESCE(removed_reason, '') = ? AND COALESCE(removed_at, '') = ?)`,
+      target.id, target.state, target.removedReason || "", target.removedAt || ""),
     stmt(db, `UPDATE ${table} SET state = ?, removed_reason = ?, removed_at = ? WHERE id = ?`, to, to === "removed" ? "space_rules" : null, to === "removed" ? now() : null, target.id),
     ...(target.type === "post" ? [recount(db, target.thread.id)] : []),
     ...logStmts(db, { spaceId: target.spaceId, actorId, action, targetType: target.type, targetId: target.id, reason, automatic }),

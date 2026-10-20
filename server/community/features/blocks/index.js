@@ -1,7 +1,8 @@
 // Blocking someone (docs/community.md, "Who enforces what"; issue #137): by community name, never yourself. The person
-// you block can't reply to your takes or your posts (checked before every reply), and their posts fold away for you on
-// every page (js/community-blocks.js; pages are shared and cached, so the folding happens in your browser). They
-// aren't told. Later features that connect people (friends, the feed, collab requests) check community_blocks too.
+// you block can't reply under your takes or anywhere below your posts (checked before every reply, up the whole
+// branch), and their posts fold away for you on every page (js/community-blocks.js; pages are shared and cached, so
+// the folding happens in your browser). They aren't notified, though a refused reply shows them they can't reply
+// there. A space's team is never stopped from replying in its own space. Later features that connect people (friends, the feed, collab requests) check community_blocks too.
 // Its own switch (community.blocks): off, replies aren't checked and nothing folds; blocks already made are kept.
 import { json, readJson, fail, str } from "../../../lib/http.js";
 import { all, first, run, now } from "../../../lib/db.js";
@@ -46,12 +47,16 @@ async function list(app) {
   return json({ names: rows.map((r) => r.name) }, 200, NO_STORE);
 }
 
-// Before a reply: not under a take or post by someone who blocked you.
-async function postCheck(app, { user, kind, thread, parent }) {
-  if (kind !== "reply") return;
-  const owners = [thread && thread.author_user_id, parent && parent.author_user_id].filter((x) => x && x !== user.id);
-  if (!owners.length) return;
-  const hit = await first(app.db, `SELECT 1 AS n FROM community_blocks WHERE blocked_user_id = ? AND user_id IN (SELECT value FROM json_each(?))`, user.id, JSON.stringify(owners));
+// Before a reply: nobody above it (the take's author and every post up the branch) has blocked you.
+async function postCheck(app, { user, kind, thread, parent, team }) {
+  if (kind !== "reply" || team) return;
+  const hit = await first(app.db, `WITH RECURSIVE up(id, author, depth) AS (
+      SELECT id, author_user_id, 0 FROM community_posts WHERE id = ?1
+      UNION ALL SELECT p.parent_post_id, (SELECT author_user_id FROM community_posts WHERE id = p.parent_post_id), up.depth + 1
+        FROM up JOIN community_posts p ON p.id = up.id WHERE p.parent_post_id IS NOT NULL AND up.depth < 60)
+    SELECT 1 AS n FROM community_blocks WHERE blocked_user_id = ?2
+      AND user_id IN (SELECT author FROM up WHERE author IS NOT NULL UNION SELECT ?3) LIMIT 1`,
+  parent ? parent.id : "", user.id, (thread && thread.author_user_id) || "");
   if (hit) fail(403, "blocked", "You can't reply here.");
 }
 

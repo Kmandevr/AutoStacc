@@ -23,10 +23,10 @@ const STALE_REPORT = `EXISTS (SELECT 1 FROM community_reports r WHERE r.space_id
 // Who hears that a space went read-only: its founder, or for a project's space the creator's owners.
 async function keepers(db, space) {
   if (space.kind === "project") {
-    return all(db, `SELECT u.email FROM projects p JOIN creator_members m ON m.creator_id = p.creator_id AND m.role = 'owner'
+    return all(db, `SELECT u.id, u.email FROM projects p JOIN creator_members m ON m.creator_id = p.creator_id AND m.role = 'owner'
       JOIN "user" u ON u.id = m.user_id WHERE p.id = ?`, space.project_id);
   }
-  return space.founder_user_id ? all(db, 'SELECT email FROM "user" WHERE id = ?', space.founder_user_id) : [];
+  return space.founder_user_id ? all(db, 'SELECT id, email FROM "user" WHERE id = ?', space.founder_user_id) : [];
 }
 
 async function sweep(app, { nowMs = Date.now() } = {}) {
@@ -48,8 +48,11 @@ async function sweep(app, { nowMs = Date.now() } = {}) {
     readOnly++;
     purge(app, { space });
     const url = app.config.siteUrl + spacePath(space);
-    for (const { email } of await keepers(app.db, space)) {
-      await sendEmail(app, "community-read-only", email, { space: space.name, url }, { dedupeKey: `community-read-only:${space.id}:${cutoff.slice(0, 10)}:${email}` });
+    // One mail each; a failure is logged (sendEmail records it for a resend) and never stops the others.
+    for (const k of await keepers(app.db, space)) {
+      try {
+        await sendEmail(app, "community-read-only", k.email, { space: space.name, url }, { dedupeKey: `community-read-only:${space.id}:${cutoff.slice(0, 10)}:${k.id}` });
+      } catch (e) { console.error("community read-only email", e && e.message); }
     }
   }
   return { readOnly };
