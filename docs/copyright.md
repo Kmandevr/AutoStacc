@@ -1,7 +1,7 @@
 ---
 title: Copyright notices and strikes
 summary: Built steps 1 and 2 of 4 (#137): the public notice form, copyright notices recorded and decided in the Control Center, strikes for the uploader (whole) and the creator space (half, whole for the owner's own upload), levels computed when asked, and what level 2 stops (publishing and pricing for an account; sales, free claims and Auto-Stacc for a space).
-covers: [server/copyright/, db/migrations/0037_copyright.sql, db/migrations/0038_copyright_form.sql, copyright-notice.html, js/copyright-notice.js, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js]
+covers: [server/copyright/, db/migrations/0037_copyright.sql, db/migrations/0038_copyright_form.sql, copyright-notice.html, js/copyright-notice.js, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js, test/unit/copyright-filing.test.js]
 updated: 2026-10-20
 ---
 
@@ -25,7 +25,7 @@ The policy is in [community safety](community-safety.md#copyright-tiered-strikes
 
 ## Built (step 2): the public form
 
-`/copyright-notice` (`copyright-notice.html`, `js/copyright-notice.js`, linked from `/copyright`) sends `POST /api/copyright/notices` (`server/copyright/filing.js`, no sign-in): name, email, postal address, owner or agent (migration 0038), the work, up to 20 places on AutoStacc, both statements and a typed signature that must match the name. It lands as `received` with `source` `form` in Daily › Copyright, and the admins get at most one email an hour. The answer is the same `202` whatever the notice names, and a filled-in hidden field is quietly dropped. Limits: 5 an hour per address (refused tries count), 10 a day per claimant email, 200 a day in all. Turnstile once its keys exist.
+`/copyright-notice` (`copyright-notice.html`, `js/copyright-notice.js`, linked from `/copyright`) sends `POST /api/copyright/notices` (`server/copyright/filing.js`, no sign-in): name, email, postal address, owner or agent (migration 0038), the work, up to 20 places on AutoStacc, both statements and a typed signature that must match the name. It lands as `received` with `source` `form` in Daily › Copyright, and the admins get at most one email an hour. The answer is the same `202` whatever the notice names, and a filled-in hidden field is quietly dropped. Limits (security review, 2026-10-20): 5 an hour per network (an IPv4 address, or an IPv6 /64 however it's written), 10 complete notices a day per claimant email (junk can't use a claimant's allowance), and past 200 a day notices are still kept but the admins' email waits; refusals point to the email address on `/copyright`. Every waiting notice is listed in the Control Center, oldest first, so junk can't push a real one out of view. Signatures match names in any alphabet. Turnstile once its keys exist; admin alert emails can rarely double when two notices land in the same instant.
 
 ## Next steps
 

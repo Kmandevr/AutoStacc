@@ -132,6 +132,9 @@ export default (ctx) => describe("copyright strikes", () => {
     assert.equal((await form(c, { signature: "Someone Else" })).data.error.code, "signature_mismatch");
     assert.equal((await form(c, { location: Array.from({ length: 21 }, (_, i) => `https://autostacc.com/p/${i}`).join("\n") })).data.error.code, "too_many_locations");
     assert.equal((await form(c, { role: "fan" })).status, 400);
+    const c3 = new Client(base());
+    assert.equal((await form(c3, { claimantName: "李明", signature: "--" })).data.error.code, "signature_mismatch", "an empty fold never matches");
+    assert.equal((await form(c3, { claimantName: "李明", signature: "李明", work: "Non-Latin signature" })).status, 202);
     const c2 = new Client(base()); // five an hour per address counts refused tries too
     const sent = await form(c2, { work: "Quiet trap test", website: "http://spam.example" });
     assert.equal(sent.status, 202);
