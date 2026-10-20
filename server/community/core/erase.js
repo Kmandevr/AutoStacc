@@ -8,7 +8,7 @@ import { stmt, all } from "../../lib/db.js";
 import { eraseStmts, exportData } from "./hooks.js";
 
 export const eraseCommunityStmts = (db, userId) => [
-  stmt(db, "DELETE FROM community_post_edits WHERE post_id IN (SELECT id FROM community_posts WHERE author_user_id = ?)", userId),
+  stmt(db, "DELETE FROM community_post_edits WHERE post_id IN (SELECT id FROM community_posts WHERE author_user_id = ? AND COALESCE(removed_reason, '') <> 'legal')", userId),
   stmt(db, "UPDATE community_posts SET author_user_id = NULL WHERE author_user_id = ?", userId),
   stmt(db, "UPDATE community_threads SET author_user_id = NULL WHERE author_user_id = ?", userId),
   stmt(db, "DELETE FROM community_votes WHERE user_id = ?", userId),

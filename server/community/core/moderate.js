@@ -4,7 +4,7 @@
 // the other. Each change is compare-and-set (a batch guard, so two moderators can't both apply one), logged in
 // community_mod_log in the same batch, counts as team activity unless automatic, and clears the cached pages it
 // changes. Removals by the author or for a legal reason are never changed here.
-import { first, stmt, now, newId, guardStmt, isGuardFailure } from "../../lib/db.js";
+import { first, all, stmt, now, newId, guardStmt, isGuardFailure } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { getSpace } from "./posting.js";
 import { purge } from "./purge.js";
@@ -30,6 +30,29 @@ export async function loadTarget(db, type, targetId) {
       FROM community_posts p JOIN community_threads t ON t.id = p.thread_id WHERE p.id = ?`, targetId), type);
   }
   return null;
+}
+
+// Many takes and posts at once, for the report queues: two queries whatever the count (a request's database
+// queries are limited), each target shaped as loadTarget does plus its author's community name and its space's
+// name. keys: [{ type, id }]. → Map of "type:id" to the target.
+export async function loadTargets(db, keys) {
+  const ids = (type) => JSON.stringify(keys.filter((k) => k.type === type).map((k) => k.id));
+  const extra = "m.display_name AS author_name, s.name AS space_name";
+  const [threads, posts] = await Promise.all([
+    all(db, `SELECT t.id, t.id AS thread_id, t.slug, t.title, t.state, t.state AS thread_state, t.removed_reason, t.removed_at, t.author_user_id, t.space_id,
+        t.channel_id, (SELECT o.body FROM community_posts o WHERE o.id = ${OPENING("t.id")}) AS body, ${extra}
+      FROM community_threads t LEFT JOIN community_members m ON m.user_id = t.author_user_id LEFT JOIN community_spaces s ON s.id = t.space_id
+      WHERE t.id IN (SELECT value FROM json_each(?))`, ids("thread")),
+    all(db, `SELECT p.id, p.thread_id, p.state, p.removed_reason, p.removed_at, p.author_user_id, p.body, t.slug, t.title, t.state AS thread_state, t.space_id,
+        t.channel_id, ${OPENING("p.thread_id")} AS opening_id, ${extra}
+      FROM community_posts p JOIN community_threads t ON t.id = p.thread_id LEFT JOIN community_members m ON m.user_id = p.author_user_id
+      LEFT JOIN community_spaces s ON s.id = t.space_id WHERE p.id IN (SELECT value FROM json_each(?))`, ids("post"))
+  ]);
+  const out = new Map();
+  for (const [type, rows] of [["thread", threads], ["post", posts]]) {
+    for (const r of rows) out.set(`${type}:${r.id}`, { ...shape(r, type), authorName: r.author_name || null, spaceName: r.space_name || "" });
+  }
+  return out;
 }
 
 // Which changes a team (or the automatic rules) may make: hide what's showing, remove what's showing or hidden,

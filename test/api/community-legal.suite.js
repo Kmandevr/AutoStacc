@@ -100,6 +100,9 @@ export default (ctx) => describe("community: AutoStacc's queue (switched on)", (
     const b = await person();
     const t = await take(kid.c);
     const post = await reply(kid.c, await take(b.c), "my reply");
+    const kept = await reply(kid.c, await take(b.c), "infringing reply kept by law");
+    db(`UPDATE community_posts SET state = 'removed', removed_reason = 'legal', removed_at = '2026-10-01T00:00:00.000Z' WHERE id = '${kept}'`);
+    db(`INSERT INTO community_post_edits (post_id, at, body) VALUES ('${kept}', '2026-10-01T00:00:00.000Z', 'earlier words')`);
     await report(b.c, post, "underage");
     const admin = await freshAdmin(ctx.mock.url);
     assert.equal((await resolve(admin, post, "underage", { reason: "Said they're 14 in a post" })).status, 200);
@@ -108,5 +111,8 @@ export default (ctx) => describe("community: AutoStacc's queue (switched on)", (
     assert.equal(one(`SELECT COUNT(*) AS n FROM community_members WHERE user_id = '${kid.user.id}'`).n, 0);
     assert.equal(one(`SELECT until FROM community_suspensions WHERE user_id = '${kid.user.id}'`).until, null);
     assert.equal((await kid.c.get("/api/community/me")).data.member, null);
+    // What AutoStacc removed for a legal reason stays as it was, edit history too (security review).
+    assert.deepEqual(one(`SELECT removed_reason AS why, body FROM community_posts WHERE id = '${kept}'`), { why: "legal", body: "infringing reply kept by law" });
+    assert.equal(one(`SELECT COUNT(*) AS n FROM community_post_edits WHERE post_id = '${kept}'`).n, 1);
   });
 });

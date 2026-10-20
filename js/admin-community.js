@@ -41,11 +41,12 @@
     let reason = "";
     let suspendDays;
     if (outcome !== "dismissed") {
-      reason = prompt(outcome === "underage" ? "Note for the audit log (their community activity is removed):" : "Why is it removed? The author is told, and it's kept in the audit log.");
+      reason = prompt(outcome === "underage" ? "Note for the audit log (their community activity is removed):" : "Why is it removed? The author and the space's team see this, so don't name who sent the notice. It's kept in the audit log.");
       if (!(reason && reason.trim().length >= 3)) return;
       if (outcome === "removed") {
         const days = prompt("Also suspend the author from the community? Days, or 0 for until lifted. Leave empty for no suspension.", "");
         if (days === null) return;
+        if (days.trim() && !/^\d+$/.test(days.trim())) return load(panel, "Days must be a whole number (0 for until lifted).");
         if (days.trim()) suspendDays = Number(days) === 0 ? null : Number(days);
       }
     }

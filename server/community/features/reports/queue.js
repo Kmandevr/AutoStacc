@@ -9,7 +9,7 @@ import { requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
 import { requireTeam } from "../../core/access.js";
 import { getSpace } from "../../core/posting.js";
-import { loadTarget, setState, canChange, logStmts, guarded } from "../../core/moderate.js";
+import { loadTarget, loadTargets, setState, canChange, logStmts, guarded } from "../../core/moderate.js";
 import { priority } from "./triage.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -20,26 +20,29 @@ async function teamFor(app, spaceId) {
   return { user, space: await requireTeam(app, user, await getSpace(app.db, spaceId)) };
 }
 
+const MAX_ITEMS = 60;
+
 async function queue(app, { spaceId }) {
   const { space } = await teamFor(app, id(spaceId, "spaceId"));
-  const rows = await all(app.db, `SELECT target_type AS type, target_id AS id, reason, note, created_at AS createdAt FROM community_reports
-    WHERE space_id = ? AND route = 'space' AND status = 'open' ORDER BY created_at LIMIT 500`, space.id);
-  const byTarget = new Map();
-  for (const r of rows) {
-    const key = `${r.type}:${r.id}`;
-    if (!byTarget.has(key)) byTarget.set(key, { type: r.type, id: r.id, reasons: [], notes: [], since: r.createdAt });
-    const e = byTarget.get(key);
-    e.reasons.push(r.reason);
-    e.notes.push(r.note);
-  }
+  // Danger reports and then the oldest items, chosen in SQL, then ranked; everything about them in a few queries (never one per report).
+  const targets = await all(app.db, `SELECT target_type AS type, target_id AS id, MIN(created_at) AS since FROM community_reports
+    WHERE space_id = ? AND route = 'space' AND status = 'open' GROUP BY target_type, target_id
+    ORDER BY MAX(reason = 'danger') DESC, since LIMIT ${MAX_ITEMS}`, space.id);
+  const [rows, loaded] = await Promise.all([
+    all(app.db, `SELECT target_type AS type, target_id AS id, reason, note FROM community_reports
+      WHERE space_id = ? AND route = 'space' AND status = 'open' AND target_type || ':' || target_id IN (SELECT value FROM json_each(?)) LIMIT 1000`,
+    space.id, JSON.stringify(targets.map((t) => `${t.type}:${t.id}`))),
+    loadTargets(app.db, targets)
+  ]);
   const items = [];
-  for (const e of byTarget.values()) {
-    const t = await loadTarget(app.db, e.type, e.id);
+  for (const e of targets) {
+    const t = loaded.get(`${e.type}:${e.id}`);
     if (!t) continue;
-    const author = t.authorId && await first(app.db, "SELECT display_name AS name FROM community_members WHERE user_id = ?", t.authorId);
-    items.push({ type: e.type, id: e.id, state: t.state, title: t.thread.title, excerpt: t.body.slice(0, 400), author: author ? author.name : null,
-      threadId: t.thread.id, reasons: e.reasons, notes: e.notes.slice(0, 5), since: e.since, danger: e.reasons.includes("danger"),
-      priority: priority({ reasons: e.reasons, text: [t.body, ...e.notes].join("\n") }) });
+    const mine = rows.filter((r) => r.type === e.type && r.id === e.id);
+    const reasons = mine.map((r) => r.reason), notes = mine.map((r) => r.note);
+    items.push({ type: e.type, id: e.id, state: t.state, title: t.thread.title, excerpt: t.body.slice(0, 400), author: t.authorName,
+      threadId: t.thread.id, reasons, notes: notes.slice(0, 5), since: e.since, danger: reasons.includes("danger"),
+      priority: priority({ reasons, text: [t.body, ...notes].join("\n") }) });
   }
   items.sort((a, b) => (b.priority - a.priority) || a.since.localeCompare(b.since));
   return json({ reports: items.slice(0, 50) }, 200, NO_STORE);

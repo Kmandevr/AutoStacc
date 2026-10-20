@@ -7,37 +7,41 @@
 //              account's community data erased as on account deletion) and they can't join again
 // Removing may also suspend the author from the whole community. Every decision is in the audit log.
 import { json, readJson, fail, id, str, int } from "../../../lib/http.js";
-import { all, first, stmt, now, guardStmt } from "../../../lib/db.js";
+import { all, stmt, now, guardStmt } from "../../../lib/db.js";
 import { requireAdmin } from "../../../auth/session.js";
 import { audit } from "../../../audit/log.js";
-import { loadTarget, legalRemove, guarded } from "../../core/moderate.js";
+import { loadTarget, loadTargets, legalRemove, guarded } from "../../core/moderate.js";
 import { eraseCommunityStmts } from "../../core/erase.js";
 import { purge } from "../../core/purge.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 const OUTCOMES = ["removed", "dismissed", "underage"];
 
+const MAX_ITEMS = 50;
+
 async function queue(app) {
   await requireAdmin(app);
-  const rows = await all(app.db, `SELECT r.target_type AS type, r.target_id AS id, r.reason, r.note, r.created_at AS createdAt, m.display_name AS reporter
-    FROM community_reports r LEFT JOIN community_members m ON m.user_id = r.reporter_user_id
-    WHERE r.route = 'autostacc' AND r.status = 'open' ORDER BY r.created_at LIMIT 500`);
-  const byTarget = new Map();
-  for (const r of rows) {
-    const key = `${r.type}:${r.id}`;
-    if (!byTarget.has(key)) byTarget.set(key, { type: r.type, id: r.id, since: r.createdAt, reports: [] });
-    byTarget.get(key).reports.push({ reason: r.reason, note: r.note, reporter: r.reporter || "deleted user", at: r.createdAt });
-  }
+  // The oldest items first, chosen in SQL, then everything about them in a few queries (never one per report).
+  const targets = await all(app.db, `SELECT target_type AS type, target_id AS id, MIN(created_at) AS since FROM community_reports
+    WHERE route = 'autostacc' AND status = 'open' GROUP BY target_type, target_id ORDER BY since LIMIT ${MAX_ITEMS}`);
+  const keys = JSON.stringify(targets.map((t) => `${t.type}:${t.id}`));
+  const [rows, loaded] = await Promise.all([
+    all(app.db, `SELECT r.target_type AS type, r.target_id AS id, r.reason, r.note, r.created_at AS createdAt, m.display_name AS reporter
+      FROM community_reports r LEFT JOIN community_members m ON m.user_id = r.reporter_user_id
+      WHERE r.route = 'autostacc' AND r.status = 'open' AND r.target_type || ':' || r.target_id IN (SELECT value FROM json_each(?))
+      ORDER BY r.created_at LIMIT 1000`, keys),
+    loadTargets(app.db, targets)
+  ]);
   const items = [];
-  for (const e of byTarget.values()) {
-    const t = await loadTarget(app.db, e.type, e.id);
+  for (const e of targets) {
+    const t = loaded.get(`${e.type}:${e.id}`);
     if (!t) continue;
-    const author = t.authorId && await first(app.db, "SELECT display_name AS name FROM community_members WHERE user_id = ?", t.authorId);
-    const space = await first(app.db, "SELECT name FROM community_spaces WHERE id = ?", t.spaceId);
-    items.push({ ...e, state: t.state, removedReason: t.removedReason, title: t.thread.title, text: t.body.slice(0, 2000), threadId: t.thread.id,
-      space: space ? space.name : "", author: author ? author.name : null, authorKnown: Boolean(t.authorId) });
+    const reports = rows.filter((r) => r.type === e.type && r.id === e.id).slice(0, 20)
+      .map((r) => ({ reason: r.reason, note: r.note, reporter: r.reporter || "deleted user", at: r.createdAt }));
+    items.push({ type: e.type, id: e.id, since: e.since, reports, state: t.state, removedReason: t.removedReason, title: t.thread.title,
+      text: t.body.slice(0, 2000), threadId: t.thread.id, space: t.spaceName, author: t.authorName, authorKnown: Boolean(t.authorId) });
   }
-  return json({ reports: items.slice(0, 100) }, 200, NO_STORE);
+  return json({ reports: items }, 200, NO_STORE);
 }
 
 const suspendStmt = (db, userId, reason, days, adminId) => stmt(db, `INSERT INTO community_suspensions (user_id, reason, until, created_by, created_at) VALUES (?, ?, ?, ?, ?)
@@ -68,7 +72,10 @@ async function resolve(app) {
     else await legalRemove(app, target, { reason, extra: [stillOpen, ...extra] });
   } else {
     if (!target.authorId) fail(409, "no_author", "That account is already gone.");
+    const threads = await all(db, `SELECT DISTINCT t.id, t.slug FROM community_threads t WHERE t.author_user_id = ?1
+      OR t.id IN (SELECT thread_id FROM community_posts WHERE author_user_id = ?1) LIMIT 200`, target.authorId);
     await underage(app, target.authorId, admin.id, [stillOpen, close]);
+    for (const t of threads) purge(app, { thread: t });
   }
   await audit(app, `community.report_${outcome}`, { targetType: `community_${target.type}`, targetId: target.id,
     subjectUserId: target.authorId || undefined, detail: { reason, suspendDays: suspend === false ? undefined : suspend } });
@@ -84,8 +91,11 @@ async function underage(app, userId, adminId, guards) {
   const at = now();
   await guarded(db, [
     ...guards,
-    stmt(db, "UPDATE community_posts SET body = '', state = 'removed', removed_reason = 'author', removed_at = ? WHERE author_user_id = ?", at, userId),
-    stmt(db, "UPDATE community_threads SET title = 'Removed', slug = 'removed', state = 'removed', removed_reason = 'author', removed_at = ? WHERE author_user_id = ?", at, userId),
+    // What AutoStacc removed for a legal reason is kept as the law requires, so it's left as it is (security review).
+    stmt(db, `UPDATE community_posts SET body = '', state = 'removed', removed_reason = 'author', removed_at = ? WHERE author_user_id = ?
+      AND COALESCE(removed_reason, '') <> 'legal'`, at, userId),
+    stmt(db, `UPDATE community_threads SET title = 'Removed', slug = 'removed', state = 'removed', removed_reason = 'author', removed_at = ? WHERE author_user_id = ?
+      AND COALESCE(removed_reason, '') <> 'legal'`, at, userId),
     stmt(db, `UPDATE community_threads SET reply_count = MAX((SELECT COUNT(*) FROM community_posts p WHERE p.thread_id = community_threads.id AND p.state = 'visible') - 1, 0)
       WHERE id IN (SELECT thread_id FROM community_posts WHERE author_user_id = ?)`, userId),
     ...eraseCommunityStmts(db, userId),
