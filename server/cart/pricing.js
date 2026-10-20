@@ -28,7 +28,8 @@ export function parseItems(raw) {
 // promoCode: what the buyer typed (optional); email and userId: who is buying, for usage limits (optional).
 // creatorSales: { open, reason } from server/payments/creator-sales.js; while closed, creators' products that could
 // otherwise be bought are held (line.held = reason): kept in the cart and shown, but outside the totals and checkout.
-export async function priceCart(db, items, { owned = [], promoCode = "", email = "", userId = null, creatorSales = { open: true, reason: null } } = {}) {
+// copyrightPaused: product ids whose creator space has selling paused by copyright strikes (held as "copyright").
+export async function priceCart(db, items, { owned = [], promoCode = "", email = "", userId = null, creatorSales = { open: true, reason: null }, copyrightPaused = new Set() } = {}) {
   const [products, sales] = await Promise.all([getProducts(db, items.map((i) => i.productId)), runningSales(db)]);
   const rows = new Map(products.map((p) => [p.id, p]));
   const ownedSet = new Set(owned);
@@ -44,6 +45,7 @@ export async function priceCart(db, items, { owned = [], promoCode = "", email =
     else if (ownedSet.has(productId)) line.problem = "owned";
     else if (quantity > p.max_quantity) line.problem = "quantity";
     else if (p.source === "studio" && !creatorSales.open) line.held = creatorSales.reason;
+    else if (copyrightPaused.has(productId)) line.held = "copyright";
     return line;
   });
   const currencies = new Set(lines.filter((l) => l.currency).map((l) => l.currency));

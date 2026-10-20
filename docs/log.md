@@ -8,6 +8,7 @@ updated: 2026-10-20
 
 Newest first.
 
+- 2026-10-20: Copyright strikes step 1 (#137): `server/copyright/` (notices recorded and decided by admins, strikes for the uploader and half for the creator space, levels and holds), level 2 enforced in the Studio, cart, checkout, free claims and Auto-Stacc; Daily › Copyright; `/copyright` and `/privacy` updated; migration 0037; tests.
 - 2026-10-20: Copyright strikes: the owner's decisions (half a space strike per member strike, full for the owner's own upload, member at 2 can't publish, paused spaces' free items pause, removed files stop for everyone; public notice form) and the architect's four-step build plan recorded.
 - 2026-10-20: AutoStacc's community queue in the Control Center (#137 part 3, switch off): the `legal` feature (legal removals, dismissals, under-16 accounts, community suspensions), `legalRemove` in the core, the author's notice for legal removals, Daily › Community reports (`js/admin-community.js`), API tests.
 - 2026-10-20: Community blocks, crisis help lines, the 40-day read-only rule and 12-month retention (#137 part 2, switch off): features `blocks`, `crisis`, `upkeep`, `core/retention.js` and `core/wording.js` in the daily sweep, migration 0036, the `community-read-only` email, `/privacy` updated, API and unit tests.

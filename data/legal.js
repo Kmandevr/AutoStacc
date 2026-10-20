@@ -109,6 +109,9 @@ window.LEGAL = [
         "The [community](/community) isn't open yet. When it is, and you take part, AutoStacc keeps: the community name you choose and when you confirmed you're 16 or older; what you post (takes and replies, as you wrote them, with earlier versions of edited posts); your boosts and Helpful votes; and the time of your posts, which is used to pace posting and stop spam. Everything you post is public under your community name, never your email. If you report a post, AutoStacc keeps your report (the reason and your note) and who sent it; the space's team sees the report but not who made it. If you appeal a decision, the team sees your appeal and your community name. What a space's team does (hiding, removing, banning, with the reason) is kept in that space's log, which names the team member and the person by community name. Reports and appeals are kept for 12 months, then deleted; deleting your account removes your appeals and your name from your reports.",
         "Your posts stay until you delete them. A post you delete, or one a space's team removes, is kept privately for 12 months and then its text is deleted. If you block someone, AutoStacc keeps who you blocked (they aren't notified) until you unblock them. If AutoStacc removes a post of yours for a legal reason or suspends you from the community, it keeps the reason and, for a suspension, until when; a legally removed post is kept privately as the law requires. Deleting your account keeps your posts as \"deleted user\" and erases your name, votes and edit history. Your community data is in your data download."
       ] },
+      { id: "copyright-notices", heading: "If you send a copyright notice", body: [
+        "AutoStacc keeps what your notice says: your name, email address and postal address, the work you say is infringed, where it is on AutoStacc and your statements, with what AutoStacc decided. The person whose upload you named isn't shown your details unless they send a counter-notice, which the law requires AutoStacc to pass between you. Strikes are kept for the 12 months they last, and the record of a notice as long as the law requires."
+      ] },
       { id: "legal-requests", heading: "Requests from police and courts", body: [
         "AutoStacc gives information about an account only in answer to valid legal process, such as a subpoena or court order, and only what it asks for. You're told about the request unless the law forbids it or someone is in danger. Where someone's life is at risk, AutoStacc may answer an emergency request sooner. Material that exploits children is reported to the authorities as US law requires."
       ] },
@@ -200,7 +203,7 @@ window.LEGAL = [
     title: "Copyright policy",
     description: "How to report something on AutoStacc that infringes your copyright, how to answer a report about your own upload, and what happens to accounts that infringe repeatedly.",
     summary: "Found your work on AutoStacc without your permission? Here's how to report it, how creators can answer a report, and what repeat infringement costs an account.",
-    updated: "2026-10-16",
+    updated: "2026-10-20",
     review: "",
     sections: [
       { id: "scope", heading: "What this covers", body: [
@@ -229,13 +232,13 @@ window.LEGAL = [
         "AutoStacc passes the counter-notice to the person who sent the notice. Unless they tell AutoStacc within 10 to 14 business days that they've gone to court, the content is put back."
       ] },
       { id: "strikes", heading: "Repeat infringement", body: [
-        "A notice that leads to a removal and isn't successfully answered by a counter-notice is a strike against the account that uploaded it. Each strike expires 12 months after it was given.",
+        "A notice that leads to a removal and isn't successfully answered by a counter-notice is a strike against the account that uploaded it, and half a strike against the creator space it was uploaded for (a whole one if the space's owner uploaded it, or if nobody else can be named). Each strike expires 12 months after it was given.",
         { list: [
           "**1 strike:** a warning.",
-          "**2 strikes:** selling is paused. You can answer a strike, or fix or remove the content and ask for selling back.",
+          "**2 strikes:** for an account, it can't publish or price products in any creator space; for a creator space, its products can't be bought or claimed free for now. You can answer a strike, or fix or remove the content and ask for selling back.",
           "**3 strikes:** the account can no longer sell, upload files or use the Studio. In serious cases AutoStacc may keep this in place after strikes expire."
         ] },
-        "Strikes never take away what you bought: you can always buy, download and use your purchases."
+        "Strikes never take away what you bought: you can always buy, download and use your purchases. The one exception is a file removed because a valid notice named it: nobody can download that file any more, and the people who bought it can get a refund for that product."
       ] },
       { id: "buyers", heading: "If you bought something that was removed", body: [
         "If a product you paid for is removed for infringement, see the [refund policy](/refunds)."

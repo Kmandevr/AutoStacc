@@ -3,13 +3,14 @@
 // server's own split (server/revenue/split.js). The price buyers pay is still combined only in server/cart/pricing.js;
 // if a store-wide sale from AutoStacc is lower, that one applies and storeSale says so. Owners and editors may use it
 // (earnings figures are the owner's only); anyone else gets "nothing here". Rows: server/promotions/creator-sales.js.
-import { json, readJson } from "../lib/http.js";
+import { json, readJson, fail } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
 import { SELLING, feeBpsOf } from "../creators/policy.js";
 import { requireOwnProduct } from "../creators/products.js";
 import { recordEvent } from "../creators/events.js";
 import { splitLine } from "../revenue/split.js";
+import { mayPublish } from "../copyright/standing.js";
 import { runningSales, salePrice, MIN_CHARGE_CENTS } from "../promotions/promotions.js";
 import { CREATOR_SALE, cleanSaleInput, listCreatorSales, createCreatorSale, endCreatorSale, saleStatus } from "../promotions/creator-sales.js";
 
@@ -56,6 +57,7 @@ async function create(app, { productId }) {
   const user = await requireUser(app);
   await limit(app, "studio-sale", 30, 3600);
   const own = await requireOwnProduct(app.db, productId, user);
+  if (!(await mayPublish(app.db, user.id))) fail(403, "copyright_paused", "Your account has copyright strikes, so it can't price products for now. See the copyright policy.");
   const sale = cleanSaleInput(await readJson(app.request, 2048), own.product.price_cents);
   const row = await createCreatorSale(app.db, { product: own.product, creatorId: own.creator.id, userId: user.id, sale });
   await recordEvent(app.db, { productId: own.product.id, kind: "sale_created", actorId: user.id,

@@ -5,7 +5,7 @@ import { parseItems, priceCart, publicCart } from "./pricing.js";
 import { resolveAccess } from "../entitlements/access.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { limit } from "../lib/ratelimit.js";
-import { creatorSalesState } from "../payments/creator-sales.js";
+import { creatorSalesState, pausedByCopyright } from "../payments/creator-sales.js";
 
 async function price(app) {
   await limit(app, "cart", 60, 60);
@@ -18,7 +18,8 @@ async function price(app) {
   if (promoCode.trim()) await limit(app, "promo", 15, 60);
   const email = access.user ? String(access.user.email).toLowerCase() : "";
   const creatorSales = await creatorSalesState(app);
-  const cart = await priceCart(app.db, items, { owned, promoCode, email, userId: access.user ? access.user.id : null, creatorSales });
+  const copyrightPaused = await pausedByCopyright(app.db, items.map((i) => i.productId));
+  const cart = await priceCart(app.db, items, { owned, promoCode, email, userId: access.user ? access.user.id : null, creatorSales, copyrightPaused });
   return json({ cart: publicCart(cart), creatorSales: { open: creatorSales.open, reason: creatorSales.reason } });
 }
 

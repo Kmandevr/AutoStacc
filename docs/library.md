@@ -2,7 +2,7 @@
 title: Your Stacc
 summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, personal collections, tags and saved searches, follows and Auto-Stacc.
 covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, js/library-bundle.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Your Stacc
@@ -11,7 +11,7 @@ updated: 2026-10-16
 
 ## Where the data comes from
 
-1. `GET /api/library` (server, from `entitlements`; it runs the Auto-Stacc grant first for a signed-in account): owned products, each with its `projectId`, `pacs`, `sources` and deliverable files, and each file's `pacId`, `kind`, size and name. Unchanged rules: only active entitlements, only active, published files ([store](store.md)), storage keys never sent.
+1. `GET /api/library` (server, from `entitlements`; it runs the Auto-Stacc grant first for a signed-in account): owned products, each with its `projectId`, `pacs`, `sources` and deliverable files, and each file's `pacId`, `kind`, size and name. Unchanged rules: only active entitlements, only active, published files ([store](store.md)), storage keys never sent. Free claims (`POST /api/library/free`) and the Auto-Stacc grant refuse or skip a creator space whose selling is paused by copyright strikes ([copyright](copyright.md)); what's already in Your Stacc stays.
 2. `data/projects.js`, `data/stacclets.js`, `data/pacs.js` (static) and `data/content-types.js` (generated from the vocabulary's `KINDS`, with `CONTENT_TYPE_ALIASES` for old kind names): names and structure.
 3. `js/stacc-model.js` joins them into one list of **assets**, one object per file, each knowing its project, Stacclet, Pac, product, kind and format. A file's kind is what the admin chose at upload (an old name such as `samples` counts as its new kind, `one-shots`; old `?kind=samples` links still work), else guessed from its extension (`content-types.js` `formats`).
 
