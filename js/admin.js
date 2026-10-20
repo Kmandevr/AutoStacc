@@ -17,7 +17,8 @@
   const pacTitle = (id) => (PACS.find((x) => x.id === id) || { title: id }).title;
   // Sub-pages, their sidebar groups and sections come from data/workspaces.js; optional features switched off
   // (data/features.js) leave none behind. The address picks the sub-page (/admin/<id>; plain /admin is the first, Stats).
-  const keep = (it) => it.key !== "packs" || (window.FEATURES || {})["packs.builder"] !== false;
+  const OPTIONAL = { packs: "packs.builder", community: "community.forum" };
+  const keep = (it) => !OPTIONAL[it.key] || (window.FEATURES || {})[OPTIONAL[it.key]] !== false;
   const PAGES = (((window.WORKSPACES || {}).control || {}).pages || [])
     .map((pg) => ({ ...pg, groups: pg.groups.map((g) => ({ ...g, items: g.items.filter(keep) })).filter((g) => g.items.length) }))
     .filter((pg) => pg.groups.length);

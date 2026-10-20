@@ -13,5 +13,6 @@ import reports from "./reports/index.js";
 import blocks from "./blocks/index.js";
 import crisis from "./crisis/index.js";
 import upkeep from "./upkeep/index.js";
+import legal from "./legal/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal]) register(f);

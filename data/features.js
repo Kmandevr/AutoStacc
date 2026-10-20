@@ -21,5 +21,6 @@ window.FEATURES = {
  "community.reports": true,
  "community.blocks": true,
  "community.crisis": true,
- "community.upkeep": true
+ "community.upkeep": true,
+ "community.legal": true
 };

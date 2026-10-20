@@ -84,3 +84,20 @@ export async function setState(app, target, to, { action, actorId = null, reason
   await purgeTarget(app, target);
   return { ...target, state: to };
 }
+
+// AutoStacc's removal for a legal reason (an illegal-content notice, copyright, impersonation; the Control Center):
+// from any state but an earlier legal removal, so even what its author deleted is kept as the law requires
+// (core/retention.js never clears it). Logged in the space's log too, so its team and the author see why.
+export async function legalRemove(app, target, { reason, extra = [] }) {
+  if (target.state === "removed" && target.removedReason === "legal") fail(409, "not_changeable", "That's already removed for a legal reason.");
+  const db = app.db;
+  const table = target.type === "thread" ? "community_threads" : "community_posts";
+  await guarded(db, [
+    guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = ? AND COALESCE(removed_reason, '') = ?)`, target.id, target.state, target.removedReason || ""),
+    stmt(db, `UPDATE ${table} SET state = 'removed', removed_reason = 'legal', removed_at = ? WHERE id = ?`, now(), target.id),
+    ...(target.type === "post" ? [recount(db, target.thread.id)] : []),
+    ...logStmts(db, { spaceId: target.spaceId, action: "legal_remove", targetType: target.type, targetId: target.id, reason: `Removed by AutoStacc: ${reason}`, automatic: true }),
+    ...extra
+  ]);
+  await purgeTarget(app, target);
+}

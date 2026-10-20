@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, server/settings/, data/workspaces.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Control Center
@@ -106,6 +106,10 @@ Paid creator storage ([creators](creators.md#paid-storage-built-2026-10-16-off))
 
 Buyers' reviews (`GET /api/admin/reviews`, `POST …/:id/hide` with a note, `…/:id/show`; `server/admin/reviews.js`, `js/admin-reviews.js`): the latest ones with product, stars and text, never who wrote them. Hiding is audited (`review.hidden`, `review.shown`); an edit doesn't unhide a review. Only owners of a product can review it, and a review shows only while they still own it ([store](store.md)).
 
+
+## Community reports
+
+AutoStacc's queue in the community (`GET /api/admin/community/reports`, `POST …/reports/resolve`, `GET /api/admin/community/suspensions`, `DELETE …/suspensions/:userId`; `server/community/features/legal/`, `js/admin-community.js`, Daily › Community reports, shown only while `community.forum` is on): only reports routed to AutoStacc (illegal content, copyright, impersonation, under 16), oldest first, with the text, the space, the author and each reporter's community name and note. **Remove** is a legal removal (the author is told why, a space's team can't undo it, retention keeps it), optionally suspending the author from the community for some days or until lifted; **Dismiss** settles AutoStacc's reports only; **Under 16** empties and removes the account's community activity, erases its community data and suspends it for good. Suspensions are listed with Lift. Every decision is audited (`community.report_removed`, `_dismissed`, `_underage`, `community.suspension_lifted`). Formal copyright notices and strikes come next ([community safety](community-safety.md)).
 ## Payouts
 
 Creators' payout requests (`GET`/`PATCH /api/admin/payouts`, `server/admin/payouts.js`), each with the amount and how the creator wants to be paid. A request from a creator with a connected Stripe account shows **Send via Stripe**: one Connect transfer from the marketplace account, keyed by the request so a retry never pays twice; if Stripe refuses, nothing is marked paid, the request stays open, its reason is shown (a 503, since Cloudflare hides a Function's 502) and the attempt is audited as `payout.failed` (Stripe's reason, scrubbed). If the transfer went out but the request was settled another way at the same moment (a Decline in another tab), the answer is a 409 naming the Stripe transfer and the audit log keeps `payout.transfer_orphaned` with its id: check Stripe before doing anything else. Without one, pay by hand and press **Mark paid**. **Decline** closes it (the API takes an optional note). Settling happens once and is audited (`payout.paid`, `payout.declined`). Setup: [payouts-setup](payouts-setup.md).
