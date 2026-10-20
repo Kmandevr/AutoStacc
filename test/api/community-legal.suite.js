@@ -115,4 +115,18 @@ export default (ctx) => describe("community: AutoStacc's queue (switched on)", (
     assert.deepEqual(one(`SELECT removed_reason AS why, body FROM community_posts WHERE id = '${kept}'`), { why: "legal", body: "infringing reply kept by law" });
     assert.equal(one(`SELECT COUNT(*) AS n FROM community_post_edits WHERE post_id = '${kept}'`).n, 1);
   });
+
+  test("a copyright notice can take a post down for a legal reason; withdrawing the notice brings it back", async () => {
+    const a = await person();
+    const b = await person();
+    const t = await take(b.c);
+    const post = await reply(a.c, t, "a reply with someone else's lyrics");
+    const admin = await freshAdmin(ctx.mock.url);
+    const nid = (await admin.post("/api/admin/copyright/notices", { claimantName: "Lyric Owner", claimantEmail: "lyrics@example.com", work: "Our song's lyrics", location: "a community reply", statements: true })).data.id;
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${nid}`, { outcome: "accepted", uploaderId: a.user.id, targets: [{ kind: "post", id: post }] })).status, 200);
+    assert.deepEqual(one(`SELECT state, removed_reason AS why FROM community_posts WHERE id = '${post}'`), { state: "removed", why: "legal" });
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${nid}`, { outcome: "withdrawn", note: "Claimant withdrew" })).status, 200);
+    assert.deepEqual(one(`SELECT state, removed_reason AS why FROM community_posts WHERE id = '${post}'`), { state: "visible", why: null });
+    assert.equal(one(`SELECT COUNT(*) AS n FROM community_mod_log WHERE target_id = '${post}' AND action = 'legal_restore'`).n, 1);
+  });
 });

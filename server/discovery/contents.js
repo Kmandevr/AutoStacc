@@ -54,7 +54,7 @@ export function deriveContents(files) {
 export async function refreshContents(app, productId) {
   const db = app.db;
   const files = await all(db, `SELECT kind, filename, size_bytes, meta FROM product_files
-    WHERE product_id = ? AND active = 1 AND status = 'published' AND retired_at IS NULL AND version_id IS NOT NULL`, productId);
+    WHERE product_id = ? AND active = 1 AND status = 'published' AND held_at IS NULL AND retired_at IS NULL AND version_id IS NOT NULL`, productId);
   const c = deriveContents(files);
   const indexed = files.length && isOn(app, "store.derivedFacets") ? 1 : 0;
   await db.batch([

@@ -19,7 +19,7 @@ async function contents(app, { productId }) {
   const [row, files] = await Promise.all([
     first(app.db, "SELECT summary FROM product_contents WHERE product_id = ?", p.id),
     all(app.db, `SELECT filename, folder_path, size_bytes, kind, meta FROM product_files WHERE product_id = ? AND active = 1 AND status = 'published'
-      AND retired_at IS NULL AND version_id IS NOT NULL ORDER BY folder_path, sort, filename LIMIT ?`, p.id, MAX_FILES + 1)
+      AND held_at IS NULL AND retired_at IS NULL AND version_id IS NOT NULL ORDER BY folder_path, sort, filename LIMIT ?`, p.id, MAX_FILES + 1)
   ]);
   const summary = parseJson(row ? row.summary : "{}", {});
   const folders = [];

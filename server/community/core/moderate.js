@@ -124,3 +124,19 @@ export async function legalRemove(app, target, { reason, extra = [] }) {
   ]);
   await purgeTarget(app, target);
 }
+
+// A legal removal undone (a copyright counter-notice the claimant didn't answer in court, server/copyright/): back to
+// visible, logged in the space's log so the team and the author see it. → whether it changed.
+export async function legalRestore(app, target) {
+  if (target.state !== "removed" || target.removedReason !== "legal") return false;
+  const db = app.db;
+  const table = target.type === "thread" ? "community_threads" : "community_posts";
+  await guarded(db, [
+    guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = 'removed' AND removed_reason = 'legal')`, target.id),
+    stmt(db, `UPDATE ${table} SET state = 'visible', removed_reason = NULL, removed_at = NULL WHERE id = ?`, target.id),
+    ...(target.type === "post" ? [recount(db, target.thread.id)] : []),
+    ...logStmts(db, { spaceId: target.spaceId, action: "legal_restore", targetType: target.type, targetId: target.id, reason: "Restored after a copyright counter-notice.", automatic: true })
+  ]);
+  await purgeTarget(app, target);
+  return true;
+}

@@ -6,6 +6,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, sql, outbox, linkIn } from "../support/client.js";
+import { SWEEP_TOKEN } from "./packs.suite.js";
 import { newBuyer, mockBuy, freshAdmin } from "../support/flows.js";
 
 const slug = (tag) => `${tag}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
@@ -146,5 +147,55 @@ export default (ctx) => describe("copyright strikes", () => {
     const statuses = [];
     for (let i = 0; i < 6; i++) statuses.push((await form(c2, { work: `Burst ${i}` })).status);
     assert.equal(statuses.includes(429), true, statuses.join(","));
+  });
+
+  test("a takedown holds the file from everyone, tells the uploader; a counter-notice brings it back after 14 days unless the claimant sues", async () => {
+    const s = await space("cp-takedown");
+    const paid = await product(s);
+    const fileId = `pf_${slug("f").replace(/[^a-z0-9]/g, "")}`;
+    db(`INSERT INTO product_files (id, product_id, r2_key, filename, label, content_type, size_bytes, sort, active, created_at, kind, status, status_at)
+      VALUES ('${fileId}', '${paid}', 'k/${fileId}', 'pack.zip', '', 'application/zip', 10, 0, 1, '2026-10-01T00:00:00.000Z', '', 'published', '2026-10-01T00:00:00.000Z')`);
+    const buyer = await newBuyer(base(), "cp-tdbuyer");
+    await mockBuy(buyer.c, [{ productId: paid, quantity: 1 }]);
+    const files = async () => ((await buyer.c.get("/api/library")).data.items.find((x) => x.productId === paid) || { files: [] }).files.map((f) => f.id);
+    assert.deepEqual(await files(), [fileId]);
+    const admin = await freshAdmin(base());
+    const id = await notice(admin);
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id}`, { outcome: "accepted", creatorId: s.creator.id, uploaderId: s.user.id, targets: [{ kind: "product_file", id: "pf_nope" }] })).data.error.code, "no_target");
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id}`, { outcome: "accepted", creatorId: s.creator.id, uploaderId: s.user.id, targets: [{ kind: "product_file", id: fileId }] })).status, 200);
+    assert.deepEqual(await files(), [], "held from past buyers too");
+    assert.ok(db(`SELECT held_at FROM product_files WHERE id = '${fileId}'`)[0].held_at);
+    const mail = (await outbox(base(), s.user.email)).find((m) => m.kind === "copyright-takedown");
+    assert.ok(mail, "the uploader is told");
+    assert.doesNotMatch(mail.body_text, /rights@example\.com|Rights Holder/, "never the claimant's details");
+    // Only the uploader can answer; once.
+    const stranger = await newBuyer(base(), "cp-stranger");
+    assert.equal((await stranger.c.get(`/api/copyright/notices/${id}/mine`)).status, 404);
+    assert.equal((await s.c.get(`/api/copyright/notices/${id}/mine`)).data.notice.takenDown.length, 1);
+    const counter = (o = {}) => s.c.post(`/api/copyright/notices/${id}/counter`, { name: "Sam Seller", email: "sam@example.org", address: "2 Beat Street, Leeds", mistake: true, jurisdiction: true, signature: "Sam Seller", ...o });
+    assert.equal((await counter({ jurisdiction: false })).data.error.code, "statements_required");
+    assert.equal((await counter({ signature: "Not Me" })).data.error.code, "signature_mismatch");
+    assert.equal((await counter()).status, 201);
+    assert.equal((await counter()).data.error.code, "already_sent");
+    assert.ok((await outbox(base(), "rights@example.com")).some((m) => m.kind === "copyright-counter-notice" && /2 Beat Street/.test(m.body_text)), "the claimant gets the counter-notice");
+    const sweep = async () => (await (await fetch(`${base()}/api/internal/sweep`, { method: "POST", headers: { Authorization: `Bearer ${SWEEP_TOKEN}` } })).json()).copyright;
+    await sweep();
+    assert.ok(db(`SELECT held_at FROM product_files WHERE id = '${fileId}'`)[0].held_at, "not before the 14 days");
+    db(`UPDATE copyright_counter_notices SET restore_after = '2026-01-01T00:00:00.000Z' WHERE notice_id = '${id}'`);
+    assert.ok((await sweep()).restored >= 1);
+    assert.deepEqual(await files(), [fileId], "back for its buyers");
+    assert.equal(units("account", s.user.id), 0, "the strike ended as countered");
+    assert.equal(db(`SELECT status FROM copyright_counter_notices WHERE notice_id = '${id}'`)[0].status, "restored");
+    // Another notice: the claimant goes to court, so it stays down.
+    const id2 = await notice(admin);
+    await admin.post(`/api/admin/copyright/notices/${id2}`, { outcome: "accepted", creatorId: s.creator.id, uploaderId: s.user.id, targets: [{ kind: "product_file", id: fileId }] });
+    await s.c.post(`/api/copyright/notices/${id2}/counter`, { name: "Sam Seller", email: "sam@example.org", address: "2 Beat Street, Leeds", mistake: true, jurisdiction: true, signature: "Sam Seller" });
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id2}`, { outcome: "sued", note: "Court filing received" })).status, 200);
+    db(`UPDATE copyright_counter_notices SET restore_after = '2026-01-01T00:00:00.000Z' WHERE notice_id = '${id2}'`);
+    await sweep();
+    assert.deepEqual(await files(), [], "stays down while it's in court");
+    // Withdrawing the notice brings it back.
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id2}`, { outcome: "withdrawn", note: "Claimant withdrew" })).status, 200);
+    assert.deepEqual(await files(), [fileId]);
   });
 });

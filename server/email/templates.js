@@ -110,6 +110,24 @@ export const templates = {
     };
   },
 
+  // To the account whose upload a copyright notice took down (server/copyright/mail.js): what and why, without the
+  // claimant's details, and how to answer with a counter-notice.
+  "copyright-takedown": ({ work, location, url }) => ({
+    subject: "Something you uploaded was taken down for copyright — AutoStacc",
+    text: `AutoStacc received a copyright notice about something you uploaded, and took it down.\n\nThe work it names: ${work}\nWhere: ${location}\n\nThis counts as a strike on your account (see the copyright policy). If you think it's a mistake, or you have the rights, you can send a counter-notice:\n${url}`,
+    html: layout("Something you uploaded was taken down", para("AutoStacc received a copyright notice about something you uploaded, and took it down.") + para(`The work it names: ${work}`) + para(`Where: ${location}`) +
+      para("This counts as a strike on your account (see the copyright policy). If you think it's a mistake, or you have the rights, you can send a counter-notice.") + button(url, "Send a counter-notice"))
+  }),
+
+  // To the claimant (server/copyright/counter.js): the counter-notice, which the law requires AutoStacc to pass on,
+  // and when the content comes back unless they go to court.
+  "copyright-counter-notice": ({ name, address, email, restoreAfter }) => ({
+    subject: "A counter-notice to your copyright notice — AutoStacc",
+    text: `The person whose upload your copyright notice named has sent a counter-notice, saying it was removed by mistake or misidentification, under penalty of perjury, and consenting to the jurisdiction of the courts.\n\nName: ${name}\nAddress: ${address}\nEmail: ${email}\n\nUnless you tell AutoStacc by ${restoreAfter} that you've filed a court action to stop the infringement, the content will be put back. Reply to this email to tell us.`,
+    html: layout("A counter-notice to your copyright notice", para("The person whose upload your copyright notice named has sent a counter-notice, saying it was removed by mistake or misidentification, under penalty of perjury, and consenting to the jurisdiction of the courts.") +
+      para(`Name: ${name}`) + para(`Address: ${address}`) + para(`Email: ${email}`) + para(`Unless you tell AutoStacc by ${restoreAfter} that you've filed a court action to stop the infringement, the content will be put back. Reply to this email to tell us.`))
+  }),
+
   // To a space's founder (or a project's owners): nobody on the team acted for 40 days, or reports waited that long,
   // so the space went read-only by itself (server/community/features/upkeep/).
   "community-read-only": ({ space, url }) => ({
