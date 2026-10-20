@@ -39,7 +39,14 @@ export const FEATURES = {
   // The community (docs/community.md): spaces, threads, posting and moderation under /community and /api/community/*.
   // Off until moderation and the launch gates are done (docs/community-safety.md); off, those addresses are 404 and
   // nothing community-related shows. Its tables (migration 0031) exist either way and stay empty.
-  "community.forum": { on: false, label: "Community" }
+  "community.forum": { on: false, label: "Community" },
+  // The community's features (server/community/features/), each switchable on its own; they only work while
+  // community.forum is on. Off, a feature's routes are 404, its parts leave the pages and its data stays stored.
+  "community.boost": { on: true, label: "Community: Boost (upvotes)" },
+  "community.qa": { on: true, label: "Community: Helpful votes and best answers" },
+  "community.waves": { on: true, label: "Community: waveforms beside names" },
+  "community.preview": { on: true, label: "Community: Preview while writing" },
+  "community.pace": { on: true, label: "Community: slow mode and posting pace" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

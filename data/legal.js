@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-16",
+    updated: "2026-10-20",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -104,6 +104,10 @@ window.LEGAL = [
           "Project mailing lists: at Brevo until you unsubscribe.",
           "Abuse counters: only the latest count for each IP address and kind of request, deleted within a day of it."
         ] }
+      ] },
+      { id: "community", heading: "The community (when it opens)", body: [
+        "The [community](/community) isn't open yet. When it is, and you take part, AutoStacc keeps: the community name you choose and when you confirmed you're 16 or older; what you post (takes and replies, as you wrote them, with earlier versions of edited posts); your boosts and Helpful votes; and the time of your posts, which is used to pace posting and stop spam. Everything you post is public under your community name, never your email. Space teams see what's reported in their space.",
+        "Your posts stay until you delete them; deleting your account keeps your posts as \"deleted user\" and erases your name, votes and edit history. Your community data is in your data download."
       ] },
       { id: "legal-requests", heading: "Requests from police and courts", body: [
         "AutoStacc gives information about an account only in answer to valid legal process, such as a subpoena or court order, and only what it asks for. You're told about the request unless the law forbids it or someone is in danger. Where someone's life is at risk, AutoStacc may answer an emergency request sooner. Material that exploits children is reported to the authorities as US law requires."

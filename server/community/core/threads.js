@@ -3,7 +3,7 @@
 // community_members; a deleted account (author NULL) or one without a name shows as "deleted user".
 // Sorting: new (latest activity), top (upvotes) and hot (upvotes weighed by age), the default. Hot ranks the most
 // recently active threads in code, since D1 has no power function to rank in SQL.
-import { first, all } from "../lib/db.js";
+import { first, all } from "../../lib/db.js";
 
 export const PAGE_SIZE = 25;
 const HOT_WINDOW = 300;
@@ -39,10 +39,15 @@ export async function listThreads(db, { spaceId = null, channelId = null, sort =
 export const getThread = (db, id) => first(db, `SELECT ${THREAD_COLS} FROM community_threads t
   LEFT JOIN community_members m ON m.user_id = t.author_user_id WHERE t.id = ?`, id);
 
-export const listPosts = (db, threadId) => all(db, `SELECT p.id, p.body, p.state, p.helpful, p.created_at AS createdAt, p.edited_at AS editedAt,
+export const listPosts = (db, threadId) => all(db, `SELECT p.id, p.parent_post_id AS parentId, p.body, p.state, p.helpful, p.created_at AS createdAt, p.edited_at AS editedAt,
   m.display_name AS author FROM community_posts p LEFT JOIN community_members m ON m.user_id = p.author_user_id
   WHERE p.thread_id = ? ORDER BY p.created_at, p.id LIMIT 500`, threadId);
 
 // Every visible thread for the sitemap, newest activity first (the sitemap protocol allows 50,000 per file).
 export const sitemapThreads = (db) => all(db, `SELECT t.id, t.slug, t.last_post_at AS lastPostAt FROM community_threads t
   WHERE t.state = 'visible' ORDER BY t.last_post_at DESC LIMIT 50000`);
+
+// Questions nobody has answered yet, newest first, for the front page's box for newcomers.
+export const unanswered = (db, limit = 5) => all(db, `SELECT ${THREAD_COLS} FROM community_threads t LEFT JOIN community_members m ON m.user_id = t.author_user_id
+  WHERE t.state = 'visible' AND t.type = 'question' AND t.reply_count = 0 ORDER BY t.created_at DESC LIMIT ?`, limit);
+

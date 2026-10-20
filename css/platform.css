@@ -105,6 +105,12 @@
 [data-track="samples"], [data-track="one-shots"] { --track: var(--coral); }
 [data-track="loops"] { --track: var(--lime); }
 [data-track="presets"] { --track: var(--violet); }
+/* The community's channels use the same five colours by name (server/community/core/render.js track()). */
+[data-track="teal"] { --track: var(--teal); }
+[data-track="amber"] { --track: var(--amber); }
+[data-track="coral"] { --track: var(--coral); }
+[data-track="lime"] { --track: var(--lime); }
+[data-track="violet"] { --track: var(--violet); }
 
 /* ---------- platform pages ---------- */
 /* A calm page: soft track-coloured light far behind everything (fixed, so it never scrolls), see-through surfaces over

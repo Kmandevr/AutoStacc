@@ -2,8 +2,8 @@
 // With the community.forum switch off, /community is the static "opening soon" page and everything under it is the
 // site's ordinary 404. On, the pages come from public.js, filled into the static /community page as a template; an
 // address it doesn't know, or an error, also gets the ordinary 404.
-import { loadConfig } from "../lib/config.js";
-import { isOn } from "../lib/features.js";
+import { loadConfig } from "../../lib/config.js";
+import { isOn } from "../../lib/features.js";
 import { communityPage } from "./public.js";
 
 async function notFound(context) {

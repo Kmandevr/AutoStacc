@@ -12,17 +12,13 @@
 .cm-sort a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--text); text-shadow: none; font-size: .9rem; }
 .cm-sort a[aria-current] { border-color: var(--accent); color: var(--accent); }
 
-.cm-threads, .cm-spaces, .cm-aside ul { list-style: none; margin: 0; padding: 0; }
-.cm-threads { display: grid; gap: 8px; }
-.cm-thread { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.cm-thread-title { display: block; font-weight: 600; color: var(--text); text-shadow: none; overflow-wrap: anywhere; }
 .cm-meta { margin: 4px 0 0; color: var(--muted); font-size: .86rem; }
 .cm-meta a { color: inherit; text-decoration: underline; }
 .cm-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; border: 1px solid var(--line); color: var(--muted); vertical-align: 1px; }
 .cm-official { border-color: var(--accent); color: var(--accent); }
 .cm-unofficial { border-style: dashed; }
 .cm-answered { border-color: var(--accent); color: var(--accent); }
-.cm-empty, .cm-small { color: var(--muted); }
+.cm-small { color: var(--muted); }
 .cm-small { font-size: .86rem; }
 .cm-deleted { font-style: italic; }
 .cm-pager { display: flex; justify-content: space-between; margin-top: 14px; }
@@ -38,7 +34,6 @@
 
 .cm-post { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); margin-bottom: 10px; scroll-margin-top: calc(var(--topbar, 58px) + 16px); }
 .cm-opening { border-width: 2px; }
-.cm-accepted { border-color: var(--accent); }
 .cm-post-gone { background: transparent; border-style: dashed; }
 .cm-body { line-height: 1.65; overflow-wrap: anywhere; }
 .cm-body blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); }
@@ -50,4 +45,64 @@
 @media (max-width: 860px) {
   .cm-layout { grid-template-columns: minmax(0, 1fr); }
   .cm-aside { position: static; }
+}
+
+/* Forms and buttons added by js/community.js. */
+.cm-compose, .cm-thread-tools { margin: 8px 0 14px; }
+.cm-thread-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cm-form { display: grid; gap: 10px; max-width: 70ch; margin: 12px 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.cm-form h2 { margin: 0; font-size: 1.1rem; }
+.cm-form label { display: grid; gap: 4px; font-size: .92rem; }
+.cm-form input:not([type=checkbox]), .cm-form textarea, .cm-form select { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; }
+.cm-form .cm-check { display: flex; gap: 8px; align-items: center; }
+.cm-form .cm-check input { width: 20px; height: 20px; }
+.cm-form button { justify-self: start; }
+.cm-post-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cm-post-tools .btn, .cm-thread-tools .btn { min-height: 36px; }
+
+/* ---------- the look (owner, 2026-10-20): channel strips, mixer, nested replies, composer, charm ---------- */
+.cm-strips, .cm-mixer, .cm-aside ul, .cm-replies, .cm-box ul { list-style: none; margin: 0; padding: 0; }
+.cm-strips { display: grid; gap: 8px; }
+.cm-strip { display: flex; gap: 12px; align-items: center; padding: 10px 14px 10px 16px; border: 1px solid var(--line); border-left: 4px solid var(--track, var(--teal)); border-radius: var(--radius); background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+.cm-strip-main { flex: 1; min-width: 0; }
+.cm-strip-title { display: block; font-weight: 600; color: var(--text); text-shadow: none; overflow-wrap: anywhere; }
+.cm-strip-meters { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.cm-replies { color: var(--muted); }
+.cm-strip-meters .cm-replies::before { content: ""; display: inline-block; width: 12px; height: 10px; margin-right: 4px; border: 1.5px solid currentColor; border-radius: 3px 3px 3px 0; vertical-align: -1px; }
+
+.cm-mixer { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 200px); justify-content: start; gap: 10px; overflow-x: auto; padding: 4px 2px 12px; margin-bottom: 8px; scroll-snap-type: x proximity; }
+.cm-channel a { display: grid; gap: 6px; justify-items: start; height: 100%; padding: 12px; border: 1px solid var(--line); border-top: 4px solid var(--track, var(--teal)); border-radius: var(--radius); background: var(--panel); color: var(--text); text-shadow: none; scroll-snap-align: start; }
+.cm-channel-meter { display: grid; gap: 2px; width: 10px; }
+.cm-channel-meter i { display: block; height: 4px; border-radius: 2px; background: var(--line); }
+.cm-channel-meter i.on { background: var(--track, var(--teal)); }
+.cm-box { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.cm-box h2 { margin: 0 0 4px; font-size: 1rem; }
+.cm-box li + li { margin-top: 6px; }
+.cm-dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--track, var(--teal)); }
+.cm-who { display: inline-flex; gap: 6px; align-items: center; }
+
+.cm-empty { display: grid; justify-items: center; gap: 6px; padding: 28px 12px; color: var(--muted); text-align: center; }
+.cm-empty-art { width: 48px; height: 40px; fill: color-mix(in srgb, var(--teal) 35%, transparent); }
+.cm-empty p { margin: 0; }
+
+/* Nested replies: the indent grows to a few levels, then stays put; deep branches fold. */
+.cm-replies .cm-replies { margin-left: 18px; padding-left: 12px; border-left: 2px solid var(--line); }
+.cm-reply[data-depth="6"] .cm-replies { margin-left: 0; padding-left: 0; border-left: 0; }
+.cm-fold > summary { cursor: pointer; min-height: 36px; display: flex; align-items: center; color: var(--accent); }
+@media (max-width: 600px) { .cm-reply[data-depth="3"] .cm-replies, .cm-reply[data-depth="4"] .cm-replies, .cm-reply[data-depth="5"] .cm-replies { margin-left: 0; padding-left: 8px; } }
+
+.cm-composer { display: grid; gap: 6px; }
+.cm-tabs { display: flex; gap: 4px; }
+.cm-tabs [role=tab] { padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px 8px 0 0; background: transparent; color: var(--muted); font: inherit; min-height: 36px; }
+.cm-tabs [aria-selected=true] { color: var(--text); background: var(--panel-2); }
+.cm-toolbar { display: flex; flex-wrap: wrap; gap: 4px; }
+.cm-tool { min-height: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: .82rem; }
+.cm-preview { min-height: 120px; padding: 10px; border: 1px dashed var(--line); border-radius: 8px; }
+.cm-reply-form { margin-left: 18px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cm-strip, .cm-channel a { transition: transform .18s ease, box-shadow .18s ease; }
+  .cm-strip:hover, .cm-channel a:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  @keyframes cm-stack-in { from { opacity: 0; transform: translateY(-14px); } 60% { opacity: 1; transform: translateY(2px); } to { transform: none; } }
+  .cm-stack-in { animation: cm-stack-in .32s cubic-bezier(.2, .8, .3, 1.2); }
 }

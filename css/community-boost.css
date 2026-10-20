@@ -1,0 +1,18 @@
+/* Boost, the community's upvote as a level meter (server/community/features/boost/, js/community-boost.js). */
+.cm-mini-boost { display: inline-flex; gap: 4px; align-items: center; }
+.cm-mini-meter, .cm-meter { display: inline-flex; gap: 2px; align-items: flex-end; }
+.cm-mini-meter i { display: block; width: 3px; border-radius: 1px; background: var(--line); }
+.cm-mini-meter i:nth-child(1) { height: 4px; } .cm-mini-meter i:nth-child(2) { height: 6px; } .cm-mini-meter i:nth-child(3) { height: 8px; }
+.cm-mini-meter i:nth-child(4) { height: 10px; } .cm-mini-meter i:nth-child(5) { height: 12px; } .cm-mini-meter i:nth-child(6) { height: 14px; }
+.cm-mini-meter i.on, .cm-meter i.on { background: var(--track, var(--teal)); }
+.cm-boost { display: inline-flex; gap: 8px; align-items: center; margin: 4px 0 10px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); }
+.cm-meter i { display: block; width: 5px; border-radius: 2px; background: var(--line); }
+.cm-meter i:nth-child(1) { height: 6px; } .cm-meter i:nth-child(2) { height: 9px; } .cm-meter i:nth-child(3) { height: 12px; }
+.cm-meter i:nth-child(4) { height: 15px; } .cm-meter i:nth-child(5) { height: 18px; } .cm-meter i:nth-child(6) { height: 21px; }
+.cm-count { font-variant-numeric: tabular-nums; font-weight: 600; }
+.cm-boost-btn { min-height: 36px; padding: 4px 14px; border: 1px solid var(--accent); border-radius: 999px; background: transparent; color: var(--accent); font: inherit; font-weight: 600; }
+.cm-boost-btn[aria-pressed=true] { background: var(--accent); color: var(--on-accent); }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes cm-bounce { 0% { transform: scaleY(1); } 30% { transform: scaleY(1.35); } 60% { transform: scaleY(.9); } 100% { transform: scaleY(1); } }
+  .cm-bounce .cm-meter { transform-origin: bottom; animation: cm-bounce .32s ease-out; }
+}
