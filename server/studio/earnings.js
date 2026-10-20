@@ -49,5 +49,5 @@ async function ask(app, { creatorId }) {
 
 export const routes = [
   ["GET", "/api/studio/creators/:creatorId/earnings", earnings],
-  ["POST", "/api/studio/creators/:creatorId/payouts", ask]
+  ["POST", "/api/studio/creators/:creatorId/payouts", ask, { copyright: "allow" }]
 ];

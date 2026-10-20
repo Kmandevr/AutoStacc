@@ -85,9 +85,9 @@ async function mockPay(app) {
 
 export const routes = [
   ["GET", "/api/studio/creators/:creatorId/storage", show],
-  ["PUT", "/api/studio/creators/:creatorId/storage/plan", changePlan],
+  ["PUT", "/api/studio/creators/:creatorId/storage/plan", changePlan, { copyright: "allow" }],
   ["DELETE", "/api/studio/creators/:creatorId/storage/plan", cancel],
   ["GET", "/api/studio/creators/:creatorId/storage/statements/:statementId", statement],
-  ["POST", "/api/studio/creators/:creatorId/storage/statements/:statementId/checkout", pay],
+  ["POST", "/api/studio/creators/:creatorId/storage/statements/:statementId/checkout", pay, { copyright: "allow" }],
   ["POST", "/api/dev/mock-storage-payment", mockPay, { impersonation: "test-payments" }]
 ];

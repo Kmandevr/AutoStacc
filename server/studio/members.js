@@ -107,6 +107,6 @@ export const routes = [
   ["DELETE", "/api/studio/creators/:creatorId/invites/:inviteId", withdraw],
   ["PATCH", "/api/studio/creators/:creatorId/members/:userId", changeRole],
   ["DELETE", "/api/studio/creators/:creatorId/members/:userId", remove],
-  ["POST", "/api/studio/invites/look", showInvite],
+  ["POST", "/api/studio/invites/look", showInvite, { copyright: "allow" }],
   ["POST", "/api/studio/invites/accept", accept]
 ];

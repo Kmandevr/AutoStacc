@@ -205,4 +205,20 @@ export default (ctx) => describe("copyright strikes", () => {
     assert.equal((await admin.post(`/api/admin/copyright/notices/${id2}`, { outcome: "withdrawn", note: "Claimant withdrew" })).status, 200);
     assert.deepEqual(await files(), [fileId]);
   });
+
+  test("three strikes: the Studio is closed to the account except deleting, payouts and storage billing; reads stay open", async () => {
+    const s = await space("cp-three");
+    const paid = await product(s);
+    const admin = await freshAdmin(base());
+    for (let i = 0; i < 3; i++) await accept(admin, await notice(admin), s.creator.id, s.user.id);
+    assert.equal(units("account", s.user.id), 6);
+    assert.equal((await s.c.post(`/api/studio/projects/${s.project.id}/products`, { title: "Another pack", type: "sample-pack", priceCents: 500, description: "x", includes: ["x"], tags: ["x"] })).data.error.code, "copyright_text_only");
+    assert.equal((await s.c.req("PATCH", `/api/studio/creators/${s.creator.id}`, { body: { name: "Renamed Space" } })).data.error.code, "copyright_text_only");
+    assert.equal((await s.c.get(`/api/studio/projects/${s.project.id}/products`)).status, 200, "reading stays open");
+    assert.notEqual((await s.c.post(`/api/studio/creators/${s.creator.id}/payouts`, {})).data.error?.code, "copyright_text_only", "getting paid stays open");
+    assert.notEqual((await s.c.req("DELETE", `/api/studio/products/${paid}/preview`)).data.error?.code, "copyright_text_only", "deleting stays open");
+    // Once the strikes go, so does the gate.
+    db(`UPDATE copyright_strikes SET state = 'withdrawn' WHERE subject = 'account' AND subject_id = '${s.user.id}'`);
+    assert.notEqual((await s.c.req("PATCH", `/api/studio/creators/${s.creator.id}`, { body: { name: "Renamed Space" } })).data.error?.code, "copyright_text_only");
+  });
 });

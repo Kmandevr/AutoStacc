@@ -52,7 +52,8 @@ export const FEATURES = {
   "community.blocks": { on: true, label: "Community: blocking people" },
   "community.crisis": { on: true, label: "Community: help lines beside self-harm wording" },
   "community.upkeep": { on: true, label: "Community: read-only after 40 days without a team" },
-  "community.legal": { on: true, label: "Community: AutoStacc's report queue and suspensions" }
+  "community.legal": { on: true, label: "Community: AutoStacc's report queue and suspensions" },
+  "community.textOnly": { on: true, label: "Community: no links from accounts at three copyright strikes" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

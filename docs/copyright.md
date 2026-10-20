@@ -1,7 +1,7 @@
 ---
 title: Copyright notices and strikes
-summary: Built steps 1 to 3 of 4 (#137): takedowns, counter-notices and restoring, the public notice form, copyright notices recorded and decided in the Control Center, strikes for the uploader (whole) and the creator space (half, whole for the owner's own upload), levels computed when asked, and what level 2 stops (publishing and pricing for an account; sales, free claims and Auto-Stacc for a space).
-covers: [server/copyright/, db/migrations/0037_copyright.sql, db/migrations/0038_copyright_form.sql, db/migrations/0039_copyright_takedowns.sql, copyright-notice.html, js/copyright-notice.js, js/copyright-counter.js, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js, test/unit/copyright-filing.test.js, test/unit/copyright-business-days.test.js]
+summary: Built (#137): level 3 (Studio closed, no links in posts), takedowns, counter-notices and restoring, the public notice form, takedowns, counter-notices and restoring, the public notice form, copyright notices recorded and decided in the Control Center, strikes for the uploader (whole) and the creator space (half, whole for the owner's own upload), levels computed when asked, and what level 2 stops (publishing and pricing for an account; sales, free claims and Auto-Stacc for a space).
+covers: [server/copyright/, server/community/features/textonly/, db/migrations/0037_copyright.sql, db/migrations/0038_copyright_form.sql, db/migrations/0039_copyright_takedowns.sql, copyright-notice.html, js/copyright-notice.js, js/copyright-counter.js, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js, test/unit/copyright-filing.test.js, test/unit/copyright-business-days.test.js]
 updated: 2026-10-20
 ---
 
@@ -37,5 +37,11 @@ The policy is in [community safety](community-safety.md#copyright-tiered-strikes
 
 Known gaps: a hold is per product file, so the same bytes published as another product's file, a product's preview clip, site images and library pieces aren't takedown targets yet; a catalog (non-Studio) product whose files are all held stays listed.
 
-## Next steps
-4. Level 3: a gate on Studio writes in `server/app.js` (payouts keep working) and the community's check on links in posts.
+## Built (step 4): level 3, text only
+
+- **The Studio** (`server/copyright/policy.js`, one gate in `server/app.js` beside the impersonation policy): every `POST`, `PUT` or `PATCH` under `/api/studio/` from an account at three strikes is refused (`copyright_text_only`): no products, uploads, Pacs, sites, images, library pieces or invitations. Deleting stays open (people can always take their own work down), and so do getting paid (payouts, the payout account), paying storage statements and looking at an invitation (routes marked `{ copyright: "allow" }`). Reading the Studio stays open, so earnings and history are still there.
+- **The community** (feature `textonly`, switch `community.textOnly`): a take, reply or edit with a link from such an account is refused. Links already in older posts still show.
+
+## Later
+
+- Stripping links from an account's older posts as pages are drawn, takedown targets for preview clips, site images and library pieces, holding the same bytes wherever they're published, unlisting a catalog product whose files are all held, and Turnstile on the notice form.
