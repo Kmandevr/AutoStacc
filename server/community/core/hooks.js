@@ -14,6 +14,7 @@
 //   arrange: { replies(thread, replies) }  reorders a take's top-level replies (the last feature to answer wins)
 //   schema: { thread(ctx, entity) }        adds fields to a take's JSON-LD entity (ctx: thread, posts, url)
 //   erase(db, userId) -> statements, exportData(db, userId) -> object   for account deletion and the data download
+//   sweep(app, { nowMs }) -> summary     the feature's part of the daily sweep (server/maintenance/sweep.js)
 import { isOn } from "../../lib/features.js";
 import { fail } from "../../lib/http.js";
 
@@ -75,6 +76,17 @@ export const featureRoutes = () => features.flatMap((f) => (f.routes || []).map(
   if (!communityOn(app) || !isOn(app, f.switch)) fail(404, "not_found", "Not found.");
   return handler(app, params);
 }, opts]));
+
+// The switched-on features' daily work, each summary under the feature's name; one feature failing doesn't stop
+// the others (it's logged, and tried again the next day).
+export async function sweepFeatures(app, opts) {
+  const out = {};
+  for (const f of on(app)) {
+    if (!f.sweep) continue;
+    try { out[f.name] = await f.sweep(app, opts); } catch (e) { console.error(`community ${f.name} sweep`, e && e.stack ? e.stack : e); out[f.name] = { error: true }; }
+  }
+  return out;
+}
 
 // Deletion and export reach every feature, switched on or not, since their data outlives a switch.
 export const eraseStmts = (db, userId) => features.flatMap((f) => (f.erase ? f.erase(db, userId) : []));

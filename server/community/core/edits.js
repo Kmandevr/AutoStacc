@@ -1,6 +1,7 @@
 // Editing and deleting your own posts (docs/community.md, "Posting limits"): edits for 24 hours after posting, each
 // earlier version kept in community_post_edits; deleting marks the post removed by its author (the text stays out of
-// every page). Deleting a thread's opening post removes the thread. Someone else's post looks like nothing there.
+// every page; the daily sweep deletes it 12 months later, core/retention.js). Deleting a thread's opening post
+// removes the thread. Someone else's post looks like nothing there.
 import { first, stmt, now } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { cleanBody, getSpace } from "./posting.js";
@@ -39,10 +40,11 @@ export async function editPost(app, user, postId, { body }) {
 export async function deletePost(app, user, postId) {
   const post = await ownPost(app.db, user.id, postId);
   const opening = post.opening_id === post.id;
+  const at = now();
   await app.db.batch([
-    stmt(app.db, "UPDATE community_posts SET state = 'removed', removed_reason = 'author' WHERE id = ? AND author_user_id = ?", post.id, user.id),
+    stmt(app.db, "UPDATE community_posts SET state = 'removed', removed_reason = 'author', removed_at = ? WHERE id = ? AND author_user_id = ?", at, post.id, user.id),
     opening
-      ? stmt(app.db, "UPDATE community_threads SET state = 'removed', removed_reason = 'author' WHERE id = ?", post.thread_id)
+      ? stmt(app.db, "UPDATE community_threads SET state = 'removed', removed_reason = 'author', removed_at = ? WHERE id = ?", at, post.thread_id)
       : stmt(app.db, "UPDATE community_threads SET reply_count = MAX(reply_count - 1, 0) WHERE id = ?", post.thread_id)
   ]);
   await emit(app, "postRemoved", { user, post, byAuthor: true });

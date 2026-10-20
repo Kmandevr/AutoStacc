@@ -90,7 +90,7 @@ async function spaceMine(app, { spaceId }) {
   const space = await getSpace(app.db, id(spaceId, "spaceId"));
   if (!space) fail(404, "not_found", "Not found.");
   const user = await currentUser(app);
-  return json({ signedIn: Boolean(user), team: user ? await isTeam(app, user, space) : false, state: space.state }, 200, NO_STORE);
+  return json({ signedIn: Boolean(user), team: user ? await isTeam(app, user, space) : false, state: space.state, stateReason: space.state_reason || null }, 200, NO_STORE);
 }
 
 export const routes = [

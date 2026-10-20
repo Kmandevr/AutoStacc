@@ -18,5 +18,8 @@ window.FEATURES = {
  "community.preview": true,
  "community.pace": true,
  "community.moderation": true,
- "community.reports": true
+ "community.reports": true,
+ "community.blocks": true,
+ "community.crisis": true,
+ "community.upkeep": true
 };

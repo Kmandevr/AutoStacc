@@ -110,6 +110,15 @@ export const templates = {
     };
   },
 
+  // To a space's founder (or a project's owners): nobody on the team acted for 40 days, or reports waited that long,
+  // so the space went read-only by itself (server/community/features/upkeep/).
+  "community-read-only": ({ space, url }) => ({
+    subject: `${space} is read-only for now — AutoStacc`,
+    text: `Nobody on ${space}'s team has acted in the community for 40 days, or reports have been waiting that long, so the space is read-only for now: people can still read it, but not post.\n\nHandle the waiting reports on the space's Team desk, then press Reopen:\n${url}`,
+    html: layout(`${space} is read-only for now`, para(`Nobody on ${space}'s team has acted in the community for 40 days, or reports have been waiting that long, so the space is read-only for now: people can still read it, but not post.`) +
+      para("Handle the waiting reports on the space's Team desk, then press Reopen.") + button(url, "Open the space"))
+  }),
+
   // To the admins: something in the Control Center is waiting for them.
   "admin-alert": ({ title, lines, adminUrl }) => ({
     subject: `Store alert: ${title}`,

@@ -7,7 +7,8 @@
 // (files/legacy.js); creator sites scheduled for earlier publish (sites/schedule.js) and files of deleted library pieces no site uses
 // anymore (library/sweep.js); and the admins hear about meters
 // near the allowance; last, paid creator storage is measured, last month's statements issued and overdue ones acted on
-// (billing/statements.js).
+// (billing/statements.js); and the community's upkeep: 12-month retention and its features' daily work
+// (community/index.js).
 // Bounded per run; anything left waits for the next day.
 import { deactivateExpiredRetired } from "../files/files.js";
 import { hashLegacyFiles } from "../files/legacy.js";
@@ -23,6 +24,7 @@ import { sweepContents } from "../discovery/contents.js";
 import { runDue } from "../sites/schedule.js";
 import { sweepReleased } from "../library/sweep.js";
 import { runStorageBilling } from "../billing/statements.js";
+import { communitySweep } from "../community/index.js";
 
 export async function sweep(app, { nowMs = Date.now() } = {}) {
   const retiredFiles = await deactivateExpiredRetired(app.db, nowMs);
@@ -40,5 +42,6 @@ export async function sweep(app, { nowMs = Date.now() } = {}) {
   const usage = (await checkLevels(app)).level;
   // After every cleanup above, so a day's measurement sees what is really still stored (server/billing/).
   const storageBilling = await runStorageBilling(app, { nowMs });
-  return { retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage, storageBilling };
+  const community = await communitySweep(app, { nowMs });
+  return { community, retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage, storageBilling };
 }
