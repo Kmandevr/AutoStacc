@@ -1,0 +1,5 @@
+/* The tiny waveform beside a name (server/community/features/waves/), in the colour its name picks. */
+.cm-wave { width: 24px; height: 16px; flex: none; fill: var(--wave, var(--teal)); }
+.cm-wave[data-wave=amber] { --wave: var(--amber); } .cm-wave[data-wave=coral] { --wave: var(--coral); }
+.cm-wave[data-wave=lime] { --wave: var(--lime); } .cm-wave[data-wave=violet] { --wave: var(--violet); }
+.cm-wave-none { fill: var(--line); }

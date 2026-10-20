@@ -1,8 +1,8 @@
-// The community's one formatter (server/community/format.js): everything escaped, a small markup set, links only to
+// The community's one formatter (server/community/core/format.js): everything escaped, a small markup set, links only to
 // valid http(s) addresses with their domain shown, and no way for HTML, scripts or other link schemes to get through.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { format, inline, plain, safeUrl, MAX_BODY } from "../../server/community/format.js";
+import { format, inline, plain, safeUrl, MAX_BODY } from "../../server/community/core/format.js";
 
 test("plain text is escaped, never markup", () => {
   assert.equal(inline(`<script>alert("x")</script> & 'q'`), "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &#39;q&#39;");

@@ -58,4 +58,4 @@ Stacked and modular, like a DAW (think REAPER) but prettier: neutral panels on a
 
 ## Voice
 
-The platform's own copy is friendly but professional and to the point: plain sentences, sentence-case headings (no all-caps, no `$` prompts or terminal flourishes), "Your Stacc" for the library, "store" for the shop. Each project brings its own voice on its own pages; Glitches & Stitches' terminal look and loop vocabulary (tear, stitch, glitch, cinch) stay inside its skin and never appear on platform pages, store pages or AutoStacc email.
+The platform's own copy is friendly but professional and to the point: plain sentences, sentence-case headings (no all-caps, no `$` prompts or terminal flourishes), "Your Stacc" for the library, "store" for the shop. The community has a small studio vocabulary of its own (takes, Boost, Hot / Fresh / Top, Best answer; owner, 2026-10-20, [community](community.md#look-and-words-owner-2026-10-20)). Each project brings its own voice on its own pages; Glitches & Stitches' terminal look and loop vocabulary (tear, stitch, glitch, cinch) stay inside its skin and never appear on platform pages, store pages or AutoStacc email.

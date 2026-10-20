@@ -11,5 +11,10 @@ window.FEATURES = {
  "store.derivedFacets": true,
  "product.contentsTree": true,
  "auth.adminTwoFactor": false,
- "community.forum": false
+ "community.forum": false,
+ "community.boost": true,
+ "community.qa": true,
+ "community.waves": true,
+ "community.preview": true,
+ "community.pace": true
 };

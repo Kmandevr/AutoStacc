@@ -20,6 +20,10 @@ const CAN = {
   members: ["owner", "admin"],
   // Share pieces to the community library (and sell them, which is also "products").
   "library.share": ["owner", "admin", "publisher"],
+  // Moderate the project's official community space: pin, lock, hide, move, ban (docs/community.md).
+  "community.moderate": ["owner", "admin"],
+  // Post Updates in the project's community space (official announcements).
+  "community.update": ["owner", "admin", "publisher"],
   // Earnings, payouts, the payout account, renaming or deleting the creator.
   money: ["owner"]
 };

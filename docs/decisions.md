@@ -540,3 +540,26 @@ For #135 the `architect` agent reviewed the community design. Its changes are re
 
 Built and off: the `community.forum` switch, migration 0031, `server/community/format.js`, and `community` reserved as a project-site page address. `/privacy` lists community data in the change that first collects it.
 
+## 2026-10-20: The community's look and words (owner)
+
+Asked one question at a time, the owner chose a clean but charming community in the app's own theme. The community gets its own small studio vocabulary: takes (threads), New take, Boost, Hot / Fresh / Top and Best answer. It's an exception to the platform's plain-words voice, kept "a little less corny" than the first proposal, with Reply and Helpful left plain. The look: channel-strip lists with track colours, a level-meter Boost, a tiny waveform beside each name, an inline composer with a preview, and a mixer row of spaces on the front page. Four short moments of charm (boost bounce, stacking in, empty states, best-answer glow) are all off for reduced motion. Replies are fully nested rather than flat. Details: [community](community.md#look-and-words-owner-2026-10-20).
+
+## 2026-10-20: Community features, and independent features (owner)
+
+The owner chose the community's features (listed in [community](community.md#features-owner-2026-10-20)):
+- **In posts:** music embeds, store item cards and code blocks.
+- **Keeping up:** following takes, joining spaces and saving for later.
+- **Notifications:** @mentions and an on-site inbox.
+- **Finding:** search, tags from AutoStacc's list plus each space's extras, and similar takes while asking.
+- **People and teams:** a mini profile card with Block and Report; team tools for channels and rules, pins and featured takes, a welcome message and the space's look.
+- **Store links:** product takes, an opt-in buyer badge and release takes.
+- **Self-promotion:** never in answers to questions or in question channels, and a team can switch it off per channel or for the whole space.
+- **Posting pace:** slow mode chosen by each space, about 3 posts a minute site-wide, duplicates refused, and daily caps only as a high safety net.
+
+The owner also set a design rule: "no system is reliant on another, so a major change needs no big rewrite". The community is built as a small core plus independent features, each with its own switch, tables, routes, scripts, styles and tests. They plug in only through the core's events, page slots, formatter extensions and pre-write checks, and never import each other ([community](community.md#built-as-independent-features-owner-2026-10-20)).
+
+Later the same day, the owner added rules for links and automatic moderation:
+- **Links to AutoStacc pages** are welcome anywhere and show as preview cards. Product pages are the exception and follow the self-promotion rule.
+- **Links to other sites** pass when the site is on AutoStacc's safe list or the space's own allowed list; are always refused when on the site-wide ban list (adult, auto-download, malware); and otherwise wait for the space's moderators.
+- **Automatic moderation:** every space gets word and phrase filters (with AutoStacc's slur list always on), new-account rules, link rules, and form-built pattern rules like Reddit's AutoModerator. Each is a feature of its own.
+

@@ -137,7 +137,7 @@ export default (ctx) => describe("community pages (switched on)", () => {
     assert.doesNotMatch(list.data, /Answered<\/span> How do I/);
     const page = await anon().get("/community/t/thr_question-how-do-i-export-stems");
     assert.match(page.data, /1 answer</);
-    assert.doesNotMatch(page.data, /Accepted answer/);
+    assert.doesNotMatch(page.data, /Best answer/);
     assert.doesNotMatch(page.data, /The <strong>accepted<\/strong> answer/);
     db("UPDATE community_posts SET state = 'visible' WHERE id = 'pst_a2'");
   });

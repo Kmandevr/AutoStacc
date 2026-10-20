@@ -16,12 +16,13 @@ import { creatorsOfUser } from "../creators/creators.js";
 import { limit } from "../lib/ratelimit.js";
 import { twoFactorEnabled } from "../auth/two-factor-state.js";
 import { twoFactorOn } from "../auth/two-factor.js";
+import { communityExport } from "../community/core/erase.js";
 
 export async function collect(app, user) {
   const db = app.db;
   const email = String(user.email).toLowerCase();
   // Every section reads only its own tables, so they are read together.
-  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches, reviews] = await Promise.all([
+  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches, reviews, community] = await Promise.all([
     twoFactorEnabled(db, user.id),
     getPreferences(db, user.id),
     listDevices(db, user.id),
@@ -36,7 +37,8 @@ export async function collect(app, user) {
     itemsOf(db, user.id),
     tagsOf(db, user.id),
     searchesOf(db, user.id),
-    reviewsOfUser(db, user.id)
+    reviewsOfUser(db, user.id),
+    communityExport(db, user.id)
   ]);
   return {
     exportedAt: new Date().toISOString(),
@@ -57,6 +59,7 @@ export async function collect(app, user) {
     tags: tags.map((t) => ({ item: t.item_key, tag: t.tag, addedAt: t.created_at })),
     savedSearches: searches.map((s) => ({ name: s.name, query: s.query, savedAt: s.created_at })),
     reviews: reviews.map((r) => ({ productId: r.product_id, rating: r.rating, text: r.body, writtenAt: r.created_at, changedAt: r.updated_at, hiddenByAutoStacc: Boolean(r.hidden_at) })),
+    community,
     pollVotes: pollVotes.map((v) => ({ pollId: v.poll_id, optionId: v.option_id, votedAt: v.created_at, changedAt: v.updated_at })),
     creators: creators.map((c) => ({ id: c.id, slug: c.slug, name: c.name, role: c.role })),
     emailsSent: emailsSent.map((m) => ({ kind: m.kind, subject: m.subject, status: m.status, at: m.created_at }))

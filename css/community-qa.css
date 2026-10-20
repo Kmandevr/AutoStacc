@@ -1,0 +1,7 @@
+/* Questions: the best answer and Helpful counts (server/community/features/qa/, js/community-qa.js). */
+.cm-best { border-color: var(--accent); border-width: 2px; }
+.cm-helpful-count { margin: 8px 0 0; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes cm-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); } 40% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .cm-glow { animation: cm-glow 1.2s ease-out; }
+}

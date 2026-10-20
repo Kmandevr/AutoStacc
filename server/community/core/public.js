@@ -7,9 +7,11 @@
 //   /community/sitemap.xml          every visible thread
 // Answers null for anything else (the static 404). Hidden and removed threads are 404 to the public. Pages are kept
 // in the edge cache for a minute in production, keyed by address; the HTML is the same for every visitor.
-import { getSpaceBySlug, listSpaces, listChannels, getChannel } from "./spaces.js";
-import { listThreads, getThread, listPosts, SORTS } from "./threads.js";
-import { hero, threadList, spaceList, spaceAside, sortNav, threadMain, threadPath, spacePath, channelPath, esc } from "./render.js";
+import { getSpaceBySlug, listSpaces, listChannels, getChannel, weeklyActivity } from "./spaces.js";
+import { listThreads, getThread, listPosts, unanswered, SORTS } from "./threads.js";
+import { hero, threadList, mixer, questionBox, spaceAside, sortNav, threadPath, spacePath, channelPath, esc, composeHook } from "./render.js";
+import { threadMain, threadHook } from "./render-thread.js";
+import { renderKit, schema } from "./hooks.js";
 import { fill, headers } from "./page.js";
 import { sitemap } from "./sitemap.js";
 import { plain } from "./format.js";
@@ -27,7 +29,8 @@ function listParams(url) {
 
 async function home(app, url) {
   const { sort, page } = listParams(url);
-  const spaces = await listSpaces(app.db);
+  const kit = renderKit(app);
+  const [spaces, activity, questions] = await Promise.all([listSpaces(app.db), weeklyActivity(app.db), unanswered(app.db)]);
   const bySpace = new Map(spaces.map((s) => [s.id, s]));
   const { threads, more } = await listThreads(app.db, { sort, page });
   return {
@@ -35,10 +38,11 @@ async function home(app, url) {
     description: "AutoStacc's community for music and sound: questions and answers, feedback, and the spaces of the projects and creators on AutoStacc.",
     hero: hero([["Home", "/"], ["Community", "/community"]], "AutoStacc", "Community",
       'Music and sound: ask, answer, share and talk with the people behind the projects. <a href="/community-rules">Community rules</a>.'),
-    main: `<div class="cm-layout"><div class="cm-col">
-        <h2>Latest</h2>${sortNav("/community", sort)}
-        ${threadList(threads, { spaces: bySpace, base: "/community", sort, page, more })}
-        </div><aside class="cm-aside"><p class="cm-aside-title">Spaces</p>${spaceList(spaces)}</aside></div>`
+    main: `${mixer(spaces, activity)}
+        <div class="cm-layout"><div class="cm-col">
+        <h2>${sort === "hot" ? "Hot takes" : sort === "new" ? "Fresh takes" : "Top takes"}</h2>${sortNav("/community", sort)}
+        ${threadList(threads, { kit, spaces: bySpace, base: "/community", sort, page, more })}
+        </div><aside class="cm-aside">${questionBox(questions)}${kit.slot("homeBoxes", {})}</aside></div>`
   };
 }
 
@@ -51,6 +55,7 @@ async function space(app, url, spaceSlug, channelSlug) {
   const { sort, page } = listParams(url);
   const base = channel ? channelPath(s, channel) : spacePath(s);
   const { threads, more } = await listThreads(app.db, { spaceId: s.id, channelId: channel && channel.id, sort, page });
+  const kit = renderKit(app);
   const crumbs = [["Home", "/"], ["Community", "/community"], [s.name, spacePath(s)], ...(channel ? [[channel.name, base]] : [])];
   const title = channel ? `${channel.name} · ${s.name}` : s.name;
   return {
@@ -58,9 +63,9 @@ async function space(app, url, spaceSlug, channelSlug) {
     description: clip(s.description || `${s.name} on AutoStacc's community: questions, answers and talk about music and sound.`),
     hero: hero(crumbs, s.kind === "community" && !s.official ? "Unofficial community" : "Community", channel ? channel.name : s.name,
       s.description ? esc(s.description) : ""),
-    main: `<div class="cm-layout"><div class="cm-col">${sortNav(base, sort)}
-        ${threadList(threads, { base, sort, page, more, empty: "Nothing here yet." })}
-        </div>${spaceAside(s, channels, channel)}</div>`
+    main: `${kit.slot("spaceHeader", { space: s, channel })}<div class="cm-layout"><div class="cm-col">${composeHook(s, channels, channel)}${sortNav(base, sort)}
+        ${threadList(threads, { kit, base, sort, page, more, empty: channel ? "No takes in this channel yet. Start the first one." : "No takes here yet. Be the first." })}
+        </div>${spaceAside(s, channels, channel, kit)}</div>`
   };
 }
 
@@ -71,23 +76,23 @@ async function thread(app, id, slug) {
   const [posts, spaces] = await Promise.all([listPosts(app.db, t.id), listSpaces(app.db)]);
   const s = spaces.find((x) => x.id === t.spaceId);
   if (!s) return null;
+  const kit = renderKit(app);
   const opening = posts[0];
   const text = opening && opening.state === "visible" ? plain(opening.body) : "";
   const url = app.config.siteUrl + threadPath(t);
-  const visibleReplies = posts.slice(1).filter((p) => p.state === "visible");
-  const person = (name) => ({ "@type": "Person", name: name || "deleted user" });
-  const schema = t.type === "question"
-    ? [{ "@type": "QAPage", url, mainEntity: { "@type": "Question", name: t.title, text: clip(text, 500), answerCount: visibleReplies.length,
-        datePublished: t.createdAt, author: person(t.author),
-        ...(t.acceptedPostId && visibleReplies.find((p) => p.id === t.acceptedPostId) ? { acceptedAnswer: { "@type": "Answer",
-          text: clip(plain(visibleReplies.find((p) => p.id === t.acceptedPostId).body), 500), url: `${url}#${t.acceptedPostId}`, upvoteCount: visibleReplies.find((p) => p.id === t.acceptedPostId).helpful } } : {}) } }]
-    : [{ "@type": "DiscussionForumPosting", url, headline: t.title, text: clip(text, 500), datePublished: t.createdAt, author: person(t.author),
-        commentCount: visibleReplies.length, interactionStatistic: { "@type": "InteractionCounter", interactionType: "https://schema.org/LikeAction", userInteractionCount: t.score } }];
+  const replies = posts.slice(1).filter((p) => p.state === "visible").length;
+  const author = { "@type": "Person", name: t.author || "deleted user" };
+  // The core's entity; features add their fields (an accepted answer, boosts) through the schema hook.
+  const entity = t.type === "question"
+    ? { "@type": "Question", name: t.title, text: clip(text, 500), answerCount: replies, datePublished: t.createdAt, author }
+    : { "@type": "DiscussionForumPosting", url, headline: t.title, text: clip(text, 500), datePublished: t.createdAt, author, commentCount: replies };
+  schema(app, { thread: t, posts, url, clip }, entity);
   return {
-    path: threadPath(t), title: `${t.title} · ${s.name}`, index: true, schema,
+    path: threadPath(t), title: `${t.title} · ${s.name}`, index: true,
+    schema: [t.type === "question" ? { "@type": "QAPage", url, mainEntity: entity } : entity],
     description: clip(text || t.title),
     hero: hero([["Home", "/"], ["Community", "/community"], [s.name, spacePath(s)], [t.title, threadPath(t)]], esc(s.name), t.title),
-    main: `<div class="cm-layout"><div class="cm-col cm-thread-page">${threadMain(t, posts)}</div></div>`
+    main: `<div class="cm-layout"><div class="cm-col cm-thread-page">${threadHook(t, posts)}${threadMain(t, posts, kit)}</div></div>`
   };
 }
 
