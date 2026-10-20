@@ -1,7 +1,7 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Decisions
