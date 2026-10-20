@@ -62,16 +62,17 @@ async function resolve(app) {
   const autoHidden = target.state === "hidden" && (await first(app.db, `SELECT action FROM community_mod_log WHERE target_type = ? AND target_id = ?
     AND action IN ('hide', 'remove', 'restore', 'auto_hide', 'appeal_granted', 'report_upheld', 'report_dismissed') ORDER BY at DESC LIMIT 1`, target.type, target.id) || {}).action === "auto_hide";
   const to = upheld ? "removed" : autoHidden ? "visible" : null;
+  // Both ways, the batch holds only while the reports are still open, so two moderators can't decide them both ways.
+  const stillOpen = guardStmt(app.db, `EXISTS (SELECT 1 FROM community_reports WHERE target_type = ? AND target_id = ? AND route = 'space' AND status = 'open')`, target.type, target.id);
   if (to && canChange(target, to)) {
-    await setState(app, target, to, { action, actorId: user.id, reason, extra: [close] });
+    await setState(app, target, to, { action, actorId: user.id, reason, extra: [stillOpen, close] });
   } else {
-    await guarded(app.db, [guardStmt(app.db, `EXISTS (SELECT 1 FROM community_reports WHERE target_type = ? AND target_id = ? AND route = 'space' AND status = 'open')`, target.type, target.id),
-      close, ...logStmts(app.db, { spaceId: target.spaceId, actorId: user.id, action, targetType: target.type, targetId: target.id, reason })]);
+    await guarded(app.db, [stillOpen, close, ...logStmts(app.db, { spaceId: target.spaceId, actorId: user.id, action, targetType: target.type, targetId: target.id, reason })]);
   }
   return json({ ok: true });
 }
 
 export const queueRoutes = [
-  ["GET", "/api/community/spaces/:spaceId/reports", queue],
+  ["GET", "/api/community/spaces/:spaceId/reports", queue, { auditReads: true }],
   ["POST", "/api/community/reports/resolve", resolve]
 ];

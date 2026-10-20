@@ -13,7 +13,8 @@ export default {
   routes: [...actionRoutes, ...banRoutes, ...appealRoutes],
   // For the take page's team tools (shown only to the team; nothing here is private).
   state: { thread: async (app, user, t) => ({ pinned: Boolean(t.pinned), locked: Boolean(t.locked), spaceId: t.space_id }) },
-  erase: (db, userId) => [stmt(db, "DELETE FROM community_appeals WHERE user_id = ?", userId)],
+  erase: (db, userId) => [stmt(db, "DELETE FROM community_appeals WHERE user_id = ?", userId),
+    stmt(db, "UPDATE community_appeals SET handled_by = NULL WHERE handled_by = ?", userId)],
   exportData: async (db, userId) => ({
     appeals: await all(db, "SELECT target_type AS targetType, target_id AS targetId, note, status, created_at AS createdAt FROM community_appeals WHERE user_id = ? ORDER BY created_at", userId)
   })

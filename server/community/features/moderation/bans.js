@@ -59,7 +59,7 @@ async function list(app, { spaceId }) {
 }
 
 export const banRoutes = [
-  ["GET", "/api/community/spaces/:spaceId/bans", list],
+  ["GET", "/api/community/spaces/:spaceId/bans", list, { auditReads: true }],
   ["PUT", "/api/community/spaces/:spaceId/bans", ban],
   ["DELETE", "/api/community/spaces/:spaceId/bans", unban]
 ];

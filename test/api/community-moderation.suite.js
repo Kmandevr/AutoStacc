@@ -235,6 +235,53 @@ export default (ctx) => describe("community moderation and reports (switched on)
     assert.equal((await report(r.c, "post", third, "rules", "Breaks the space's rules though.")).status, 201);
   });
 
+  test("security review: AutoStacc-routed reports and banned reporters can't hide; races decide once; odd keys are 400", async () => {
+    const a = await person();
+    const t = await take(a.c);
+    const post = await replyTo(a.c, t);
+    const trusted = [];
+    for (let i = 0; i < 3; i++) trusted.push(await person({ old: true }));
+    for (const p of trusted) assert.equal((await report(p.c, "post", post, "copyright", "Uploaded my track without permission.")).status, 201);
+    assert.equal(state("community_posts", post).state, "visible", "AutoStacc's reports wait for AutoStacc");
+    // Banned from the space: no reports there, and old ones stop counting.
+    const admin = await team();
+    const banned = await person({ old: true });
+    await report(banned.c, "post", post);
+    assert.equal((await admin.req("PUT", `/api/community/spaces/${SPACE}/bans`, { body: { name: banned.name, reason: "Brigading" } })).status, 200);
+    assert.equal((await report(banned.c, "thread", t.id)).data.error.code, "banned");
+    await report(trusted[0].c, "post", post, "rules", "Breaks the rules of this space.");
+    await report(trusted[1].c, "post", post, "rules", "Breaks the rules of this space.");
+    assert.equal(state("community_posts", post).state, "visible", "only 2 counting reporters");
+    // One person's reports sent at once land once.
+    const r = await person();
+    await Promise.all(Array.from({ length: 5 }, () => report(r.c, "thread", t.id)));
+    assert.equal(db(`SELECT COUNT(*) AS n FROM community_reports WHERE target_id = '${t.id}' AND reporter_user_id = '${r.user.id}'`)[0][0].n, 1);
+    assert.equal((await report(r.c, "post", post, "constructor")).status, 400);
+    assert.equal((await mod(admin, "posts", post, { action: "constructor", reason: "x" })).status, 400);
+    assert.equal((await mod(admin, "threads", t.id, { action: "toString" })).status, 400);
+    // Uphold and dismiss at once: one wins.
+    const both = await Promise.all([
+      admin.post("/api/community/reports/resolve", { targetType: "thread", targetId: t.id, outcome: "upheld", reason: "Rule break" }),
+      admin.post("/api/community/reports/resolve", { targetType: "thread", targetId: t.id, outcome: "dismissed" })]);
+    assert.equal(both.filter((x) => x.status === 200).length, 1, both.map((x) => x.status).join(","));
+    // Grant and refuse at once: one wins; granting what's already back just closes the appeal.
+    const b = await person();
+    const t2 = await take((await person()).c); // the first take may be removed by now
+    const p2 = await replyTo(b.c, t2);
+    await mod(admin, "posts", p2, { action: "hide", reason: "Checking" });
+    await b.c.post("/api/community/appeals", { targetType: "post", targetId: p2, note: "Please look at this one again." });
+    const ap = db(`SELECT id FROM community_appeals WHERE target_id = '${p2}'`)[0][0].id;
+    const decided = await Promise.all([admin.post(`/api/community/appeals/${ap}`, { outcome: "granted" }), admin.post(`/api/community/appeals/${ap}`, { outcome: "refused", reason: "No" })]);
+    assert.equal(decided.filter((x) => x.status === 200).length, 1, decided.map((x) => x.status).join(","));
+    const p3 = await replyTo(b.c, t2);
+    await mod(admin, "posts", p3, { action: "hide", reason: "Checking" });
+    await b.c.post("/api/community/appeals", { targetType: "post", targetId: p3, note: "Please look at this one again." });
+    await mod(admin, "posts", p3, { action: "restore" });
+    const ap3 = db(`SELECT id FROM community_appeals WHERE target_id = '${p3}'`)[0][0].id;
+    assert.equal((await admin.post(`/api/community/appeals/${ap3}`, { outcome: "granted" })).status, 200);
+    assert.equal(db(`SELECT status FROM community_appeals WHERE id = '${ap3}'`)[0][0].status, "granted");
+  });
+
   test("a support impersonation can't report or moderate", async () => {
     const a = await person();
     const t = await take(a.c);

@@ -10,6 +10,7 @@ import { requireTeam } from "../../core/access.js";
 import { getSpace } from "../../core/posting.js";
 import { loadTarget, setState, logStmts, guarded, purgeTarget } from "../../core/moderate.js";
 
+const own = (map, key) => (Object.hasOwn(map, key) ? map[key] : undefined);
 const STATE_OF = { hide: "hidden", remove: "removed", restore: "visible" };
 const FLAGS = { pin: ["pinned", 1], unpin: ["pinned", 0], lock: ["locked", 1], unlock: ["locked", 0] };
 const NEEDS_REASON = new Set(["hide", "remove"]);
@@ -47,10 +48,10 @@ async function threadAction(app, { threadId }) {
   const body = await readJson(app.request);
   const action = str(body.action, "action", { max: 20 });
   const reason = readReason(body, NEEDS_REASON.has(action));
-  if (STATE_OF[action]) {
-    await setState(app, target, STATE_OF[action], { action, actorId: user.id, reason });
-  } else if (FLAGS[action]) {
-    const [col, value] = FLAGS[action];
+  if (own(STATE_OF, action)) {
+    await setState(app, target, own(STATE_OF, action), { action, actorId: user.id, reason });
+  } else if (own(FLAGS, action)) {
+    const [col, value] = own(FLAGS, action);
     await guarded(app.db, [
       guardStmt(app.db, "EXISTS (SELECT 1 FROM community_threads WHERE id = ? AND state <> 'removed')", target.id),
       stmt(app.db, `UPDATE community_threads SET ${col} = ? WHERE id = ?`, value, target.id),
@@ -71,10 +72,10 @@ async function postAction(app, { postId }) {
   const { user } = await moderator(app, target.spaceId);
   const body = await readJson(app.request);
   const action = str(body.action, "action", { max: 20 });
-  if (!STATE_OF[action]) fail(400, "invalid_field", "Unknown action.", { field: "action" });
+  if (!own(STATE_OF, action)) fail(400, "invalid_field", "Unknown action.", { field: "action" });
   // The opening post is the take itself: hiding it hides the take.
   if (target.opening) fail(400, "use_thread", "That's the take's opening post: moderate the take instead.");
-  await setState(app, target, STATE_OF[action], { action, actorId: user.id, reason: readReason(body, NEEDS_REASON.has(action)) });
+  await setState(app, target, own(STATE_OF, action), { action, actorId: user.id, reason: readReason(body, NEEDS_REASON.has(action)) });
   return json({ ok: true });
 }
 

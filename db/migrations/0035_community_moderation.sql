@@ -1,6 +1,6 @@
 -- Community moderation (docs/community.md, "Who enforces what"; issue #137): appeals of a space team's decisions,
--- and an index for a take's or post's latest moderation (the author's notice says why). Reports already have theirs
--- (0031).
+-- an index for a take's or post's latest moderation (the author's notice says why), and one open report per person
+-- and item.
 --
 -- An appeal: the author of a take or post that a space's team hid or removed under its rules asks the team to look
 -- again, once per take or post. status: open, granted (it's back) or refused. A removal for a legal reason isn't
@@ -21,5 +21,8 @@ CREATE TABLE community_appeals (
 );
 CREATE INDEX community_appeals_queue ON community_appeals(space_id, status, created_at);
 CREATE INDEX community_appeals_user ON community_appeals(user_id);
+
+-- One open report per person and item (reports sent at the same moment can't double up; security review).
+CREATE UNIQUE INDEX community_reports_one_open ON community_reports(target_type, target_id, reporter_user_id) WHERE status = 'open';
 
 CREATE INDEX community_mod_log_target ON community_mod_log(target_type, target_id, at);

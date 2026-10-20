@@ -8,7 +8,7 @@ import { first, all, stmt, now, newId, guardStmt } from "../../../lib/db.js";
 import { requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
 import { getMember } from "../../core/members.js";
-import { loadTarget, setState, logStmts, guarded } from "../../core/moderate.js";
+import { loadTarget, setState, canChange, logStmts, guarded } from "../../core/moderate.js";
 import { threadPath } from "../../core/render-parts.js";
 import { moderator, readReason } from "./actions.js";
 
@@ -76,8 +76,8 @@ async function decide(app, { appealId }) {
   const close = [guardStmt(app.db, "EXISTS (SELECT 1 FROM community_appeals WHERE id = ? AND status = 'open')", a.id),
     stmt(app.db, "UPDATE community_appeals SET status = ?, handled_by = ?, handled_at = ? WHERE id = ?", grant ? "granted" : "refused", user.id, now(), a.id)];
   const target = await loadTarget(app.db, a.target_type, a.target_id);
-  if (grant && target) {
-    await setState(app, target, "visible", { action: "appeal_granted", actorId: user.id, reason, extra: close.slice(1) });
+  if (grant && target && canChange(target, "visible")) {
+    await setState(app, target, "visible", { action: "appeal_granted", actorId: user.id, reason, extra: close });
   } else {
     await guarded(app.db, [...close, ...logStmts(app.db, { spaceId: a.space_id, actorId: user.id, action: grant ? "appeal_granted" : "appeal_refused", targetType: a.target_type, targetId: a.target_id, reason })]);
   }
@@ -98,7 +98,7 @@ async function log(app, { spaceId }) {
 export const appealRoutes = [
   ["GET", "/api/community/moderated", moderated],
   ["POST", "/api/community/appeals", appeal],
-  ["GET", "/api/community/spaces/:spaceId/appeals", queue],
+  ["GET", "/api/community/spaces/:spaceId/appeals", queue, { auditReads: true }],
   ["POST", "/api/community/appeals/:appealId", decide],
-  ["GET", "/api/community/spaces/:spaceId/mod-log", log]
+  ["GET", "/api/community/spaces/:spaceId/mod-log", log, { auditReads: true }]
 ];
