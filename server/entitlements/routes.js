@@ -15,6 +15,7 @@ import { isOn } from "../lib/features.js";
 import { autoStacc, AUTO_NOTE } from "./autostacc.js";
 import { projectNames } from "../creators/creators.js";
 import { previewsOf } from "../packs/previews.js";
+import { pausedByCopyright } from "../payments/creator-sales.js";
 
 async function library(app) {
   const access = await requireAccess(app);
@@ -66,6 +67,7 @@ async function claimFree(app) {
   const p = await getProduct(app.db, id(body.productId, "productId"));
   if (!isVisible(p)) fail(404, "not_found", "No product with that id.");
   if (!isFree(p)) fail(409, "not_free", "That one isn't free.");
+  if ((await pausedByCopyright(app.db, [p.id])).size) fail(409, "seller_paused", "This creator can't hand out items right now.");
   await grant(app.db, { userId: user.id, email: user.email, productId: p.id, sourceType: "free", sourceId: user.id });
   return json({ ok: true, productId: p.id });
 }

@@ -18,6 +18,7 @@ import { putVerifiedFile } from "../files/upload.js";
 import { newFileKey, safeFilename, deleteFile, putPreview, peekPreview, deletePreview } from "../storage/buckets.js";
 import { alertAdmins } from "../email/alerts.js";
 import { recordEvent } from "../creators/events.js";
+import { mayPublish } from "../copyright/standing.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
 
@@ -25,6 +26,8 @@ async function upload(app, { productId }) {
   const user = await requireUser(app);
   await limit(app, "studio-file", 30, 3600);
   const { product, creator } = await requireOwnProduct(app.db, productId, user);
+  // Two copyright strikes: no new content on sale, on a new product or one already selling (security review).
+  if (!(await mayPublish(app.db, user.id))) fail(403, "copyright_paused", "Your account has copyright strikes, so it can't add files to products for now. See the copyright policy.");
   const filename = safeFilename(str(new URL(app.request.url).searchParams.get("filename") || "", "filename", { max: 160 }));
   const size = Number(app.request.headers.get("content-length") || 0);
   const [existing, used] = await Promise.all([countKept(app.db, product.id), storageUsed(app.db, creator.id)]);

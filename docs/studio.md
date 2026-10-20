@@ -61,7 +61,7 @@ All sections read and write the same D1 rows. No section keeps its own copy of p
 
 - **Store Page reuses the Pac's facts.** The "included content" summary on the store page is counted from the published files (how many of each kind and format, and the total size), never typed in again. Store details suggested from the product's own words stay suggestions until the creator accepts them.
 - **Typing is never lost to a redraw.** Pricing draws at once and again when the server's numbers arrive; that second draw keeps anything already typed (and the cursor), unless it follows a save.
-- **Pricing supplies the displayed price.** A creator's sale is an ordinary `promotions` sale scoped to that one product, so the cart, checkout, search, the "on sale" filter and order history already handle it (`server/cart/pricing.js` is still the only place prices are combined).
+- **Pricing supplies the displayed price.** A creator's sale is an ordinary `promotions` sale scoped to that one product, so the cart, checkout, search, the "on sale" filter and order history already handle it (`server/cart/pricing.js` is still the only place prices are combined). An account at two copyright strikes can't start a sale or change prices (`copyright_paused`; [copyright](copyright.md)).
 - **Release reads everything.** It runs one readiness check (`server/creators/readiness.js`), and the same check guards `published: true` on the server. No other code path can publish around it.
 
 ## Sections in detail

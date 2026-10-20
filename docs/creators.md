@@ -2,7 +2,7 @@
 title: Creators and the Studio
 summary: Creators own projects; addresses /<creator>/<project>; the Studio's free sites and profiles (the visual builder) and selling, how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
 covers: [data/creators.js, server/creators/, server/studio/, server/sites/, server/revenue/, server/files/, server/integrations/providers.js, server/lib/slugs.js, functions/[[path]].js, functions/media/sites/, functions/studio.js, studio.html, js/studio*.js, js/product-page.js, css/studio.css, css/creator-site.css, scripts/dist.js, scripts/lib/creator-page.js, db/migrations/0006_creators.sql, db/migrations/0009_creator_selling.sql, db/migrations/0011_marketplace_payouts.sql, server/billing/, server/revenue/deductions.js, server/payments/refund-amount.js, server/studio/storage.js, server/admin/storage-billing.js, js/studio-storage.js, js/admin-storage-billing.js, db/migrations/0029_storage_billing.sql]
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Creators and the Studio
@@ -95,6 +95,7 @@ Storage above the free allowance, paid by the creator. **Off until the owner swi
 ## Store foundations under creators
 
 - **Seller and split per order line** (`server/revenue/split.js`). Each line records its project, creator, share of a promo code, net, platform fee and creator share, fixed when the order is written. The fee is the creator's own (admin-set, basis points) or the platform default, **20%** (`DEFAULT_PLATFORM_FEE_BPS` in `server/creators/policy.js`; owner, 2026-10-09). Changing it only affects later orders. Refunds are recorded on the order (`refunded_cents`) and, for full refunds, on each line. The Control Center's **Creators** statistics show fees and creators' shares. Nothing is paid out automatically: a creator's earnings and payout requests read these records (`server/revenue/earnings.js`, `payouts.js`), and the owner sends each payout from the Control Center ([payouts-setup](payouts-setup.md)).
+- **Copyright strikes** ([copyright](copyright.md)): an account at two strikes can't create, price or publish products or start a sale in any creator space (`copyright_paused`); a creator space at two has its products held in carts, refused at checkout and for free claims, and skipped by Auto-Stacc.
 - **Paid file lifecycle** (`server/files/`). Each paid file is `pending`, `published`, `rejected` or `deleted`, and only published, active files reach customers (downloads, Your Stacc, test-purchase checks). The admin can upload a file held back ("Hold back until I publish it") and publish it later. Uploads are limited by file type, size (95 MB) and count per product (`server/files/policy.js`). Creators' paid uploads use the same path (`server/studio/product-files.js`); packs uploaded through the Pack Builder pass the automated review instead (between checked and published, [packs](packs.md)).
 - **Connected accounts** (`server/integrations/providers.js`, D1 `connected_accounts`). This is the extension point for Spotify, SoundCloud, YouTube, Instagram, TikTok and so on, with no provider switched on yet. The planned flow: OAuth with PKCE, the fewest read-only scopes, tokens encrypted before storage (or not kept at all), and the creator choosing what appears on their pages.
 
