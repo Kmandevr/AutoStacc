@@ -12,8 +12,10 @@ updated: 2026-10-20
 
 ## Before launch (gates: the `community.forum` switch stays off until these are done)
 
-- [ ] **The operator's legal setup** (owner, tracked privately): done before the community goes live; terms, privacy and the footer (`data/legal.js`) updated to match.
-- [ ] **DMCA designated agent** (owner, 2026-10-20: later) registered with the US Copyright Office ($6, renewed every 3 years), using a registered-agent or mail-service address (not the owner's home), and a dedicated copyright contact address. Without it, US protection for hosting uploads doesn't apply.
+> **Owner, 2026-10-20:** the operator's legal setup and the DMCA agent **no longer block launch**. They wait until AutoStacc becomes an LLC, which the owner plans once the site has traction. Until then the US hosting protection for uploads doesn't apply, and copyright notices go to the support address (`/copyright`). The other gates still stand.
+
+- [ ] **The operator's legal setup** (owner, tracked privately; deferred 2026-10-20 until the LLC, not a launch gate): terms, privacy and the footer (`data/legal.js`) updated to match.
+- [ ] **DMCA designated agent** (deferred 2026-10-20 until the LLC, not a launch gate) registered with the US Copyright Office ($6, renewed every 3 years), using a registered-agent or mail-service address (not the owner's home), and a dedicated copyright contact address. Without it, US protection for hosting uploads doesn't apply.
 - [x] **Cloudflare CSAM Scanning Tool** on for the zone that serves uploads, with the owner's notification email set (owner, 2026-10-20). Still to do: the NCMEC reporting steps written for the owner.
 - [x] Published (owner chose now, 2026-10-16): `/community-rules` (base rules, spaces, moderation, reports, 16+; marked "opening soon"), `/copyright` (notices, counter-notices, tiered strikes; it already covers creators' uploads; notices to the support address until the DMCA agent is registered), the terms' pointer to both, and the privacy policy's legal requests (`data/legal.js`).
 - [ ] Still to publish: contest rules (with challenges), and `/privacy`'s community data (with the change that first collects it).

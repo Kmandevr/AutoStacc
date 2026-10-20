@@ -6,6 +6,10 @@ updated: 2026-10-16
 
 # Decisions
 
+## 2026-10-20: Community legal gates deferred (owner)
+
+The operator's legal setup and the DMCA designated agent are no longer launch gates for the community: they wait until AutoStacc is an LLC, planned once the site has traction. Reason: not worth the cost and paperwork before there's traction. Trade-off accepted: until the agent is registered, the US hosting protection for user uploads doesn't apply. CSAM scanning is on; the other gates in [community safety](community-safety.md) stand.
+
 ## 2026-10-15: The community library
 
 Phase 8 (Claude, following the owner's answers): a shared piece is a checked fragment of a site document, never markup; it drops the seller's own products, projects and audio players, which a buyer's site couldn't show anyway. A paid piece is an ordinary store product of a new kind, `template` (general digital-goods tax code, its own licence), so buying, refunds, payouts and Your Stacc need nothing new; ownership is the buyer account's, usable on any creator it edits for. A takedown hides the piece's files everywhere but can't take back words already copied into drafts. After the security review: non-buyers see a paid piece's layout only; using a bought piece counts as a download for refunds (as with files); an installer's sites show a paid piece's files only while the installer still owns it; installing your own piece never keeps files alive. Changed from the earlier proposal: a deleted piece's files used elsewhere keep counting against their creator until the sweep deletes them (otherwise two accounts could pass the storage cap); a paid piece is unlisted until its product is on sale; a refund claims its order so a simultaneous use can't slip through.
