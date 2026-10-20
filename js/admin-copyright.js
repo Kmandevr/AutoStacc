@@ -1,6 +1,7 @@
 // Control Center: Copyright (server/copyright/routes.js). Record a notice that came to the support address (with the
-// claimant's statements), then accept it (naming the creator space and, if known, the uploading account: strikes
-// follow), reject it or later withdraw it; the latest notices with their strikes. Starts on "gs:admin". Needs js/util.js.
+// claimant's statements), then accept it (naming the creator space, the uploading account if known, and what to take
+// down: strikes follow), reject it, later withdraw it, or note that the claimant went to court after a counter-notice;
+// every waiting notice and the latest decided ones, with strikes, takedowns and counter-notices. Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
 
@@ -11,7 +12,7 @@
 
   function draw(panel, notices, message) {
     panel.innerHTML = `${message ? `<p class="msg" role="status">${e(message)}</p>` : ""}
-      <p class="small-print">A valid notice gives the uploading account a strike and its creator space half a strike (a whole one if the space's owner uploaded it). Two strikes stop selling; strikes last 12 months. Remove the content itself with the product, file or community tools. <a href="/copyright">Copyright policy</a>.</p>
+      <p class="small-print">A valid notice gives the uploading account a strike and its creator space half a strike (a whole one if the space's owner uploaded it). Two strikes stop selling; strikes last 12 months. Accepting names what to take down; the uploader (or the space's owner) is emailed and can send a counter-notice, after which it comes back in about two weeks unless the claimant goes to court. <a href="/copyright">Copyright policy</a>.</p>
       <form class="admin-card" data-record>
         <h3>Record a notice from email</h3>
         <label>Claimant's name <input name="claimantName" required maxlength="200"></label>
@@ -25,9 +26,9 @@
       <div class="admin-table"><table><thead><tr><th>Received</th><th>Claimant</th><th>Work and where</th><th>Status</th><th>Strikes</th><th></th></tr></thead><tbody>${notices.map((n) => `<tr data-notice="${e(n.id)}">
         <td>${e(day(n.created_at))}<br><span class="small-print">${n.source === "form" ? "form" : "email"}</span></td><td>${e(n.claimant_name)}${n.claimant_role === "agent" ? " (for the owner)" : ""}</td><td>${e(n.work)}<br><span class="small-print">${e(n.location)}</span></td>
         <td>${e(n.status)}${n.creator_name ? `<br><span class="small-print">${e(n.creator_name)}${n.uploader_email ? ` · ${e(n.uploader_email)}` : ""}</span>` : ""}</td>
-        <td>${n.strikes.map((s) => e(strikeText(s))).join("<br>")}</td>
+        <td>${n.strikes.map((s) => e(strikeText(s))).join("<br>")}${n.targets.length ? `<br><span class="small-print">${n.targets.map((t) => e(`${t.kind} ${t.target_id}: ${t.restored_at ? "back" : t.removed_at ? "down" : "not taken down"}`)).join("<br>")}</span>` : ""}${n.counter ? `<br><span class="small-print">counter-notice: ${e(n.counter.status)}${n.counter.status === "waiting" ? `, back on ${e(day(n.counter.restore_after))}` : ""}</span>` : ""}</td>
         <td>${n.status === "received" ? '<button class="btn ghost small" type="button" data-act="accepted">Accept</button> <button class="btn ghost small" type="button" data-act="rejected">Reject</button>'
-          : n.status === "accepted" ? '<button class="btn ghost small" type="button" data-act="withdrawn">Withdraw</button>' : ""}</td></tr>`).join("") || '<tr><td colspan="6">No notices yet.</td></tr>'}</tbody></table></div>`;
+          : n.status === "accepted" ? `<button class="btn ghost small" type="button" data-act="withdrawn">Withdraw</button>${n.counter && n.counter.status === "waiting" ? ' <button class="btn ghost small" type="button" data-act="sued">Claimant went to court</button>' : ""}` : ""}</td></tr>`).join("") || '<tr><td colspan="6">No notices yet.</td></tr>'}</tbody></table></div>`;
   }
 
   async function load(panel, message) {
@@ -45,9 +46,12 @@
       if (creatorId === null) return;
       const uploaderId = prompt("Account id of the uploader, if known (empty if not: then the space gets a whole strike):", "");
       if (uploaderId === null) return;
-      Object.assign(body, { creatorId: creatorId.trim() || null, uploaderId: uploaderId.trim() || null });
+      const what = prompt("What to take down, as kind:id separated by commas (product_file:pf_…, post:pst_…, thread:thr_…). Empty for nothing:", "");
+      if (what === null) return;
+      const targets = what.split(",").map((x) => x.trim()).filter(Boolean).map((x) => { const [kind, id] = x.split(":"); return { kind, id }; });
+      Object.assign(body, { creatorId: creatorId.trim() || null, uploaderId: uploaderId.trim() || null, targets });
     } else {
-      const note = prompt(outcome === "rejected" ? "Why is it rejected?" : "Why is it withdrawn?");
+      const note = prompt(outcome === "rejected" ? "Why is it rejected?" : outcome === "sued" ? "What did the claimant send to show they went to court?" : "Why is it withdrawn? (What it took down comes back.)");
       if (!(note && note.trim().length >= 3)) return;
       body.note = note.trim();
     }

@@ -10,6 +10,8 @@ import { USER_ID } from "../impersonation/routes.js";
 import { recordNotice, acceptNotice, rejectNotice, withdrawNotice, latestNotices } from "./notices.js";
 import { accountLevel, creatorLevel } from "./standing.js";
 import { filingRoutes } from "./filing.js";
+import { counterRoutes, noteSued } from "./counter.js";
+import { tellUploader } from "./mail.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 const userId = (v, name) => (v === undefined || v === null || v === "" ? null : str(v, name, { max: 64, pattern: USER_ID }));
@@ -46,16 +48,20 @@ async function decide(app, { noticeId }) {
   if (body.outcome === "accepted") {
     const creatorId = body.creatorId ? id(body.creatorId, "creatorId") : null;
     const uploaderId = userId(body.uploaderId, "uploaderId");
-    await acceptNotice(app.db, admin, nid, { creatorId, uploaderId, note: note(body, false) });
-    await audit(app, "copyright.notice_accepted", { targetType: "copyright_notice", targetId: nid, subjectUserId: uploaderId || undefined, detail: { creatorId } });
+    const targets = await acceptNotice(app, admin, nid, { creatorId, uploaderId, note: note(body, false), targets: body.targets });
+    await audit(app, "copyright.notice_accepted", { targetType: "copyright_notice", targetId: nid, subjectUserId: uploaderId || undefined, detail: { creatorId, targets: targets.length } });
+    await tellUploader(app, nid);
   } else if (body.outcome === "rejected") {
     await rejectNotice(app.db, admin, nid, note(body, true));
     await audit(app, "copyright.notice_rejected", { targetType: "copyright_notice", targetId: nid });
   } else if (body.outcome === "withdrawn") {
-    await withdrawNotice(app.db, admin, nid, note(body, true));
+    await withdrawNotice(app, admin, nid, note(body, true));
     await audit(app, "copyright.notice_withdrawn", { targetType: "copyright_notice", targetId: nid });
+  } else if (body.outcome === "sued") {
+    await noteSued(app.db, admin, nid, note(body, true));
+    await audit(app, "copyright.counter_sued", { targetType: "copyright_notice", targetId: nid });
   } else {
-    fail(400, "invalid_field", "Accept, reject or withdraw.", { field: "outcome" });
+    fail(400, "invalid_field", "Accept, reject, withdraw, or note that the claimant went to court.", { field: "outcome" });
   }
   return json({ notices: await latestNotices(app.db) });
 }
@@ -83,6 +89,7 @@ const hold = (on) => async (app) => {
 
 export const routes = [
   ...filingRoutes,
+  ...counterRoutes,
   ["GET", "/api/admin/copyright", show],
   ["POST", "/api/admin/copyright/notices", record],
   ["POST", "/api/admin/copyright/notices/:noticeId", decide],
