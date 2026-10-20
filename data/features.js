@@ -16,5 +16,7 @@ window.FEATURES = {
  "community.qa": true,
  "community.waves": true,
  "community.preview": true,
- "community.pace": true
+ "community.pace": true,
+ "community.moderation": true,
+ "community.reports": true
 };

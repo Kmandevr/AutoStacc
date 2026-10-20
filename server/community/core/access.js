@@ -33,3 +33,19 @@ export async function requirePoster(app, user, space) {
   if (space.state !== "open") fail(403, "space_read_only", "This space is read-only for now.");
   return member;
 }
+
+// A space's team member who may act for it now (moderation and reports): anyone else, or an unknown space, finds
+// nothing there. A suspended account or an archived space can't act.
+export async function requireTeam(app, user, space) {
+  if (!space || !(await isTeam(app, user, space))) fail(404, "not_found", "Not found.");
+  if (space.state === "archived") fail(403, "space_archived", "This space is archived.");
+  const suspended = await first(app.db, "SELECT until FROM community_suspensions WHERE user_id = ?", user.id);
+  if (suspended && active(suspended.until)) fail(403, "suspended", "Your account can't act in the community right now.");
+  return space;
+}
+
+// Whether someone (by id) is on a space's team, for refusing to ban or report-hide a team member.
+export async function isTeamMember(app, userId, space) {
+  const user = userId && await first(app.db, 'SELECT id, email, role, emailVerified FROM "user" WHERE id = ?', userId);
+  return Boolean(user && await isTeam(app, { ...user, emailVerified: Boolean(user.emailVerified) }, space));
+}

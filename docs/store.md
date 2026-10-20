@@ -2,7 +2,7 @@
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
 covers: [server/app.js, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, server/settings/, server/collections/, server/billing/, server/reviews/, js/product-reviews.js, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Store
@@ -69,7 +69,7 @@ Frontend pieces, one script each: `js/store.js` (live buttons, prices, sizes and
 
 ## Platform layer
 
-The store is the commerce half of AutoStacc. Projects, Stacclets, Pacs, assets, Your Stacc, follows, Auto-Stacc and polls are built on top of it without changing auth, checkout, payments, entitlements or download security: [architecture](architecture.md), [library](library.md). Schema: `db/migrations/0003_platform.sql` (`products.project_id`, `products.pacs`, `product_files.pac_id`, `product_files.kind`, `projects`, `follows`, `polls`, `poll_votes`). The planned community's tables are in `0031_community.sql` (AutoStacc's own space seeded by `0032`), and its pages and API (`server/community/index.js`: a core plus independent features) are served by `functions/community.js`, `functions/community/[[path]].js` and `/api/community/*`, all inert while its switch `community.forum` is off ([community](community.md)).
+The store is the commerce half of AutoStacc. Projects, Stacclets, Pacs, assets, Your Stacc, follows, Auto-Stacc and polls are built on top of it without changing auth, checkout, payments, entitlements or download security: [architecture](architecture.md), [library](library.md). Schema: `db/migrations/0003_platform.sql` (`products.project_id`, `products.pacs`, `product_files.pac_id`, `product_files.kind`, `projects`, `follows`, `polls`, `poll_votes`). The planned community's tables are in `0031_community.sql` (AutoStacc's own space seeded by `0032`; later community migrations add nested replies, slow mode and appeals), and its pages and API (`server/community/index.js`: a core plus independent features) are served by `functions/community.js`, `functions/community/[[path]].js` and `/api/community/*`, all inert while its switch `community.forum` is off ([community](community.md)).
 
 ## Product model
 

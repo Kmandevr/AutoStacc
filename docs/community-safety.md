@@ -1,7 +1,7 @@
 ---
 title: Community safety, legal and security
 summary: PLANNED, rules and copyright pages published (owner, 2026-10-16): what the community and profiles must have before and after launch: the operator's legal setup and a DMCA agent, tiered copyright strikes, CSAM scanning, contest rules, UK/EU duties, urgent reports with false-report filtering, retention, legal requests, bot checks, and the security design rules.
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Community safety, legal and security
@@ -57,7 +57,7 @@ Content named in a valid notice is removed promptly; the uploader can counter-no
 - **Who gets which report** (owner: legal minimum for AutoStacc): rule-breaking, harassment and danger reports go to the **space team**; illegal-content notices, copyright, CSAM and impersonation go to **AutoStacc**.
 - **Danger reports** ("someone is in danger"): top of the space team's queue. People posting self-harm wording are shown crisis resources automatically (988 in the US, local lines elsewhere). No email to the owner (changed from the first plan).
 - **False reports filtered** (owner: "people will report for dumb things"): reporter trust (accounts older than 7 days; dismissed reports lower trust; abusers lose the danger option), a short written reason required, and keyword triage on our own server (nothing sent outside) to rank the queue.
-- **Automatic hiding**: a post reported by **3** different trusted reporters is hidden until the space team decides. A **trusted reporter** is an account 7+ days old with fewer than 3 dismissed reports in the last 90 days (owner, 2026-10-16; settings, adjustable).
+- **Automatic hiding**: a post reported by **3** different trusted reporters is hidden until the space team decides. A **trusted reporter** is an account 7+ days old with fewer than 3 dismissed reports in the last 90 days (owner, 2026-10-16; settings, adjustable). Built (#137): only reports made since the post was last brought back count, a team member's own post is never hidden this way, reporters are anonymous to the team, and **2 dismissed danger reports in 90 days** take the danger reason away (`server/community/features/reports/trust.js`).
 - **Inactive teams**: the space turns read-only by itself after 40 days ([community](community.md)), so reports never sit with nobody responsible.
 
 ## Records and requests

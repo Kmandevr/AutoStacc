@@ -1,0 +1,23 @@
+/* Moderation and reports (server/community/features/moderation/ and reports/, js/community-moderation.js and
+   js/community-reports.js): the space team's desk, the team bar on a take, the report form and people's notices. */
+.cm-desk { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: var(--radius); background: var(--panel); }
+.cm-desk-title { font-size: 1rem; margin: 0 0 6px; }
+.cm-desk-part { border-top: 1px solid var(--line); padding: 8px 0; }
+.cm-desk-part > summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+.cm-desk-item { padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.cm-desk-item:last-child { border-bottom: 0; }
+.cm-desk-item blockquote { margin: 6px 0; padding: 6px 10px; border-left: 3px solid var(--line); background: var(--panel-2); color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cm-desk-row { margin: 6px 0; overflow-wrap: anywhere; }
+.cm-danger { border-left: 3px solid var(--coral); padding-left: 10px; }
+.cm-badge-danger { border-color: var(--coral); color: var(--coral); }
+.cm-log { margin: 0; padding-left: 18px; font-size: .88rem; color: var(--muted); }
+.cm-log li { margin: 4px 0; overflow-wrap: anywhere; }
+.cm-log time { font-family: var(--mono); }
+.cm-mod-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; padding: 8px 10px; border: 1px dashed var(--teal); border-radius: var(--radius); }
+.cm-mod-bar .btn { min-height: 36px; }
+.cm-report { margin-top: 10px; }
+.cm-report select { max-width: 100%; }
+.cm-notices { margin: 0 0 18px; }
+.cm-notices h2 { font-size: 1rem; }
+.cm-notice { padding: 10px 12px; border-left: 3px solid var(--amber); background: var(--panel-2); margin: 0 0 8px; overflow-wrap: anywhere; }
+.cm-notice p { margin: 0 0 4px; }

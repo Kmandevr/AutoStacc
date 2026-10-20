@@ -1,13 +1,14 @@
 ---
 title: Log
 summary: Dated history of changes, newest first.
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Log
 
 Newest first.
 
+- 2026-10-20: Community moderation and reports (#137 part 1, switch off): `core/moderate.js`, the moderation feature (pin, lock, move, hide, remove, restore, bans, appeals, the author's notices, the team log) and the reports feature (routed reports, trusted reporters, auto-hide, the ranked team queue), migration 0035, the team desk and notices in the browser, `/privacy` updated, API and unit tests.
 - 2026-10-20: Community look, words and features chosen with the owner (takes, Boost, channel strips, waveforms, nested replies, composer preview, mixer front page, charm; embeds, cards, links rules, automod and more planned), and the rule that features are independent. Built (switch off): the core/feature split with hooks, posting and nested replies, display names, and the boost, qa, waves, preview and pace features with their scripts and styles; `/privacy` covers the community. Notes: community, decisions, autostacc, production.
 - 2026-10-16: Community read side (#136, switch off): `/community` opening-soon page generated as the template; with the switch on, Functions render spaces, channels, threads and `/community/sitemap.xml` from the database (escaped, strict policy, hidden threads 404, old slugs redirect, Q&A with the accepted answer first); AutoStacc's space and five channels seeded (migration 0032); tests on their own store. Notes: community, seo, store, development, search-console.
 - 2026-10-16: Community foundations (#135): architect review folded into the notes; `/community-rules` and `/copyright` published, the terms point to them, privacy gains legal requests; the `community.forum` switch (off), migration 0031 (spaces, channels, threads, posts, votes, reports, blocks, bans, mod log), the post formatter with tests, and `community` reserved as a project page address. Notes: community, community-safety, decisions, production, seo, creators, builder, creator-pages, store, packs, development, autostacc, modules, search-console.

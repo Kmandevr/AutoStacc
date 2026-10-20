@@ -86,6 +86,11 @@ export function spaceAside(space, channels, current = null, kit = BARE) {
         </aside>`;
 }
 
+// Where features' browser scripts put a space team's desk (reports, appeals, the log...) and a visitor's own notices
+// (a post of theirs a team took down, with why). Empty and hidden: the scripts ask the API before showing anything.
+export const spaceHook = (space) => `<section class="cm-desk" data-cm-space="${esc(space.id)}" aria-label="Team desk" hidden></section>`;
+export const noticesHook = () => '<div class="cm-notices" data-cm-notices hidden></div>';
+
 // Where the browser script (js/community.js) puts the "New take" form: the channels a visitor may post in, as JSON in
 // an attribute (escaped like any value). The script asks the API who the visitor is before showing anything.
 export function composeHook(space, channels, current = null) {
