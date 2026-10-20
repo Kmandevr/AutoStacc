@@ -169,6 +169,29 @@ export default (ctx) => describe("community posting (switched on)", () => {
     assert.equal((await admin.req("PUT", "/api/community/spaces/spc_autostacc/slow-mode", { body: { seconds: 0 } })).status, 200);
   });
 
+  test("posts sent at the same moment can't race past the pace limit (security review)", async () => {
+    const { c } = await person();
+    const results = await Promise.all(Array.from({ length: 10 }, (_, i) => ask(c, { title: `Racing question ${i}`, body: `race ${i}` })));
+    assert.ok(results.filter((r) => r.status === 201).length <= 3, results.map((r) => r.status).join(","));
+  });
+
+  test("a banned or suspended member can't edit, a locked take can't be edited, archived channels take no replies (security review)", async () => {
+    const a = await person();
+    const t = (await ask(a.c, { title: "Editable question", body: "first words" })).data.thread;
+    const post = db(`SELECT id FROM community_posts WHERE thread_id = '${t.id}'`)[0][0].id;
+    db(`INSERT INTO community_space_bans (space_id, user_id, created_at) VALUES ('spc_autostacc', '${a.user.id}', '2026-10-16T00:00:00Z')`);
+    assert.equal((await a.c.req("PATCH", `/api/community/posts/${post}`, { body: { body: "abuse" } })).data.error.code, "banned");
+    assert.equal((await a.c.req("PUT", `/api/community/threads/${t.id}/accepted`, { body: { postId: null } })).data.error.code, "banned");
+    db(`DELETE FROM community_space_bans WHERE user_id = '${a.user.id}'`);
+    db(`UPDATE community_threads SET locked = 1 WHERE id = '${t.id}'`);
+    assert.equal((await a.c.req("PATCH", `/api/community/posts/${post}`, { body: { body: "changed" } })).data.error.code, "thread_locked");
+    db(`UPDATE community_threads SET locked = 0 WHERE id = '${t.id}'`);
+    db(`UPDATE community_channels SET archived_at = '2026-10-16T00:00:00Z' WHERE id = '${HELP}'`);
+    const b = await person();
+    assert.equal((await b.c.post(`/api/community/threads/${t.id}/posts`, { body: "into the archive" })).data.error.code, "channel_archived");
+    db(`UPDATE community_channels SET archived_at = NULL WHERE id = '${HELP}'`);
+  });
+
   test("nested replies: a reply answers a post of the same take, and shows under it", async () => {
     const a = await person();
     const b = await person();

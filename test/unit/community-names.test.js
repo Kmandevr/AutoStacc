@@ -30,6 +30,12 @@ test("other alphabets are refused, so look-alikes can't pass for a name", async 
   assert.equal((await nameProblem(db(), "Аdmin", "u1")).code, "name_shape");
 });
 
+test("letters that only look Latin, digit swaps and names containing a creator's are refused (security review)", async () => {
+  for (const n of ["Gl\u0131tches", "\u1d00utoStacc", "AutoSt\u0251cc"]) assert.equal((await nameProblem(db(), n, "u1")).code, "name_shape", n);
+  for (const n of ["Supp0rt", "Adm1n", "Aut0Stacc"]) assert.equal((await nameProblem(db(), n, "u1")).code, "name_reserved", n);
+  for (const n of ["The Night Owl", "NightOwl Fan", "N1ght 0wl"]) assert.equal((await nameProblem(db(), n, "u1")).code, "name_taken", n);
+});
+
 test("AutoStacc's words, and names containing them, are kept", async () => {
   for (const n of ["AutoStacc", "auto stacc", "Official", "Moderator", "Real AutoStacc Team", "deleted user"]) {
     assert.equal((await nameProblem(db(), n, "u1")).code, "name_reserved", n);

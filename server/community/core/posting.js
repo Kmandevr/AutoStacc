@@ -67,6 +67,7 @@ export async function reply(app, user, threadId, { body, parentId = null }) {
   const parent = parentId ? await first(app.db, "SELECT id, author_user_id FROM community_posts WHERE id = ? AND thread_id = ? AND state = 'visible'", parentId, thread.id) : null;
   if (parentId && !parent) fail(404, "not_found", "The post you're replying to isn't there any more.");
   const channel = await first(app.db, "SELECT * FROM community_channels WHERE id = ?", thread.channel_id);
+  if (!channel || channel.archived_at) fail(403, "channel_archived", "This channel is archived: its takes are read-only.");
   const team = await isTeam(app, user, space);
   await check(app, "post", { user, space, channel, thread, kind: "reply", type: thread.type, parent, body: text, team });
   const at = now();

@@ -36,7 +36,9 @@ async function pick(app, { threadId }) {
   if (!t) fail(404, "not_found", "That take doesn't exist.");
   if (t.type !== "question") fail(400, "not_a_question", "Only questions have a best answer.");
   const space = await getSpace(app.db, t.space_id);
-  if (t.author_user_id !== user.id && !(await isTeam(app, user, space))) fail(403, "not_asker", "Only the person who asked, or the space's team, picks the best answer.");
+  const team = await isTeam(app, user, space);
+  if (t.author_user_id !== user.id && !team) fail(403, "not_asker", "Only the person who asked, or the space's team, picks the best answer.");
+  if (!team) await requirePoster(app, user, space);
   if (space.state !== "open") fail(403, "space_read_only", "This space is read-only for now.");
   const body = await readJson(app.request);
   const postId = body.postId === null ? null : id(body.postId, "postId");

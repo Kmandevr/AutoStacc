@@ -32,9 +32,12 @@ function branch(p, children, kit, thread, depth) {
 const replies = (list, children, kit, thread, depth) =>
   `<ol class="cm-replies">${list.map((p) => branch(p, children, kit, thread, depth)).join("")}</ol>`;
 
+// Replies under a post, counted without recursion (a very deep chain can't overflow the stack).
 function count(id, children) {
-  const kids = children.get(id) || [];
-  return kids.reduce((n, k) => n + 1 + count(k.id, children), 0);
+  let n = 0;
+  const stack = [...(children.get(id) || [])];
+  while (stack.length) { const k = stack.pop(); n++; stack.push(...(children.get(k.id) || [])); }
+  return n;
 }
 
 export function threadMain(thread, posts, kit = BARE) {

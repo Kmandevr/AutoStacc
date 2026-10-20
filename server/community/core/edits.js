@@ -4,12 +4,13 @@
 import { first, stmt, now } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { cleanBody, getSpace } from "./posting.js";
+import { requirePoster } from "./access.js";
 import { check, emit } from "./hooks.js";
 
 export const EDIT_WINDOW_MS = 24 * 3600 * 1000;
 
 async function ownPost(db, userId, postId) {
-  const post = await first(db, `SELECT p.*, t.space_id, t.channel_id, t.slug, t.state AS thread_state,
+  const post = await first(db, `SELECT p.*, t.space_id, t.channel_id, t.slug, t.state AS thread_state, t.locked AS thread_locked,
       (SELECT id FROM community_posts o WHERE o.thread_id = p.thread_id ORDER BY o.created_at, o.id LIMIT 1) AS opening_id
     FROM community_posts p JOIN community_threads t ON t.id = p.thread_id WHERE p.id = ?`, postId);
   if (!post || post.author_user_id !== userId || post.state !== "visible" || post.thread_state === "removed") fail(404, "not_found", "That post doesn't exist.");
@@ -19,6 +20,10 @@ async function ownPost(db, userId, postId) {
 export async function editPost(app, user, postId, { body }) {
   const post = await ownPost(app.db, user.id, postId);
   if (Date.now() - Date.parse(post.created_at) > EDIT_WINDOW_MS) fail(403, "edit_window", "Posts can be edited for 24 hours after posting.");
+  // Editing is posting: a ban, a suspension, a read-only space, a locked or hidden take all stop it (deleting doesn't).
+  if (post.thread_state !== "visible") fail(404, "not_found", "That post doesn't exist.");
+  if (post.thread_locked) fail(403, "thread_locked", "This take is locked.");
+  await requirePoster(app, user, await getSpace(app.db, post.space_id));
   const text = cleanBody(body);
   if (text === post.body) return post;
   await check(app, "post", { user, space: await getSpace(app.db, post.space_id), channel: { id: post.channel_id }, thread: { id: post.thread_id }, kind: "edit", body: text, team: false });
