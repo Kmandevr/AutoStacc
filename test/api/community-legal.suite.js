@@ -140,7 +140,8 @@ export default (ctx) => describe("community: AutoStacc's queue (switched on)", (
     const t = await take((await person()).c);
     db(`INSERT INTO copyright_notices (id, source, claimant_name, claimant_email, work, location, status, created_at) VALUES ('cpn_textonly${n}', 'email', 'X', 'x@example.com', 'w', 'l', 'accepted', '2026-10-20T00:00:00.000Z')`);
     for (let i = 0; i < 3; i++) db(`INSERT INTO copyright_strikes (id, notice_id, subject, subject_id, units, created_at, expires_at) VALUES ('cps_to${n}x${i}', 'cpn_textonly${n}', 'account', '${a.user.id}', 2, '2026-10-20T00:00:00.000Z', '2027-10-20T00:00:00.000Z')`);
-    for (const body of ["see https://example.com/track", "grab it at www.example.com", "[here](https://x.example)"]) {
+    for (const body of ["see https://example.com/track", "xhttps://glued.example/f", "_https://glued.example", "[here](https://x.example)"]) {
+      db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${a.user.id}'`); // three a minute counts refused tries
       assert.equal((await a.c.post(`/api/community/threads/${t.id}/posts`, { body })).data.error.code, "copyright_text_only", body);
     }
     db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${a.user.id}'`); // refused tries count toward three a minute

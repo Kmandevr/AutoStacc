@@ -6,6 +6,7 @@ import { all, first, run, stmt, newId, now, randomToken } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { sha256 } from "../lib/crypto.js";
 import { LIMITS } from "./policy.js";
+import { accountLevel } from "../copyright/standing.js";
 
 const DAY = 864e5;
 
@@ -56,6 +57,8 @@ export async function inviteByToken(db, token) {
 export async function acceptInvite(db, user, token) {
   const inv = await inviteByToken(db, token);
   if (!inv) fail(404, "not_found", "This invitation has expired, was withdrawn or was already used.");
+  // An invitation from an account that has since reached three copyright strikes can't bring anyone in (security review).
+  if (inv.invited_by && (await accountLevel(db, inv.invited_by)).level >= 3) fail(403, "copyright_text_only", "This invitation can't be accepted right now.");
   if (!user.emailVerified || String(user.email).toLowerCase() !== inv.email) {
     fail(403, "wrong_account", `This invitation is for another email address. Sign in with the account for that address to accept it.`);
   }

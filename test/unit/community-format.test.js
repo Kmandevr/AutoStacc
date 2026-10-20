@@ -74,3 +74,13 @@ test("an address with no real host stays text", () => {
   assert.doesNotMatch(inline("see https://www./ ok"), /<a /);
 });
 
+test("hasLink matches exactly what the formatter shows as a link (security review)", async () => {
+  const { hasLink, format } = await import("../../server/community/core/format.js");
+  for (const t of ["xhttps://glued.example/f", "_https://e.example", "see https://a.example.", "[x](https://y.example)"]) {
+    assert.equal(hasLink(t), true, t);
+    assert.match(format(t), /<a /, t);
+  }
+  for (const t of ["plain words", "hxxp://nope", "[x](javascript:alert(1))", "www.example.com"]) {
+    assert.equal(hasLink(t), /<a /.test(format(t)), t);
+  }
+});

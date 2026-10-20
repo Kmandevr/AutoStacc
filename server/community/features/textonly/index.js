@@ -4,11 +4,11 @@
 // still show (stripping them as pages are drawn is a later step). Its own switch (community.textOnly).
 import { fail } from "../../../lib/http.js";
 import { accountLevel } from "../../../copyright/standing.js";
-
-const LINK = /\bhttps?:\/\/|\bwww\.[a-z0-9-]+\.[a-z]{2,}|\]\(\s*\S/i;
+import { hasLink } from "../../core/format.js";
 
 async function postCheck(app, { user, body }) {
-  if (!LINK.test(String(body || ""))) return;
+  // The formatter's own rule (core/format.js), so nothing it would show as a link gets past (security review).
+  if (!hasLink(body || "")) return;
   if ((await accountLevel(app.db, user.id)).level >= 3) {
     fail(403, "copyright_text_only", "Your account has three copyright strikes, so its posts can't include links for now. See the copyright policy.");
   }

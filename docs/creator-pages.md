@@ -2,7 +2,7 @@
 title: Creator pages
 summary: PLANNED / NOT IMPLEMENTED. Blueprint for customizable project pages: creator HTML/CSS (later JavaScript) isolated in a sandboxed iframe on sandbox.autostacc.com, seamless under /<creator>/<project>.
 covers: [server/sites/, functions/[[path]].js, functions/media/sites/, _headers, server/lib/http.js, server/auth/index.js, server/orders/guest.js, server/impersonation/sessions.js]
-updated: 2026-10-15
+updated: 2026-10-20
 ---
 
 # Creator pages (sandboxed customization)
@@ -37,6 +37,7 @@ Context: [architecture](architecture.md) (Project → Stacclet → Pac → asset
 ## Where it fits today
 
 - Projects are trusted code in git: hand-written pages under `<creator>/<project>`, `css/projects/<id>/skin.css` and `look.css`, all reviewed and deployed with the site. This works for projects AutoStacc runs, but not for creators AutoStacc doesn't know.
+- Copyright strikes reach creator sites too: at three, a site's scheduled publish made by that account is dropped instead of published, and the Studio refuses that account's site changes ([copyright](copyright.md)).
 - Creator accounts and self-service publishing now exist ([creators](creators.md)): creators and members in D1, Studio projects, and block-based site documents stored in the database and rendered at publish. Custom code would build on those.
 - Today's headers forbid framing: `X-Frame-Options: SAMEORIGIN` on every page, and `frame-ancestors 'none'` on store and account pages. Store and account pages keep that forever. Only a project page's shell would frame the sandbox.
 - Cookies are already host-only. Better Auth's `gs.*` cookies (the session, and the two-step sign-in cookie when that switch is on), the guest order key (`Path=/api/`) and the impersonation cookie (`SameSite=Strict`) set no `Domain`, so `sandbox.autostacc.com` never receives them. State-changing API calls already require the exact origin (`assertSameOrigin` in `server/lib/http.js`). The design below depends on both staying true.

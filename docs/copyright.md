@@ -40,7 +40,9 @@ Known gaps: a hold is per product file, so the same bytes published as another p
 ## Built (step 4): level 3, text only
 
 - **The Studio** (`server/copyright/policy.js`, one gate in `server/app.js` beside the impersonation policy): every `POST`, `PUT` or `PATCH` under `/api/studio/` from an account at three strikes is refused (`copyright_text_only`): no products, uploads, Pacs, sites, images, library pieces or invitations. Deleting stays open (people can always take their own work down), and so do getting paid (payouts, the payout account), paying storage statements and looking at an invitation (routes marked `{ copyright: "allow" }`). Reading the Studio stays open, so earnings and history are still there.
-- **The community** (feature `textonly`, switch `community.textOnly`): a take, reply or edit with a link from such an account is refused. Links already in older posts still show.
+- **The community** (feature `textonly`, switch `community.textOnly`): a take, reply or edit with a link from such an account is refused, using the formatter's own rule (`hasLink` in `server/community/core/format.js`), so the check and what readers see can't disagree. Links already in older posts still show.
+- **No way round it** (security review, 2026-10-20): a site publish scheduled before the third strike is dropped instead of published (`server/sites/schedule.js`), and an invitation sent by such an account can't be accepted (`server/creators/team.js`). The gate skips its reads while no account has strikes. The storage plan stays changeable, so existing storage can stay paid for.
+- **Open question for the owner:** whether a creator space that itself reaches three strikes (from members' half strikes or the owner's whole ones) closes its Studio to the whole team, not only to the accounts that are at three.
 
 ## Later
 

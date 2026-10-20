@@ -6,12 +6,13 @@
 // Reading the Studio stays open, so earnings and history are still there.
 import { fail } from "../lib/http.js";
 import { currentUser } from "../auth/session.js";
-import { accountLevel } from "./standing.js";
+import { accountLevel, anyAccountStanding } from "./standing.js";
 
 const WRITES = new Set(["POST", "PUT", "PATCH"]);
 
 export async function copyrightGate(app, { path, route }) {
   if (!WRITES.has(app.request.method) || !path.startsWith("/api/studio/") || !route || route.opts.copyright === "allow") return;
+  if (!(await anyAccountStanding(app.db))) return;
   const user = await currentUser(app);
   if (!user) return; // the route itself answers 401
   if ((await accountLevel(app.db, user.id)).level >= 3) {
