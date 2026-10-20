@@ -1,7 +1,7 @@
 // Copyright in the Control Center (docs/admin.md, "Copyright"): the latest notices with their strikes, recording a
 // notice that came by email, accepting it (giving strikes) or rejecting it, withdrawing an accepted one, and holds
 // that keep an account or creator space at the top level. Admins only (others find nothing), audited without the
-// claimant's or anyone's email. The public form is a later step (docs/decisions.md 2026-10-20).
+// claimant's or anyone's email. The public form's route is filing.js.
 import { json, readJson, fail, id, str, email as readEmail } from "../lib/http.js";
 import { run, now } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
@@ -9,6 +9,7 @@ import { audit } from "../audit/log.js";
 import { USER_ID } from "../impersonation/routes.js";
 import { recordNotice, acceptNotice, rejectNotice, withdrawNotice, latestNotices } from "./notices.js";
 import { accountLevel, creatorLevel } from "./standing.js";
+import { filingRoutes } from "./filing.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 const userId = (v, name) => (v === undefined || v === null || v === "" ? null : str(v, name, { max: 64, pattern: USER_ID }));
@@ -81,6 +82,7 @@ const hold = (on) => async (app) => {
 };
 
 export const routes = [
+  ...filingRoutes,
   ["GET", "/api/admin/copyright", show],
   ["POST", "/api/admin/copyright/notices", record],
   ["POST", "/api/admin/copyright/notices/:noticeId", decide],

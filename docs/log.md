@@ -8,6 +8,7 @@ updated: 2026-10-20
 
 Newest first.
 
+- 2026-10-20: Copyright step 2 (#137): the public notice form at `/copyright-notice` (`server/copyright/filing.js`, migration 0038), linked from `/copyright`, limits and a bot trap; `/privacy` updated.
 - 2026-10-20: Copyright strikes step 1 (#137): `server/copyright/` (notices recorded and decided by admins, strikes for the uploader and half for the creator space, levels and holds), level 2 enforced in the Studio, cart, checkout, free claims and Auto-Stacc; Daily › Copyright; `/copyright` and `/privacy` updated; migration 0037; tests.
 - 2026-10-20: Copyright strikes: the owner's decisions (half a space strike per member strike, full for the owner's own upload, member at 2 can't publish, paused spaces' free items pause, removed files stop for everyone; public notice form) and the architect's four-step build plan recorded.
 - 2026-10-20: AutoStacc's community queue in the Control Center (#137 part 3, switch off): the `legal` feature (legal removals, dismissals, under-16 accounts, community suspensions), `legalRemove` in the core, the author's notice for legal removals, Daily › Community reports (`js/admin-community.js`), API tests.

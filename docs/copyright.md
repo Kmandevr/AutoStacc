@@ -1,7 +1,7 @@
 ---
 title: Copyright notices and strikes
-summary: Built step 1 of 4 (#137): copyright notices recorded and decided in the Control Center, strikes for the uploader (whole) and the creator space (half, whole for the owner's own upload), levels computed when asked, and what level 2 stops (publishing and pricing for an account; sales, free claims and Auto-Stacc for a space).
-covers: [server/copyright/, db/migrations/0037_copyright.sql, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js]
+summary: Built steps 1 and 2 of 4 (#137): the public notice form, copyright notices recorded and decided in the Control Center, strikes for the uploader (whole) and the creator space (half, whole for the owner's own upload), levels computed when asked, and what level 2 stops (publishing and pricing for an account; sales, free claims and Auto-Stacc for a space).
+covers: [server/copyright/, db/migrations/0037_copyright.sql, db/migrations/0038_copyright_form.sql, copyright-notice.html, js/copyright-notice.js, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js]
 updated: 2026-10-20
 ---
 
@@ -23,8 +23,11 @@ The policy is in [community safety](community-safety.md#copyright-tiered-strikes
   - Carts and checkouts skip the strike lookups entirely while no creator space has an active strike or hold (`anyCreatorStanding`).
   - It never writes `products.sales_paused` (the creator's own switch). Payments, fulfilment, entitlements and downloads are untouched: what people already have stays theirs.
 
+## Built (step 2): the public form
+
+`/copyright-notice` (`copyright-notice.html`, `js/copyright-notice.js`, linked from `/copyright`) sends `POST /api/copyright/notices` (`server/copyright/filing.js`, no sign-in): name, email, postal address, owner or agent (migration 0038), the work, up to 20 places on AutoStacc, both statements and a typed signature that must match the name. It lands as `received` with `source` `form` in Daily › Copyright, and the admins get at most one email an hour. The answer is the same `202` whatever the notice names, and a filled-in hidden field is quietly dropped. Limits: 5 an hour per address (refused tries count), 10 a day per claimant email, 200 a day in all. Turnstile once its keys exist.
+
 ## Next steps
 
-2. The public notice form on its own page, with rate limits (Turnstile once its keys exist).
 3. Removing and restoring each kind of target through its owning module (`targets.js`), a core `legalRestore` for the community, counter-notices and the sweep that restores countered items. A file removed by a valid notice can't be downloaded by anyone (owner, 2026-10-20; buyers can get a refund).
 4. Level 3: a gate on Studio writes in `server/app.js` (payouts keep working) and the community's check on links in posts.
