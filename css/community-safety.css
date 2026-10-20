@@ -1,0 +1,6 @@
+/* Care in the community (server/community/features/crisis/ and blocks/, js/community-blocks.js): the help-line note
+   under posts with self-harm wording, and the fold over posts by people you've blocked. */
+.cm-crisis { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--violet); border-radius: var(--radius); background: var(--panel-2); color: var(--text); font-size: .92rem; }
+.cm-crisis p { margin: 0; }
+.cm-folded { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; color: var(--muted); }
+.cm-folded .btn { min-height: 32px; }

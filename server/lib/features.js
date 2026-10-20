@@ -48,7 +48,10 @@ export const FEATURES = {
   "community.preview": { on: true, label: "Community: Preview while writing" },
   "community.pace": { on: true, label: "Community: slow mode and posting pace" },
   "community.moderation": { on: true, label: "Community: team tools, bans and appeals" },
-  "community.reports": { on: true, label: "Community: reports and the team's queue" }
+  "community.reports": { on: true, label: "Community: reports and the team's queue" },
+  "community.blocks": { on: true, label: "Community: blocking people" },
+  "community.crisis": { on: true, label: "Community: help lines beside self-harm wording" },
+  "community.upkeep": { on: true, label: "Community: read-only after 40 days without a team" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

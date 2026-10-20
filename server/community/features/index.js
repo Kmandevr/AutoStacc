@@ -10,5 +10,8 @@ import preview from "./preview/index.js";
 import pace from "./pace/index.js";
 import moderation from "./moderation/index.js";
 import reports from "./reports/index.js";
+import blocks from "./blocks/index.js";
+import crisis from "./crisis/index.js";
+import upkeep from "./upkeep/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep]) register(f);

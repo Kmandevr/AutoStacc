@@ -21,7 +21,7 @@ updated: 2026-10-20
 | `/guide` | `data/guides.js` | Step-by-step guides and the creator manual, searchable together with `/help` ([guides](guides.md)) |
 | `/copyright` | `data/legal.js` | Copyright notices, counter-notices and tiered strikes for everything people upload ([community safety](community-safety.md)) |
 | `/community-rules` | `data/legal.js` | The community's rules, published before it opens ("opening soon") ([community](community.md)) |
-| `/privacy` › The community | `data/legal.js` | What the community keeps once it opens (name and 16+ confirmation, posts and edit history, votes, post times for pacing, reports and appeals with who made them, the space teams' logs) and what deleting an account keeps (posts as "deleted user"; reports without who made them); `server/account/delete.js` and `export.js` include the community through `server/community/core/erase.js` |
+| `/privacy` › The community | `data/legal.js` | What the community keeps once it opens (name and 16+ confirmation, posts and edit history, votes, post times for pacing, reports and appeals with who made them, the space teams' logs, who you blocked, removed posts' text for 12 months) and what deleting an account keeps (posts as "deleted user"; reports without who made them); `server/account/delete.js` and `export.js` include the community through `server/community/core/erase.js` |
 | `/help` | `data/help.js` | Questions and answers by topic (following, Auto-Stacc and release emails described as they work: opt-in, never paid items, announced releases only) |
 | `/license` | `data/licenses.js` | What buyers may do, per kind of product |
 
