@@ -30,6 +30,7 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `cart.html`, `login.html`, `checkout.html`, `admin.html` | Cart, sign-in, checkout status and the owner's Control Center (kept out of search) |
 | `product.html` (`/product?p=<id>`) | A Studio creator's product, fetched from the store API (kept out of search) |
 | `privacy.html`, `terms.html`, `refunds.html`, `security.html`, `contact.html`, `copyright.html`, `community-rules.html`, `help.html`, `license.html` | Trust pages generated from `data/legal.js`, `data/help.js` and `data/licenses.js` ([docs/production.md](docs/production.md)). Don't edit them; change the data and rebuild |
+| `copyright-notice.html` | The public copyright notice form (`js/copyright-notice.js` → `server/copyright/filing.js`), linked from `/copyright` ([docs/copyright.md](docs/copyright.md)) |
 | `404.html` | Shown for any address that doesn't exist |
 | `community.html` | Generated from `scripts/lib/community-page.js`: the "opening soon" page at `/community`, and the frame its Function (`functions/community.js`) fills with spaces and threads once the community is switched on ([docs/community.md](docs/community.md)) |
 | `guide.html`, `guide/` | Generated guides from `data/guides.js`: `/guide` and one page per article (`/guide/<id>`), buying, Your Stacc and refunds, and the creator manual ([docs/guides.md](docs/guides.md)). Don't edit them; change the data and rebuild |

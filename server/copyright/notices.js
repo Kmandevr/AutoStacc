@@ -46,10 +46,13 @@ export const withdrawNotice = (db, admin, noticeId, note) => batchIf(db, "EXISTS
   endStrikesStmt(db, noticeId, "withdrawn", admin.id, note)
 ]);
 
-// For the Control Center: the latest notices with their strikes.
+// For the Control Center, with their strikes: every notice still waiting (oldest first, so none can be pushed out of
+// view by newer ones; security review), then the latest decided ones.
 export async function latestNotices(db) {
-  const notices = await all(db, `SELECT n.*, c.name AS creator_name, u.email AS uploader_email FROM copyright_notices n
-    LEFT JOIN creators c ON c.id = n.creator_id LEFT JOIN "user" u ON u.id = n.uploader_user_id ORDER BY n.created_at DESC LIMIT 100`);
+  const cols = `SELECT n.*, c.name AS creator_name, u.email AS uploader_email FROM copyright_notices n
+    LEFT JOIN creators c ON c.id = n.creator_id LEFT JOIN "user" u ON u.id = n.uploader_user_id`;
+  const notices = [...await all(db, `${cols} WHERE n.status = 'received' ORDER BY n.created_at LIMIT 1000`),
+    ...await all(db, `${cols} WHERE n.status <> 'received' ORDER BY n.created_at DESC LIMIT 50`)];
   const strikes = await all(db, `SELECT notice_id, subject, subject_id, units, state, expires_at FROM copyright_strikes
     WHERE notice_id IN (SELECT value FROM json_each(?))`, JSON.stringify(notices.map((n) => n.id)));
   return notices.map((n) => ({ ...n, strikes: strikes.filter((s) => s.notice_id === n.id) }));

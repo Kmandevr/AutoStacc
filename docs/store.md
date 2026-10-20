@@ -37,7 +37,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `checkout/` | cart → pending order → hosted payment page (if the provider refuses: 503 `payment_unavailable`, with its reason in the logs, and in the answer only outside production) | `POST /api/checkout` |
 | `payments/` | providers (Stripe, mock), which Stripe account takes a product's money (`accounts.js`), Connect payout accounts and transfers (`connect.js`), tax codes per product type (`tax-codes.js`), the one event pipeline, webhooks | `POST /api/webhooks/stripe`, `POST /api/webhooks/stripe-marketplace`, `POST /api/dev/mock-payment` |
 | `orders/` | orders, status machine, fulfilment, guest keys, customer refunds (`refunds.js`) | `GET /api/orders`, `/api/orders/:id`, `POST /api/orders/:id/reconcile`, `POST /api/orders/:id/refund`, `POST /api/guest/key` |
-| `copyright/` | copyright notices, strikes, holds and the standing other modules ask (`standing.js`) | `/api/admin/copyright/*` |
+| `copyright/` | copyright notices (the public form and admins), strikes, holds and the standing other modules ask (`standing.js`) | `POST /api/copyright/notices`, `/api/admin/copyright/*` |
 | `entitlements/` | ownership, guest adoption, library, free claims, Auto-Stacc grants | `GET /api/library`, `POST /api/library/free` |
 | `downloads/` | signed links, streaming private files; several owned files as one ZIP (`bundle.js`, `zip.js`) | `POST /api/downloads`, `GET /api/downloads/:token`, `POST /api/downloads/bundle`, `GET /api/downloads/bundle/:token` |
 | `files/` | paid files' lifecycle (only published, active files are delivered) and upload limits; the allowed file types match the vocabulary's `FORMATS` ([discovery](discovery.md)) | (used by downloads, library, admin) |

@@ -123,4 +123,28 @@ export default (ctx) => describe("copyright strikes", () => {
     assert.equal((await admin.req("DELETE", "/api/admin/copyright/holds", { body: { subject: "creator", subjectId: s.creator.id } })).status, 404);
     assert.equal((await price(new Client(base()), paid)).data.cart.held.length, 0);
   });
+
+  test("the public form: what the law asks, the same answer whatever it names, a quiet trap for bots, and limits", async () => {
+    const form = (c, o = {}) => c.post("/api/copyright/notices", { claimantName: "Ada Composer", claimantEmail: `ada-${slug("e")}@example.org`, claimantAddress: "1 Music Row, Nashville",
+      role: "owner", work: "My track Night Drive (2024)", location: "https://autostacc.com/shop/some-pack", goodFaith: true, accurate: true, signature: "ada composer", ...o });
+    const c = new Client(base());
+    assert.equal((await form(c, { accurate: false })).data.error.code, "statements_required");
+    assert.equal((await form(c, { signature: "Someone Else" })).data.error.code, "signature_mismatch");
+    assert.equal((await form(c, { location: Array.from({ length: 21 }, (_, i) => `https://autostacc.com/p/${i}`).join("\n") })).data.error.code, "too_many_locations");
+    assert.equal((await form(c, { role: "fan" })).status, 400);
+    const c3 = new Client(base());
+    assert.equal((await form(c3, { claimantName: "李明", signature: "--" })).data.error.code, "signature_mismatch", "an empty fold never matches");
+    assert.equal((await form(c3, { claimantName: "李明", signature: "李明", work: "Non-Latin signature" })).status, 202);
+    const c2 = new Client(base()); // five an hour per address counts refused tries too
+    const sent = await form(c2, { work: "Quiet trap test", website: "http://spam.example" });
+    assert.equal(sent.status, 202);
+    assert.equal(db("SELECT COUNT(*) AS n FROM copyright_notices WHERE work = 'Quiet trap test'")[0].n, 0, "a filled-in hidden field is ignored");
+    const ok = await form(c2, { work: "Real notice from the form" });
+    assert.equal(ok.status, 202);
+    assert.deepEqual(ok.data, sent.data, "the same answer either way");
+    assert.deepEqual(db("SELECT source, status, claimant_role AS role FROM copyright_notices WHERE work = 'Real notice from the form'")[0], { source: "form", status: "received", role: "owner" });
+    const statuses = [];
+    for (let i = 0; i < 6; i++) statuses.push((await form(c2, { work: `Burst ${i}` })).status);
+    assert.equal(statuses.includes(429), true, statuses.join(","));
+  });
 });

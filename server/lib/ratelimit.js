@@ -1,8 +1,8 @@
 // Per-client request limits for store endpoints (Better Auth limits its own). Counts live in the rateLimit table that
 // Better Auth already uses, under "gs:" keys, as one atomic upsert per request. The client is Cloudflare's
 // CF-Connecting-IP (set by Cloudflare, not by the browser); it is only used as a counter key, never stored elsewhere.
-// Counters older than a day are deleted now and then (no window is longer than six hours), Better Auth's own included,
-// so an IP address is kept for at most a day after its last limited request (/privacy says so).
+// Counters older than a day are deleted now and then (the longest windows are a day), Better Auth's own included, so
+// an IP address (or the email a copyright notice names) is kept about a day after its last limited request (/privacy).
 import { fail } from "./http.js";
 import { newId } from "./db.js";
 

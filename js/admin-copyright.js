@@ -23,7 +23,7 @@
         <button class="btn small" type="submit">Record</button>
       </form>
       <div class="admin-table"><table><thead><tr><th>Received</th><th>Claimant</th><th>Work and where</th><th>Status</th><th>Strikes</th><th></th></tr></thead><tbody>${notices.map((n) => `<tr data-notice="${e(n.id)}">
-        <td>${e(day(n.created_at))}</td><td>${e(n.claimant_name)}</td><td>${e(n.work)}<br><span class="small-print">${e(n.location)}</span></td>
+        <td>${e(day(n.created_at))}<br><span class="small-print">${n.source === "form" ? "form" : "email"}</span></td><td>${e(n.claimant_name)}${n.claimant_role === "agent" ? " (for the owner)" : ""}</td><td>${e(n.work)}<br><span class="small-print">${e(n.location)}</span></td>
         <td>${e(n.status)}${n.creator_name ? `<br><span class="small-print">${e(n.creator_name)}${n.uploader_email ? ` · ${e(n.uploader_email)}` : ""}</span>` : ""}</td>
         <td>${n.strikes.map((s) => e(strikeText(s))).join("<br>")}</td>
         <td>${n.status === "received" ? '<button class="btn ghost small" type="button" data-act="accepted">Accept</button> <button class="btn ghost small" type="button" data-act="rejected">Reject</button>'
