@@ -8,6 +8,7 @@ updated: 2026-10-20
 
 Newest first.
 
+- 2026-10-20: Copyright strikes: the owner's decisions (half a space strike per member strike, full for the owner's own upload, member at 2 can't publish, paused spaces' free items pause, removed files stop for everyone; public notice form) and the architect's four-step build plan recorded.
 - 2026-10-20: AutoStacc's community queue in the Control Center (#137 part 3, switch off): the `legal` feature (legal removals, dismissals, under-16 accounts, community suspensions), `legalRemove` in the core, the author's notice for legal removals, Daily › Community reports (`js/admin-community.js`), API tests.
 - 2026-10-20: Community blocks, crisis help lines, the 40-day read-only rule and 12-month retention (#137 part 2, switch off): features `blocks`, `crisis`, `upkeep`, `core/retention.js` and `core/wording.js` in the daily sweep, migration 0036, the `community-read-only` email, `/privacy` updated, API and unit tests.
 - 2026-10-20: Community moderation and reports (#137 part 1, switch off): `core/moderate.js`, the moderation feature (pin, lock, move, hide, remove, restore, bans, appeals, the author's notices, the team log) and the reports feature (routed reports, trusted reporters, auto-hide, the ranked team queue), migration 0035, the team desk and notices in the browser, `/privacy` updated, API and unit tests.

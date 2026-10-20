@@ -39,6 +39,8 @@ A strike is a valid takedown notice that wasn't successfully disputed (counter-n
 
 **Who gets a strike (owner, 2026-10-20):** both the uploading account and the creator space it was uploaded for, but much more leniently for the space's owner when they aren't the one who caused the infringement (owner: each member strike counts as half a strike for the space, so two make one; the owner's own account is untouched unless they uploaded it). **How notices arrive (owner, 2026-10-20):** a public form on `/copyright` (with the legal statements a notice needs) that lands in the Control Center for an admin to accept or reject, alongside notices to the support address until the DMCA agent is registered.
 
+**Details (owner, 2026-10-20):** the owner's own upload is a full space strike; a member at 2 strikes can't publish or price products anywhere; a paused space's free claims and Auto-Stacc pause too; a file removed by a valid notice can't be downloaded by anyone, past buyers included (refund available). Build plan: [decisions](decisions.md#2026-10-20-copyright-strikes-the-details-owner-and-the-build-plan).
+
 Content named in a valid notice is removed promptly; the uploader can counter-notice, and the content is restored in the legal window if the claimant doesn't sue. Misleading notices are noted against the claimant.
 
 ## Uploads and child safety
