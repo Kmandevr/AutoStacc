@@ -4,7 +4,7 @@
 // A whole strike is 2 units, a half strike 1 (a member's strike counts half for their creator space); the level is
 // the whole strikes, rounded down, up to 3. A strike is active until it's countered, withdrawn or 12 months old, so
 // levels are computed when asked and expiry needs nothing to run. An admin's hold keeps level 3 past expiry.
-import { all } from "../lib/db.js";
+import { all, first } from "../lib/db.js";
 
 export const STRIKE_DAYS = 365;
 export const UNITS = { whole: 2, half: 1 };
@@ -40,6 +40,11 @@ export async function creatorsSellingPaused(db, creatorIds) {
   const s = await standings(db, "creator", ids);
   return new Set(ids.filter((id) => levelOf(s.get(id).units, s.get(id).held) >= 2));
 }
+
+// Whether any creator space has an active strike or a hold at all: one cheap read that lets every cart and checkout
+// skip the rest while nobody has strikes (almost always).
+export const anyCreatorStanding = async (db) => Boolean(await first(db, `SELECT 1 AS n WHERE EXISTS (SELECT 1 FROM copyright_strikes
+  WHERE subject = 'creator' AND state = 'active' AND expires_at > ?) OR EXISTS (SELECT 1 FROM copyright_holds WHERE subject = 'creator')`, new Date().toISOString()));
 
 // Whether this account may publish or price products (owner: a member at 2 strikes can't, in any creator space).
 export const mayPublish = async (db, userId) => (await accountLevel(db, userId)).level < 2;

@@ -61,7 +61,7 @@ export default (ctx) => describe("copyright strikes", () => {
     const m = await member(s, "cp-member");
     const outsider = await newBuyer(base(), "cp-outsider");
     const admin = await freshAdmin(base());
-    assert.equal((await accept(admin, await notice(admin), s.creator.id, outsider.user.id)).data.error.code, "not_a_member");
+    assert.equal((await accept(admin, await notice(admin), s.creator.id, "no-such-account-1")).data.error.code, "no_account");
     assert.equal((await accept(admin, await notice(admin), s.creator.id, m.user.id)).status, 200);
     assert.equal(units("account", m.user.id), 2);
     assert.equal(units("creator", s.creator.id), 1);
@@ -69,6 +69,10 @@ export default (ctx) => describe("copyright strikes", () => {
     await accept(admin, await notice(admin), s.creator.id, s.user.id);
     assert.equal(units("creator", s.creator.id), 3);
     assert.equal(units("account", s.user.id), 2);
+    // Someone no longer on the team (left before the decision) still gets the strike, and the space half (security review).
+    assert.equal((await accept(admin, await notice(admin), s.creator.id, outsider.user.id)).status, 200);
+    assert.equal(units("account", outsider.user.id), 2);
+    assert.equal(units("creator", s.creator.id), 4);
   });
 
   test("two strikes: the account can't publish or price; the space's sales and free claims pause, purchases stay", async () => {
@@ -85,11 +89,14 @@ export default (ctx) => describe("copyright strikes", () => {
     assert.equal((await m.c.post(`/api/studio/products/${paid}/sales`, { percentOff: 10 })).data.error.code, "copyright_paused");
     assert.equal((await s.c.req("PATCH", `/api/studio/products/${paid}`, { body: { priceCents: 1600 } })).status, 200, "the owner still can");
     assert.equal((await price(new Client(base()), paid)).data.cart.held.length, 0);
+    assert.equal((await m.c.req("PATCH", `/api/studio/products/${paid}`, { body: { salesPaused: false } })).data.error.code, "copyright_paused", "no resuming sales either");
+    const up = await m.c.req("PUT", `/api/studio/products/${paid}/files?filename=more.zip`, { raw: Buffer.from("PK\u0003\u0004 more", "latin1"), headers: { "Content-Type": "application/octet-stream" } });
+    assert.equal(up.data.error.code, "copyright_paused", "no new files on a product already on sale");
     // The owner's own upload: the space reaches two strikes.
     const owned = await accept(admin, await notice(admin), s.creator.id, s.user.id);
     assert.equal(owned.status, 200);
     const cart = (await price(new Client(base()), paid)).data.cart;
-    assert.deepEqual(cart.held, [{ productId: paid, reason: "copyright" }]);
+    assert.deepEqual(cart.held, [{ productId: paid, reason: "seller_paused" }], "a reason that doesn't say why");
     const shopper = await newBuyer(base(), "cp-shopper");
     assert.equal((await shopper.c.post("/api/checkout", { items: [{ productId: paid, quantity: 1 }] })).data.error.code, "seller_paused");
     assert.equal((await shopper.c.post("/api/library/free", { productId: free })).data.error.code, "seller_paused");

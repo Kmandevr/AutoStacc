@@ -14,7 +14,7 @@ import { mayPublish } from "../copyright/standing.js";
 
 // Owner, 2026-10-20: an account at two copyright strikes can't publish or price products, in any creator space.
 async function publishGate(db, user, input) {
-  if ((input.published || input.priceCents !== undefined) && !(await mayPublish(db, user.id))) {
+  if ((input.published || input.priceCents !== undefined || input.salesPaused === false) && !(await mayPublish(db, user.id))) {
     fail(403, "copyright_paused", "Your account has copyright strikes, so it can't publish or price products for now. See the copyright policy.");
   }
 }

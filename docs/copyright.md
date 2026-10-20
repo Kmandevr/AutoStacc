@@ -12,12 +12,15 @@ The policy is in [community safety](community-safety.md#copyright-tiered-strikes
 ## Built (step 1)
 
 - **Its own area, `server/copyright/`**, outside the community, since strikes cover every kind of upload. Other modules never read its tables: they ask `standing.js`.
-- **Notices** (`notices.js`, `copyright_notices`): an admin records one that came to the support address (claimant, the work, where it is, the statements), then accepts it naming the creator space and, when known, the uploading account (who must be on that space's team), rejects it with a note, or later withdraws an accepted one (its strikes end). Decisions are compare-and-set and audited (`copyright.notice_recorded`, `_accepted`, `_rejected`, `_withdrawn`, `copyright.hold_set`, `_lifted`), never with an email. Control Center: Daily › Copyright (`js/admin-copyright.js`).
+- **Notices** (`notices.js`, `copyright_notices`): an admin records one that came to the support address (claimant, the work, where it is, the statements), then accepts it naming the creator space and, when known, the uploading account (any account, even one that has left the team since; "the owner uploaded it" means the space's founder or its owner now), rejects it with a note, or later withdraws an accepted one (its strikes end; who withdrew it is kept). Decisions are compare-and-set and audited (`copyright.notice_recorded`, `_accepted`, `_rejected`, `_withdrawn`, `copyright.hold_set`, `_lifted`), never with an email. Control Center: Daily › Copyright (`js/admin-copyright.js`).
 - **Strikes** (`strikes.js`, `copyright_strikes`): the uploader gets a whole strike (2 units); the space gets half (1 unit), or whole when its owner uploaded it or no uploader is named. 12 months, or until countered or withdrawn.
 - **Levels** (`standing.js`): whole strikes rounded down, up to 3; an admin's hold (`copyright_holds`) is 3. Computed when asked, so expiry needs no sweep. `accountLevel`, `creatorLevel`, `creatorsSellingPaused`, `mayPublish`.
 - **What level 2 stops:**
   - An account can't create, price or publish products, or start a sale, in any creator space (`server/studio/products.js`, `pricing.js`: `copyright_paused`).
   - A creator space's products are held in the cart (`held: "copyright"`, `server/cart/pricing.js`), checkout refuses them (`seller_paused`), free claims refuse (`server/entitlements/routes.js`) and Auto-Stacc skips them (`server/entitlements/autostacc.js`), all through `pausedByCopyright` in `server/payments/creator-sales.js`.
+  - An account at two strikes also can't resume a paused product's sales, add files to a product (`server/studio/product-files.js`) or publish a Pac version (`server/packs/routes.js`; an admin still can), so no new content goes on sale through a product already selling.
+  - The cart's reason is the generic `seller_paused`, so nobody learns from a cart that a space has strikes.
+  - Carts and checkouts skip the strike lookups entirely while no creator space has an active strike or hold (`anyCreatorStanding`).
   - It never writes `products.sales_paused` (the creator's own switch). Payments, fulfilment, entitlements and downloads are untouched: what people already have stays theirs.
 
 ## Next steps

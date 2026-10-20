@@ -24,14 +24,16 @@ async function batchIf(db, condition, params, stmts) {
 
 export async function acceptNotice(db, admin, noticeId, { creatorId, uploaderId, note }) {
   if (!creatorId && !uploaderId) fail(400, "invalid_field", "Name the creator space, the uploader, or both.", { field: "creatorId" });
-  if (creatorId && !(await getCreator(db, creatorId))) fail(404, "no_creator", "No creator space with that id.");
-  const role = creatorId && uploaderId ? await roleOf(db, creatorId, uploaderId) : null;
-  if (creatorId && uploaderId && !role) fail(400, "not_a_member", "That account isn't on that creator space's team.", { field: "uploaderId" });
+  const creator = creatorId ? await getCreator(db, creatorId) : null;
+  if (creatorId && !creator) fail(404, "no_creator", "No creator space with that id.");
   if (uploaderId && !(await first(db, 'SELECT id FROM "user" WHERE id = ?', uploaderId))) fail(404, "no_account", "No account with that id.");
+  // The uploader may have left the team since; "the owner uploaded it" is the space's founder or its owner now, so
+  // leaving or handing over the space before the decision doesn't change the weight (security review).
+  const ownerUploaded = Boolean(creator && uploaderId && (creator.created_by === uploaderId || (await roleOf(db, creatorId, uploaderId)) === "owner"));
   await batchIf(db, "EXISTS (SELECT 1 FROM copyright_notices WHERE id = ? AND status = 'received')", [noticeId], [
     stmt(db, `UPDATE copyright_notices SET status = 'accepted', creator_id = ?, uploader_user_id = ?, decided_by = ?, decided_at = ?, decision_note = ? WHERE id = ?`,
       creatorId || null, uploaderId || null, admin.id, now(), note, noticeId),
-    ...strikeStmts(db, { noticeId, uploaderId: uploaderId || null, creatorId: creatorId || null, ownerUploaded: role === "owner" })
+    ...strikeStmts(db, { noticeId, uploaderId: uploaderId || null, creatorId: creatorId || null, ownerUploaded })
   ]);
 }
 
@@ -40,7 +42,7 @@ export const rejectNotice = (db, admin, noticeId, note) => batchIf(db, "EXISTS (
 ]);
 
 export const withdrawNotice = (db, admin, noticeId, note) => batchIf(db, "EXISTS (SELECT 1 FROM copyright_notices WHERE id = ? AND status = 'accepted')", [noticeId], [
-  stmt(db, "UPDATE copyright_notices SET status = 'withdrawn', decision_note = ? WHERE id = ?", note, noticeId),
+  stmt(db, "UPDATE copyright_notices SET status = 'withdrawn', withdrawn_by = ?, withdrawn_at = ?, decision_note = ? WHERE id = ?", admin.id, now(), note, noticeId),
   endStrikesStmt(db, noticeId, "withdrawn", admin.id, note)
 ]);
 

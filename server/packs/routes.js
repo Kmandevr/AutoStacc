@@ -39,6 +39,7 @@ import { routes as reviewRoutes } from "./review-routes.js";
 import { versionView } from "./view.js";
 import { openAddition } from "./additions.js";
 import { refreshedStats, saveStatsStmt } from "./final-review.js";
+import { mayPublish } from "../copyright/standing.js";
 
 // Room for a carry list of the most files a version may have.
 const CREATE_BYTES = 3 * 1024 * 1024;
@@ -112,6 +113,8 @@ function shared(scope) {
     ["POST", `${P}/versions/:versionId/publish`, async (app, { versionId }) => {
       const actor = await scope.actor(app);
       let v = await scope.version(app, actor, versionId);
+      // Two copyright strikes: a creator's account can't put new files on sale (an admin still can).
+      if (!actor.admin && !(await mayPublish(app.db, actor.user.id))) fail(403, "copyright_paused", "Your account has copyright strikes, so it can't publish files for now. See the copyright policy.");
       const allowed = actor.admin ? ["ready", "in_review"] : ["ready"];
       if (!allowed.includes(v.status)) fail(409, "not_ready", v.status === "published" ? "Already published: this version is live." : v.status === "in_review" ? "It's waiting for AutoStacc's review." : "Only a checked, ready version can be published.");
       if (await openAddition(app.db, v.id)) fail(409, "addition_open", "Files are still being added. Wait for them first.");

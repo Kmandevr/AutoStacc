@@ -73,7 +73,7 @@ async function checkout(app) {
   const copyrightPaused = await pausedByCopyright(db, items.map((i) => i.productId));
   const cart = await priceCart(db, items, { owned, promoCode, email, userId: user ? user.id : null, creatorSales, copyrightPaused });
   // A creator space whose selling is paused by copyright strikes: those products can't be paid for.
-  if (cart.held.some((h) => h.reason === "copyright")) fail(409, "seller_paused", "Some items' creator can't sell right now.", { held: cart.held, cart: publicView(cart) });
+  if (cart.held.some((h) => h.reason === "seller_paused")) fail(409, "seller_paused", "Some items' creator can't sell right now.", { held: cart.held, cart: publicView(cart) });
   // Creators' products while creator sales are closed: the cart holds them back, so a request with them is refused.
   if (cart.held.length) fail(503, "creator_sales_closed", CREATOR_SALES_CLOSED, { held: cart.held, cart: publicView(cart) });
   const publicCart = publicView(cart);

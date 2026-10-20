@@ -6,7 +6,7 @@ import { getSetting } from "../settings/settings.js";
 import { pendingWithCreatorProducts, transition } from "../orders/orders.js";
 import { providerForOrder } from "./index.js";
 import { sellersOfProducts } from "../creators/creators.js";
-import { creatorsSellingPaused } from "../copyright/standing.js";
+import { creatorsSellingPaused, anyCreatorStanding } from "../copyright/standing.js";
 
 export const keyReady = (config) => config.paymentProvider !== "stripe" || Boolean(config.marketplaceEnabled);
 
@@ -20,6 +20,7 @@ export async function creatorSalesState(app) {
 // Products whose creator space has selling paused by copyright strikes (server/copyright/standing.js): they can't be
 // bought or claimed free, and Auto-Stacc skips them; what people already have stays theirs. → Set of product ids.
 export async function pausedByCopyright(db, productIds) {
+  if (!productIds.length || !(await anyCreatorStanding(db))) return new Set();
   const sellers = await sellersOfProducts(db, [...new Set(productIds)]);
   const paused = await creatorsSellingPaused(db, sellers.map((s) => s.creator_id));
   return new Set(sellers.filter((s) => paused.has(s.creator_id)).map((s) => s.product_id));

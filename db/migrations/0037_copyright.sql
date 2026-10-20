@@ -20,6 +20,8 @@ CREATE TABLE copyright_notices (
   decided_by TEXT,
   decided_at TEXT,
   decision_note TEXT NOT NULL DEFAULT '',
+  withdrawn_by TEXT,
+  withdrawn_at TEXT,
   created_by TEXT,
   created_at TEXT NOT NULL
 );
