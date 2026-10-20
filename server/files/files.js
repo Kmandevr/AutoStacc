@@ -69,7 +69,7 @@ export const unpublishEmptyStudioProducts = (db) =>
 // A copyright notice's hold on a file and its release (server/copyright/targets.js is the only caller). → whether it changed.
 export const holdFile = async (db, fileId) => (await run(db, "UPDATE product_files SET held_at = ? WHERE id = ? AND held_at IS NULL AND status <> 'deleted'", now(), fileId)).meta.changes > 0;
 export const releaseFile = async (db, fileId) => (await run(db, "UPDATE product_files SET held_at = NULL WHERE id = ? AND held_at IS NOT NULL", fileId)).meta.changes > 0;
-export const fileProduct = (db, fileId) => first(db, "SELECT id, product_id, held_at, status FROM product_files WHERE id = ?", fileId);
+export const fileProduct = (db, fileId) => first(db, "SELECT id, product_id, held_at, status, active FROM product_files WHERE id = ?", fileId);
 
 // Where a file's bytes are: its stored original's key for files published from a pack version (their own r2_key is a
 // placeholder, db/migrations/0015_pack_publish.sql), else its own key. Every download goes through here.

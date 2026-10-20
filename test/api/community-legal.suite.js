@@ -128,5 +128,10 @@ export default (ctx) => describe("community: AutoStacc's queue (switched on)", (
     assert.equal((await admin.post(`/api/admin/copyright/notices/${nid}`, { outcome: "withdrawn", note: "Claimant withdrew" })).status, 200);
     assert.deepEqual(one(`SELECT state, removed_reason AS why FROM community_posts WHERE id = '${post}'`), { state: "visible", why: null });
     assert.equal(one(`SELECT COUNT(*) AS n FROM community_mod_log WHERE target_id = '${post}' AND action = 'legal_restore'`).n, 1);
+    // Something already down for another reason can't be named, so a counter-notice can never bring it back.
+    const gone = await reply(a.c, t, "deleted by its author");
+    await a.c.req("DELETE", `/api/community/posts/${gone}`);
+    const n2 = (await admin.post("/api/admin/copyright/notices", { claimantName: "Lyric Owner", claimantEmail: "lyrics@example.com", work: "Our song", location: "a reply", statements: true })).data.id;
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${n2}`, { outcome: "accepted", uploaderId: a.user.id, targets: [{ kind: "post", id: gone }] })).data.error.code, "target_not_up");
   });
 });

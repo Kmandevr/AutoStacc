@@ -12,7 +12,7 @@
 
   function draw(panel, notices, message) {
     panel.innerHTML = `${message ? `<p class="msg" role="status">${e(message)}</p>` : ""}
-      <p class="small-print">A valid notice gives the uploading account a strike and its creator space half a strike (a whole one if the space's owner uploaded it). Two strikes stop selling; strikes last 12 months. Remove the content itself with the product, file or community tools. <a href="/copyright">Copyright policy</a>.</p>
+      <p class="small-print">A valid notice gives the uploading account a strike and its creator space half a strike (a whole one if the space's owner uploaded it). Two strikes stop selling; strikes last 12 months. Accepting names what to take down; the uploader (or the space's owner) is emailed and can send a counter-notice, after which it comes back in about two weeks unless the claimant goes to court. <a href="/copyright">Copyright policy</a>.</p>
       <form class="admin-card" data-record>
         <h3>Record a notice from email</h3>
         <label>Claimant's name <input name="claimantName" required maxlength="200"></label>

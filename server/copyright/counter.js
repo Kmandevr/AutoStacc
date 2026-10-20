@@ -1,7 +1,7 @@
 // Counter-notices (docs/copyright.md, step 3): the account whose upload an accepted notice took down (or, when no
 // uploader was named, the creator space's owner) can answer once, signed in, with their details, the statements the
 // law asks for and a signature matching their name. AutoStacc passes it to the claimant (the law requires it) and,
-// unless the claimant says within the wait (WAIT_DAYS) that they've gone to court (an admin notes "sued"), the daily sweep puts
+// unless the claimant says within 11 US business days (business-days.js) that they've gone to court (an admin notes "sued"), the daily sweep puts
 // the content back and the notice's strikes end as countered (sweep.js). Others find nothing here.
 import { json, readJson, fail, id, str, email as readEmail } from "../lib/http.js";
 import { first, stmt, now, newId, guardStmt, isGuardFailure } from "../lib/db.js";
@@ -11,9 +11,8 @@ import { sendEmail } from "../email/index.js";
 import { alertAdmins } from "../email/alerts.js";
 import { roleOf } from "../creators/creators.js";
 import { targetsOf } from "./takedown.js";
+import { afterBusinessDays } from "./business-days.js";
 
-// 15 calendar days: at least the 10 business days the law asks to wait before putting it back.
-export const WAIT_DAYS = 15;
 const NO_STORE = { "Cache-Control": "no-store" };
 const fold = (s) => String(s).normalize("NFKD").replace(/\p{M}/gu, "").toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 
@@ -46,7 +45,7 @@ async function send(app, { noticeId }) {
   const signature = str(body.signature, "signature", { min: 2, max: 200 }).trim();
   if (!fold(name) || fold(signature) !== fold(name)) fail(400, "signature_mismatch", "Type your full name as the signature, the same as above.", { field: "signature" });
   const at = now();
-  const restoreAfter = new Date(Date.now() + WAIT_DAYS * 86400000).toISOString();
+  const restoreAfter = afterBusinessDays(Date.now());
   try {
     await app.db.batch([
       guardStmt(app.db, "NOT EXISTS (SELECT 1 FROM copyright_counter_notices WHERE notice_id = ?)", n.id),
@@ -58,7 +57,9 @@ async function send(app, { noticeId }) {
     throw e;
   }
   try {
-    await sendEmail(app, "copyright-counter-notice", n.claimant_email, { name, address, email, restoreAfter: restoreAfter.slice(0, 10) }, { dedupeKey: `copyright-counter:${n.id}` });
+    // Nothing comes back until the claimant has been sent this (the sweep waits for claimant_told_at).
+    const told = await sendEmail(app, "copyright-counter-notice", n.claimant_email, { name, address, email, restoreAfter: restoreAfter.slice(0, 10) }, { dedupeKey: `copyright-counter:${n.id}` });
+    if (told.status !== "failed") await app.db.prepare("UPDATE copyright_counter_notices SET claimant_told_at = ? WHERE notice_id = ?").bind(now(), n.id).run();
     await alertAdmins(app, { key: `copyright-counter:${n.id}`, title: "a copyright counter-notice arrived",
       lines: [`A counter-notice answers notice ${n.id}. The content comes back on ${restoreAfter.slice(0, 10)} unless the claimant says they've gone to court (mark it in Daily › Copyright).`] });
   } catch (e) { console.error("copyright counter emails", e && e.message); }

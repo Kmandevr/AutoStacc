@@ -32,7 +32,7 @@ export async function acceptNotice(app, admin, noticeId, { creatorId, uploaderId
   // The uploader may have left the team since; "the owner uploaded it" is the space's founder or its owner now, so
   // leaving or handing over the space before the decision doesn't change the weight (security review).
   const ownerUploaded = Boolean(creator && uploaderId && (creator.created_by === uploaderId || (await roleOf(db, creatorId, uploaderId)) === "owner"));
-  const targets = await checkTargets(app, rawTargets);
+  const targets = await checkTargets(app, rawTargets, creatorId || null);
   await batchIf(db, "EXISTS (SELECT 1 FROM copyright_notices WHERE id = ? AND status = 'received')", [noticeId], [
     stmt(db, `UPDATE copyright_notices SET status = 'accepted', creator_id = ?, uploader_user_id = ?, decided_by = ?, decided_at = ?, decision_note = ? WHERE id = ?`,
       creatorId || null, uploaderId || null, admin.id, now(), note, noticeId),

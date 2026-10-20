@@ -162,6 +162,8 @@ export default (ctx) => describe("copyright strikes", () => {
     const admin = await freshAdmin(base());
     const id = await notice(admin);
     assert.equal((await admin.post(`/api/admin/copyright/notices/${id}`, { outcome: "accepted", creatorId: s.creator.id, uploaderId: s.user.id, targets: [{ kind: "product_file", id: "pf_nope" }] })).data.error.code, "no_target");
+    const elsewhere = await space("cp-elsewhere");
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id}`, { outcome: "accepted", creatorId: elsewhere.creator.id, targets: [{ kind: "product_file", id: fileId }] })).data.error.code, "target_other_creator", "a file of another creator space");
     assert.equal((await admin.post(`/api/admin/copyright/notices/${id}`, { outcome: "accepted", creatorId: s.creator.id, uploaderId: s.user.id, targets: [{ kind: "product_file", id: fileId }] })).status, 200);
     assert.deepEqual(await files(), [], "held from past buyers too");
     assert.ok(db(`SELECT held_at FROM product_files WHERE id = '${fileId}'`)[0].held_at);
@@ -191,6 +193,11 @@ export default (ctx) => describe("copyright strikes", () => {
     await admin.post(`/api/admin/copyright/notices/${id2}`, { outcome: "accepted", creatorId: s.creator.id, uploaderId: s.user.id, targets: [{ kind: "product_file", id: fileId }] });
     await s.c.post(`/api/copyright/notices/${id2}/counter`, { name: "Sam Seller", email: "sam@example.org", address: "2 Beat Street, Leeds", mistake: true, jurisdiction: true, signature: "Sam Seller" });
     assert.equal((await admin.post(`/api/admin/copyright/notices/${id2}`, { outcome: "sued", note: "Court filing received" })).status, 200);
+    // While it's held, another notice can't name it (so one counter-notice never undoes another notice's hold).
+    const id3 = await notice(admin);
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id3}`, { outcome: "accepted", creatorId: s.creator.id, targets: [{ kind: "product_file", id: fileId }] })).data.error.code, "target_not_up");
+    const other = await space("cp-other");
+    assert.equal((await admin.post(`/api/admin/copyright/notices/${id3}`, { outcome: "accepted", creatorId: other.creator.id, targets: [{ kind: "product_file", id: "pf_zzzz" }] })).status, 404);
     db(`UPDATE copyright_counter_notices SET restore_after = '2026-01-01T00:00:00.000Z' WHERE notice_id = '${id2}'`);
     await sweep();
     assert.deepEqual(await files(), [], "stays down while it's in court");

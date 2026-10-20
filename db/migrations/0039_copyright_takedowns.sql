@@ -15,8 +15,8 @@ CREATE TABLE copyright_notice_targets (
 );
 
 -- A counter-notice from the person whose upload was taken down: their details (passed to the claimant, as the law
--- requires), statements and signature. status: waiting (restored after restore_after unless the claimant says they've
--- gone to court), restored, sued, withdrawn. One per notice.
+-- requires), statements and signature. status: waiting (restored after restore_after, and only once the claimant was
+-- emailed it: claimant_told_at, unless the claimant says they've gone to court), restored, sued, withdrawn. One per notice.
 CREATE TABLE copyright_counter_notices (
   id TEXT PRIMARY KEY,
   notice_id TEXT NOT NULL UNIQUE REFERENCES copyright_notices(id),
@@ -27,6 +27,7 @@ CREATE TABLE copyright_counter_notices (
   statements_at TEXT NOT NULL,
   signature TEXT NOT NULL,
   restore_after TEXT NOT NULL,
+  claimant_told_at TEXT,
   status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'restored', 'sued', 'withdrawn')),
   decided_by TEXT,
   decided_at TEXT,
