@@ -35,7 +35,7 @@ function communityPage(SITE) {
         ${me}
       </div>
     </section>`;
-  const html = shell(SITE, { page, section: "community", styles: ["community", "community-boost", "community-qa", "community-waves"], scripts: ["js/community-kit.js", "js/community.js", "js/community-boost.js", "js/community-qa.js"], main });
+  const html = shell(SITE, { page, section: "community", styles: ["community", "community-boost", "community-qa", "community-waves", "community-moderation"], scripts: ["js/community-kit.js", "js/community.js", "js/community-boost.js", "js/community-qa.js", "js/community-moderation.js", "js/community-reports.js"], main });
   return { file: "community.html", page, html };
 }
 

@@ -3,12 +3,13 @@
 // needs a signed-in account with a confirmed email (requireUser), is refused during a support impersonation (the policy
 // refuses writes that don't opt in), counts against a per-client request limit, passes the features' checks (posting
 // pace, link rules...) and clears the cached pages it changes.
-import { json, readJson, id, str } from "../../lib/http.js";
+import { json, readJson, id, str, fail } from "../../lib/http.js";
 import { requireFeature } from "../../lib/features.js";
 import { currentUser, requireUser } from "../../auth/session.js";
 import { limit } from "../../lib/ratelimit.js";
 import { getMember, join } from "./members.js";
-import { startThread, reply } from "./posting.js";
+import { startThread, reply, getSpace } from "./posting.js";
+import { isTeam } from "./access.js";
 import { editPost, deletePost } from "./edits.js";
 import { mine } from "./mine.js";
 import { purge } from "./purge.js";
@@ -83,12 +84,22 @@ async function threadMine(app, { threadId }) {
   return json({ ...core, features: user ? await state(app, user, core.thread) : {}, thread: undefined }, 200, NO_STORE);
 }
 
+// Whether the visitor is on a space's team, for its page's team desk (features add the desk's parts).
+async function spaceMine(app, { spaceId }) {
+  requireFeature(app, "community.forum");
+  const space = await getSpace(app.db, id(spaceId, "spaceId"));
+  if (!space) fail(404, "not_found", "Not found.");
+  const user = await currentUser(app);
+  return json({ signedIn: Boolean(user), team: user ? await isTeam(app, user, space) : false, state: space.state }, 200, NO_STORE);
+}
+
 export const routes = [
   ["GET", "/api/community/me", me],
   ["PUT", "/api/community/me", setMe],
   ["POST", "/api/community/threads", newThread],
   ["POST", "/api/community/threads/:threadId/posts", newReply],
   ["GET", "/api/community/threads/:threadId/mine", threadMine],
+  ["GET", "/api/community/spaces/:spaceId/mine", spaceMine],
   ["PATCH", "/api/community/posts/:postId", edit],
   ["DELETE", "/api/community/posts/:postId", remove],
   ...featureRoutes()

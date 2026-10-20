@@ -46,7 +46,9 @@ export const FEATURES = {
   "community.qa": { on: true, label: "Community: Helpful votes and best answers" },
   "community.waves": { on: true, label: "Community: waveforms beside names" },
   "community.preview": { on: true, label: "Community: Preview while writing" },
-  "community.pace": { on: true, label: "Community: slow mode and posting pace" }
+  "community.pace": { on: true, label: "Community: slow mode and posting pace" },
+  "community.moderation": { on: true, label: "Community: team tools, bans and appeals" },
+  "community.reports": { on: true, label: "Community: reports and the team's queue" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

@@ -8,5 +8,7 @@ import qa from "./qa/index.js";
 import waves from "./waves/index.js";
 import preview from "./preview/index.js";
 import pace from "./pace/index.js";
+import moderation from "./moderation/index.js";
+import reports from "./reports/index.js";
 
-for (const f of [boost, qa, waves, preview, pace]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports]) register(f);

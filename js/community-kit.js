@@ -1,11 +1,12 @@
 // Shared helpers for the community's browser scripts (GS.communityKit; loads before js/community.js and each
 // js/community-<feature>.js): building elements safely (text only through textContent), status lines, the visitor
-// (/api/community/me, asked once) and their state in the open take (/mine, asked once), and the "join" gate. No
+// (/api/community/me, asked once), their state in the open take or space (/mine, asked once), the space team's desk
+// (each feature adds its own part) and the "join" gate. No
 // feature logic lives here, so each feature script stays independent of the others.
 (function () {
   "use strict";
   const GS = window.GS;
-  if (!GS || !document.querySelector("[data-cm-compose], [data-cm-thread]")) return;
+  if (!GS || !document.querySelector("[data-cm-compose], [data-cm-thread], [data-cm-space], [data-cm-notices]")) return;
 
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
@@ -28,6 +29,19 @@
   const mine = () => (minePromise = minePromise || (tools
     ? GS.api(`/api/community/threads/${encodeURIComponent(tools.dataset.cmThread)}/mine`).then((r) => (r.ok ? r.data : null))
     : Promise.resolve(null)));
+
+  const desk = document.querySelector("[data-cm-space]");
+  let spacePromise = null;
+  const space = () => (spacePromise = spacePromise || (desk
+    ? GS.api(`/api/community/spaces/${encodeURIComponent(desk.dataset.cmSpace)}/mine`).then((r) => (r.ok ? r.data : null))
+    : Promise.resolve(null)));
+  // A titled part of the team desk, shown once a feature has something in it.
+  const deskPart = (title) => {
+    desk.hidden = false;
+    if (!desk.querySelector(".cm-desk-title")) desk.prepend(el("h2", { class: "cm-desk-title", text: "Team desk" }));
+    return desk.appendChild(el("details", { class: "cm-desk-part" }, el("summary", { text: title })));
+  };
+  const notices = document.querySelector("[data-cm-notices]");
 
   // A button that calls the API, disables itself until the answer, and runs done(data) on success.
   const action = (label, { path, method, body, pressed = null, cls = "btn ghost small", title = null, done }) => {
@@ -72,5 +86,5 @@
     box.append(form);
   }
 
-  GS.communityKit = { el, status, say, busy, me, mine, action, gate, tools };
+  GS.communityKit = { el, status, say, busy, me, mine, action, gate, tools, desk, space, deskPart, notices };
 })();
