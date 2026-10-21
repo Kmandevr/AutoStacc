@@ -216,10 +216,13 @@ for (const p of ["/privacy", "/terms", "/refunds", "/license", "/help", "/guide"
 // ---------- robots.txt ----------
 const robots = exists("robots.txt") ? read("robots.txt") : "";
 if (!robots) add("FAIL", "robots", "robots.txt missing");
-if (!new RegExp(`^Sitemap: ${ORIGIN.replace(/\./g, "\\.")}/sitemap\\.xml$`, "m").test(robots)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/sitemap.xml" line`);
+// Exact lines, compared as text (no pattern built from the origin).
+const robotsLines = new Set(robots.split("\n").map((l) => l.trim()));
+const hasSitemap = (file) => robotsLines.has(`Sitemap: ${ORIGIN}/${file}`);
+if (!hasSitemap("sitemap.xml")) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/sitemap.xml" line`);
 // Release and event pages, and trusted creators' product pages, are only listed in the sitemaps the store API serves.
 for (const [file, what] of [["sitemap-content.xml", "release and event pages"], ["sitemap-shop.xml", "product pages"]])
-  if (!new RegExp(`^Sitemap: ${ORIGIN.replace(/\./g, "\\.")}/${file.replace(/\./g, "\\.")}$`, "m").test(robots)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/${file}" line (${what})`);
+  if (!hasSitemap(file)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/${file}" line (${what})`);
 // Rules for "*" (Google's matching: the longest matching rule wins; Allow wins a tie).
 const rules = [];
 let star = false;

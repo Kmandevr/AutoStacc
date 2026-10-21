@@ -32,8 +32,10 @@ function wrangler(args, opts = {}) {
 const OWNERS = "FIRST_PARTY_OWNERS=autostacc=owner@autostacc.test";
 function ensureDevVars() {
   const file = path.join(ROOT, ".dev.vars");
-  if (fs.existsSync(file)) {
-    if (!/^FIRST_PARTY_OWNERS=/m.test(fs.readFileSync(file, "utf8"))) fs.appendFileSync(file, `\n${OWNERS}\n`);
+  let current = null;
+  try { current = fs.readFileSync(file, "utf8"); } catch (err) { if (err.code !== "ENOENT") throw err; }
+  if (current !== null) {
+    if (!/^FIRST_PARTY_OWNERS=/m.test(current)) fs.appendFileSync(file, `\n${OWNERS}\n`);
     return;
   }
   const rand = () => crypto.randomBytes(32).toString("hex");
@@ -46,7 +48,7 @@ function ensureDevVars() {
     "# First-party creators' owners (<creator>=<email>), once verified (#172).",
     OWNERS,
     ""
-  ].join("\n"));
+  ].join("\n"), { flag: "wx" });
   console.log("dev: wrote .dev.vars with fresh local secrets");
 }
 
