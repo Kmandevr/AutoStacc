@@ -37,6 +37,7 @@ import { routes as studioSiteFiles } from "./studio/site-files.js";
 import { routes as studioMembers } from "./studio/members.js";
 import { routes as communityLibrary } from "./library/routes.js";
 import { routes as community } from "./community/index.js";
+import { routes as copyright } from "./copyright/routes.js";
 import { routes as adminLibrary } from "./library/admin.js";
 import { routes as studioProducts } from "./studio/products.js";
 import { routes as studioProductFiles } from "./studio/product-files.js";
@@ -69,7 +70,7 @@ import { routes as maintenance } from "./maintenance/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountTwoFactor, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, adminLibrary, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, reviews, adminReviews, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, copyright, adminLibrary, studioProducts, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, reviews, adminReviews, adminPayouts, adminFiles, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

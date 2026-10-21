@@ -33,6 +33,7 @@ window.WORKSPACES = {
           { key: "customers", label: "Customers" },
           { key: "reviews", label: "Reviews" },
           { key: "community", label: "Community reports" },
+          { key: "copyright", label: "Copyright" },
           { key: "payouts", label: "Payouts" }
         ] }
       ] },

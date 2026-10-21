@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # AutoStacc vault
@@ -30,6 +30,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Product Studio](studio.md): one workspace per product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared shell the Control Center also uses; names, data ownership, API contracts, built vs planned
 - [Guides and creator manual](guides.md): PLANNED: long-form support articles at /guide beside /help, with a full Studio manual
 - [Community](community.md): PLANNED: spaces for AutoStacc, projects and user-made communities, with channels; discussions, Q&A, updates, polls and challenges; upvotes; base rules plus stricter local rules; moderation, 16+, build order
+- [Copyright](copyright.md): notices and strikes as built: the uploader and the creator space, levels, what two strikes stop, the next steps
 - [Community safety](community-safety.md): PLANNED: legal and security for the community: launch gates (legal setup, DMCA agent, CSAM scanning), copyright strikes, UK/EU duties, contests, urgent reports, retention, security rules
 - [Profiles, points and friends](profiles.md): PLANNED: Steam-style profiles, points spent on profile items creators make, friends, a friends-only feed, collab requests
 - [Store](store.md): how the store works (architecture, accounts, payments, entitlements, downloads, email, admin, security)

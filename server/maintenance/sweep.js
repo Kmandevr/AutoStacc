@@ -8,7 +8,7 @@
 // anymore (library/sweep.js); and the admins hear about meters
 // near the allowance; last, paid creator storage is measured, last month's statements issued and overdue ones acted on
 // (billing/statements.js); and the community's upkeep: 12-month retention and its features' daily work
-// (community/index.js).
+// (community/index.js); and copyright counter-notices whose wait is over (copyright/sweep.js).
 // Bounded per run; anything left waits for the next day.
 import { deactivateExpiredRetired } from "../files/files.js";
 import { hashLegacyFiles } from "../files/legacy.js";
@@ -25,6 +25,7 @@ import { runDue } from "../sites/schedule.js";
 import { sweepReleased } from "../library/sweep.js";
 import { runStorageBilling } from "../billing/statements.js";
 import { communitySweep } from "../community/index.js";
+import { copyrightSweep } from "../copyright/sweep.js";
 
 export async function sweep(app, { nowMs = Date.now() } = {}) {
   const retiredFiles = await deactivateExpiredRetired(app.db, nowMs);
@@ -43,5 +44,6 @@ export async function sweep(app, { nowMs = Date.now() } = {}) {
   // After every cleanup above, so a day's measurement sees what is really still stored (server/billing/).
   const storageBilling = await runStorageBilling(app, { nowMs });
   const community = await communitySweep(app, { nowMs });
-  return { community, retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage, storageBilling };
+  const copyright = await copyrightSweep(app, { nowMs });
+  return { community, copyright, retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage, storageBilling };
 }
