@@ -8,6 +8,10 @@ updated: 2026-10-20
 
 Newest first.
 
+- 2026-10-21: Sidebar no longer lists each first-party project (Glitches & Stitches); Projects keeps All projects, as for every creator (owner) (`js/layout.js`, `css/layout.css`).
+- 2026-10-20: Owner deferred the community's legal setup and DMCA agent until an LLC (after traction); no longer launch gates.
+- 2026-10-20: Owner switched on Cloudflare's CSAM Scanning Tool (community launch gate); DMCA agent to be registered later.
+- 2026-10-20: `docs/community.md`: status corrected from "nothing exists yet" to partly built behind the off switch (read side, posting, moderation); build order steps 3 and 4 marked.
 - 2026-10-20: Copyright step 3 (#137): takedowns through each owning module (`server/copyright/targets.js`: product files held by `held_at` in the deliverable rule, community posts by `legalRemove`/`legalRestore`), the uploader's email, counter-notices (`/copyright-notice?counter=`), the claimant's copy, the restore in the daily sweep after 11 US business days unless the claimant sues; migration 0039; `/copyright` and `/privacy` updated.
 - 2026-10-20: Copyright step 2 (#137): the public notice form at `/copyright-notice` (`server/copyright/filing.js`, migration 0038), linked from `/copyright`, limits and a bot trap; `/privacy` updated.
 - 2026-10-20: Copyright strikes step 1 (#137): `server/copyright/` (notices recorded and decided by admins, strikes for the uploader and half for the creator space, levels and holds), level 2 enforced in the Studio, cart, checkout, free claims and Auto-Stacc; Daily › Copyright; `/copyright` and `/privacy` updated; migration 0037; tests.

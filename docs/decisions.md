@@ -1,10 +1,14 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-16
+updated: 2026-10-20
 ---
 
 # Decisions
+
+## 2026-10-20: Community legal gates deferred (owner)
+
+The operator's legal setup and the DMCA designated agent are no longer launch gates for the community: they wait until AutoStacc is an LLC, planned once the site has traction. Reason: not worth the cost and paperwork before there's traction. Trade-off accepted: until the agent is registered, the US hosting protection for user uploads doesn't apply. CSAM scanning is on; the other gates in [community safety](community-safety.md) stand.
 
 ## 2026-10-15: The community library
 
