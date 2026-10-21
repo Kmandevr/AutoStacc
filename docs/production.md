@@ -41,7 +41,7 @@ One address, `SITE.email` in `data/site.js` (support@autostacc.com), used by the
 
 ## Product pages
 
-Show only facts that exist in `data/products.js` (`includes`, `pacs`, `metadata`, `preview`) or follow from it (type, price, project, licence). Never invent formats, file counts, sizes or specs. Product structured data is only published for products that are for sale (not drafts), with the real price and currency.
+Show only facts the product's record holds (its Studio fields in D1, or `data/products.js` for the dormant catalog list, empty since 2026-10-21: `includes`, `pacs`, `metadata`, `preview`) or follow from it (type, price, project, licence). The same goes for release, news and show pages, which come from the Studio's records (`server/content/`, [creators](creators.md)). Never invent formats, file counts, sizes or specs. Product structured data is only published for products that are for sale (not drafts), with the real price and currency.
 
 ## Uploads
 
