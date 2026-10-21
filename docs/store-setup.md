@@ -57,7 +57,7 @@ Production refuses test keys: `sk_test_` keys only work in development and previ
 
 ## Paid storage: saved cards
 
-Built, **off** (owner, 2026-10-21, #142; [creators](creators.md#paid-storage-built-2026-10-16-off)). Creators save a card on a Stripe page; each month what their cleared earnings don't cover is charged to it automatically, retried after a decline, with a pay page by email as the fallback. All on the main Stripe account. Before switching it on:
+Built, and **switched on** by the owner on 2026-10-21 after steps 1 to 3 below (#142; [creators](creators.md#paid-storage-built-2026-10-16-off)). Creators save a card on a Stripe page; each month what their cleared earnings don't cover is charged to it automatically, retried after a decline, with a pay page by email as the fallback. All on the main Stripe account. Before switching it on:
 
 1. Stripe → Settings → Payments: keep cards on, and make sure Checkout in **setup mode** and saving cards for later off-session charges are allowed on this account. AutoStacc creates one Customer per creator space; card details stay at Stripe.
 2. Developers → Webhooks → the `https://autostacc.com/api/webhooks/stripe` endpoint: **add** `payment_intent.succeeded` and `payment_intent.payment_failed`. (`checkout.session.completed` is already there and now also confirms a saved card; `charge.refunded` and `charge.dispute.*` cover storage refunds and chargebacks.)
@@ -99,5 +99,4 @@ Local development needs none of this (mock payments, emails in the database): se
 - The Cloudflare token permissions and R2 enabled (step 1).
 - Stripe account activation, live keys and the webhook endpoint (step 3).
 - Brevo account, domain authentication and API key (step 4).
-- Paid storage: the two webhook events, one test-mode payment end to end, then switching it on ([above](#paid-storage-saved-cards), #142).
 - `FIRST_PARTY_OWNERS` set to your account (step 2), and the real products, prices and files made in the Studio (issue #5). The placeholders were deleted (#173), so nothing can be bought on the live site until you publish products, even when the store is on.
