@@ -3,12 +3,14 @@
 // filters used and genres picked; read here, never sent). Each card says why it was picked; projects the visitor
 // already follows are left out. data-picks="following" lists those instead (the dashboard), most recently active
 // first. data-limit="3" caps the cards. Offline, the built list inside stays. Needs js/util.js, js/project-card.js,
-// data/product-types.js; js/taste.js optional; js/follow.js fills the follow controls.
+// data/product-types.js; js/taste.js optional; js/skeleton.js draws placeholder cards where no built list stands;
+// js/follow.js fills the follow controls.
 (function () {
   "use strict";
 
   const GS = window.GS;
   const { api } = GS;
+  const sk = GS.skeleton;
   const roots = [...document.querySelectorAll("[data-project-picks]")];
   if (!roots.length || !GS.projectCard) return;
 
@@ -39,14 +41,22 @@
   async function load(root) {
     const limit = Number(root.dataset.limit) || 3;
     const following = root.dataset.picks === "following";
+    // Placeholder cards while it asks, unless a built list of real cards is already there (the home page); the note
+    // that was there comes back if nothing replaces it.
+    const before = root.innerHTML;
+    if (sk && !root.querySelector(".project-card, .pcard")) {
+      root.innerHTML = `<div class="pgrid"></div>`;
+      sk.show(root.firstElementChild, "card", limit);
+    }
     const res = await ask(following ? "followed=1" : "");
-    if (!res.ok) return;
+    const restore = () => { if (root.innerHTML !== before) root.innerHTML = before; };
+    if (!res.ok) return restore();
     const list = res.data.projects.filter((p) => Boolean(p.following) === following);
     if (following && !list.length) {
       root.innerHTML = `<p class="small-print">${res.data.signedIn ? "You don't follow any projects yet." : "Log in to see the projects you follow."} <a href="/projects">Find projects to follow</a>.</p>`;
       return;
     }
-    if (!list.length) return;
+    if (!list.length) return restore();
     const chosen = following ? list.slice(0, limit).map((p) => ({ p, why: "" })) : pick(list, limit);
     root.innerHTML = `<div class="pgrid">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3, why })).join("")}</div>`;
     dispatchEvent(new CustomEvent("gs:projects"));

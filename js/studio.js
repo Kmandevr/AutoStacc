@@ -98,6 +98,7 @@
     if (hash.get("profile")) return window.GS.builder.open(root, { kind: "profile", id: hash.get("profile") }, back);
     if (hash.get("products")) return window.GS.studioProducts.open(root, hash.get("products"), back);
     if (hash.get("content")) return window.GS.studioContent.open(root, hash.get("content"), hash.get("kind"), back, hash.get("item"));
+    if (window.GS.skeleton) window.GS.skeleton.pending(root, "panel", 2); // placeholders until the overview draws
     const res = await api("/api/studio");
     if (!res.ok) { root.innerHTML = `<p class="msg error">${e(res.status === 403 ? "Confirm your email first (check your inbox), then come back." : res.error.message)}</p>`; return; }
     overview(res.data);

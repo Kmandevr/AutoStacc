@@ -42,6 +42,7 @@
   const list = root.querySelector("[data-events-list]");
   if (!slot || !list) return;
   const original = list.innerHTML;
+  const sk = window.GS.skeleton; // placeholder rows while the followed events load (optional)
 
   const card = (x) => {
     const [, m, d] = String(x.date).split("-");
@@ -80,9 +81,9 @@
     q.set("to", root.dataset.to);
     q.delete("view");
     q.delete("month");
-    list.setAttribute("aria-busy", "true");
+    if (sk) sk.show(list, "row", 3); else list.setAttribute("aria-busy", "true");
     const res = await api(`/api/events?${q}`);
-    list.removeAttribute("aria-busy");
+    if (sk) sk.done(list); else list.removeAttribute("aria-busy");
     if (!res.ok) {
       list.innerHTML = `<p class="msg err" role="alert">Couldn't load the events you follow. Try again.</p>`;
       return;

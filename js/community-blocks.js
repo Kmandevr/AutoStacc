@@ -6,7 +6,7 @@
   "use strict";
   const kit = window.GS && window.GS.communityKit;
   if (!kit) return;
-  const { el } = kit;
+  const { el, press } = kit;
   const api = window.GS.api;
 
   const nameOf = (post) => {
@@ -26,9 +26,9 @@
   const toggle = (name, blocked) => el("button", { class: "btn ghost small", type: "button", text: blocked ? "Unblock" : "Block", on: { click: async (ev) => {
     if (!blocked && !window.confirm(`Block ${name}? Their posts fold away for you, and they can't reply under your posts. They aren't notified.`)) return;
     const b = ev.currentTarget;
-    b.disabled = true;
+    press(b, true);
     const r = await api("/api/community/blocks", { method: blocked ? "DELETE" : "PUT", body: { name } });
-    b.disabled = false;
+    press(b, false);
     if (r.ok) location.reload(); else window.alert(r.error.message);
   } } });
 

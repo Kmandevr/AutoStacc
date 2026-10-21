@@ -68,7 +68,7 @@ The library page (`/library`) is "Your Stacc": every asset the customer can use,
 ## Auto
 
 - **Purchase → Stacc:** already true; a paid order grants entitlements and the library reads them.
-- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory (`GET /api/projects/browse`, [browse](browse.md)), follows and Auto-Stacc cover published Studio projects of active creators too; polls need a feature only `data/projects.js` sets. Followed projects' published products surface in Your Stacc under "New from projects you follow".
+- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory (`GET /api/projects/browse`, [browse](browse.md)) and the creators directory (`GET /api/creators`, `server/projects/creators.js`: active, published creators with at least one visible project, only name, address, verified and project links, cached publicly a minute), follows and Auto-Stacc cover published Studio projects of active creators too; polls need a feature only `data/projects.js` sets. Followed projects' published products surface in Your Stacc under "New from projects you follow".
 - **Auto-Stacc:** a follow with `autoStacc: true` grants every free, published product of that project (source `free`, the same idempotent grant as claiming it by hand), now and whenever the library is opened, so free releases added later arrive by themselves; it skips a creator space whose selling is paused by copyright strikes ([copyright](copyright.md)). Paid products are never granted by following; they appear as available until bought.
 - **Automatic organization:** assets are placed by their Pac, kind and format with no per-customer work.
 

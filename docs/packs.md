@@ -52,6 +52,8 @@ updated: 2026-10-21
 
 Labels: **[V]** verified in the repo or in Cloudflare's docs this session · **[R]** recommendation · **[A]** assumption, checked in Phase 0 · **[O]** open (section H).
 
+The Control Center's review queue (`js/admin-packs-queue.js`) shows placeholder rows on its first load (`GS.skeleton`, 2026-10-21).
+
 ## Pac editor (built 2026-10-15)
 
 The owner asked for a small system that lets a creator build a whole Pac one thing at a time ([decisions](decisions.md#2026-10-15-a-pac-is-built-one-thing-at-a-time-single-files-are-checked-like-packs-owner)). In the Studio's Pack Builder and the Control Center's Packs tab (switch `packs.editor`):

@@ -1,6 +1,6 @@
 // Layout and CSP sweeps in real Chromium against its own local store: every public and store page at 320, 390, 768 and
 // 1280px, with no sideways scroll, no tiny buttons and no console errors; the signed-in pages on a phone; the trust
-// pages and their links; reduced motion. Usage: npm run test:browser.
+// pages and their links; the sidebar's links; reduced motion. Usage: npm run test:browser.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { unique } from "../support/client.js";
@@ -34,6 +34,20 @@ describe("layout in the browser", { concurrency: true }, () => {
       await ctx.close();
     });
   }
+
+  test("sidebar: AutoStacc has Home, Store, Explore, Community and About; Projects has Projects and Creators; the footer links Creators", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/projects");
+    const names = (sel) => page.locator(`${sel} a`).evaluateAll((els) => els.map((el) => [el.getAttribute("href"), el.textContent.trim()]));
+    assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/explore", "Explore"], ["/community", "Community"], ["/about", "About"]]);
+    assert.deepEqual(await names("[aria-labelledby=side-projects]"), [["/projects", "Projects"], ["/creators", "Creators"]]);
+    assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Projects");
+    assert.ok(await page.locator("#site-footer a[href='/creators']").count(), "the footer links Creators");
+    await page.goto("/community");
+    assert.equal(await page.locator(".side-nav a[aria-current]").getAttribute("href"), "/community", "community pages light up Community");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
 
   test("the signed-in pages fit a phone: no sideways scroll, no tiny buttons, no CSP errors", async () => {
     const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });

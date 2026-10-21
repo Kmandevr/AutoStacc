@@ -8,7 +8,7 @@ const crypto = require("crypto");
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.resolve(ROOT, process.argv[2] || "dist");
-const ROOT_FILES = ["_redirects", "_headers", "robots.txt", "sitemap.xml", "llms.txt"];
+const ROOT_FILES = ["_redirects", "_headers", "robots.txt", "sitemap.xml", "llms.txt", "speculation-rules.json"];
 const { loadData } = require("./lib/data");
 const CREATORS = loadData().creators.map((c) => c.id);
 const DIRS = ["css", "js", "data", "img", "guide", ...CREATORS];

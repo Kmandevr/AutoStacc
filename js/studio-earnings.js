@@ -34,7 +34,10 @@
   }
 
   async function draw(el, creatorId) {
+    const sk = window.GS.skeleton; // placeholders (js/skeleton.js) the first time only, so a redraw never flickers
+    if (sk && !el.childElementCount) sk.show(el, "panel", 1);
     const [res, acctRes] = await Promise.all([api(`/api/studio/creators/${encodeURIComponent(creatorId)}/earnings`), api(`/api/studio/creators/${encodeURIComponent(creatorId)}/payout-account`)]);
+    if (sk) sk.done(el);
     if (!res.ok) { el.innerHTML = ""; return; }
     const { earnings: x, payouts } = res.data;
     const acct = acctRes.ok ? acctRes.data : null;

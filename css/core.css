@@ -179,8 +179,11 @@ section { padding: 80px 0; }
 a, button, summary, label, select, input { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s; }
-/* A page change: the old page dims away, the new one rises a few pixels into place; the sidebar, top bar and phone
-   bar (named in css/layout.css) stay put. */
+/* A page change: the old page dims away, the new one rises a few pixels into place. The sidebar, top bar, phone bar
+   and project header (named in css/layout.css, css/project-frame.css) stay perfectly still: no movement, no fade. */
+::view-transition-group(side), ::view-transition-group(topbar), ::view-transition-group(tabbar), ::view-transition-group(project-header),
+::view-transition-new(side), ::view-transition-new(topbar), ::view-transition-new(tabbar), ::view-transition-new(project-header) { animation: none; }
+::view-transition-old(side), ::view-transition-old(topbar), ::view-transition-old(tabbar), ::view-transition-old(project-header) { display: none; }
 html:active-view-transition-type(page)::view-transition-old(root) { animation: page-leave .16s ease-in both; }
 html:active-view-transition-type(page)::view-transition-new(root) { animation: page-enter .32s var(--snap) both; }
 @keyframes page-leave { to { opacity: 0; transform: scale(.992); } }

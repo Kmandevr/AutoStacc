@@ -1,0 +1,54 @@
+/* Loading placeholders (js/skeleton.js, GS.skeleton) for every page that loads content from the store: grey shapes like
+   the coming cards, rows, lines, buttons, tiles and panels, and the small spinner in a busy button. Shimmer and spin run
+   only when the visitor has not asked for reduced motion. Written against role tokens, so it works in any theme or skin. */
+.sk { --sk-fill: color-mix(in srgb, var(--text) 9%, transparent); position: relative; overflow: hidden; display: block; list-style: none; }
+.sk-item { list-style: none; }
+.sk-bar { display: block; background: var(--sk-fill); border-radius: 6px; }
+.sk-body { display: grid; gap: 10px; padding: 14px 16px 16px; }
+
+/* Lines are text-sized: 1em of the surrounding font, so a placeholder takes the room its line of text will. */
+.sk-line { height: .9em; margin: .3em 0; }
+.sk-title { height: 1.15em; }
+.sk-w0 { width: 92%; } .sk-w1 { width: 74%; } .sk-w2 { width: 58%; }
+.sk-w3 { width: 83%; } .sk-w4 { width: 66%; } .sk-w5 { width: 48%; }
+.sk-title.sk-w0, .sk-title.sk-w3 { width: 70%; }
+
+/* card: a product or project card (square cover, two lines, a button), in the grid's own slot. */
+.sk-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.sk-cover { aspect-ratio: 1 / 1; border-radius: 0; }
+.sk-btn { width: 9rem; max-width: 100%; height: 44px; border-radius: var(--radius); }
+.sk-card .sk-btn { margin-top: 4px; }
+
+/* row: a list row (round picture, name, one line). */
+.sk-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.sk-row .sk-body { flex: 1; padding: 0; gap: 4px; min-width: 0; }
+.sk-avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; }
+
+/* line, text, button, tile, panel. */
+.sk-text { display: grid; padding: 4px 0; }
+.sk-button { display: inline-block; width: 9rem; max-width: 100%; vertical-align: middle; }
+.sk-tile .sk-block { min-height: 7rem; border-radius: var(--radius); }
+.sk-panel { padding: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.sk-panel .sk-block { min-height: 6rem; margin-top: 12px; }
+
+/* A button waiting on its request: the spinner sits in the left padding, so the label and the button's size never move. */
+.sk-busy { position: relative; }
+.sk-busy[aria-busy="true"] { cursor: progress; }
+.sk-busy > .spin {
+  position: absolute; left: .45em; top: 50%;
+  width: .85em; height: .85em; margin-top: -.425em;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  opacity: .8; pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sk::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--panel) 55%, transparent), transparent);
+    transform: translateX(-100%);
+    animation: sk-shimmer 1.4s ease-in-out infinite;
+  }
+  .sk-busy > .spin { animation: sk-spin .7s linear infinite; }
+}
+@keyframes sk-shimmer { to { transform: translateX(100%); } }
+@keyframes sk-spin { to { transform: rotate(1turn); } }

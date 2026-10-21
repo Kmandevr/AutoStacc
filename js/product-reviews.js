@@ -1,11 +1,11 @@
 // Reviews on a product's page ([data-reviews="<product id>"], or the Studio product page's ?p=): the average stars and
 // count, the latest reviews from verified buyers (no names), and for a signed-in owner of the product a form to rate it
 // (1 to 5 stars, optional text), edit or delete their review. Talks to /api/products/:id/reviews (server/reviews/).
-// Stays hidden while there's nothing to show and the visitor can't review, or the store is offline. Needs js/util.js.
+// Stays hidden while there's nothing to show and the visitor can't review, or the store is offline; placeholders while loading (js/skeleton.js, optional). Needs js/util.js.
 (function () {
   "use strict";
 
-  const { escapeHTML: e, api } = window.GS;
+  const { escapeHTML: e, api } = window.GS, sk = window.GS.skeleton;
   const root = document.querySelector("[data-reviews]");
   if (!root) return;
   const id = root.dataset.reviews || new URLSearchParams(location.search).get("p") || "";
@@ -27,9 +27,13 @@
       <p class="msg" role="status" data-review-msg hidden></p></form>`;
   }
 
-  async function draw() {
+  // Busy request buttons show js/skeleton.js's spinner when it's loaded; they're disabled until the answer either way.
+  const busy = (b, on) => (sk ? sk.busy(b, on) : (b.disabled = on));
+
+  async function draw(first) {
+    if (first && sk) { root.hidden = false; root.innerHTML = `<div class="wrap"></div>`; sk.show(root.firstElementChild, "text", 2); }
     const res = await api(`${base}/reviews`);
-    if (!res.ok) return;
+    if (!res.ok) { if (first) { root.hidden = true; root.innerHTML = ""; } return; }
     const x = res.data;
     if (!x.count && !x.mine.canReview) { root.hidden = true; return; }
     root.hidden = false;
@@ -44,19 +48,19 @@
     f.addEventListener("submit", async (ev) => {
       ev.preventDefault();
       const btn = f.querySelector("button[type=submit]");
-      btn.disabled = true;
+      busy(btn, true);
       const out = await api(`${base}/review`, { method: "PUT", body: { rating: Number(f.rating.value), body: f.body.value } });
-      if (!out.ok) { btn.disabled = false; return say(out.error.message); }
+      if (!out.ok) { busy(btn, false); return say(out.error.message); }
       draw();
     });
     const del = f.querySelector("[data-review-delete]");
     if (del) del.addEventListener("click", async () => {
-      del.disabled = true;
+      busy(del, true);
       const out = await api(`${base}/review`, { method: "DELETE", body: {} });
-      if (!out.ok) { del.disabled = false; return say(out.error.message); }
+      if (!out.ok) { busy(del, false); return say(out.error.message); }
       draw();
     });
   }
 
-  draw();
+  draw(true);
 })();

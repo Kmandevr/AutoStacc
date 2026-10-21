@@ -20,6 +20,8 @@ Creators' products are sold on a **second Stripe account** (the "marketplace" ac
 
 Until the keys below are set, creator products can be listed and added to carts but not checked out (the cart says creator checkout isn't open yet; checkout answers 503 `creator_sales_closed`) and payouts stay manual (the creator types how they want to be paid, you pay and mark it paid).
 
+The Studio's Earnings section (`js/studio-earnings.js`) shows placeholders only on its first draw, so a redraw after a payout request doesn't flicker (2026-10-21).
+
 ## What the owner does
 
 **Status (2026-10-11):** done. The marketplace account is "AutoStacc Payments", with its own key and webhook in GitHub. Recommended in Stripe: branding as the main account (`img/autostacc-mark.svg`, brand `#15171c`, accent `#0a716a`) and tax behaviour exclusive (the store checks the total before tax and splits revenue on it). Creator purchases still need **Allow creator purchases** in the Control Center.

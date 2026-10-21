@@ -19,7 +19,7 @@ Every product, any creator's, has a page rendered on the server at **`/shop/<pro
 - An unknown or hidden product gets the 404 page.
 - The old `/product?p=<id>` answers a 301 to `/shop/<id>`, and `/product` alone to `/shop`. The redirect is in the Function, because `_redirects` can't match a query string.
 
-`/shop` itself (`shop.html`) stays a static page, and the store's grids and search read products from the API ([discovery](discovery.md)).
+`/shop` itself (`shop.html`) stays a static page, and the store's grids and search read products from the API ([discovery](discovery.md)). Both load `css/skeleton.css` and `js/skeleton.js` (product pages through the CSS and script lists in `server/shop/page.js`) so their grids and product parts show placeholders while they load, and `js/prefetch.js` last; product pages get the `Speculation-Rules` header from `pageHeaders()` in `server/content/page.js`, since `_headers` doesn't reach Functions ([modules](modules.md#shared-helpers-every-feature-uses)).
 
 ## Test fixtures
 

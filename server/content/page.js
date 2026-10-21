@@ -28,7 +28,8 @@ export const CSP = [
   "frame-ancestors 'self'"
 ].join("; ");
 
-// _headers doesn't reach Function responses, so the page's own headers say what the static pages' did.
+// _headers doesn't reach Function responses, so the page's own headers say what the static pages' did, including
+// the page-preloading rules (speculation-rules.json).
 export const pageHeaders = (maxAge = 60) => ({
   "Content-Type": "text/html; charset=utf-8",
   "Content-Security-Policy": CSP,
@@ -37,6 +38,7 @@ export const pageHeaders = (maxAge = 60) => ({
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "Speculation-Rules": '"/speculation-rules.json"',
   "Cache-Control": `public, max-age=${maxAge}, s-maxage=${maxAge}`
 });
 
@@ -68,9 +70,11 @@ export function shell(siteUrl, ctx, { page, section, styles, main, scripts = [],
   const skin = Boolean(id && look.skin);
   const sounds = Boolean(id && look.sounds);
   const frame = Boolean(id && ctx.frame);
-  const css = ["core", "platform", "layout", ...(frame ? ["project-frame"] : []), ...styles, ...(skin ? [`projects/${id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", "js/util.js", frame ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
-    ...(sounds ? ["js/sound.js", "js/eggs.js", "js/terminal.js"] : []), "js/motion.js", ...scripts];
+  // Pages with feature scripts load content from the store, so they get the loading placeholders (js/skeleton.js).
+  const loads = scripts.length > 0;
+  const css = ["core", "platform", "layout", ...(loads ? ["skeleton"] : []), ...(frame ? ["project-frame"] : []), ...styles, ...(skin ? [`projects/${id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
+  const js = ["data/site.js", "data/projects.js", "js/util.js", ...(loads ? ["js/skeleton.js"] : []), frame ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
+    ...(sounds ? ["js/sound.js", "js/eggs.js", "js/terminal.js"] : []), "js/motion.js", ...scripts, "js/prefetch.js"];
   const projectAttrs = frame ? ` data-project="${esc(id)}" data-project-page="${esc(section)}"` : "";
   return `<!doctype html>
 <html lang="en">

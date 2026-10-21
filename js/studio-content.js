@@ -148,9 +148,11 @@
       say($("form[data-cx]", root), publish === true ? "Published." : publish === false ? "Back to draft: it's off the site." : "Saved.");
     };
 
-    root.innerHTML = '<p class="msg pending">Loading…</p>';
+    const sk = window.GS.skeleton; // item rows as placeholders while the list loads (js/skeleton.js)
+    if (sk) sk.show(root, "row", 4); else root.innerHTML = '<p class="msg pending">Loading…</p>';
     (async () => {
       const [res] = await Promise.all([api(base), K.load ? K.load(s) : null]);
+      if (sk) sk.done(root);
       if (!res.ok) { root.innerHTML = `${bar(s)}<p class="msg error">${e(res.error.message)}</p>`; return; }
       Object.assign(s, { items: res.data.items, max: res.data.max, canPublish: res.data.canPublish, images: res.data.images || [], embedProviders: res.data.embedProviders || [] });
       show(itemId || null);

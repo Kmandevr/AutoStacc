@@ -66,6 +66,7 @@ The current search and filters always win: while the store is narrowed, the sect
 - `/shop`: `js/store-browse.js` (state in the address, results, chips, pages, the filter drawer on phones; offline it shows an empty state with the offline note, since every product lives in the store), `js/store-filters.js` (panel and chip templates), `js/store-suggest.js` (combobox), results and rows draw store-style card sizes (`GS.productCard` with `mixed`: featured banners, artwork capsules; [modules](modules.md)), `js/store-sections.js` (rows, tune picks, not interested, your wishlist; on the home page `data-sections="2" data-brief` keeps two rows and the same controls, [browse](browse.md)), `js/wishlist.js` (hearts), `css/store.css` (on phones the filter drawer is frosted glass over a blurred page).
 - Product pages: every stated detail in "Details", a wishlist button, and "You might also like" (`js/similar.js`).
 - Other pages' grids (`js/shop.js`) stay simple: featured or a project's products, each opening its own page.
+- Loading (2026-10-21): the first load of `/shop` fills the grid with 12 placeholder cards and the rows with one placeholder row, and product pages' Contents, Reviews and "You might also like" show placeholders while they load (and hide again if empty), all through `GS.skeleton` ([modules](modules.md#shared-helpers-every-feature-uses)). Later searches and filters keep the old results dimmed under `aria-busy` (`css/store.css`, which never dims the placeholders themselves), so the grid doesn't flash.
 
 ## Limits and next steps
 

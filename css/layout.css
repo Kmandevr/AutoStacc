@@ -86,6 +86,8 @@ body:has(> .site-frame) { padding-left: var(--side); }
 .side-icon-stacc { stroke: var(--amber); }
 .side-icon-about { stroke: var(--violet); }
 .side-icon-all { stroke: var(--lime); }
+.side-icon-community { stroke: var(--coral); }
+.side-icon-creators { stroke: var(--amber); }
 /* expand/collapse, at the foot of the sidebar (computers only) */
 .side-collapse {
   margin-top: auto;
@@ -285,7 +287,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .side { transition: none; }
 }
 
-/* ---------- phones: a quick-links bar within thumb reach (Store, Projects, Your Stacc or Log in, Menu) ---------- */
+/* ---------- phones: a quick-links bar within thumb reach (Store, Projects, Community, Your Stacc or Log in, Menu) ---------- */
 .tabbar { display: none; }
 @media (max-width: 900px) {
   .tabbar {
@@ -294,7 +296,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
     z-index: 40;
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    grid-auto-columns: minmax(0, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     background: color-mix(in srgb, var(--panel) 72%, transparent);
     -webkit-backdrop-filter: var(--blur-bar, blur(20px));
@@ -319,12 +321,15 @@ body:has(> .site-frame) { padding-left: var(--side); }
     text-decoration: none;
     cursor: pointer;
   }
+  /* five names share 320px: a long one shrinks to fit its column rather than push the bar sideways */
+  .tabbar span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tabbar [hidden] { display: none; }
   .tabbar a[aria-current], .tabbar a:hover, .tabbar button:hover { color: var(--text); }
   .tabbar a[aria-current] .side-icon { stroke-width: 2.4; }
   .tabbar .side-icon { width: 22px; height: 22px; }
   body:has(> .site-frame) { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
+@media (max-width: 380px) { .tabbar a, .tabbar button { padding-inline: 1px; font-size: .64rem; } }
 /* blur isn't motion: only visitors who ask for less transparency get a solid bar */
 @media (prefers-reduced-transparency: reduce) { .tabbar { background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 

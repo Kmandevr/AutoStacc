@@ -2,7 +2,8 @@
 // its head (title, description, canonical or noindex, Open Graph, JSON-LD) between the seo markers, and its heading
 // and main areas between the community markers. The image lines of the template's own head are kept, so the site's
 // share image stays defined in one place (data/site.js). Answers with the store's strict policy: this site's scripts
-// only, no framing. Cached for a minute at the edge and in browsers (public.js).
+// only, no framing, plus the page-preloading rules (speculation-rules.json; _headers doesn't reach Functions).
+// Cached for a minute at the edge and in browsers (public.js).
 import { esc } from "./render.js";
 
 const SEO = /<!-- seo:start[^\n]*-->[\s\S]*?<!-- seo:end -->/;
@@ -17,6 +18,7 @@ export const headers = (status = 200) => ({
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "Speculation-Rules": '"/speculation-rules.json"',
   "Cache-Control": status === 200 ? "public, max-age=60, s-maxage=60" : "public, max-age=60"
 });
 

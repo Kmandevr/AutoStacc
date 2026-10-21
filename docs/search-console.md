@@ -35,7 +35,7 @@ Open each of these in a browser. They should all work:
 
 1. In the left menu: **Sitemaps**.
 2. Under "Add a new sitemap" type `sitemap.xml` and click **Submit**, then do the same for `sitemap-content.xml` (the release and news pages made in the Studio).
-3. Status should become **Success** within a day, with the number of discovered pages. The sitemaps update themselves when releases, products or news are added; you never need to resubmit it.
+3. Status should become **Success** within a day, with the number of discovered pages. The sitemaps update themselves when releases, products or news are added; you never need to resubmit it. `sitemap.xml` also lists the platform pages the build makes, `/creators` among them since 2026-10-21; check it shows in the discovered count.
 
 ## 4. Inspect the home page and request indexing
 

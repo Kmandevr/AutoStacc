@@ -2,8 +2,8 @@
 // (js/workspace.js) at #product=<id>&section=<key>. Loads GET /api/studio/products/:id, draws the header (name, status,
 // Preview, Publish or Unpublish, a settings menu) and hands the open section to its module, GS.studioSections[key]
 // (js/studio-section-*.js): draw(el, ctx) with ctx = { product, workspace, reload(), go(key), setSave(state), note(text,
-// error), release(act) }. draw may return a function, called when the section is left. The server decides everything;
-// this only shows its answers. Needs data/workspaces.js, js/util.js, js/workspace.js and js/studio-kit.js.
+// error), release(act) }. draw may return a function, called when the section is left. Loading placeholders show until
+// the product and then each section draw (GS.skeleton.pending). The server decides everything; this only shows its answers. Needs data/workspaces.js, js/util.js, js/workspace.js and js/studio-kit.js.
 (function () {
   "use strict";
 
@@ -22,7 +22,7 @@
   async function open(root, id, wanted) {
     leave();
     root.onclick = root.onchange = root.onsubmit = root.oninput = null;
-    root.innerHTML = '<p class="msg pending">Opening the product…</p>';
+    if (window.GS.skeleton) window.GS.skeleton.pending(root, "panel", 2); else root.innerHTML = '<p class="msg pending">Opening the product…</p>';
     const url = `/api/studio/products/${encodeURIComponent(id)}`;
     const first = await api(url);
     if (!first.ok) {
@@ -71,6 +71,7 @@
         el.innerHTML = `<p class="msg">This section isn't available right now. Reload the page, or try again in a little while.</p>`;
         return;
       }
+      if (window.GS.skeleton) window.GS.skeleton.pending(el, "panel", 2);
       try {
         const out = mod.draw(el, ctx);
         if (typeof out === "function") leaving = out;

@@ -140,7 +140,8 @@
   async function load() {
     const mine = ++seq;
     input.value = params.get("q") || "";
-    grid.setAttribute("aria-busy", "true");
+    // First load: placeholder cards (js/skeleton.js); later loads keep the old results, dimmed, until the new ones arrive.
+    if (!last && window.GS.skeleton) window.GS.skeleton.show(grid, "card", 12); else grid.setAttribute("aria-busy", "true");
     const res = await api(`/api/store/search?${params}`);
     if (mine !== seq) return; // a newer request is on its way
     if (res.ok) return render(res.data);

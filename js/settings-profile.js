@@ -1,12 +1,14 @@
 // Settings › Profile: your name (Better Auth's /api/auth/update-user) and your email. Changing the email
 // (/api/account/email) needs the password; the link sent to the new address opens this page with ?confirm=<token>, and
-// pressing Confirm here (signed in as the same account) makes the change (/api/account/email/confirm). Draws into #settings-app when js/settings.js opens this section. Needs js/util.js.
+// pressing Confirm here (signed in as the same account) makes the change (/api/account/email/confirm). Draws into #settings-app when js/settings.js opens this section. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, fmtDate, api, loginPath, say } = window.GS;
+  const { $, escapeHTML, fmtDate, api, loginPath, say, skeleton: sk } = window.GS;
   const root = $('#settings-app[data-section="profile"]');
   if (!root) return;
+  // A request button: GS.skeleton's spinner when it's loaded, otherwise just disabled while the request runs.
+  const busy = (btn, on) => (sk ? sk.busy(btn, on) : (btn.disabled = on));
 
   addEventListener("gs:settings", ({ detail: { user } }) => {
     root.innerHTML = `
@@ -38,10 +40,10 @@
     const btn = e.target.closest("[data-confirm-email]");
     if (!btn || btn.disabled) return;
     const form = btn.closest("form");
-    btn.disabled = true;
+    busy(btn, true);
     const res = await api("/api/account/email/confirm", { method: "POST", body: { t: token } });
     if (res.status === 401) return location.replace(loginPath(location.pathname + location.search));
-    if (!res.ok) { btn.disabled = false; return say(form, res.error.message, true); }
+    if (!res.ok) { busy(btn, false); return say(form, res.error.message, true); }
     history.replaceState(null, "", location.pathname);
     $("[data-confirm-box]", form).remove();
     $("#email", root).value = res.data.email;
@@ -55,9 +57,9 @@
       const btn = $("button[type=submit]", change);
       if (btn.disabled) return;
       if (!change.checkValidity()) return say(change, "Enter the new email and your password.", true);
-      btn.disabled = true;
+      busy(btn, true);
       const res = await api("/api/account/email", { method: "POST", body: { email: $("#new-email", change).value.trim(), password: $("#email-password", change).value } });
-      btn.disabled = false;
+      busy(btn, false);
       if (res.status === 401) return location.replace(loginPath(location.pathname));
       if (!res.ok) return say(change, res.status === 429 ? "Too many tries. Wait a few minutes." : res.error.message, true);
       change.reset();
@@ -69,9 +71,9 @@
     const btn = $("button[type=submit]", form);
     if (btn.disabled) return;
     if (!form.checkValidity()) return say(form, "Enter your name.", true);
-    btn.disabled = true;
+    busy(btn, true);
     const res = await api("/api/auth/update-user", { method: "POST", body: { name: $("#name", form).value.trim() } });
-    btn.disabled = false;
+    busy(btn, false);
     if (res.ok) return say(form, "Saved.");
     if (res.status === 401) return location.replace(loginPath(location.pathname));
     say(form, res.status === 429 ? "Too many tries. Wait a minute." : res.error.message, true);

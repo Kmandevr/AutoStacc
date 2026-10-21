@@ -192,16 +192,23 @@ describe("features in the browser", () => {
     await ctx.close();
   });
 
-  test("phone quick-links bar: Store, Projects, Log in and Menu are within reach; Menu opens the drawer and Escape closes it", async () => {
+  test("phone quick-links bar: Store, Projects, Community, Log in and Menu are within reach at 320px; Menu opens the drawer and Escape closes it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/shop");
     const bar = page.locator(".tabbar");
     assert.equal(await bar.isVisible(), true);
     const names = await bar.locator("a:visible, button:visible").allTextContents();
-    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Projects", "Log in", "Menu"]);
+    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Projects", "Community", "Log in", "Menu"]);
     assert.equal(await bar.locator("a[aria-current]").textContent(), "Store");
     const small = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
     assert.equal(small, 0, "every quick link is at least 44px tall");
+    // The narrowest phone: five quick links still fit, each wide enough to tap, nothing scrolls sideways.
+    await page.setViewportSize({ width: 320, height: 640 });
+    const narrow = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width < 44).length);
+    assert.equal(narrow, 0, "every quick link is at least 44px wide at 320px");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "nothing scrolls sideways at 320px");
+    await page.goto("/community");
+    assert.equal(await page.locator(".tabbar a[aria-current]").textContent(), "Community");
     await bar.locator("[data-tab-menu]").click();
     await page.waitForSelector(".side.open");
     await page.keyboard.press("Escape");
