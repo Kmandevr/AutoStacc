@@ -105,8 +105,8 @@ window.LEGAL = [
           "Abuse counters: only the latest count for each IP address and kind of request, deleted within a day of it."
         ] }
       ] },
-      { id: "community", heading: "The community (when it opens)", body: [
-        "The [community](/community) isn't open yet. When it is, and you take part, AutoStacc keeps: the community name you choose and when you confirmed you're 16 or older; what you post (takes and replies, as you wrote them, with earlier versions of edited posts); your boosts and Helpful votes; and the time of your posts, which is used to pace posting and stop spam. Everything you post is public under your community name, never your email. If you report a post, AutoStacc keeps your report (the reason and your note) and who sent it; the space's team sees the report but not who made it. If you appeal a decision, the team sees your appeal and your community name. What a space's team does (hiding, removing, banning, with the reason) is kept in that space's log, which names the team member and the person by community name. Reports and appeals are kept for 12 months, then deleted; deleting your account removes your appeals and your name from your reports.",
+      { id: "community", heading: "The community", body: [
+        "If you take part in the [community](/community), AutoStacc keeps: the community name you choose and when you confirmed you're 16 or older; what you post (takes and replies, as you wrote them, with earlier versions of edited posts); your boosts and Helpful votes; and the time of your posts, which is used to pace posting and stop spam. Everything you post is public under your community name, never your email. If you report a post, AutoStacc keeps your report (the reason and your note) and who sent it; the space's team sees the report but not who made it. If you appeal a decision, the team sees your appeal and your community name. What a space's team does (hiding, removing, banning, with the reason) is kept in that space's log, which names the team member and the person by community name. Reports and appeals are kept for 12 months, then deleted; deleting your account removes your appeals and your name from your reports.",
         "Your posts stay until you delete them. A post you delete, or one a space's team removes, is kept privately for 12 months and then its text is deleted. If you block someone, AutoStacc keeps who you blocked (they aren't notified) until you unblock them. If AutoStacc removes a post of yours for a legal reason or suspends you from the community, it keeps the reason and, for a suspension, until when; a legally removed post is kept privately as the law requires. Deleting your account keeps your posts as \"deleted user\" and erases your name, votes and edit history. Your community data is in your data download."
       ] },
       { id: "copyright-notices", heading: "If you send a copyright notice", body: [
@@ -135,7 +135,7 @@ window.LEGAL = [
     title: "Terms of service",
     description: "The general rules for using AutoStacc: accounts, buying and downloading digital products, licences, acceptable use, and what happens when things go wrong.",
     summary: "The general rules for using AutoStacc, in plain words. What you can buy, what you can do with it, and what AutoStacc promises.",
-    updated: "2026-10-16",
+    updated: "2026-10-21",
     review: "",
     sections: [
       { id: "about", heading: "About these terms", body: [
@@ -167,7 +167,7 @@ window.LEGAL = [
         ] }
       ] },
       { id: "community", heading: "Community and copyright", body: [
-        "The [community rules](/community-rules) apply to the community when it opens. The [copyright policy](/copyright) explains how to report infringement, how to answer a report, and what repeat infringement costs an account."
+        "The [community rules](/community-rules) apply to the community. The [copyright policy](/copyright) explains how to report infringement, how to answer a report, and what repeat infringement costs an account."
       ] },
       { id: "creators", heading: "Artists and creators", body: [
         "Products and pages are made by the projects and creators named on them, who keep the rights in their work. AutoStacc sells and delivers it for them.",
@@ -250,13 +250,10 @@ window.LEGAL = [
     id: "community-rules",
     title: "Community rules",
     description: "The rules for AutoStacc's community: what it's for, the base rules that apply everywhere, how each space can add its own, who moderates, and how reports work.",
-    summary: "AutoStacc's community is opening soon. These are the rules it will open with: a place for music and sound, run by the people in each space, inside a few rules that apply everywhere.",
-    updated: "2026-10-16",
+    summary: "The rules of AutoStacc's community: a place for music and sound, run by the people in each space, inside a few rules that apply everywhere.",
+    updated: "2026-10-21",
     review: "",
     sections: [
-      { id: "status", heading: "Opening soon", body: [
-        "The community isn't open yet. These rules apply from the day it opens, and this page will say so."
-      ] },
       { id: "about", heading: "What it's for", body: [
         "Making, sharing and talking about music and sound: production, sound design, gear and software, the creators and projects on AutoStacc, challenges, and ideas about AutoStacc and its products. It isn't a general social site; chat that has nothing to do with that belongs in a space's off-topic channel, and off-topic spaces and threads can be removed.",
         "Be welcoming. Everyone started somewhere, and basic questions are welcome."

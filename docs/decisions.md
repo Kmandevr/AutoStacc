@@ -6,6 +6,10 @@ updated: 2026-10-21
 
 # Decisions
 
+## 2026-10-21: The community opens (owner)
+
+The owner asked to activate the community. `community.forum` is on through `FEATURES_ON` in `wrangler.toml` (production and preview), so it ships with the deploy. `/privacy`, `/terms` and `/community-rules` no longer say it is opening soon. Still open at launch, by the owner's choice: the UK and EU risk assessments, the NCMEC reporting steps and contest rules (challenges aren't built), plus the LLC-dependent legal setup and DMCA agent deferred on 2026-10-20. Each creator's Community page and the move of news posts there (#174) are not built yet.
+
 ## 2026-10-21: The owner's answers to #171 to #179 (owner)
 
 Given one by one in chat after the #154 entry below. Built the same day (Claude); where an answer changed what #154 built, this entry wins.

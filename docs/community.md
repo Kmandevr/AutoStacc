@@ -7,7 +7,7 @@ updated: 2026-10-21
 
 # Community
 
-> **PARTLY BUILT, NOT LIVE.** The read side, posting and moderation are built (#135, #136, #137) but behind the `community.forum` switch, which stays off until the launch gates in [community safety](community-safety.md) are done; `/community` says "opening soon". To open it, add `community.forum` to `FEATURES_ON` under `[env.production.vars]` in `wrangler.toml` and deploy ([development](development.md)); it isn't a Control Center setting. Later steps (below) are planned only. This turns the open question "community features" in [vision](vision.md) §8 into what the owner chose on 2026-10-16 ([decisions](decisions.md#2026-10-16-guides-and-community-forum-planned-owner)). Profiles, points, friends and collab requests are in [profiles](profiles.md). Support articles are in [guides](guides.md). Legal and security requirements (launch gates, copyright strikes, urgent reports, contest rules) are in [community safety](community-safety.md).
+> **OPEN (owner, 2026-10-21).** The read side, posting and moderation (#135, #136, #137, copyright #167–#169) are live: `community.forum` is switched on in `wrangler.toml` (`FEATURES_ON`, production and preview). The owner opened it with some launch gates still open ([community safety](community-safety.md)). Later steps (below) are planned only, including each creator's Community page, where their news posts will move (#174).
 
 "Like Reddit, but less of a do-what-you-want" (owner): a place to ask questions and get answers, share and have fun, and grow communities without needing a creator, inside rules AutoStacc sets.
 

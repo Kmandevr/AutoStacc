@@ -10,7 +10,9 @@ updated: 2026-10-20
 
 > **PLANNED / NOT IMPLEMENTED.** The owner's choices of 2026-10-16 for [community](community.md) and [profiles](profiles.md) ([decisions](decisions.md#2026-10-16-guides-and-community-forum-planned-owner)). Not legal advice: drafts are written by Claude from the site's real behaviour; the owner chose to have a lawyer review them **later**, not before launch.
 
-## Before launch (gates: the `community.forum` switch stays off until these are done)
+## Before launch
+
+> **Owner, 2026-10-21:** the community is open (`community.forum` on). The owner switched it on with these still unchecked: the UK and EU risk assessments, the NCMEC reporting steps, and contest rules (needed only once challenges exist). They remain to do.
 
 > **Owner, 2026-10-20:** the operator's legal setup and the DMCA agent **no longer block launch**. They wait until AutoStacc becomes an LLC, which the owner plans once the site has traction. Until then the US hosting protection for uploads doesn't apply, and copyright notices go to the support address (`/copyright`). The other gates still stand.
 
