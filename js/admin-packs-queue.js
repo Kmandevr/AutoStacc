@@ -8,7 +8,10 @@
   let box;
 
   async function draw() {
+    const sk = window.GS.skeleton; // placeholder rows on the first load only, so a redraw never flickers (js/skeleton.js)
+    if (sk && !box.childElementCount) sk.show(box, "row", 2);
     const res = await api("/api/admin/packs/review");
+    if (sk) sk.done(box);
     if (!res.ok) { box.innerHTML = ""; return; }
     const held = res.data.versions;
     box.innerHTML = held.length ? `<div class="panel wide"><h3>Waiting for review (${held.length})</h3><ul class="plain">${held.map((v) =>

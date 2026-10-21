@@ -51,8 +51,11 @@
       if (!res.ok) return window.GS.say(f, res.error.message, true);
       open(res.data.product.id, "pacs");
     };
+    const sk = window.GS.skeleton; // product rows as placeholders while the list loads (js/skeleton.js)
+    if (sk) sk.show(root, "row", 4);
     (async () => {
       const res = await api(base);
+      if (sk) sk.done(root);
       if (!res.ok) { root.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
       draw(root, res.data);
     })();

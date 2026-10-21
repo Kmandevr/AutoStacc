@@ -6,10 +6,10 @@ import { esc } from "../sites/text.js";
 import { SITE_NAME, clip, local, abs, orgRef, webPage, head, crumbNav } from "../content/page.js";
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap";
-const CSS = ["core", "platform", "layout", "forms", "product-page", "shop", "store"];
-const JS = ["data/site.js", "data/projects.js", "data/product-types.js", "js/util.js", "js/layout.js", "js/account-nav.js", "js/site-notice.js",
+const CSS = ["core", "platform", "layout", "skeleton", "forms", "product-page", "shop", "store"];
+const JS = ["data/site.js", "data/projects.js", "data/product-types.js", "js/util.js", "js/skeleton.js", "js/layout.js", "js/account-nav.js", "js/site-notice.js",
   "data/vocabulary.js", "js/product-card.js", "js/taste.js", "js/product-view.js", "js/product-page.js", "data/features.js", "js/product-contents.js",
-  "js/product-reviews.js", "js/similar.js", "js/wishlist.js", "js/store.js", "js/motion.js"];
+  "js/product-reviews.js", "js/similar.js", "js/wishlist.js", "js/store.js", "js/motion.js", "js/prefetch.js"];
 const money = (c, cur) => { try { return new Intl.NumberFormat("en-US", { style: "currency", currency: cur || "USD" }).format(c / 100); } catch { return (c / 100).toFixed(2); } };
 const kind = (t) => String(t || "").replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
 

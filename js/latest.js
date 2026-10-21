@@ -2,7 +2,7 @@
 // next upcoming events (the content API through js/project-content.js and js/explore-items.js; only published items),
 // each list linking to its view on /explore, events also to the /events calendar. Projects the visitor follows come
 // first once js/follow.js says which (gs:follows). data-limit="3" caps each list. Needs js/util.js,
-// js/project-content.js, js/explore-items.js and data/projects.js.
+// js/project-content.js, js/explore-items.js and data/projects.js; js/skeleton.js draws placeholder panels until then.
 (function () {
   "use strict";
 
@@ -12,6 +12,7 @@
   if (!roots.length || !GS.exploreItems) return;
   let items = null; // filled once the content API answers
   let followed = new Set();
+  if (GS.skeleton) roots.forEach((r) => GS.skeleton.show(r, "panel", 2)); // one per column, until the content API answers
   const COLS = [["releases", "New releases", "No releases yet.", "midi"], ["events", "Upcoming events", "No events announced right now.", "presets"]];
 
   const line = (x) => `<li class="${look(x.project)}"><a href="${e(x.href)}">
@@ -21,6 +22,7 @@
   function draw(root, n) {
     if (!items) return;
     const limit = Number(root.dataset.limit) || 3;
+    if (GS.skeleton) GS.skeleton.done(root);
     root.innerHTML = COLS.map(([view, title, empty, track]) => {
       const list = GS.exploreItems.query(view, items[view], {}).hits
         .map((x, i) => ({ x, rank: (followed.has(x.project) ? 0 : 1e4) + i })).sort((a, b) => a.rank - b.rank).slice(0, limit).map((r) => r.x);

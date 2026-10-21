@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  const { api, escapeHTML: e } = window.GS;
+  const { api, escapeHTML: e, skeleton: sk } = window.GS;
   // The address keys of Your Stacc's view and filters (js/library.js), the only ones a saved search keeps.
   const QUERY_KEYS = ["view", "q", "project", "kind", "format", "collection", "tag"];
   const on = () => Boolean(window.FEATURES && window.FEATURES["library.collections"]);
@@ -77,9 +77,10 @@
     const selected = () => (root.staccSelection ? root.staccSelection() : []);
     const filterOf = (k) => { const s = root.querySelector(`[data-filter="${k}"]`); return s ? s.value : ""; };
     async function call(btn, url, method, body) {
-      if (btn) btn.disabled = true;
+      const pending = (on) => { if (sk) sk.busy(btn, on); else if (btn) btn.disabled = on; }; // spinner when GS.skeleton is loaded
+      pending(true);
       const res = await api(url, { method, body });
-      if (btn) btn.disabled = false;
+      pending(false);
       if (!res.ok) { say(res.error.message); return null; }
       return res.data;
     }

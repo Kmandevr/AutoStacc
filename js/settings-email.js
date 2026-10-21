@@ -1,10 +1,11 @@
 // Settings › Emails: switches for the optional emails (/api/account/email-preferences), each saved the moment it's
 // flipped and put back if saving fails. Receipts and security emails have no switch: they always come. Draws into
-// #settings-app when js/settings.js opens this section. Needs js/util.js.
+// #settings-app when js/settings.js opens this section, with placeholder rows (GS.skeleton) while the switches load.
+// Needs js/util.js (js/skeleton.js optional).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, api, loginPath, say } = window.GS;
+  const { $, escapeHTML, api, loginPath, say, skeleton: sk } = window.GS;
   const root = $('#settings-app[data-section="email"]');
   if (!root) return;
 
@@ -20,9 +21,11 @@
     </div>`;
 
   addEventListener("gs:settings", async () => {
-    root.innerHTML = `<section class="panel appear" aria-labelledby="email-title"><h2 id="email-title">Emails</h2><p class="msg pending">Loading…</p></section>`;
+    root.innerHTML = `<section class="panel appear" aria-labelledby="email-title"><h2 id="email-title">Emails</h2><p class="msg${sk ? "" : " pending"}">${sk ? "" : "Loading…"}</p><div data-wait></div></section>`;
     const panel = $(".panel", root);
+    if (sk) sk.show($("[data-wait]", panel), "line", 4);
     const res = await api("/api/account/email-preferences");
+    if (sk) sk.done($("[data-wait]", panel));
     if (res.status === 401) return location.replace(loginPath(location.pathname));
     if (!res.ok) return say(panel, res.error.message, true);
     const prefs = res.data.preferences;

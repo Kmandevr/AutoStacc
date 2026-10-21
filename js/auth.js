@@ -1,11 +1,12 @@
 // Login page: sign in, create an account, forgot password and set a new password, all through Better Auth's
 // endpoints (/api/auth/*). Modes: #signup, #forgot, ?token=... (from the reset email), default sign in.
 // ?next=/path returns there afterwards (same-site paths only, GS.safeNext); without one, the dashboard. An account
-// with two-step sign-in hands over to js/sign-in-code.js after the password (gs:two-step). Needs js/util.js.
+// with two-step sign-in hands over to js/sign-in-code.js after the password (gs:two-step). Needs js/util.js
+// (js/skeleton.js optional: the spinner on a waiting submit button).
 (function () {
   "use strict";
 
-  const { $, api, safeNext } = window.GS;
+  const { $, api, safeNext, skeleton: sk } = window.GS;
   const root = $("#auth-app");
   if (!root) return;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
@@ -71,11 +72,13 @@
   };
 
   const value = (id) => ($("#" + id, root) || {}).value || "";
+  // The submit button waits on its request: disabled, with GS.skeleton's small spinner when that's loaded.
   function setBusy(form, on, label) {
     const btn = $("button[type=submit]", form);
-    btn.disabled = on;
-    btn.classList.toggle("busy", on);
     if (label) btn.textContent = label;
+    btn.classList.toggle("busy", on && !sk); // the old blinking cursor only when there's no spinner
+    if (sk) sk.busy(btn, on);
+    else btn.disabled = on;
   }
 
   const ERRORS = {

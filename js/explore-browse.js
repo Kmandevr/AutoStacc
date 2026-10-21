@@ -3,7 +3,7 @@
 // Real data only (published content from the content API through js/project-content.js). The address holds the state
 // (/explore?view=events&q=&project=&type=&year=&city=&month=&page=; the old view=shows opens events). Searches and
 // filters feed the on-device history (gs:taste) like the store's. Needs js/util.js, js/project-content.js,
-// js/explore-items.js, js/project-events.js (event cards) and data/projects.js.
+// js/explore-items.js, js/project-events.js (event cards) and data/projects.js; js/skeleton.js for placeholders.
 (function () {
   "use strict";
 
@@ -11,7 +11,7 @@
   const { $, escapeHTML: e, fmtDate, look } = GS;
   const root = $("[data-explore]");
   if (!root || !GS.exploreItems) return;
-  const X = GS.exploreItems;
+  const X = GS.exploreItems, sk = GS.skeleton; // sk: placeholder rows until the content API answers (optional)
   const VIEWS = [["releases", "Releases"], ["events", "Events"]];
   const NOUN = { releases: ["release", "releases"], events: ["event", "events"] };
   const PER = 12;
@@ -50,11 +50,12 @@
         <p class="ex-calendar" data-calendar hidden>Every event by date and place, with filters for city and host: <a class="btn small" href="/events">Open the events calendar</a></p>
         <div class="browse-chips" data-chips></div>
         <h2 class="browse-results-head" id="ex-head" tabindex="-1"></h2>
-        <div class="explore-list" data-list aria-busy="true"><p class="small-print">Loading…</p></div>
+        <div class="explore-list" data-list></div>
         <nav class="browse-pages" aria-label="Result pages"></nav>
       </div>
     </div>`;
-  const input = $("#ex-q", root);
+  const input = $("#ex-q", root), list = $("[data-list]", root);
+  if (sk) sk.show(list, "row", 4); else { list.setAttribute("aria-busy", "true"); list.innerHTML = `<p class="small-print">Loading…</p>`; }
 
   const art = (x) => {
     const src = x.artwork && GS.content ? GS.content.art(x.artwork.src) : "";
@@ -91,7 +92,7 @@
     $("#ex-head", root).textContent = chips ? `${name}: results` : v === "events" ? "Upcoming events" : `Latest ${name.toLowerCase()}`;
     $("[data-calendar]", root).hidden = v !== "events";
     const shown = hits.slice((page - 1) * PER, page * PER).map(row[v]).join("");
-    $("[data-list]", root).innerHTML = hits.length ? (v === "events" ? `<ul class="ecards">${shown}</ul>` : shown)
+    list.innerHTML = hits.length ? (v === "events" ? `<ul class="ecards">${shown}</ul>` : shown)
       : `<div class="empty browse-empty"><p><strong>${chips ? "Nothing matches all of that." : e(EMPTY[v])}</strong>${chips ? " Try removing a filter:" : ""}</p>${chips ? `<div class="browse-relax">${chips}</div>` : ""}</div>`;
     $(".browse-pages", root).innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => i + 1)
       .map((n) => `<button type="button" data-page="${n}"${n === page ? ' aria-current="page"' : ` aria-label="Page ${n}"`}>${n}</button>`).join("") : "";
@@ -164,7 +165,7 @@
   X.load().then((got) => {
     items = got;
     root.querySelectorAll("[data-count]").forEach((c) => { c.textContent = count(c.dataset.count); });
-    $("[data-list]", root).removeAttribute("aria-busy");
+    if (sk) sk.done(list); else list.removeAttribute("aria-busy");
     render();
   });
 })();

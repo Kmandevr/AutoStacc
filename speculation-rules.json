@@ -1,0 +1,22 @@
+{
+  "prefetch": [
+    {
+      "source": "document",
+      "eagerness": "moderate",
+      "where": {
+        "and": [
+          { "href_matches": "/*" },
+          { "not": { "href_matches": { "pathname": "/api/*" } } },
+          { "not": { "href_matches": { "pathname": "/media/*" } } },
+          { "not": { "href_matches": { "pathname": "/logout" } } },
+          { "not": { "href_matches": { "pathname": "/admin" } } },
+          { "not": { "href_matches": { "pathname": "/admin/*" } } },
+          { "not": { "href_matches": { "pathname": "/cart" } } },
+          { "not": { "href_matches": { "pathname": "/checkout" } } },
+          { "not": { "href_matches": { "pathname": "/checkout/*" } } },
+          { "not": { "selector_matches": "a[href*='?'], area[href*='?'], [download], [data-no-prefetch]" } }
+        ]
+      }
+    }
+  ]
+}

@@ -15,6 +15,8 @@ updated: 2026-10-21
 2. `data/projects.js` (static) and `data/content-types.js` (generated from the vocabulary's `KINDS`, with `CONTENT_TYPE_ALIASES` for old kind names): names and structure.
 3. `js/stacc-model.js` joins them into one list of **assets**, one object per file, each knowing its project, Stacclet, Pac, product, kind and format. A file's kind is what the admin chose at upload (an old name such as `samples` counts as its new kind, `one-shots`; old `?kind=samples` links still work), else guessed from its extension (`content-types.js` `formats`).
 
+While Your Stacc loads (2026-10-21) it shows placeholder rows (`GS.skeleton`, [modules](modules.md#shared-helpers-every-feature-uses)), then placeholders in the files box while follows and discovery load; the dashboard's "Your Stacc at a glance" boxes do the same, and collection actions show a spinner on their button. `server/projects/` also holds the public creators directory (`GET /api/creators`, [browse](browse.md)), which reads nothing from Your Stacc.
+
 ## Views (same assets, no copies)
 
 - **By project:** Project → Stacclet → Pac → content type → files; files uploaded without a Pac sit under their product.

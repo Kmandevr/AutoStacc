@@ -3,11 +3,11 @@
 // customers, with a link to what the poll is about (its `about`: a published release of the poll's project, from the
 // content API through js/project-content.js, or a published product, from GET /api/products/:id). The enclosing
 // section stays hidden until a poll exists. Needs data/polls.js and js/util.js (and js/project-content.js for a
-// release's "About" link).
+// release's "About" link; js/skeleton.js for placeholders and the vote spinner).
 (function () {
   "use strict";
 
-  const { escapeHTML: e, api, content } = window.GS;
+  const { escapeHTML: e, api, content, skeleton: sk } = window.GS;
   // "release:hail" (a release of the poll's project) or "product:<id>" -> { title, href }; anything else -> null.
   async function aboutLink(ref, project) {
     const [kind, id] = String(ref || "").split(":");
@@ -43,15 +43,16 @@
   async function mount(el, id, aboutP) {
     const [res, about] = await Promise.all([api(`/api/polls/${encodeURIComponent(id)}`), aboutP]);
     if (!res.ok) return false;
+    if (sk) sk.done(el);
     render(el, res.data, about);
     el.addEventListener("click", async (ev) => {
       const btn = ev.target.closest("[data-vote]");
       if (!btn || btn.disabled) return;
-      btn.disabled = true;
+      if (sk) sk.busy(btn, true); else btn.disabled = true;
       const vote = await api(`/api/polls/${encodeURIComponent(id)}/vote`, { method: "POST", body: { optionId: btn.dataset.vote } });
       if (vote.ok) render(el, { ...res.data, ...vote.data }, about);
       else {
-        btn.disabled = false;
+        if (sk) sk.busy(btn, false); else btn.disabled = false;
         el.querySelector("[role=status]").textContent = vote.status === 401 || vote.status === 403 ? "Log in with a confirmed email to vote." : vote.error.message;
       }
     });
@@ -65,6 +66,7 @@
       const el = document.createElement("div");
       el.className = "poll panel";
       box.append(el);
+      if (sk) sk.show(el, "button", (p.options || []).length || 3);
       if (await mount(el, p.id, aboutLink(p.about, p.project))) return true;
       el.remove();
       return false;

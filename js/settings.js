@@ -3,11 +3,12 @@
 // one section per page (computers show Profile beside the list there). It asks the store once who is signed in and
 // hands the answer to the section scripts as a gs:settings event on window; each js/settings-<section>.js draws its
 // section into #settings-app. The server only serves this page to a signed-in visitor (server/pages/guard.js); this
-// script still sends anyone else to log in. Needs js/util.js.
+// script still sends anyone else to log in. A placeholder panel (GS.skeleton) holds the section's place until the
+// account answers. Needs js/util.js (js/skeleton.js optional).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, api, loginPath } = window.GS;
+  const { $, escapeHTML, api, loginPath, skeleton: sk } = window.GS;
   const layout = $("[data-settings]");
   if (!layout) return;
   const root = $("#settings-app", layout);
@@ -45,7 +46,9 @@
   const fail = (text) => { root.innerHTML = `<p class="msg error" role="alert">${escapeHTML(text)}</p>`; };
 
   (async () => {
+    if (sk) sk.show(root, "panel", 1);
     const me = await api("/api/account");
+    if (sk) sk.done(root);
     if (me.status === 503) return fail("Accounts are offline for maintenance. Try again soon.");
     if (!me.ok) return fail(me.error.message);
     if (!me.data.user) return location.replace(loginPath(location.pathname));

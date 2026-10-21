@@ -6,13 +6,13 @@
 //   data-mixed               store-style card sizes (js/product-card.js): a featured-only grid opens with one banner
 // Each card opens the product's own page. The store itself (/shop: search, filters, sections) is js/store-browse.js.
 // Products come from the store API (made in the Studio, every creator's), each marked "Unverified creator" until
-// AutoStacc trusts its creator; with the store offline the grid shows its empty state (no products are defined in code, #176). Needs data/projects.js, data/product-types.js, js/util.js and js/product-card.js. Buttons, live
+// AutoStacc trusts its creator; with the store offline the grid shows its empty state (no products are defined in code, #176). Needs data/projects.js, data/product-types.js, js/util.js and js/product-card.js (js/skeleton.js optional). Buttons, live
 // prices and STACC'D come from js/store.js (it listens for gs:cards).
 (function () {
   "use strict";
 
   const GS = window.GS;
-  const card = GS.productCard;
+  const card = GS.productCard, sk = GS.skeleton;
   if (!card) return;
 
   // The store's products, in the shape js/product-card.js takes (price in dollars), fetched once per page for every grid.
@@ -33,7 +33,9 @@
       root.innerHTML = `<div class="grid">${items.map((p, i) => card(mixed ? top(p, i) : p, { level, mixed })).join("") || `<p class="empty">Nothing here yet.</p>`}</div>`;
       dispatchEvent(new CustomEvent("gs:cards"));
     };
+    // Placeholder cards in the grid's own slots while the store answers (js/skeleton.js, when loaded).
     root.setAttribute("aria-busy", "true");
+    if (sk) { root.innerHTML = `<div class="grid"></div>`; sk.show(root.firstElementChild, "card", Math.min(Number(cfg.limit) || 3, 6)); }
     products().then((list) => { root.removeAttribute("aria-busy"); draw(list); });
   }
 

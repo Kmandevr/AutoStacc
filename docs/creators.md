@@ -14,6 +14,7 @@ updated: 2026-10-21
 | Address | What |
 | --- | --- |
 | `/<creator>` | the creator's profile: the one they designed, else a list of their published projects |
+| `/creators` | the directory of creators (owner, 2026-10-21): every first-party creator and every active, published Studio creator with a published project, never a suspended or unpublished one, each with its projects and a link to its profile; it shows nothing the profile doesn't ([browse](browse.md#creators-creators)) |
 | `/<creator>/<name>` | a project's home, else a page of the creator's profile (one address space per creator: a profile page can't take a project's name, nor a project a page's; `server/sites/addresses.js`) |
 | `/<creator>/<project>` | the project's home page |
 | `/<creator>/<project>/<page>` | another page of the project (`/events`, `/about`, ...); `/home` redirects to the project's home |

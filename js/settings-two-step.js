@@ -2,13 +2,15 @@
 // auth.adminTwoFactor, off by default). Asks GET /api/account/two-factor and draws nothing when that is 404 (switch
 // off, or not an admin), so other accounts see no change. Setting up: password, then the secret as text and as an
 // otpauth:// link for the app, the backup codes once, and a code from the app to switch it on. Turning off: password
-// and a code. All through Better Auth's /api/auth/two-factor/*. Draws after js/settings-security.js. Needs js/util.js.
+// and a code. All through Better Auth's /api/auth/two-factor/*. Draws after js/settings-security.js. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, api, loginPath, say } = window.GS;
+  const { $, escapeHTML, api, loginPath, say, skeleton: sk } = window.GS;
   const root = $('#settings-app[data-section="security"]');
   if (!root) return;
+  // A request button: GS.skeleton's spinner when it's loaded, otherwise just disabled while the request runs.
+  const busy = (btn, on) => (sk ? sk.busy(btn, on) : (btn.disabled = on));
   let panel;
 
   const field = (id, label, type, extra) =>
@@ -79,13 +81,13 @@
     if (!form.checkValidity()) return say(panel, "Fill in every field.", true);
     const value = (id) => $("#" + id, form).value;
     const kind = form.dataset.form;
-    btn.disabled = true;
+    busy(btn, true);
     const res = kind === "two-step-start"
       ? await api("/api/auth/two-factor/enable", { method: "POST", body: { password: value("tf-password") } })
       : kind === "two-step-confirm"
         ? await api("/api/auth/two-factor/verify-totp", { method: "POST", body: { code: value("tf-code").replace(/\s+/g, "") } })
         : await api("/api/auth/two-factor/disable", { method: "POST", body: { password: value("tf-off-password"), code: value("tf-off-code").replace(/\s+/g, "") } });
-    btn.disabled = false;
+    busy(btn, false);
     if (res.status === 401 && kind !== "two-step-confirm") return location.replace(loginPath(location.pathname));
     if (!res.ok) return say(panel, errorText(res), true);
     if (kind === "two-step-start") return draw("setup", { uri: res.data.totpURI, backupCodes: res.data.backupCodes }, "Add the key to your app, save the backup codes, then type a code.");

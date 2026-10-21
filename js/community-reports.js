@@ -1,12 +1,12 @@
 // Reporting and the team's report queue (the reports feature, server/community/features/reports/; needs
 // js/community-kit.js). On a take, members get Report on every post that isn't theirs: a reason and a short note,
 // sent to the space's team or to AutoStacc depending on the reason. On a space, its team desk lists the open reports,
-// danger first, with Remove (upheld) and Keep (dismissed). Does nothing when the feature is off.
+// danger first, with Remove (upheld) and Keep (dismissed), and a placeholder while it loads. Does nothing when the feature is off.
 (function () {
   "use strict";
   const kit = window.GS && window.GS.communityKit;
   if (!kit) return;
-  const { el, status, say, busy } = kit;
+  const { el, status, say, busy, press } = kit;
   const api = window.GS.api;
   const enc = encodeURIComponent;
   const REASONS = [
@@ -54,9 +54,10 @@
 
   async function queue() {
     const spaceId = kit.desk.dataset.cmSpace;
+    const wait = kit.deskWait();
     const r = await api(`/api/community/spaces/${enc(spaceId)}/reports`);
-    if (!r.ok) return;
-    const part = kit.deskPart(`Reports (${r.data.reports.length})`);
+    if (!r.ok) { wait.remove(); return; }
+    const part = kit.deskPart(`Reports (${r.data.reports.length})`, wait);
     if (r.data.reports.some((x) => x.danger)) part.open = true;
     if (!r.data.reports.length) part.append(el("p", { class: "cm-small", text: "No open reports. Nice and quiet." }));
     r.data.reports.forEach((x) => {
@@ -66,9 +67,9 @@
         const reason = ask ? window.prompt(ask) : "";
         if (reason === null) return;
         const btn = ev.currentTarget;
-        btn.disabled = true;
+        press(btn, true);
         const res = await api("/api/community/reports/resolve", { method: "POST", body: { targetType: x.type, targetId: x.id, outcome, reason } });
-        btn.disabled = false;
+        press(btn, false);
         if (res.ok) location.reload(); else window.alert(res.error.message);
       } } });
       part.append(el("article", { class: `cm-desk-item${x.danger ? " cm-danger" : ""}` },

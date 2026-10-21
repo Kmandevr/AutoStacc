@@ -17,6 +17,9 @@ const clip = (s, n = 160) => {
 // Fonts: AutoStacc's on every page, plus the pixel font for a project skin that uses it.
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700";
 
+// Sections whose scripts load content from the store get the loading placeholders (js/skeleton.js, css/skeleton.css).
+const LOADS = new Set(["community", "creator"]);
+
 // The whole document. project: the project whose page this is (its frame, skin and sounds), or null for a platform
 // page. projectPage: which of the project's pages lights up in its header ("music", "events").
 // look: on a platform page, the project whose look it wears.
@@ -24,9 +27,10 @@ function shell(SITE, { page, section, styles, scripts, main, project = null, pro
   const skin = project && project.skin;
   const lookOf = skin ? project : look && look.skin ? look : null;
   const sounds = project && project.sounds;
-  const css = ["core", "platform", "layout", ...(project ? ["project-frame"] : []), ...styles, ...(lookOf ? [`projects/${lookOf.id}/look`] : []), ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", project ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
-    ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js"];
+  const loads = LOADS.has(section);
+  const css = ["core", "platform", "layout", ...(loads ? ["skeleton"] : []), ...(project ? ["project-frame"] : []), ...styles, ...(lookOf ? [`projects/${lookOf.id}/look`] : []), ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
+  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", ...(loads ? ["js/skeleton.js"] : []), project ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
+    ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js", "js/prefetch.js"];
   return `<!doctype html>
 ${GENERATED}
 <html lang="en">

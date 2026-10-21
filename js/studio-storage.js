@@ -51,7 +51,10 @@
 
   async function draw(el, creatorId) {
     const base = `/api/studio/creators/${encodeURIComponent(creatorId)}/storage`;
+    const sk = window.GS.skeleton; // placeholders (js/skeleton.js) the first time only, so a redraw never flickers
+    if (sk && !el.childElementCount) sk.show(el, "panel", 1);
     const res = await api(base);
+    if (sk) sk.done(el);
     if (!res.ok) { el.innerHTML = ""; return; }
     const x = res.data, s = x.storage;
     el.innerHTML = `<h3>Storage</h3>

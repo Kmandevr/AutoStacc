@@ -5,15 +5,15 @@
 // through GS.staccClient (js/stacc-client.js, js/stacc-worker.js), and markup from GS.libraryView (js/library-view.js).
 // Each download asks for a fresh 5-minute private link. Also redeems the guest key in a receipt link (/library#key=...).
 // A drop-in for any [data-stacc] element: data-project starts it filtered to one project (and wears that project's
-// look), data-stacc-view="kinds" starts it by content type instead of by project.
-// Needs js/util.js, js/stacc-model.js, js/stacc-client.js, js/library-view.js and data/projects.js, content-types.js.
+// look), data-stacc-view="kinds" starts it by content type instead of by project. Placeholder rows while it loads.
+// Needs js/util.js (js/skeleton.js optional), js/stacc-model.js, js/stacc-client.js, js/library-view.js and data/projects.js, content-types.js.
 (function () {
   "use strict";
 
   const { escapeHTML, api, track, wear } = window.GS;
   const roots = [...document.querySelectorAll("[data-stacc]")];
   if (!roots.length) return;
-  const { libraryView: V } = window.GS;
+  const { libraryView: V, skeleton: sk } = window.GS;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
   const params = new URLSearchParams(location.search);
 
@@ -75,6 +75,7 @@
       const files = state.assets.length ? `${addressed && P ? P.saved(state.personal, state.filter) : ""}${V.toolbar(shown.facets, state, ctx)}${V.selection(state.selected.size, ctx)}
         <div class="stacc-view">${view || `<p class="msg">Nothing matches those filters.</p>`}</div>` : "";
       const waiting = state.items.filter((it) => !it.files.length);
+      if (sk) sk.done(box);
       box.innerHTML = files + V.waiting(waiting) + V.following(state.follows, state.discover, ctx);
     }
 
@@ -92,16 +93,18 @@
 
     async function load() {
       const n = ++asked; // a reload drops any view still being worked out
+      if (sk) sk.show(root, "row", 4); // placeholder rows (GS.skeleton) until the store and the model answer
+      const fill = (html) => { if (sk) sk.done(root); root.innerHTML = html; };
       const res = await api("/api/library");
       if (res.status === 401) {
-        root.innerHTML = `${banner()}<div class="panel appear"><h2>Locked</h2>
+        fill(`${banner()}<div class="panel appear"><h2>Locked</h2>
           <p>Log in to open Your Stacc. Bought as a guest? Use the link in your receipt email, or create an account with the email you paid with: everything you Stacc'd joins it automatically.</p>
-          <div class="actions"><a class="btn" href="/login?next=/library">Log in</a><a class="btn ghost" href="/login?next=/library#signup">Create account</a></div></div>`;
+          <div class="actions"><a class="btn" href="/login?next=/library">Log in</a><a class="btn ghost" href="/login?next=/library#signup">Create account</a></div></div>`);
         return;
       }
       if (!res.ok) {
-        root.innerHTML = `${banner()}<p class="msg error">${escapeHTML(res.status === 503 ? "The store is offline for maintenance. Your files are safe; try again soon." : res.error.message)}</p>
-          <div class="actions"><button class="btn" type="button" data-retry>Try again</button></div>`;
+        fill(`${banner()}<p class="msg error">${escapeHTML(res.status === 503 ? "The store is offline for maintenance. Your files are safe; try again soon." : res.error.message)}</p>
+          <div class="actions"><button class="btn" type="button" data-retry>Try again</button></div>`);
         return;
       }
       const { items, signedIn } = res.data;
@@ -119,7 +122,8 @@
       state.items = items;
       state.assets = built.assets;
       const guest = !signedIn ? `<p class="msg">You're viewing a guest order. <a href="/login?next=/library#signup">Create an account</a> with the same email to keep these for good.</p>` : "";
-      root.innerHTML = banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc-head></div><div data-stacc-files></div>`;
+      fill(banner() + guest + (items.length ? "" : `<div class="panel appear"><h2>Empty</h2><p>Nothing Stacc'd yet. Every piece you buy or claim lands here, sorted for you.</p><div class="actions"><a class="btn" href="/shop">Browse the store</a></div></div>`) + `<div data-stacc-head></div><div data-stacc-files></div>`);
+      if (sk && items.length) sk.show(root.querySelector("[data-stacc-files]"), "row", 3);
       if (signedIn) await discover(new Set(items.map((it) => it.productId)));
       await render();
     }

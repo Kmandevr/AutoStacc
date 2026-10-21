@@ -1,13 +1,15 @@
 // Login page, the second step of two-step sign-in (admins who switched it on in Settings › Security; the store's
 // switch auth.adminTwoFactor, off by default): after a right password js/auth.js sends gs:two-step on window, and this
 // asks for the 6-digit code from the authenticator app, or a backup code, then goes on to where the person was going.
-// Without the switch the store never asks, so nothing here runs. Needs js/util.js.
+// Without the switch the store never asks, so nothing here runs. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
   "use strict";
 
-  const { $, api, say } = window.GS;
+  const { $, api, say, skeleton: sk } = window.GS;
   const root = $("#auth-app");
   if (!root) return;
+  // A request button: GS.skeleton's spinner when it's loaded, otherwise just disabled while the request runs.
+  const busy = (btn, on) => (sk ? sk.busy(btn, on) : (btn.disabled = on));
   let next = "/dashboard";
 
   const ERRORS = {
@@ -38,12 +40,12 @@
     if (btn.disabled) return;
     const code = $("#code", form).value.replace(/\s+/g, "");
     if (!code) return say(form, "Type the code from your authenticator app.", true);
-    btn.disabled = true;
+    busy(btn, true);
     // Six digits: the app's code. Anything else: a backup code (they look like abcde-12345).
     const path = /^\d{6}$/.test(code) ? "/api/auth/two-factor/verify-totp" : "/api/auth/two-factor/verify-backup-code";
     const res = await api(path, { method: "POST", body: { code } });
     if (res.ok) { location.replace(next); return; }
-    btn.disabled = false;
+    busy(btn, false);
     say(form, res.status === 0 ? res.error.message : res.status === 429 ? "Too many tries. Wait a minute, then try again." : ERRORS[res.error.code] || res.error.message, true);
   });
 })();

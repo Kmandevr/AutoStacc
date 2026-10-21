@@ -15,7 +15,10 @@
 
   async function draw(el, creatorId) {
     const base = `/api/studio/creators/${encodeURIComponent(creatorId)}`;
+    const sk = window.GS.skeleton; // placeholders (js/skeleton.js) the first time only, so a redraw never flickers
+    if (sk && !el.childElementCount) sk.show(el, "row", 2);
     const res = await api(`${base}/team`);
+    if (sk) sk.done(el);
     if (!res.ok) { el.innerHTML = ""; return; }
     const t = res.data;
     const manages = t.you.capabilities.includes("members");

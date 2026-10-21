@@ -35,6 +35,9 @@
   const pageOf = (key) => PAGES.find((pg) => keysOf(pg).includes(key));
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
   let ws = null;
+  // Placeholders (GS.skeleton and GS.skeleton.pending, js/skeleton.js) while access is checked, then in every tab until its script draws.
+  const pending = (el, shape, n) => window.GS.skeleton && window.GS.skeleton.pending(el, shape, n);
+  pending(root, "panel", 2);
 
   // The sub-page tabs: Stats carries a count of the payment alerts that need a look, so they're seen from every page.
   const pageTabs = (urgent) => `<nav class="admin-pages" aria-label="Control Center pages"><ul>${PAGES.map((pg) => `<li>
@@ -64,6 +67,7 @@
       ${ALL.map((k) => `<section class="admin-section" data-admin-section="${k}" aria-labelledby="admin-h-${k}"${k === KEYS[0] ? "" : " hidden"}>
         <h2 class="admin-section-title" id="admin-h-${k}" tabindex="-1" data-ws-heading>${escapeHTML(LABEL[k])}</h2>
         <div class="admin-panel" id="admin-${k}"></div></section>`).join("")}`;
+    ALL.forEach((k) => pending($(`#admin-${k}`), "row", 4));
   }
 
   // The summary's payment alerts (ranked by server/admin/alerts.js): severity spelled out, the full time, the order id
