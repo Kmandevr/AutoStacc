@@ -2,12 +2,13 @@
 // latest measurement, statements waiting or overdue, the billing log, and per creator the daily measurements behind a
 // statement, to answer a question or a dispute. Waiving an open statement (a credit) and refunding a paid one are
 // audited and land in the creator's own billing log. Turning billing on needs a rate; nothing here charges anyone.
+// Also AutoStacc's storage cap as base + paid = effective (the paid part grows with active plans; server/usage/).
 import { json, readJson, fail, id, str } from "../lib/http.js";
 import { requireAdmin } from "../auth/session.js";
 import { audit } from "../audit/log.js";
 import { all, first } from "../lib/db.js";
 import { setSetting } from "../settings/settings.js";
-import { capBytes } from "../usage/usage.js";
+import { capParts } from "../usage/usage.js";
 import { billingSettings, planOf, logOf, rescalePlans } from "../billing/plans.js";
 import { statementsOf, daysOf, publicStatement } from "../billing/statements.js";
 import { waive, refund } from "../billing/payments.js";
@@ -23,14 +24,14 @@ async function state(app) {
     all(db, `SELECT s.*, c.name FROM storage_statements s JOIN creators c ON c.id = s.creator_id
       WHERE s.status IN ('open', 'carried', 'disputed') OR s.issued_at > ? ORDER BY s.issued_at DESC LIMIT 200`, new Date(Date.now() - 90 * 86400000).toISOString()),
     all(db, "SELECT l.*, c.name FROM storage_billing_log l JOIN creators c ON c.id = l.creator_id ORDER BY l.at DESC LIMIT 100"),
-    capBytes(db)
+    capParts(db)
   ]);
   const now = new Date().toISOString();
   const activeCaps = plans.filter((p) => p.status === "active").reduce((a, p) => a + p.cap_bytes, 0);
   return {
     settings,
-    // Paid limits only help while AutoStacc's own storage cap (Usage and storage) leaves room for them.
-    platform: { capBytes: cap, activePaidLimitBytes: activeCaps },
+    // AutoStacc's storage cap grows by what active plans hold above free storage (server/usage/; #142): base + paid = cap.
+    platform: { baseCapBytes: cap.baseBytes, paidCapBytes: cap.paidBytes, capBytes: cap.capBytes, activePaidLimitBytes: activeCaps },
     plans: plans.map((p) => ({ creatorId: p.creator_id, name: p.name, slug: p.slug, status: p.status, capCents: p.cap_cents, capBytes: p.cap_bytes, startedAt: p.started_at, lastUsedBytes: p.last_used_bytes, lastDay: p.last_day })),
     statements: statements.map((s) => ({ ...publicStatement(s), creatorId: s.creator_id, name: s.name, overdue: s.status === "disputed" || (s.status === "open" && s.due_at < now) })),
     log: log.map((l) => ({ at: l.at, creatorId: l.creator_id, name: l.name, actor: l.actor, action: l.action, statementId: l.statement_id, detail: JSON.parse(l.detail || "{}") }))

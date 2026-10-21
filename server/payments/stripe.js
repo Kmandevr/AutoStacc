@@ -1,8 +1,9 @@
 // Stripe provider: hosted Checkout Sessions built from server-side prices, webhook verification with Stripe's own
 // library (signature + timestamp tolerance), and session lookups for reconciliation. Normalizes Stripe events into the
-// provider-neutral shape that server/payments/events.js processes.
+// provider-neutral shape that server/payments/events.js processes. Saved cards for storage: ./stripe-cards.js.
 import Stripe from "stripe";
 import { taxCodeFor, STORAGE_TAX_CODE } from "./tax-codes.js";
+import { cardMethods, normalizeCardEvent } from "./stripe-cards.js";
 
 // Two Stripe accounts: "main" (AutoStacc's own products, Managed Payments) and "marketplace" (creators' products and their
 // Connect payouts). Each has its own key, webhook secret and live/test mode.
@@ -112,7 +113,10 @@ const makeProvider = (account) => ({
     const body = await request.text();
     const event = await stripeClient(app.config, account).webhooks.constructEventAsync(body, signature, ACCOUNTS[account](app.config).secret, 300, crypto);
     return { ...normalizeEvent(event), account };
-  }
+  },
+
+  // Creator storage is billed on the main account only: saved cards and off-session charges.
+  ...(account === "main" ? cardMethods(account, { stripeClient, expiresAtFor }) : {})
 });
 
 export const stripeProvider = makeProvider("main");
@@ -137,6 +141,9 @@ function normalizeSession(s, type) {
 export function normalizeEvent(event) {
   const o = event.data && event.data.object ? event.data.object : {};
   const base = { provider: "stripe", id: event.id, rawType: event.type, livemode: Boolean(event.livemode) };
+  // Setup-mode sessions and off-session storage charges first (a setup session is never an order's payment).
+  const card = normalizeCardEvent(event, base);
+  if (card) return card;
   switch (event.type) {
     case "checkout.session.completed":
       // Card payments are paid here; delayed methods (bank debits) settle later with async_payment_succeeded.

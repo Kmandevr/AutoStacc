@@ -4,12 +4,15 @@
 //   2. the event must match its order: same provider, same session/payment, same order id, same live/test mode
 //   3. a payment must match the order's total and currency to the cent
 //   4. status moves are compare-and-set (server/orders/orders.js), so racing events can't double-apply
+// Storage statements and saved cards take the same once-per-event claim, then go to server/billing/.
 import { first, run, now } from "../lib/db.js";
 import { getOrderBySession, getOrderByPayment, transition, recordRefund } from "../orders/orders.js";
 import { fulfil, unfulfil, restore, sendRefundNotice } from "../orders/fulfilment.js";
 import { sendEmail } from "../email/index.js";
 import { checkDoublePurchase } from "../orders/double-purchase.js";
 import { applyStatementEvent, statementByPayment } from "../billing/payments.js";
+import { applyCardEvent } from "../billing/cards.js";
+import { applyChargeFailure } from "../billing/charges.js";
 import { preTaxRefund } from "./refund-amount.js";
 
 export async function processPaymentEvent(app, ev) {
@@ -58,7 +61,10 @@ const reject = (detail, orderId = null) => ({ outcome: "rejected", detail, order
 async function apply(app, ev) {
   const { db } = app;
   if (["ignored", "awaiting", "pending"].includes(ev.type)) return { outcome: "ignored", detail: ev.type };
-  // A creator's storage statement, not an order (server/billing/payments.js).
+  // A card saved for storage billing, and a failed off-session storage charge (server/billing/cards.js, charges.js).
+  if (ev.type === "card_saved") return applyCardEvent(app, ev);
+  if (ev.type === "charge_failed") return applyChargeFailure(app, ev);
+  // A creator's storage statement, not an order (server/billing/payments.js); a paid off-session charge goes here too.
   if (ev.statementId) return applyStatementEvent(app, ev);
 
   const order = ["refunded", "partial_refund", "disputed", "dispute_won", "dispute_lost"].includes(ev.type)

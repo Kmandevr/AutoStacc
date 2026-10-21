@@ -1,7 +1,9 @@
 // Studio API, storage and paid storage (server/billing/, docs/creators.md "Paid storage"). Every member sees what the
 // creator stores, split by kind, against its limit (the same figures uploads are checked against). Only the owner sees
 // and changes paid storage: the plan, this month so far, statements with their daily measurements, the billing log and
-// paying a statement. Other creators' storage looks like nothing there. A first-party creator's storage has no limit
+// paying a statement, and the saved card that pays statements automatically (save, confirm on return, remove; card
+// details stay at Stripe, server/billing/cards.js). Card routes have no impersonation opt-in, so support can't change
+// them. Other creators' storage looks like nothing there. A first-party creator's storage has no limit
 // (quotaBytes null, unlimited) and paid storage isn't offered to it (server/creators/policy.js).
 import { json, readJson, fail, id } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
@@ -12,6 +14,7 @@ import { storageByPart } from "../creators/storage.js";
 import { planOf, setPlan, cancelPlan, billingSettings, logOf } from "../billing/plans.js";
 import { statementsOf, statementOfCreator, daysOf, monthToDate, publicStatement } from "../billing/statements.js";
 import { startCheckout } from "../billing/payments.js";
+import { cardOf, publicCard, startCardSetup, confirmCardSetup, removeCard } from "../billing/cards.js";
 import { processPaymentEvent } from "../payments/events.js";
 import { first, randomToken } from "../lib/db.js";
 
@@ -29,10 +32,10 @@ async function show(app, { creatorId }) {
   const storage = { usedBytes, byPart: parts, includedBytes: unlimited ? null : includedQuotaOf(creator), quotaBytes: quotaReportOf(creator), unlimited,
     overLimit: usedBytes > quotaOf(creator) };
   if (role !== "owner") return json({ storage }, 200, NO_STORE);
-  const [settings, plan, statements, log, month] = await Promise.all([billingSettings(app.db), planOf(app.db, creator.id), statementsOf(app.db, creator.id),
-    logOf(app.db, creator.id, 50), monthToDate(app.db, creator.id)]);
+  const [settings, plan, statements, log, month, card] = await Promise.all([billingSettings(app.db), planOf(app.db, creator.id), statementsOf(app.db, creator.id),
+    logOf(app.db, creator.id, 50), monthToDate(app.db, creator.id), cardOf(app.db, creator.id)]);
   return json({ storage, billing: { available: settings.on && !unlimited, rate: settings.rate, currency: settings.currency, graceDays: settings.graceDays,
-    minChargeCents: settings.minChargeCents, minCapCents: settings.minCapCents, maxCapCents: settings.maxCapCents },
+    minChargeCents: settings.minChargeCents, minCapCents: settings.minCapCents, maxCapCents: settings.maxCapCents, card: unlimited ? null : publicCard(card) },
   plan: publicPlan(plan), monthToDate: month, statements: statements.map(publicStatement), log: log.map(publicLog) }, 200, NO_STORE);
 }
 
@@ -69,6 +72,26 @@ async function pay(app, { creatorId, statementId }) {
   return json(await startCheckout(app, creator, s, user), 201);
 }
 
+// The saved card (owner only): a Stripe setup page to save or replace it, the lookup when the owner comes back from it
+// (the webhook may not have arrived yet), and removing it. What's saved is read from Stripe, never from the browser.
+async function saveCard(app, { creatorId }) {
+  const { user, creator } = await owner(app, creatorId);
+  await limit(app, "studio-storage-card", 10, 3600);
+  return json(await startCardSetup(app, creator, user), 201);
+}
+
+async function confirmCard(app, { creatorId }) {
+  const { user, creator } = await owner(app, creatorId);
+  await limit(app, "studio-storage-card-confirm", 30, 3600);
+  return json(await confirmCardSetup(app, creator, user), 200, NO_STORE);
+}
+
+async function deleteCard(app, { creatorId }) {
+  const { user, creator } = await owner(app, creatorId);
+  await limit(app, "studio-storage-card", 10, 3600);
+  return json(await removeCard(app, creator, user));
+}
+
 // Development and tests only: what Stripe would report for a mock storage payment page (paid, failed or expired, for the
 // session given, which may be an earlier page of the statement) or for its payment (disputed, dispute_won).
 async function mockPay(app) {
@@ -92,5 +115,8 @@ export const routes = [
   ["DELETE", "/api/studio/creators/:creatorId/storage/plan", cancel],
   ["GET", "/api/studio/creators/:creatorId/storage/statements/:statementId", statement],
   ["POST", "/api/studio/creators/:creatorId/storage/statements/:statementId/checkout", pay],
+  ["POST", "/api/studio/creators/:creatorId/storage/card", saveCard],
+  ["POST", "/api/studio/creators/:creatorId/storage/card/confirm", confirmCard],
+  ["DELETE", "/api/studio/creators/:creatorId/storage/card", deleteCard],
   ["POST", "/api/dev/mock-storage-payment", mockPay, { impersonation: "test-payments" }]
 ];
