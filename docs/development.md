@@ -88,6 +88,6 @@ Each note in `docs/` names the code it describes in its `covers:` frontmatter. `
 
 - **New product type:** one entry in `data/product-types.js`.
 - **New payment provider:** a file in `server/payments/` with `name`, `livemode`, `createCheckout`, `retrieveCheckout`, `refund` (and webhook verification producing the normalized event), plus one line in `server/payments/index.js` and its webhook route. Orders already store `provider`.
-- **New email provider:** one function in `server/email/providers.js`. **New email:** one template in `server/email/templates.js`, sent with `sendEmail(app, kind, to, data, { dedupeKey })`.
+- **New email provider:** one function in `server/email/providers.js`. **New email:** one template in `server/email/templates.js`, sent with `sendEmail(app, kind, to, data, { dedupeKey })` (the key is claimed before sending, so it goes once even from two requests at once).
 - **New entitlement source** (bundle, subscription): grant with `grantStmt` and a new `source_type` (add it to the CHECK in a migration).
 - **New API route:** add it to the owning module's `routes` table; a new module adds one import and one entry in `server/app.js`.

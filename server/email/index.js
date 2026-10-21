@@ -5,13 +5,33 @@ import { render, senderOf } from "./templates.js";
 import { providers } from "./providers.js";
 import { all, first, run, stmt, newId, now } from "../lib/db.js";
 
+const CLAIM_MS = 5 * 60 * 1000;
+
 export async function sendEmail(app, kind, to, data, { dedupeKey } = {}) {
   const { config, db } = app;
   const key = dedupeKey || null;
   if (key) {
     const prior = await first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", key);
     if (prior && prior.status !== "failed") return { status: "duplicate" };
+    // Claim the key before sending: whoever's insert (or takeover of a stale claim) changes the row sends, the other stops.
+    const claim = await run(db, `INSERT INTO email_claims (dedupe_key, claimed_at) VALUES (?1, ?2)
+      ON CONFLICT(dedupe_key) DO UPDATE SET claimed_at = ?2 WHERE claimed_at < ?3`, key, now(), new Date(Date.now() - CLAIM_MS).toISOString());
+    if (!claim.meta.changes) return { status: "duplicate" };
   }
+  try {
+    // Looked again under the claim: a send that finished between the first look and the claim must not go twice.
+    if (key) {
+      const again = await first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", key);
+      if (again && again.status !== "failed") return { status: "duplicate" };
+    }
+    return await deliver(app, kind, to, data, key);
+  } finally {
+    if (key) await run(db, "DELETE FROM email_claims WHERE dedupe_key = ?", key).catch(() => {});
+  }
+}
+
+async function deliver(app, kind, to, data, key) {
+  const { config, db } = app;
   const msg = { from: senderOf(kind) === "store" ? config.emailFrom : config.emailFromNoreply, to, tags: [kind], ...render(kind, data) };
   let status = config.emailProvider === "log" ? "logged" : "sent";
   let providerId = "", error = null;
