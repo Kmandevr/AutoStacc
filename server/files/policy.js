@@ -50,12 +50,13 @@ export const PREVIEW_EXTENSIONS = new Set(["mp3", "m4a", "ogg", "wav"]);
 
 export const extensionOf = (filename) => (String(filename).match(/\.([a-z0-9]{1,12})$/i) || [])[1]?.toLowerCase() || "";
 
-// Throws the right 4xx for a file that may not be added to a product with `existing` deliverable-or-pending files.
-export function checkUpload({ filename, sizeBytes, existing }) {
+// Throws the right 4xx for a file that may not be added to a product with `existing` deliverable-or-pending files
+// (maxFiles: UNLIMITED for a first-party creator's product, server/creators/policy.js).
+export function checkUpload({ filename, sizeBytes, existing, maxFiles = FILE_LIMITS.filesPerProduct }) {
   if (!sizeBytes) fail(411, "length_required", "Send the file with its size.");
   if (sizeBytes > FILE_LIMITS.fileBytes) fail(413, "too_large", "Files must be under 95 MB per upload.");
   if (!ALLOWED_EXTENSIONS.has(extensionOf(filename))) fail(415, "unsupported_file_type", "That kind of file can't be sold here yet. Zip it, or ask for its type to be added.");
-  if (existing >= FILE_LIMITS.filesPerProduct) fail(409, "limit_reached", `A product can have up to ${FILE_LIMITS.filesPerProduct} files.`);
+  if (existing >= maxFiles) fail(409, "limit_reached", `A product can have up to ${maxFiles} files.`);
 }
 
 // The content type to store and serve for an allowed extension (never the uploader's header).

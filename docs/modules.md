@@ -1,7 +1,7 @@
 ---
 title: Modules
 summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
-covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/news.js, js/shows.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, data/shows.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
+covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/project-events.js, js/events-calendar.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, js/project-content.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
 updated: 2026-10-21
 ---
 
@@ -37,11 +37,10 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Account links and menu (`js/account-nav.js`) | `[data-auth="in"\|"out"]`, `[data-account-menu]`, `[data-signout]` | |
 | Site notice (`js/site-notice.js`) | every page's `<main>` (loaded after `js/account-nav.js`, in `scripts/lib/pages.js` too) | the owner's one-line notice from `GET /api/site-status`, text only; nothing when there's none |
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |
-| News (`js/news.js`) | `[data-news]` | `data-project`, `data-limit`, `data-full` (whole posts as h2 sections, the news page; otherwise headlines and summaries as h3) |
-| Shows (`js/shows.js`) | `[data-shows]` | `data-project` (shows carry `project` in `data/shows.js`; ticketed ones go into structured data once per project) |
+| Events (`js/project-events.js`, `GS.eventCard`) | `[data-events]` | `data-project`, `data-limit` (the project's upcoming published events from the content API, soonest first, each card linking to the event's page; made in the Studio's Events editor). The site-wide calendar is `/events` (`server/content/calendar.js`, enhanced by `js/events-calendar.js`) |
 | Releases (`js/releases.js`) | `[data-releases]` (a list) | `data-project`, `data-limit` |
 | Official profiles (`js/profiles.js`) | `[data-profiles]` | `data-project` (music and press pages) |
-| Listen player (`js/music.js`) | `[data-listen]` | `data-release` (a release page; counts a release view), else `featured` in `data/music.js` if it is the project's, else its newest; `data-project`; `data-links` (the release's streaming links under the player) |
+| Listen player (`js/music.js`) | `[data-listen]` | `data-release` (counts a release view), else the project's `featured` release, else its newest (releases from `GET /api/projects/:id/content`, made in the Studio's Music editor; the release pages themselves are server-rendered by `server/content/render.js` and don't load this module); `data-project`; `data-links` (the release's streaming links under the player) |
 | Newsletter sign-up (`js/newsletter.js`) | `[data-newsletter]` holding a `<form>` and a `.form-msg` (an empty element gets the standard form) | `data-project` (the list it joins); reads `?newsletter=<result>` from the confirmation link |
 | Press contact (`js/press.js`) | `[data-press-contact]` | `data-project`; also wires `[data-copy="<id>"]` copy buttons |
 | Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link; Auto-Stacc grants say "added by Auto-Stacc" |

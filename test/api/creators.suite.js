@@ -195,7 +195,7 @@ export default (ctx) => describe("creators", () => {
     assert.equal(sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM admin_audit WHERE action = 'creator.updated' AND target_id = '${creator.id}'`)[0].n, 2);
   });
 
-  test("order lines record their seller and split; refunds are recorded per line", async () => {
+  test("order lines record their seller; a first-party sale keeps all its money; refunds are recorded per line", async () => {
     const admin = await adminClient(ctx.mock.url);
     const { c } = await newBuyer(ctx.mock.url, "split");
     assert.equal((await admin.req("PATCH", "/api/admin/creators/autostacc", { body: { platformFeeBps: 1000 } })).status, 200);
@@ -209,8 +209,9 @@ export default (ctx) => describe("creators", () => {
     assert.equal(line.creator_id, "autostacc");
     assert.equal(line.project_id, "glitches-and-stitches");
     assert.equal(line.net_cents, line.line_total_cents);
-    assert.equal(line.platform_fee_cents, Math.round(line.net_cents / 10));
-    assert.equal(line.platform_fee_cents + line.creator_share_cents, line.net_cents);
+    // A first-party creator keeps all of it (owner, 2026-10-21, #171): even with a fee set, no fee and no creator share.
+    assert.equal(line.platform_fee_cents, 0);
+    assert.equal(line.creator_share_cents, 0);
     assert.equal((await mockOutcome(c, order, "refunded")).status, 200);
     const [after] = sql(ctx.mock.stateDir, `SELECT i.refunded_cents AS line, o.refunded_cents AS total FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.id = '${order.orderId}'`);
     assert.equal(after.line, line.net_cents);

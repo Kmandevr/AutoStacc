@@ -1,12 +1,14 @@
 // The Studio (/studio): claim a creator name, see your creator's address and storage, make, rename and delete
 // projects, open your profile or a project's site in the visual builder (js/builder.js; #profile=<creator id> and
-// #project=<id> reopen them), a project's products
-// (js/studio-products.js; #products=<id>), one product in the Product Studio (js/studio-workspace.js;
-// #product=<id>&section=<key>), see storage and paid storage (js/studio-storage.js) and earnings (js/studio-earnings.js). All checks
-// (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js (and the
-// modules it needs), js/studio-team.js (the Team panel; #invite=<token> opens an emailed invitation), js/studio-products.js,
-// js/studio-workspace.js, js/studio-storage.js and js/studio-earnings.js. What each member's role allows (capabilities from the API) decides
-// which actions show; the server checks again.
+// #project=<id> reopen them), a project's products (js/studio-products.js; #products=<id>), its Music and Events
+// (js/studio-content.js; #content=<id>&kind=music|events), one product in the Product Studio (js/studio-workspace.js;
+// #product=<id>&section=<key>), see storage and paid storage (js/studio-storage.js) and earnings (js/studio-earnings.js).
+// All checks (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js
+// (and the modules it needs), js/studio-team.js (the Team panel; #invite=<token> opens an emailed invitation),
+// js/studio-products.js, js/studio-workspace.js, js/studio-content.js, js/studio-storage.js and js/studio-earnings.js.
+// What each member's role allows (capabilities from the API) decides which actions show; the server checks again.
+// First-party creators (AutoStacc's own, owned by the account the deploy names) show only their products and content,
+// with no limits and no platform fee.
 (function () {
   "use strict";
 
@@ -23,7 +25,7 @@
       <p class="small-print">${hint}Lowercase letters, numbers and hyphens. It has to be unique${prefix === "pr" ? " among your projects" : " on AutoStacc"}.</p></div>`;
 
   function overview(data) {
-    root.onclick = root.oninput = root.onchange = null;
+    root.onclick = root.oninput = root.onchange = root.onsubmit = null;
     if (!data.creators.length) {
       root.innerHTML = `<div class="studio-start">
         <form class="panel" data-form="creator"><h2>Claim your creator name</h2>
@@ -38,41 +40,47 @@
       return;
     }
     const may = (c, cap) => (c.capabilities || []).includes(cap);
+    // A first-party creator's pages are hand-written: no builder, profile, renames, deletes, new projects, team or money here.
+    const own = (c) => !c.firstParty;
     root.innerHTML = data.creators.map((c) => `
       <section class="panel wide studio-creator">
         <div class="studio-creator-head">
-          <h2>${e(c.name)}</h2>${c.status !== "active" ? ' <strong class="tag">Suspended</strong>' : ""}
+          <h2>${e(c.name)}</h2>${c.firstParty ? ' <strong class="tag">First-party</strong>' : ""}${c.status !== "active" ? ' <strong class="tag">Suspended</strong>' : ""}
           <a class="studio-address" href="${e(c.path)}" target="_blank" rel="noopener">${e(location.host + c.path)}<span class="sr-only"> (opens in a new tab)</span></a>
         </div>
         ${c.trusted ? "" : '<p class="small-print">New creators\' pages are kept out of search engines until AutoStacc has had a look.</p>'}
         <ul class="studio-meters">
-          <li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>of ${size(c.storage.quotaBytes)}</small></strong>
-            <meter min="0" max="${c.storage.quotaBytes}" value="${c.storage.usedBytes}" aria-label="Storage used"></meter></li>
-          <li><span>Projects</span><strong>${c.projects.length} <small>of ${data.limits.projectsPerCreator}</small></strong>
-            <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>
+          ${c.firstParty ? `<li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>no limit</small></strong></li>`
+            : `<li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>of ${size(c.storage.quotaBytes)}</small></strong>
+            <meter min="0" max="${c.storage.quotaBytes}" value="${c.storage.usedBytes}" aria-label="Storage used"></meter></li>`}
+          ${own(c) ? `<li><span>Projects</span><strong>${c.projects.length} <small>of ${data.limits.projectsPerCreator}</small></strong>
+            <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>` : ""}
         </ul>
-        <div class="studio-profile"><div><h3 class="studio-sub">Your profile</h3><p class="small-print">Your home at ${e(location.host + c.path)}: who you are, your music, your projects.</p></div>
-          ${may(c, "site.edit") ? `<button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button>` : ""}</div>
+        ${own(c) ? "" : '<p class="small-print">AutoStacc\'s own creator: its pages are hand-written, so here you run its products, music and events. No limits, no storage charges and no platform fee: every sale is AutoStacc\'s own.</p>'}
+        ${own(c) ? `<div class="studio-profile"><div><h3 class="studio-sub">Your profile</h3><p class="small-print">Your home at ${e(location.host + c.path)}: who you are, your music, your projects.</p></div>
+          ${may(c, "site.edit") ? `<button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button>` : ""}</div>` : ""}
         <h3 class="studio-sub">Projects</h3>
         <ul class="studio-projects">${c.projects.map((p) => `<li class="studio-project">
           <div class="studio-project-head"><strong>${e(p.name)}</strong> <span class="studio-state" data-live="${p.published}">${p.published ? "Live" : "Draft"}</span></div>
           <a class="studio-path" href="${e(p.path)}" target="_blank" rel="noopener">${e(p.path)}<span class="sr-only"> (opens in a new tab)</span></a>
           <div class="studio-project-actions">
-            ${may(c, "site.edit") ? `<button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>` : ""}
+            ${own(c) && may(c, "site.edit") ? `<button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>` : ""}
             ${may(c, "products") ? `<button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>` : ""}
+            ${may(c, "site.edit") ? ["music", "events"].map((k) => `<button class="btn ghost small" type="button" data-content="${e(p.id)}" data-kind="${k}">${k[0].toUpperCase() + k.slice(1)}<span class="sr-only"> of ${e(p.name)}</span></button>`).join("") : ""}
           </div>
-          ${may(c, "projects") ? `<details><summary>Rename or delete</summary>
+          ${own(c) && may(c, "projects") ? `<details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
               <button class="btn ghost small" type="submit">Save</button></form>
             <form class="studio-danger" data-form="project-delete" data-id="${e(p.id)}"><div class="field"><label for="pd-${e(p.id)}">Type ${e(p.slug)} to delete</label><input id="pd-${e(p.id)}" name="confirm" required autocomplete="off"></div>
               <button class="btn ghost small danger" type="submit">Delete project</button></form>
           </details>` : ""}</li>`).join("") || `<li class="studio-empty">No projects yet. Name your first one below: it opens in the editor straight away.</li>`}</ul>
-        ${may(c, "projects") && c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
-        ${c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
+        ${own(c) && may(c, "projects") && c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
+        ${own(c) && c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
-        <div class="studio-team-panel" data-team="${e(c.id)}"></div>
+        ${own(c) ? `<div class="studio-team-panel" data-team="${e(c.id)}"></div>
+` : ""}
         <div class="studio-earnings" data-storage="${e(c.id)}"></div>
-        ${c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
+        ${own(c) && c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
         <p class="msg" role="status" hidden></p>
       </section>`).join("");
     root.querySelectorAll("[data-earnings]").forEach((el) => window.GS.studioEarnings.draw(el, el.dataset.earnings));
@@ -89,6 +97,7 @@
     if (hash.get("project")) return window.GS.builder.open(root, { kind: "project", id: hash.get("project") }, back);
     if (hash.get("profile")) return window.GS.builder.open(root, { kind: "profile", id: hash.get("profile") }, back);
     if (hash.get("products")) return window.GS.studioProducts.open(root, hash.get("products"), back);
+    if (hash.get("content")) return window.GS.studioContent.open(root, hash.get("content"), hash.get("kind"), back, hash.get("item"));
     const res = await api("/api/studio");
     if (!res.ok) { root.innerHTML = `<p class="msg error">${e(res.status === 403 ? "Confirm your email first (check your inbox), then come back." : res.error.message)}</p>`; return; }
     overview(res.data);
@@ -137,7 +146,12 @@
     if (preview) preview.textContent = f.slug.value || "you";
   });
 
-  root.addEventListener("click", (ev) => {
+  root.addEventListener("click", async (ev) => {
+    const content = ev.target.closest("[data-content]");
+    if (content) {
+      history.replaceState(null, "", `#content=${encodeURIComponent(content.dataset.content)}&kind=${encodeURIComponent(content.dataset.kind)}`);
+      return window.GS.studioContent.open(root, content.dataset.content, content.dataset.kind, back);
+    }
     const prod = ev.target.closest("[data-products]");
     if (prod) {
       history.replaceState(null, "", `#products=${encodeURIComponent(prod.dataset.products)}`);

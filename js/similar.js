@@ -11,8 +11,8 @@
   if (!root || !GS.productCard) return;
 
   (async () => {
-    // A generated page names the product; the Studio product page (/product?p=<id>) has it in the address.
-    const id = root.dataset.similar || new URLSearchParams(location.search).get("p") || "";
+    // The product's page (/shop/<id>, server/shop/page.js) names the product.
+    const id = root.dataset.similar || "";
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) return;
     const res = await api(`/api/store/similar/${encodeURIComponent(id)}`);
     if (!res.ok || !res.data.products.length) return;

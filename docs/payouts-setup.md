@@ -2,12 +2,12 @@
 title: Payouts setup
 summary: How creators get paid (Stripe Connect on a second Stripe account), what the owner sets up in Stripe and GitHub to switch it on, and how the code behaves until then.
 covers: [server/payments/connect.js, server/payments/accounts.js, server/payments/stripe.js, server/payments/routes.js, server/revenue/, server/studio/earnings.js, server/studio/payout-account.js, server/admin/payouts.js, server/admin/creator-sales.js, server/payments/creator-sales.js, server/checkout/routes.js, server/lib/config.js, server/creators/policy.js, db/migrations/0011_marketplace_payouts.sql, js/admin-payouts.js, js/studio-earnings.js, scripts/cloudflare.js]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Payouts setup
 
-Creators' products are sold on a **second Stripe account** (the "marketplace" account), and creators are paid from it through **Stripe Connect**. AutoStacc's own products stay on the first account with Managed Payments, which Stripe doesn't allow for marketplaces ([eligibility](https://docs.stripe.com/payments/managed-payments/eligibility)). Owner decisions behind this: [decisions](decisions.md).
+Creators' products are sold on a **second Stripe account** (the "marketplace" account), and creators are paid from it through **Stripe Connect**. AutoStacc's own products stay on the first account with Managed Payments (also the ones its first-party creator makes in the Studio: `server/payments/accounts.js` sends only a Studio product of a Studio creator to the marketplace, `creatorSaleIds`), which Stripe doesn't allow for marketplaces ([eligibility](https://docs.stripe.com/payments/managed-payments/eligibility)). Owner decisions behind this: [decisions](decisions.md).
 
 ## How it works
 

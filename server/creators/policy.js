@@ -52,11 +52,19 @@ export const SELLING = {
 // affects later sales. A creator's own platform_fee_bps (Control Center) overrides it.
 export const DEFAULT_PLATFORM_FEE_BPS = 2000;
 
-// A creator's paid-file quota: an admin-set one (creators.files_quota_bytes), else the free plan's.
+// First-party creators (creators.source 'catalog', AutoStacc's own; owner 2026-10-21, #171/#177) sell on AutoStacc's own
+// account and keep all of it: no platform fee, no creator share or payout records (server/revenue/split.js), no Studio
+// limits (products, projects, pages, storage, images, files) and no paid storage. Judged by the creator's source, never
+// a project id. UNLIMITED goes into SQL binds where a limit is checked (a number, never Infinity); APIs report null.
+export const UNLIMITED = Number.MAX_SAFE_INTEGER;
+export const isFirstParty = (creator) => Boolean(creator && creator.source === "catalog");
+export const limitOf = (creator, key) => (isFirstParty(creator) ? UNLIMITED : LIMITS[key]);
+
 // A creator's one storage quota: the smaller of any quota an admin set (creators.storage_quota_bytes, from the Control
 // Center; files_quota_bytes, an older paid-file one set in the database), else the free plan's.
 // That is also the storage included without paying (server/billing/ charges only for what is stored above it).
 export const includedQuotaOf = (creator) => {
+  if (isFirstParty(creator)) return UNLIMITED;
   const set = creator ? [creator.storage_quota_bytes, creator.files_quota_bytes].filter((v) => v !== null && v !== undefined) : [];
   return set.length ? Math.min(...set) : LIMITS.storageQuotaBytes;
 };
@@ -64,4 +72,6 @@ export const includedQuotaOf = (creator) => {
 // creator chose; a past-due or cancelled plan has none, so only new uploads stop and nothing stored is touched.
 export const quotaOf = (creator) => Math.max(includedQuotaOf(creator), (creator && creator.storage_paid_bytes) || 0);
 export const filesQuotaOf = quotaOf;
-export const feeBpsOf = (creator) => (creator && creator.platform_fee_bps != null ? creator.platform_fee_bps : DEFAULT_PLATFORM_FEE_BPS);
+// What an API reports as a creator's quota: null when there is none.
+export const quotaReportOf = (creator) => (isFirstParty(creator) ? null : quotaOf(creator));
+export const feeBpsOf = (creator) => (isFirstParty(creator) ? 0 : creator && creator.platform_fee_bps != null ? creator.platform_fee_bps : DEFAULT_PLATFORM_FEE_BPS);

@@ -7,7 +7,7 @@
 //     pages: [{ slug, title, description, sections: [{ id, rows, full, cls, background, elements: [element] }] }] }
 // The first page is the home (slug ""), served at the site's address; the others at <address>/<slug>.
 import { fail } from "../lib/http.js";
-import { LIMITS } from "../creators/policy.js";
+import { LIMITS, limitOf } from "../creators/policy.js";
 import { PRESETS, FONTS, HEADERS, DEFAULT_THEME, HEX } from "./theme.js";
 import { safeUrl } from "./text.js";
 import { checkCss, cleanClasses } from "./css.js";
@@ -105,13 +105,14 @@ export function starterDocument(name, { profile = false } = {}) {
   return cleanDocument({ version: 2, theme: { ...DEFAULT_THEME }, nav: { items: [] }, pages: [{ slug: "", title: "Home", sections: [{ id: "s1", rows: 12, elements }] }] }).doc;
 }
 
-// Clean document plus what it refers to: { doc, assets, fonts, products, projects } (Sets of ids).
-export function cleanDocument(input) {
+// Clean document plus what it refers to: { doc, assets, fonts, products, projects } (Sets of ids). With the creator,
+// its own page limit applies (none for a first-party creator, server/creators/policy.js).
+export function cleanDocument(input, { creator = null } = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) bad("site", "must be an object");
   if (JSON.stringify(input).length > LIMITS.siteDocumentBytes) fail(413, "too_large", "This site is too big to save. Split long text across pages.");
   const raw = input.version === 2 ? input : fromVersion1(input);
   const refs = { assets: new Set(), fonts: new Set(), products: new Set(), projects: new Set() };
-  const pages = list(raw.pages, "pages", LIMITS.pagesPerSite);
+  const pages = list(raw.pages, "pages", creator ? limitOf(creator, "pagesPerSite") : LIMITS.pagesPerSite);
   if (!pages.length) bad("pages", "add at least one page");
   const seen = new Set();
   const doc = { version: 2, theme: theme(raw.theme, refs), nav: { items: [] }, pages: pages.map((p, i) => {

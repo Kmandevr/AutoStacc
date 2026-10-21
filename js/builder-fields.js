@@ -1,7 +1,8 @@
 // The visual builder's element fields (GS.builderFields; docs/builder.md): the side panel's form for each kind of
 // element. Every input carries data-path (where its value lives in the site document), so the editor keeps the document
 // in step without knowing the element types; lists add and remove items with data-action buttons. Pickers offer only
-// the creator's own files, products and projects (the server checks again). Needs js/util.js.
+// the creator's own files, products and projects (the server checks again); Releases and project Events show that
+// project's Studio lists. Needs js/util.js.
 (function () {
   "use strict";
 
@@ -20,6 +21,7 @@
   const check = (label, path, value) => { const id = `bf-${++uid}`; return `<label class="bx-check" for="${id}"><input id="${id}" type="checkbox" data-path="${e(path)}"${value ? " checked" : ""}> ${e(label)}</label>`; };
   const MARKUP = "Blank line: new paragraph. **bold**, *italic*, [label](https://link).";
 
+  const projectPick = (path, value, data) => select("Project", path, value, [["", "Pick a project"], ...data.projects.map((x) => [x.id, x.name + (x.published ? "" : " (not live yet)")])]);
   const images = (data) => data.files.filter((f) => f.contentType.startsWith("image/"));
   const imagePick = (label, path, value, data) => select(label, path, value, [["", images(data).length ? "Pick an image" : "Upload an image under Files first"], ...images(data).map((f) => [f.id, f.filename])]);
 
@@ -54,8 +56,13 @@
       return select("Product preview", `${p}.product`, b.product, [["", withClips.length ? "Pick a product" : "None of your products has a preview clip yet"], ...withClips.map((x) => [x.id, x.title])])
         + text("Title (optional)", `${p}.title`, b.title);
     },
-    events: (b, p) => text("Title", `${p}.title`, b.title) + list(`${p}.items`, b.items, "event", (x, ip) => field("Date", (id) => `<input id="${id}" type="date" data-path="${e(ip)}.date" value="${e(x.date)}">`)
-      + text("What", `${ip}.title`, x.title) + text("Venue", `${ip}.venue`, x.venue) + text("City", `${ip}.city`, x.city, { max: 80 }) + text("Link (optional)", `${ip}.url`, x.url, { max: 500 }), "Add date", 50),
+    releases: (b, p, data) => text("Title", `${p}.title`, b.title) + projectPick(`${p}.project`, b.project, data)
+      + select("How many", `${p}.count`, b.count, [1, 2, 3, 4, 6, 8, 12].map((n) => [n, `Newest ${n}`]), { number: true })
+      + '<p class="small-print">Shows the project\'s published releases from the Music editor, newest first, each linking to its page.</p>',
+    events: (b, p, data) => text("Title", `${p}.title`, b.title)
+      + select("Dates from", `${p}.project`, b.project || "", [["", "Typed in here"], ...data.projects.map((x) => [x.id, `${x.name}'s events` + (x.published ? "" : " (not live yet)")])])
+      + '<p class="small-print">A project shows its published upcoming events from the Events editor, soonest first; the dates below show only when typed in here.</p>' + (list(`${p}.items`, b.items, "event", (x, ip) => field("Date", (id) => `<input id="${id}" type="date" data-path="${e(ip)}.date" value="${e(x.date)}">`)
+      + text("What", `${ip}.title`, x.title) + text("Venue", `${ip}.venue`, x.venue) + text("City", `${ip}.city`, x.city, { max: 80 }) + text("Link (optional)", `${ip}.url`, x.url, { max: 500 }), "Add date", 50)),
     tabs: (b, p) => list(`${p}.items`, b.items, "panel", (x, ip) => text("Tab name", `${ip}.title`, x.title, { max: 80 }) + area("Text", `${ip}.text`, x.text, { max: 3000, rows: 4, hint: MARKUP }), "Add tab", 12),
     accordion: (b, p) => list(`${p}.items`, b.items, "panel", (x, ip) => text("Question or title", `${ip}.title`, x.title, { max: 80 }) + area("Answer", `${ip}.text`, x.text, { max: 3000, rows: 4, hint: MARKUP }), "Add item", 12),
     countdown: (b, p) => field("Counts down to (UTC)", (id) => `<input id="${id}" type="datetime-local" data-path="${e(p)}.at" value="${e(b.at)}">`, "Visitors see it in their own time.")
@@ -66,7 +73,7 @@
       ? `<fieldset class="bx-checks"><legend>Products to show</legend>${data.products.map((x) => { const id = `bf-${++uid}`; return `<label for="${id}"><input id="${id}" type="checkbox" data-path="${e(p)}.ids" data-toggle="${e(x.id)}"${b.ids.includes(x.id) ? " checked" : ""}> ${e(x.title)}</label>`; }).join("")}</fieldset>`
       : '<p class="small-print">Your published products appear here.</p>'),
     projects: (b, p) => text("Title", `${p}.title`, b.title) + '<p class="small-print">Shows your published projects.</p>',
-    follow: (b, p, data) => select("Project", `${p}.project`, b.project, [["", "Pick a project"], ...data.projects.map((x) => [x.id, x.name + (x.published ? "" : " (not live yet)")])])
+    follow: (b, p, data) => projectPick(`${p}.project`, b.project, data)
       + text("Label (optional)", `${p}.label`, b.label, { max: 60, placeholder: "Follow on AutoStacc" }) + '<p class="small-print">Opens the project on AutoStacc, where visitors follow it.</p>',
     cart: (b, p) => text("Label (optional)", `${p}.label`, b.label, { max: 60, placeholder: "Your AutoStacc cart" }),
     divider: () => "",

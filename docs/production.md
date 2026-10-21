@@ -41,7 +41,7 @@ One address, `SITE.email` in `data/site.js` (support@autostacc.com), used by the
 
 ## Product pages
 
-Show only facts that exist in `data/products.js` (`includes`, `pacs`, `metadata`, `preview`) or follow from it (type, price, project, licence). Never invent formats, file counts, sizes or specs. Product structured data is only published for products that are for sale (not drafts), with the real price and currency.
+Show only facts the product's record holds (its Studio fields in D1; there is no code-defined catalog any more, #176) or follow from it (type, price, project, creator, licence). Every product's page is rendered by the server at `/shop/<id>` (`server/shop/`, [shop](shop.md)). The same goes for release and event pages and the `/events` calendar, which come from the Studio's records (`server/content/`, [creators](creators.md)). Never invent formats, file counts, sizes, specs, dates or places. Product structured data carries an Offer only while the product is for sale, with the real price and currency, and only a trusted creator's pages are indexable. Event pages' "Add to calendar" is a static `.ics` file and a Google Calendar link and collects nothing.
 
 ## Uploads
 
@@ -65,7 +65,7 @@ Keep: skip link, one `h1`, landmarks, labels on every field, errors announced (`
 
 ## Footer and navigation
 
-The platform footer has Explore (Store, Projects, Releases, news and shows, About, Community, Studio), Help (Help, Guides, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences, Copyright, Community rules); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
+The platform footer has Explore (Store, Projects, Releases, Events, About, Community, Studio), Help (Help, Guides, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences, Copyright, Community rules); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
 
 ## Not built yet (on purpose)
 

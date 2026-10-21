@@ -14,5 +14,5 @@ paths:
 - New features are drop-in modules ([docs/modules.md](../../docs/modules.md)): mount on every `[data-<feature>]` element, options as `data-*` attributes, no page ids, no project hard-coded. Anything a project made wears its look (`GS.look(projectId)`).
 - Store scripts talk to the API only through `GS.api` (never throws; status 0 = offline, 503 = store offline), keep the cart in `GS.cart` and count events with `GS.track`. They never compute prices or ownership: they show what the API says, and keep a static fallback that works when it says nothing. Features signal each other with DOM events (`gs:cart`, `gs:cards`, `gs:admin` on window; `gs:sound` on document).
 - Every button that sends a request disables itself until the answer comes back (double clicks, slow networks).
-- Escape every data value you put into HTML with `GS.escapeHTML`. The one exception is `news.body`, which is trusted HTML by design.
+- Escape every data value you put into HTML with `GS.escapeHTML`, with no exceptions. Releases and events come from the content API (`{ releases, events }`) as plain fields; never insert HTML a creator wrote.
 - Start with a one-line `//` comment saying what the file is for and what it needs (the repo map reads it).

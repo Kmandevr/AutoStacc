@@ -7,7 +7,7 @@ updated: 2026-10-21
 
 # Community
 
-> **PARTLY BUILT, NOT LIVE.** The read side, posting and moderation are built (#135, #136, #137) but behind the `community.forum` switch, which stays off until the launch gates in [community safety](community-safety.md) are done; `/community` says "opening soon". Later steps (below) are planned only. This turns the open question "community features" in [vision](vision.md) §8 into what the owner chose on 2026-10-16 ([decisions](decisions.md#2026-10-16-guides-and-community-forum-planned-owner)). Profiles, points, friends and collab requests are in [profiles](profiles.md). Support articles are in [guides](guides.md). Legal and security requirements (launch gates, copyright strikes, urgent reports, contest rules) are in [community safety](community-safety.md).
+> **OPEN (owner, 2026-10-21).** The read side, posting and moderation (#135, #136, #137, copyright #167–#169) are live: `community.forum` is switched on in `wrangler.toml` (`FEATURES_ON`, production and preview). The owner opened it with some launch gates still open ([community safety](community-safety.md)). Later steps (below) are planned only, including each creator's Community page, where their news posts will move (#174).
 
 "Like Reddit, but less of a do-what-you-want" (owner): a place to ask questions and get answers, share and have fun, and grow communities without needing a creator, inside rules AutoStacc sets.
 
@@ -32,7 +32,7 @@ updated: 2026-10-21
 | Posts | Text with simple formatting and links. Challenge entries may also be audio (below) |
 | Visibility | Public and indexed. People appear by display name only |
 | Age | **16+** to post or connect, self-declared, no verification system |
-| News | First-party news moves from `data/news.js` to Updates once Updates exist |
+| News | Each creator's community space is its **Community** page, and that is where posts, updates and announcements (events' included) belong (owner, 2026-10-21, #174). Until the community opens, news is hidden: no News editor, no news pages, `/<creator>/<project>/news[/<slug>]` answer a 301 to the project's home, and the `project_news` rows wait in D1 to become the creator's community posts at the same addresses |
 | Outside communities | None; everything is on autostacc.com |
 
 ## Look and words (owner, 2026-10-20)
@@ -85,7 +85,7 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 
 - **Discussion**: anyone allowed in the channel.
 - **Question**: tagged, listed in the space and on `/community/questions`. The asker or a moderator accepts an answer, which is pinned on top. Other answers sort by Helpful votes (up only, one per verified account). Answered questions are indexed so people find them from search. A question in AutoStacc's Help channel can link to a [guide](guides.md) article.
-- **Update**: an official announcement by the space's team, and in a project space by those with the publishing capability. It appears on the project's news page and followers' dashboards. **All news moves here**, first-party included (owner). The news addresses (`/<creator>/<project>/news/<slug>`) and their SEO must survive the move: the pages are rendered on the server from Updates, old addresses keep working, and `data/news.js` is retired only once that's in place.
+- **Update**: an official announcement by the space's team, and in a project space by those with the publishing capability. It appears on the creator's **Community** page (each creator's community space) and followers' dashboards. **All news moves here**, first-party included (owner, 2026-10-16), and so do announcements of events (owner, 2026-10-21, #174). Until the community opens, news is hidden (owner: "wait for community"). The Studio's News editor was removed, news pages are offline, and `/<creator>/<project>/news` and `/news/<slug>` answer a 301 to the project's home. News is in no sitemap or feed. The posts stay in D1 `project_news`, unpublished to the public and never dropped. When Updates exist they become the creator's community posts, and their old `/<creator>/<project>/news/<slug>` addresses come back (as the posts or as redirects to them), so no address is lost. Events themselves stay in the Studio's Events editor with their own pages and the `/events` calendar ([creators](creators.md#music-and-events)); the community announces them.
 - **Poll**: by creators and moderators. It reuses `server/polls/` (one vote per verified account, changeable while open), extended so polls can be made from the Studio and the community, not only `data/polls.js`.
 - **Challenge**: by creators and moderators, with a brief, dates, optional free pack, and how it's judged (community vote, host's pick, or both; host chooses). Entries are replies. The **host decides** whether entries are **audio uploads, links, or both**:
   - Uploads: audio only, with size and length limits, stored privately in R2, streamed and never downloadable, checked by the [engine](engine.md), removed if reported. They count toward the host's storage cap if hosted by a creator ([creators](creators.md)).
@@ -148,7 +148,7 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 
 **Rendering.** Threads are user content, so they're rendered on the server by their own Pages Function for `/community` (planned, a thin entry calling the community area's public renderer), not the creators' catch-all, with the edge-cache pattern of `server/sites/public.js` (production, about a minute). The HTML is the same for everyone; votes and controls load from `/api/community/*`. Removing illegal content purges the cached page (one data centre per purge, so the cache stays short). Head: canonical, Open Graph, `DiscussionForumPosting` or `QAPage` JSON-LD. Thread URLs are listed in `/community/sitemap.xml` (a second `Sitemap:` line in `robots.txt`); hidden and removed threads are `noindex` and left out. User links carry `rel="ugc nofollow noopener"` and show their domain.
 
-**Addresses.** A thread is `/community/t/<id>-<slug>`; the id is what counts, so an edited title redirects (301) to the new slug. Project spaces: in Studio projects, `community` can't be a page's address (refused since #135) and `server/sites/public.js` will hand that path to the community renderer. First-party projects' folders are excluded from Functions as a whole today (`scripts/dist.js`), so their `/community` needs per-project excludes there first (also needed when news moves to Updates).
+**Addresses.** A thread is `/community/t/<id>-<slug>`; the id is what counts, so an edited title redirects (301) to the new slug. Project spaces: in Studio projects, `community` can't be a page's address (refused since #135) and `server/sites/public.js` will hand that path to the community renderer. Since 2026-10-21 `scripts/dist.js` excludes first-party projects' hand-written files one by one rather than their whole folders (so their release and event pages reach the content Function), so a first-party project's `/community` address already reaches the catch-all Function, which would hand it to the community renderer.
 
 **Project spaces.** A project uses the community through its `"community"` feature; for first-party projects in `data/projects.js`, for creators a Studio switch that creates the space row. The team is the creator's team, read through the project, never copied.
 
@@ -177,7 +177,7 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 2. ~~Read side: the community Function, spaces, channels, threads rendered on the server, `/community/sitemap.xml`~~ (done, #136; first-party project spaces and the `robots.txt` line still to do).
 3. ~~Posting: display names, age declaration, the formatter, Discussion and Question, accepted answers, Helpful votes, upvotes and sorting, limits, edit and delete~~ (done, #136; switch off).
 4. Moderation (built, switch off, #137; copyright notices and strikes #167–#169): routed reports, urgent reports with false-report filtering, blocks, space bans, copyright notices and strikes, Control Center queue, suspensions, audit. **The whole feature stays behind a switch (`community.forum`, off) until this step and the launch gates in [community safety](community-safety.md) are done.**
-5. Project spaces and Updates (Official marks, team roles, news pages and dashboards from Updates; then move `data/news.js` with addresses kept).
+5. Project spaces and Updates (Official marks, team roles, dashboards from Updates), shown on each creator's Community page. The hidden `project_news` posts migrate there at their old addresses (#174).
 6. Polls from the Studio and communities; the central Q&A page.
 7. Communities anyone can start: cap setting, name checks, founders and moderators, Unofficial marks, hand-over and archive.
 8. Challenges (uploads or links per host, judging, item prizes), games and events.

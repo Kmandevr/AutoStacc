@@ -47,3 +47,14 @@ test("secrets must exist, be long and differ", () => {
   assert.match(problems({ ...dev, DB: undefined }).join(), /D1 binding/);
   assert.match(problems({ ...dev, APP_ENV: "staging" }).join(), /unknown/);
 });
+
+test("FIRST_PARTY_OWNERS maps each confirmed email to the first-party creators it owns, and refuses what doesn't parse", () => {
+  const dev = { ...base, APP_ENV: "development", SITE_URL: "http://localhost:8788" };
+  assert.equal(loadConfig({ ...dev }).firstPartyOwners.size, 0);
+  const owners = loadConfig({ ...dev, FIRST_PARTY_OWNERS: " autostacc=Owner@Example.com , other-one=owner@example.com" }).firstPartyOwners;
+  assert.deepEqual([...owners], [["owner@example.com", ["autostacc", "other-one"]]]);
+  for (const bad of ["autostacc", "autostacc=", "=a@b.co", "autostacc=not-an-email", "auto stacc=a@b.co", "autostacc=a@b.co=x"]) {
+    assert.match(problems({ ...dev, FIRST_PARTY_OWNERS: bad }).join(), /FIRST_PARTY_OWNERS/, bad);
+  }
+  assert.match(problems({ ...dev, FIRST_PARTY_OWNERS: "autostacc=a@b.co,autostacc=c@d.co" }).join(), /twice/);
+});

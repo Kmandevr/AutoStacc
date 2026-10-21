@@ -86,6 +86,19 @@ export function loadConfig(env) {
   const emailFromNoreply = parseFrom(env.EMAIL_FROM_NOREPLY || "");
   if (!emailFromNoreply) problems.push("EMAIL_FROM_NOREPLY must look like: Name <address@domain>");
 
+  // Who owns each first-party creator (owner, 2026-10-21, #172): "autostacc=owner@example.com,other=..." pairs from a
+  // secret, so no address sits in the public repo. One owner per creator; a pair that doesn't parse is refused, not skipped.
+  const firstPartyOwners = new Map();
+  const ownedCreators = new Set();
+  for (const pair of String(env.FIRST_PARTY_OWNERS || "").split(",").map((s) => s.trim()).filter(Boolean)) {
+    const m = pair.match(/^([a-z0-9-]{1,80})=([^\s@,=]+@[^\s@,=]+\.[^\s@,=]+)$/i);
+    if (!m) { problems.push("FIRST_PARTY_OWNERS must be <creator>=<email> pairs separated by commas"); break; }
+    const [creatorId, email] = [m[1].toLowerCase(), m[2].toLowerCase()];
+    if (ownedCreators.has(creatorId)) problems.push(`FIRST_PARTY_OWNERS names creator "${creatorId}" twice`);
+    ownedCreators.add(creatorId);
+    firstPartyOwners.set(email, [...(firstPartyOwners.get(email) || []), creatorId]);
+  }
+
   if (problems.length) throw new ConfigError(problems);
 
   const config = Object.freeze({
@@ -116,6 +129,8 @@ export function loadConfig(env) {
     newsListId,
     // Comma-separated emails that are admins once verified. Roles can also be set in the user table.
     adminEmails: new Set(String(env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)),
+    // Email -> the first-party creator ids that verified account owns (server/studio/creators.js assigns it).
+    firstPartyOwners,
     downloadTtlSeconds: 300,
     guestAccessDays: 30,
     checkoutTtlMinutes: 30

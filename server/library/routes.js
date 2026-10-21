@@ -9,6 +9,7 @@ import { limit } from "../lib/ratelimit.js";
 import { SELLING } from "../creators/policy.js";
 import { requireCreator, getCreator } from "../creators/creators.js";
 import { requireProject } from "../creators/projects.js";
+import { productPath } from "../catalog/products.js";
 import { rolesFor, can } from "../creators/roles.js";
 import { createProduct, updateProduct } from "../creators/products.js";
 import { ownedProductIds } from "../entitlements/grants.js";
@@ -104,7 +105,7 @@ async function use(app, { creatorId, pieceId }) {
   const before = await first(app.db, "SELECT 1 FROM library_installs WHERE piece_id = ? AND creator_id = ?", piece.id, creator.id);
   if (!mine && (!seller || seller.status !== "active")) fail(404, "not_found", "This piece isn't available.");
   if (piece.status === "deleted" && !mine && !bought && !before) fail(404, "not_found", "This piece isn't available.");
-  if (piece.product_id && !mine && !bought) fail(402, "buy_first", "Buy it in the AutoStacc store first, then use it here.", { productPath: `/product?p=${piece.product_id}` });
+  if (piece.product_id && !mine && !bought) fail(402, "buy_first", "Buy it in the AutoStacc store first, then use it here.", { productPath: productPath({ id: piece.product_id }) });
   // Using a bought piece is like downloading it: its order can't be refunded by the buyer afterwards (orders/refunds.js).
   if (piece.product_id && !mine) {
     const [ent] = await activeEntitlements(app.db, { user, guestOrderIds: [] }, piece.product_id);

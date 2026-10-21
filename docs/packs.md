@@ -2,7 +2,7 @@
 title: Pack Builder and processing engine
 summary: BUILT (Phases 0–9 and the Pac editor; Phase 10 optional). Approved plan and status of the Pack Builder, the Pac editor, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
 covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, db/migrations/0023_pac_editor.sql, js/pac-*.js, js/pack-*.js, js/packs-*.js, js/admin-packs*.js, js/studio-packs.js, js/zip-make.js, js/zip-thin.js, js/library-bundle.js, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Pack Builder and processing engine
@@ -352,7 +352,7 @@ Migration db/migrations/0014_packs.sql (forward-only).
 
 | Table / change | Key columns | Notes |
 | --- | --- | --- |
-| `stacclets`, `pacs` | id, project_id/stacclet_id, title, description, draft, source; `pacs.live_version_id`, `draft_version_id` | Synced from `data/` by `scripts/lib/platform-catalog.js` (`catalog`), plus Studio-made ones |
+| `stacclets`, `pacs` | id, project_id/stacclet_id, title, description, draft, source; `pacs.live_version_id`, `draft_version_id` | Studio-made only since 2026-10-21 (the code-defined ones in `data/` were retired, #176; older `catalog` rows stay as history) |
 | `pac_versions` | id, pac_id, number, origin (zip\|files\|revision\|import), base_version_id, status, idempotency_key UNIQUE, stats JSON, created_by, reviewed_by, review_note, published_at | Status: draft → uploading → processing → ready → (in_review) → published → superseded; or failed / discarded. CAS transitions |
 | `uploads` | id, version_id, kind (zip\|file), r2_key (`incoming/…`), upload_id, size, parts JSON, status | Incoming originals or ZIP before processing; deleted after publish or discard |
 | `processing_jobs` | see B | Owned by the engine Worker (status) and server/packs (create/import) |
@@ -437,7 +437,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 
 **Smallest end-to-end slice = Phases 0–3:**
 
-1. Admin uploads a ZIP for a first-party product.
+1. A creator (AutoStacc included, in the Studio) or an admin uploads a ZIP for a product.
 2. The Container stores byte-exact originals with facts.
 3. Admin publishes.
 4. The library shows folders.

@@ -1,5 +1,5 @@
-// Your Stacc's model (docs/library.md): turns the library API's owned products and files plus the static hierarchy
-// (data/projects.js, stacclets.js, pacs.js, content-types.js with its old-name aliases) into one list of assets, then builds the views from that
+// Your Stacc's model (docs/library.md): turns the library API's owned products and files, its Stacclets and Pacs, and
+// data/projects.js and content-types.js (with its old-name aliases) into one list of assets, then builds the views from that
 // list. Pure functions, no DOM or window-only APIs: every view holds the same asset objects, never copies. Sets GS.stacc
 // in pages and in js/stacc-worker.js (Your Stacc's background thread); also loads in Node for the unit tests
 // (test/unit/stacc-model.test.js).
@@ -159,7 +159,7 @@
   }
 
   // Files published from the Pack Builder keep their creator's folders: shown instead of content types when present
-  // (a Studio product's Pac isn't in the catalog, so its files sit under the product, folders and all). A nested tree:
+  // (files whose Pac the store didn't name sit under their product, folders and all). A nested tree:
   // { name, path, assets (the files directly in it, in their order), folders (sorted by name), count (files in it and
   // below) }; the root has name and path "". null when no file has a folder.
   function foldersOf(list) {

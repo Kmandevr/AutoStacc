@@ -1,10 +1,13 @@
 // SEO regression tests, no browser and no dependencies: page metadata, canonicals, JSON-LD, sitemap, robots.txt,
-// redirects, recorded public URLs, placeholder identity data and brand spelling. Prints PASS/WARN/FAIL lines.
+// redirects, recorded public URLs, placeholder identity data and brand spelling. Prints PASS/WARN/FAIL lines. Release and
+// event addresses (/<creator>/<project>/music/<slug>, /events[/<slug>]) and the /events calendar are served by the
+// content Function from the store database and listed in /sitemap-content.xml, so they count as served without a static
+// file (lib/data.js contentAddress); retired news addresses count as redirected to the project home (retiredAddress).
 // Usage: node scripts/seo-test.js   (exit 1 on any FAIL). The rendered-head and crawl checks are in verify-site.
 const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
-const { ROOT, loadData, origin, projectPath } = require("./lib/data");
+const { ROOT, loadData, origin, projectPath, contentAddress, retiredAddress } = require("./lib/data");
 
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
@@ -32,15 +35,14 @@ const buildCheck = new Promise((resolve) =>
 // ---------- pages ----------
 const htmlUnder = (dir) => (exists(dir) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...htmlUnder("guide"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
+const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("guide"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
 const urlPath = (f) => (f === "index.html" ? "/" : "/" + f.replace(/\.html$/, ""));
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));
 const metaVal = (head, key) => tags(head, "meta").filter((m) => m.name === key || m.property === key).map((m) => m.content);
-const draftProducts = new Set(data.products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages (cart, login, library...) are private: noindex, out of the sitemap, blocked in robots.txt.
-const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|product|api|private)(\/|$)/;
-const EXPECT_NOINDEX = (f) => f === "404.html" || draftProducts.has(f) || PRIVATE.test(urlPath(f));
+const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|api|private)(\/|$)/;
+const EXPECT_NOINDEX = (f) => f === "404.html" || PRIVATE.test(urlPath(f));
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
 const pages = {}; // file -> facts
@@ -74,7 +76,7 @@ for (const f of pageFiles) {
   if (BAD_HOST.test(head)) add("FAIL", "head-host", `head mentions ${head.match(BAD_HOST)[0]}`, f);
 
   if (noindex && !EXPECT_NOINDEX(f)) add("FAIL", "noindex", `public page is noindex (${robots})`, f);
-  if (!noindex && EXPECT_NOINDEX(f)) add("FAIL", "noindex", "should be noindex (404 page, draft product or private page)", f);
+  if (!noindex && EXPECT_NOINDEX(f)) add("FAIL", "noindex", "should be noindex (404 page or private page)", f);
   if (noindex && canon.length) add("FAIL", "canonical", `noindex page names a canonical (${canon.join(", ")})`, f);
   for (const c of canon) if (!servedPathsOf(c)) add("FAIL", "canonical", `${c} isn't a page on this site`, f);
   if (!noindex) {
@@ -106,9 +108,9 @@ for (const f of pageFiles) {
 
 // ---------- internal links in the HTML resolve to real pages, without redirect hops ----------
 // Settings is one page served at a few more addresses by its Function (server/pages/guard.js SETTINGS_SECTIONS;
-// test/unit/redirects.test.js keeps this list equal to that one).
+// test/unit/redirects.test.js keeps this list equal to that one). The events calendar is the content Function's.
 const SETTINGS_SECTIONS = ["profile", "security", "orders", "email", "privacy"];
-const servedPaths = new Set([...Object.values(pages).map((p) => p.path), ...SETTINGS_SECTIONS.map((s) => `/settings/${s}`)]);
+const servedPaths = new Set([...Object.values(pages).map((p) => p.path), ...SETTINGS_SECTIONS.map((s) => `/settings/${s}`), "/events"]);
 for (const [f, p] of Object.entries(pages)) {
   for (const m of p.html.matchAll(/\shref="([^"]+)"/g)) {
     const href = decode(m[1]);
@@ -117,7 +119,7 @@ for (const [f, p] of Object.entries(pages)) {
     if (/\.(css|png|jpg|webp|ico|svg|js)$/.test(clean)) { if (!exists(clean.slice(1))) add("FAIL", "broken-asset", href, f); continue; }
     if (!href.startsWith("/")) add("WARN", "relative-link", `${href}: use a root-relative clean address`, f);
     else if (clean.endsWith(".html")) add("WARN", "link-redirect", `${href} redirects; link to ${clean.replace(/(index)?\.html$/, "")}`, f);
-    else if (!servedPaths.has(clean)) add("FAIL", "broken-link", href, f);
+    else if (!servedPaths.has(clean) && !contentAddress(clean)) add("FAIL", "broken-link", href, f);
   }
 }
 
@@ -172,13 +174,6 @@ const needs = (f, type, why) => pages[f] && !jsonTypes[f].has(type) && add("FAIL
 needs("index.html", "WebSite", "home page");
 needs("index.html", "Organization", "home page");
 for (const x of data.projects.filter((p) => !p.draft)) needs(`${projectPath(x.id).slice(1)}.html`, x.entity || "Organization", "project home page");
-for (const r of data.releases) needs(`${projectPath(r.project, "music", r.id).slice(1)}.html`, "MusicAlbum", "release page");
-for (const n of data.news) needs(`${projectPath(n.project, "news", n.id).slice(1)}.html`, "BlogPosting", "news post");
-for (const pr of data.products) {
-  const f = `shop/${pr.id}.html`;
-  if (pr.draft && jsonTypes[f] && jsonTypes[f].has("Product")) add("FAIL", "jsonld-draft", "draft product must not publish Product data", f);
-  if (!pr.draft) needs(f, "Product", "public product");
-}
 for (const [f, p] of Object.entries(pages)) if (!p.noindex && f !== "index.html") needs(f, "BreadcrumbList", "every indexable page below home");
 for (const x of data.projects.filter((p) => !p.draft)) {
   const home = pages[`${projectPath(x.id).slice(1)}.html`];
@@ -221,7 +216,13 @@ for (const p of ["/privacy", "/terms", "/refunds", "/license", "/help", "/guide"
 // ---------- robots.txt ----------
 const robots = exists("robots.txt") ? read("robots.txt") : "";
 if (!robots) add("FAIL", "robots", "robots.txt missing");
-if (!new RegExp(`^Sitemap: ${ORIGIN.replace(/\./g, "\\.")}/sitemap\\.xml$`, "m").test(robots)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/sitemap.xml" line`);
+// Exact lines, compared as text (no pattern built from the origin).
+const robotsLines = new Set(robots.split("\n").map((l) => l.trim()));
+const hasSitemap = (file) => robotsLines.has(`Sitemap: ${ORIGIN}/${file}`);
+if (!hasSitemap("sitemap.xml")) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/sitemap.xml" line`);
+// Release and event pages, and trusted creators' product pages, are only listed in the sitemaps the store API serves.
+for (const [file, what] of [["sitemap-content.xml", "release and event pages"], ["sitemap-shop.xml", "product pages"]])
+  if (!hasSitemap(file)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/${file}" line (${what})`);
 // Rules for "*" (Google's matching: the longest matching rule wins; Allow wins a tie).
 const rules = [];
 let star = false;
@@ -242,7 +243,7 @@ for (const p of ["/css/core.css", "/js/util.js", "/data/site.js", "/img/og.png"]
 for (const p of ["/dashboard", "/account", "/settings", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
 // The public directory and every project page stay crawlable whatever is blocked beside them (a rule like
 // "Disallow: /p" or "/projects" would silently hide them).
-for (const p of ["/", "/shop", "/about", "/projects", ...data.projects.filter((x) => !x.draft).map((x) => projectPath(x.id))]) if (!allowed(p)) add("FAIL", "robots-public", `${p} is blocked by robots.txt`);
+for (const p of ["/", "/shop", "/shop/x", "/product", "/events", "/about", "/projects", ...data.projects.filter((x) => !x.draft).map((x) => projectPath(x.id))]) if (!allowed(p)) add("FAIL", "robots-public", `${p} is blocked by robots.txt`);
 if (robots && !out.some((l) => /^FAIL robots/.test(l))) add("PASS", "robots", "public pages crawlable, private areas blocked, sitemap declared");
 
 // ---------- redirects, recorded URLs and preview hosts ----------
@@ -251,19 +252,36 @@ for (const [from, to, code] of redirects) {
   if (locs.includes(ORIGIN + from)) add("FAIL", "redirect-public", `${from} is in the sitemap but redirects to ${to}`);
   if (code === "200") { if (!servedPaths.has(to)) add("FAIL", "rewrite-target", `${from} serves ${to}, which isn't a page`); continue; }
   if (!["301", "308"].includes(code)) add("WARN", "redirect-code", `${from} -> ${to} uses ${code || "302"}; permanent moves should be 301`);
-  // A "/old/*  /new/:splat" rule must point into a folder that has pages.
+  // A "/old/*  /new/:splat" rule must point into a folder that has pages (static, or a project's music/ or events/,
+  // whose pages the content Function serves), never at a retired news address (a redirect chain).
   const target = to.endsWith("/:splat") ? to.slice(0, -"/:splat".length) : to;
-  const lands = to.endsWith("/:splat") ? [...servedPaths].some((s) => s.startsWith(target + "/")) : servedPaths.has(to);
-  if (to !== "/" && !to.startsWith("http") && !lands) add("FAIL", "redirect-target", `${from} -> ${to} goes nowhere`);
+  const lands = to.endsWith("/:splat") ? [...servedPaths].some((s) => s.startsWith(target + "/")) || Boolean(contentAddress(target + "/x"))
+    : servedPaths.has(to) || Boolean(contentAddress(to));
+  if (retiredAddress(to.replace(/\/:splat$/, "/x"))) add("FAIL", "redirect-chain", `${from} -> ${to} lands on a retired news address; point it at ${retiredAddress(to.replace(/\/:splat$/, "/x"))}`);
+  else if (to !== "/" && !to.startsWith("http") && !lands) add("FAIL", "redirect-target", `${from} -> ${to} goes nowhere`);
 }
+// The migrations that move a release into the store database (INSERT INTO project_releases). Event pages were never
+// static, so a recorded one has no migration to check.
+const migrations = exists("db/migrations") ? fs.readdirSync(path.join(ROOT, "db/migrations")).filter((f) => f.endsWith(".sql")).map((f) => read(`db/migrations/${f}`)) : [];
+const seeded = ({ project, kind, slug }) => kind !== "music" || migrations.some((sql) => sql.includes("INSERT INTO project_releases ") && sql.includes(`'${project}', '${slug}'`));
 const recorded = exists("scripts/public-urls.txt") ? read("scripts/public-urls.txt").split("\n").filter((l) => l && !l.startsWith("#")) : [];
 for (const u of recorded) {
   const p = u.slice(ORIGIN.length);
   const redirected = redirects.find(([from]) => from === p || (from.endsWith("/*") && p.startsWith(from.slice(0, -1))));
-  // A wildcard redirect only covers an old address if the page it points to exists.
+  // A wildcard redirect only covers an old address if the page it points to exists (or is a release or event address)
+  // and isn't a retired news address (whose 301 would make a chain).
   const landing = redirected && (redirected[0].endsWith("/*") ? redirected[1].replace(":splat", p.slice(redirected[0].length - 1)) : redirected[1]);
-  if (redirected && landing !== "/" && !servedPaths.has(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
-  if (!locs.includes(u) && !redirected) {
+  if (redirected && retiredAddress(landing)) add("FAIL", "redirect-chain", `${u} redirects to ${landing}, which redirects again; point it at ${retiredAddress(landing)}`);
+  else if (redirected && landing !== "/" && !servedPaths.has(landing) && !contentAddress(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
+  else if (redirected && contentAddress(landing) && !seeded(contentAddress(landing))) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which no migration in db/migrations/ moved into the store database`);
+  // A release address stays public through the content Function and /sitemap-content.xml, as long as a migration
+  // moved it into the store database (the build only records static pages, so these are the old ones). A news address
+  // is answered with a 301 to its project's home by the content Function (news waits for the community, #174).
+  const content = !locs.includes(u) && !redirected && contentAddress(p);
+  if (content && !seeded(content)) add("FAIL", "url-disappeared", `${u} was a static page and no migration in db/migrations/ seeds its release "${content.slug}"`);
+  const retired = !locs.includes(u) && !redirected && retiredAddress(p);
+  if (retired && !servedPaths.has(retired)) add("FAIL", "url-disappeared", `${u} redirects to ${retired}, which isn't a page`);
+  if (!locs.includes(u) && !redirected && !content && !retired) {
     add("FAIL", "url-disappeared", `${u} was public and is gone: add a 301 in _redirects, or remove it from scripts/public-urls.txt if that's deliberate`);
   }
 }
@@ -280,7 +298,6 @@ for (const x of data.projects) for (const s of x.socials || []) {
   if (s.url && !isProfile(s.url)) add("FAIL", "placeholder-profile", `${x.id} ${s.name}: "${s.url}" isn't a profile page (leave it "" until it exists)`, "data/projects.js");
   if (s.url && BAD_HOST.test(s.url)) add("FAIL", "placeholder-profile", `${x.id} ${s.name}: ${s.url}`, "data/projects.js");
 }
-for (const r of data.releases) for (const l of r.links || []) if (l.url && !isProfile(l.url)) add("FAIL", "placeholder-link", `${r.id} ${l.name}: "${l.url}"`, "data/music.js");
 const fakeEmail = (m) => m && (BAD_HOST.test(m) || !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(m));
 if (fakeEmail(SITE.email)) add("FAIL", "placeholder-email", `"${SITE.email}" isn't a real address`, "data/site.js");
 for (const x of data.projects) {
@@ -290,8 +307,6 @@ for (const x of data.projects) {
 if (SITE.url !== "https://autostacc.com") add("FAIL", "site-url", `SITE.url is ${SITE.url}`, "data/site.js");
 if (!SITE.title || !SITE.title.startsWith(BRAND)) add("FAIL", "home-title", "SITE.title must start with the platform name", "data/site.js");
 for (const x of data.projects.filter((p) => !p.draft)) if (!x.title || !x.title.includes(x.name) || !x.title.endsWith(" · " + BRAND)) add("FAIL", "home-title", `${x.id}: its title must name it and end "· ${BRAND}"`, "data/projects.js");
-const drafts = data.products.filter((p) => p.draft).length;
-if (drafts) add("WARN", "drafts", `${drafts} placeholder product(s) kept out of search (issue #5)`, "data/products.js");
 
 // Legal text the owner hasn't confirmed yet shows a "To be confirmed" notice (data/legal.js review).
 for (const f of Object.keys(pages)) if (/class="prose-notice"/.test(pages[f].html)) add("WARN", "legal-review", "has text the owner still has to confirm (data/legal.js review)", f);

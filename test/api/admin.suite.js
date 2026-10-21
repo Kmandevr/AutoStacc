@@ -1,4 +1,6 @@
-// Admin: only the configured owner gets in; grants and revokes work and are separate records; uploads stay private.
+// Admin: only the configured owner gets in; grants and revokes work and are separate records; uploads stay private;
+// moderation (pause, hide, remove) works on any product but price and text stay the creator's; release artwork moves
+// from the site's files into storage once (#179).
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, unique, sql } from "../support/client.js";
@@ -9,7 +11,8 @@ export default (ctx) => describe("admin", () => {
     const { c } = await newBuyer(ctx.mock.url, "not-admin");
     for (const [m, p] of [["GET", "/api/admin/summary"], ["GET", "/api/admin/products"], ["PATCH", "/api/admin/products/wallpapers"],
       ["PUT", "/api/admin/products/wallpapers/files?filename=x.zip"], ["DELETE", "/api/admin/files/pf_x"], ["GET", "/api/admin/orders"],
-      ["POST", "/api/admin/entitlements"], ["GET", "/api/admin/customers"]]) {
+      ["POST", "/api/admin/entitlements"], ["GET", "/api/admin/customers"], ["GET", "/api/admin/pacs"],
+      ["GET", "/api/admin/content/artwork"], ["POST", "/api/admin/content/artwork/move"]]) {
       const r = await c.req(m, p, m === "GET" ? {} : { body: {} });
       assert.equal(r.status, 404, `${m} ${p}`);
     }
@@ -80,27 +83,68 @@ export default (ctx) => describe("admin", () => {
     for (const path of ["files", "previews"]) assert.equal((await customer.req("PUT", `/api/admin/${path === "files" ? "products/vj-loops/files" : "previews"}?filename=a.zip`, { raw: ZIP })).status, 404);
   });
 
-  test("the owner can change a price, publish a draft and remove a product; it sticks, and only the owner can", async () => {
+  test("the owner can hide, show and remove a product; price and text aren't the Control Center's; only the owner can", async () => {
     const admin = await adminClient(ctx.mock.url);
     const patch = (body, id = "vj-loops", c = admin) => c.req("PATCH", `/api/admin/products/${id}`, { body });
-    const priceNow = async () => (await new Client(ctx.mock.url).get("/api/products/vj-loops")).data.product;
+    const row = () => sql(ctx.mock.stateDir, "SELECT price_cents, title, description, published, deleted_at IS NOT NULL AS deleted FROM products WHERE id = 'vj-loops'")[0];
+    const before = row();
     const { c: customer } = await newBuyer(ctx.mock.url, "price-thief");
-    for (const body of [{ priceCents: 1 }, { published: false }, { deleted: true }]) assert.equal((await patch(body, "vj-loops", customer)).status, 404, JSON.stringify(body));
-    assert.equal((await patch({ priceCents: 1 }, "vj-loops", new Client(ctx.mock.url))).status, 404);
-    // Bad input changes nothing.
-    for (const body of [{}, { priceCents: -1 }, { priceCents: 1.5 }, { priceCents: "5" }, { priceCents: 1e9 }, { published: "yes" }, { deleted: 1 }]) {
+    for (const body of [{ salesPaused: true }, { published: false }, { deleted: true }]) assert.equal((await patch(body, "vj-loops", customer)).status, 404, JSON.stringify(body));
+    assert.equal((await patch({ published: false }, "vj-loops", new Client(ctx.mock.url))).status, 404);
+    // Bad input, and the creator's own fields, change nothing.
+    for (const body of [{}, { priceCents: 1 }, { title: "Mine now" }, { description: "x" }, { published: "yes" }, { deleted: 1 }, { deleted: true, published: true }]) {
       assert.equal((await patch(body)).status, 400, JSON.stringify(body));
     }
-    assert.equal((await patch({ priceCents: 1234 }, "no-such-product")).status, 404);
-    assert.equal((await patch({ priceCents: 1234, published: true })).status, 200);
-    assert.deepEqual(sql(ctx.mock.stateDir, "SELECT price_cents, published, admin_managed FROM products WHERE id = 'vj-loops'"), [{ price_cents: 1234, published: 1, admin_managed: 1 }]);
-    assert.equal((await priceNow()).priceCents, 1234, "checkout and the store read the new price");
+    assert.deepEqual(row(), before);
+    assert.equal((await patch({ published: false }, "no-such-product")).status, 404);
     assert.equal((await patch({ deleted: true })).status, 200);
     assert.equal((await new Client(ctx.mock.url).get("/api/products/vj-loops")).status, 404, "removed products leave the store");
-    assert.equal((await patch({ deleted: false, published: true })).status, 200);
-    assert.equal((await priceNow()).priceCents, 1234);
+    assert.deepEqual(row(), { ...before, published: 0, deleted: 1 });
+    assert.equal((await patch({ deleted: false, published: Boolean(before.published) })).status, 200);
+    assert.deepEqual(row(), before, "restored as it was");
     const log = sql(ctx.mock.stateDir, "SELECT action FROM admin_audit WHERE target_id = 'vj-loops' AND action = 'product.changed_by_admin'");
-    assert.ok(log.length >= 3, "each change is in the audit log under the owner's name");
+    assert.ok(log.length >= 2, "each change is in the audit log under the owner's name");
+  });
+
+  test("the Pack Builder lists Pacs from the database, not from code", async () => {
+    const admin = await adminClient(ctx.mock.url);
+    const r = await admin.get("/api/admin/pacs");
+    assert.equal(r.status, 200);
+    const live = sql(ctx.mock.stateDir, "SELECT id FROM pacs WHERE deleted_at IS NULL ORDER BY id").map((x) => x.id);
+    assert.deepEqual(r.data.pacs.map((x) => x.id).sort(), live);
+    const products = (await admin.get("/api/admin/products")).data;
+    assert.equal(typeof products.pacs, "object", "Pac titles for the files list");
+  });
+
+  test("release artwork moves into the creator's storage once: audited, idempotent, refused while impersonating", async () => {
+    const admin = await freshAdmin(ctx.mock.url);
+    const hail = sql(ctx.mock.stateDir, "SELECT id FROM project_releases WHERE slug = 'hail' AND deleted_at IS NULL")[0].id;
+    const artwork = () => JSON.parse(sql(ctx.mock.stateDir, `SELECT artwork FROM project_releases WHERE id = '${hail}'`)[0].artwork);
+    const old = artwork();
+    assert.equal(old.src, "/img/releases/hail.jpg", "the page works from the site's file until the move");
+    assert.ok((await admin.get("/api/admin/content/artwork")).data.pending.some((p) => p.releaseId === hail && p.src === old.src));
+    // While impersonating, the admin is the customer: nothing moves.
+    const { user } = await newBuyer(ctx.mock.url, "artwork-customer");
+    await admin.post(`/api/admin/customers/${user.id}/impersonate`, {});
+    assert.ok([403, 404].includes((await admin.post("/api/admin/content/artwork/move", {})).status));
+    await admin.post("/api/impersonation/exit", {});
+    assert.deepEqual(artwork(), old);
+
+    const r = await admin.post("/api/admin/content/artwork/move", {});
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    const moved = r.data.moved.find((m) => m.releaseId === hail);
+    assert.ok(moved, JSON.stringify(r.data));
+    assert.deepEqual(artwork(), { asset: moved.asset, width: old.width, height: old.height, alt: old.alt });
+    const asset = sql(ctx.mock.stateDir, `SELECT a.content_type, a.status, a.creator_id, p.creator_id AS owner FROM site_assets a, project_releases x
+      JOIN projects p ON p.id = x.project_id WHERE a.id = '${moved.asset}' AND x.id = '${hail}'`)[0];
+    assert.deepEqual([asset.content_type, asset.status, asset.creator_id], ["image/jpeg", "active", asset.owner], "stored as the creator's image");
+    assert.equal((await new Client(ctx.mock.url).get(`/media/sites/${moved.asset}`)).status, 200);
+    // Running it again moves nothing and stores nothing.
+    const files = sql(ctx.mock.stateDir, "SELECT COUNT(*) AS n FROM site_assets")[0].n;
+    const again = await admin.post("/api/admin/content/artwork/move", {});
+    assert.deepEqual([again.status, again.data.moved, again.data.remaining], [200, [], 0]);
+    assert.equal(sql(ctx.mock.stateDir, "SELECT COUNT(*) AS n FROM site_assets")[0].n, files);
+    assert.ok(sql(ctx.mock.stateDir, "SELECT COUNT(*) AS n FROM admin_audit WHERE action = 'release.artwork_moved'")[0].n >= 2);
   });
 
   test("order details show the payment trail", async () => {

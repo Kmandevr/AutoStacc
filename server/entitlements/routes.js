@@ -1,10 +1,10 @@
 // The customer's library ("Your Stacc"): every product they own (from entitlements, whatever the source) with its
-// downloadable files, each tagged with its Pac and content kind so the page can organize them (docs/library.md), and
-// claiming free products. Paid files are listed by id only; links come from server/downloads. Opening it runs
+// downloadable files, each tagged with its Pac and content kind, plus the names of those Pacs and their Stacclets so the
+// page can organize them (docs/library.md; there is no code-defined catalog of them, #176), and claiming free products. Paid files are listed by id only; links come from server/downloads. Opening it runs
 // Auto-Stacc first, so free products of followed projects arrive without any other trigger.
 import { json, fail, readJson, id } from "../lib/http.js";
 import { isOpen } from "../settings/settings.js";
-import { parseJson } from "../lib/db.js";
+import { all, parseJson } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { requireAccess } from "./access.js";
 import { activeEntitlements, grant } from "./grants.js";
@@ -17,6 +17,19 @@ import { projectNames } from "../creators/creators.js";
 import { previewsOf } from "../packs/previews.js";
 import { pausedByCopyright } from "../payments/creator-sales.js";
 
+// The Pacs the owned products list and their Stacclets, by id (deleted ones too: what was bought keeps its names).
+// Read-only here; server/packs owns these tables.
+async function hierarchyOf(db, pacIds) {
+  if (!pacIds.length) return { stacclets: [], pacs: [] };
+  const pacs = await all(db, "SELECT id, title, stacclet_id, project_id FROM pacs WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id", JSON.stringify(pacIds));
+  const staccletIds = [...new Set(pacs.map((p) => p.stacclet_id))];
+  const stacclets = await all(db, "SELECT id, title, project_id FROM stacclets WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id", JSON.stringify(staccletIds));
+  return {
+    stacclets: stacclets.map((s) => ({ id: s.id, title: s.title, project: s.project_id })),
+    pacs: pacs.map((p) => ({ id: p.id, title: p.title, stacclet: p.stacclet_id, project: p.project_id }))
+  };
+}
+
 async function library(app) {
   const access = await requireAccess(app);
   if (access.user) await autoStacc(app.db, access.user);
@@ -28,8 +41,8 @@ async function library(app) {
   // Studio projects aren't in data/projects.js, so the page gets their names from here.
   const names = new Map((await projectNames(app.db, [...new Set(rows.map((p) => p.project_id).filter(Boolean))])).map((r) => [r.id, r.name]));
   // Each Pac's preview clips (public anyway, server/packs/previews.js) and read me (its text kept at publishing).
-  const clips = await previewsOf(app.db, [...new Set(rows.flatMap((p) => parseJson(p.pacs, [])))]);
-  const readmes = await readmesOf(app.db, productIds);
+  const pacIds = [...new Set(rows.flatMap((p) => parseJson(p.pacs, [])))];
+  const [clips, readmes, hierarchy] = await Promise.all([previewsOf(app.db, pacIds), readmesOf(app.db, productIds), hierarchyOf(app.db, pacIds)]);
   const items = productIds.filter((pid) => products.has(pid)).map((pid) => {
     const p = products.get(pid);
     const mine = ents.filter((e) => e.product_id === pid);
@@ -55,7 +68,7 @@ async function library(app) {
         ...(f.blob_id && bundles ? { bundleable: true } : {}) }))
     };
   });
-  return json({ signedIn: Boolean(access.user), guestOrders: access.guestOrderIds, items });
+  return json({ signedIn: Boolean(access.user), guestOrders: access.guestOrderIds, items, ...hierarchy });
 }
 
 // Free products: a signed-in customer adds them to their library. One grant per account, however often they click.

@@ -4,15 +4,19 @@
 /home.html  /  301
 # 2026-10-08: the site became AutoStacc and Glitches & Stitches moved under its project, then into its creator's
 # space at /autostacc/glitches-and-stitches (docs/decisions.md). Each old address goes straight to the current one, no chains.
+# 2026-10-21: news is offline until each creator's community opens (#174): the content Function sends a project's
+# /news addresses to its home, so the old news addresses go straight there too. The first matching rule wins.
 /music      /autostacc/glitches-and-stitches/music  301
 /music/*    /autostacc/glitches-and-stitches/music/:splat  301
-/news       /autostacc/glitches-and-stitches/news  301
-/news/*     /autostacc/glitches-and-stitches/news/:splat  301
+/news       /autostacc/glitches-and-stitches  301
+/news/*     /autostacc/glitches-and-stitches  301
 /press      /autostacc/glitches-and-stitches/press  301
 /music.html /autostacc/glitches-and-stitches/music  301
-/news.html  /autostacc/glitches-and-stitches/news  301
+/news.html  /autostacc/glitches-and-stitches  301
 /press.html /autostacc/glitches-and-stitches/press  301
 /projects/glitches-and-stitches    /autostacc/glitches-and-stitches  301
+/projects/glitches-and-stitches/news    /autostacc/glitches-and-stitches  301
+/projects/glitches-and-stitches/news/*  /autostacc/glitches-and-stitches  301
 /projects/glitches-and-stitches/*  /autostacc/glitches-and-stitches/:splat  301
 # 2026-10-08: Account and Settings became one Settings area with a page per section (docs/decisions.md).
 /account    /settings/orders  301

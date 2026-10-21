@@ -1,7 +1,7 @@
 ---
 title: Vision and product principles
 summary: Owner-written vision for AutoStacc as a connected creative ecosystem: identity hierarchy, builder, store, collaboration, purchase permanence, licences, trust and safety, programs, and the open-questions register. Guides decisions; not a spec.
-updated: 2026-10-14
+updated: 2026-10-21
 ---
 
 # AutoStacc vision, product principles and working direction
@@ -586,7 +586,7 @@ Do not interpret this document as permission to implement every idea listed here
 - Founding program names, participant limits, eligibility, and benefits.
 - Education program eligibility, access duration, and any future pricing.
 - Community features, moderation details, and influencer/ambassador criteria.
-- Free-tier limits, platform fees, payout policies, and the eventual business model.
+- Free-tier limits, platform fees, payout policies, and the eventual business model. (Settled for first-party creators only, owner 2026-10-21, #171 and #177: no limits, no fee, 100% of their sales; [decisions](decisions.md).)
 - Data-export formats, account closure, and retention policies.
 - Recommendation signals, ranking controls, and measurable discovery goals.
 - Current implementation status of each idea. This must be verified against the live repository and application rather than assumed from this document.
@@ -607,7 +607,7 @@ Checked against the vault on 2026-10-10. The vision above is the direction; thes
 
 - **Account / creator / project layers (§2):** creators are their own entity with members by account, separate from projects; addresses are `/<creator>/<project>` ([creators](creators.md)). Projects are data with Stacclets and Pacs ([architecture](architecture.md)). Role-based permissions beyond creator membership are not built.
 - **Builder (§3):** the Studio builds free, block-only sites with no creator code; custom HTML/CSS (later JavaScript) is a separate, unbuilt plan that would run only in a sandbox on another origin ([creator-pages](creator-pages.md)). This matches "no arbitrary executable code by default".
-- **One authoritative product record (§2.4, §4):** products live once in `data/products.js` (first-party) or D1, with the price always set by the server ([store](store.md)).
+- **One authoritative product record (§2.4, §4):** products live once, in D1, made in the Studio by every creator (the code-based catalog was retired, #176), with the price always set by the server ([store](store.md)).
 - **Licences (§6):** today's licences are per kind of product (`sounds`, `stems`, `music`, `visuals` in `data/licenses.js`, [production](production.md#licences)), not the Free / Community / Education / Commercial categories above, which are under consideration only.
 - **Platform fee (§9):** the vision calls fees open; the owner has already set a 20% default fee per creator sale (decision 2026-10-09, [creators](creators.md)).
 - **Sales and promotions (§4):** built as admin-created promotions ([admin](admin.md)); the creator-facing transparency side is not.

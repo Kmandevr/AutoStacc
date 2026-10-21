@@ -34,6 +34,8 @@ bucket_name = "autostacc-previews-dev"
 # Branch previews: test-mode Stripe keys and their own database and buckets, so a preview can never grant production access.
 [env.preview.vars]
 APP_ENV = "preview"
+# Switches that are off by default, turned on here (server/lib/features.js). The community opened 2026-10-21 (owner).
+FEATURES_ON = "community.forum"
 SITE_URL = "https://preview.autostacc.pages.dev"
 PAYMENT_PROVIDER = "stripe"
 EMAIL_PROVIDER = "log"
@@ -57,6 +59,8 @@ bucket_name = "autostacc-previews-preview"
 # autostacc.com: live Stripe keys only (server/lib/config.js refuses anything else), Brevo email.
 [env.production.vars]
 APP_ENV = "production"
+# Switches that are off by default, turned on here (server/lib/features.js). The community opened 2026-10-21 (owner).
+FEATURES_ON = "community.forum"
 SITE_URL = "https://autostacc.com"
 PAYMENT_PROVIDER = "stripe"
 EMAIL_PROVIDER = "brevo"

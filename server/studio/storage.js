@@ -1,12 +1,13 @@
 // Studio API, storage and paid storage (server/billing/, docs/creators.md "Paid storage"). Every member sees what the
 // creator stores, split by kind, against its limit (the same figures uploads are checked against). Only the owner sees
 // and changes paid storage: the plan, this month so far, statements with their daily measurements, the billing log and
-// paying a statement. Other creators' storage looks like nothing there.
+// paying a statement. Other creators' storage looks like nothing there. A first-party creator's storage has no limit
+// (quotaBytes null, unlimited) and paid storage isn't offered to it (server/creators/policy.js).
 import { json, readJson, fail, id } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
 import { requireCreator } from "../creators/creators.js";
-import { quotaOf, includedQuotaOf } from "../creators/policy.js";
+import { quotaReportOf, quotaOf, includedQuotaOf, isFirstParty } from "../creators/policy.js";
 import { storageByPart } from "../creators/storage.js";
 import { planOf, setPlan, cancelPlan, billingSettings, logOf } from "../billing/plans.js";
 import { statementsOf, statementOfCreator, daysOf, monthToDate, publicStatement } from "../billing/statements.js";
@@ -21,21 +22,23 @@ const publicLog = (l) => ({ at: l.at, by: l.actor === "system" ? "AutoStacc" : "
 
 async function show(app, { creatorId }) {
   const user = await requireUser(app);
-  const { creator, role } = await requireCreator(app.db, creatorId, user);
+  const { creator, role } = await requireCreator(app.db, creatorId, user, undefined, { allowCatalog: true });
   const parts = await storageByPart(app.db, creator.id);
   const usedBytes = Object.values(parts).reduce((a, b) => a + Number(b), 0);
-  const storage = { usedBytes, byPart: parts, includedBytes: includedQuotaOf(creator), quotaBytes: quotaOf(creator), overLimit: usedBytes > quotaOf(creator) };
+  const unlimited = isFirstParty(creator);
+  const storage = { usedBytes, byPart: parts, includedBytes: unlimited ? null : includedQuotaOf(creator), quotaBytes: quotaReportOf(creator), unlimited,
+    overLimit: usedBytes > quotaOf(creator) };
   if (role !== "owner") return json({ storage }, 200, NO_STORE);
   const [settings, plan, statements, log, month] = await Promise.all([billingSettings(app.db), planOf(app.db, creator.id), statementsOf(app.db, creator.id),
     logOf(app.db, creator.id, 50), monthToDate(app.db, creator.id)]);
-  return json({ storage, billing: { available: settings.on, rate: settings.rate, currency: settings.currency, graceDays: settings.graceDays,
+  return json({ storage, billing: { available: settings.on && !unlimited, rate: settings.rate, currency: settings.currency, graceDays: settings.graceDays,
     minChargeCents: settings.minChargeCents, minCapCents: settings.minCapCents, maxCapCents: settings.maxCapCents },
   plan: publicPlan(plan), monthToDate: month, statements: statements.map(publicStatement), log: log.map(publicLog) }, 200, NO_STORE);
 }
 
 const owner = async (app, creatorId) => {
   const user = await requireUser(app);
-  return { user, ...(await requireCreator(app.db, creatorId, user, ["owner"])) };
+  return { user, ...(await requireCreator(app.db, creatorId, user, ["owner"], { allowCatalog: true })) };
 };
 
 async function changePlan(app, { creatorId }) {

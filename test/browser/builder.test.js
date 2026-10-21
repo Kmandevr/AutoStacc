@@ -125,6 +125,15 @@ describe("the visual builder in the browser", () => {
     assert.equal(await frame(page).locator(".cs-h").first().evaluate((h) => getComputedStyle(h).color), "rgb(255, 0, 0)");
     const project = sql(t.stateDir, "SELECT p.id FROM projects p WHERE p.name = 'Glow'")[0];
     assert.match(sql(t.stateDir, `SELECT draft FROM project_sites WHERE project_id = '${project.id}'`)[0].draft, /cs-h/);
+    // A Releases element: pick the project, the editor shows where its releases go, and it saves.
+    await page.click('.bx-tabs [data-tab="add"]');
+    await page.click('[data-action="add-element"][data-type="releases"]');
+    await page.waitForSelector(".bx-panel-body h3:text('Releases')");
+    await page.selectOption('.bx-panel-body select[data-path$=".project"]', project.id);
+    await frame(page).locator(".cs-empty:text('Newest releases from Glow appear here')").waitFor();
+    await page.click('[data-action="save"]');
+    await page.waitForSelector(".bx-status:text('Saved.')");
+    assert.match(sql(t.stateDir, `SELECT draft FROM project_sites WHERE project_id = '${project.id}'`)[0].draft, /"type":"releases"/);
     assert.deepEqual(page.errors, []);
   });
 

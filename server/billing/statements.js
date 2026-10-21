@@ -49,12 +49,13 @@ export const mailOwner = async (app, creatorId, stage, s) => {
     { dedupeKey: `storage-billing:${stage}:${s.id}` });
 };
 
-/** Issues last month's statements (each once). */
+/** Issues last month's statements (each once); never to a first-party creator, who is never charged for storage (#177). */
 export async function issue(app, nowMs) {
   const { db } = app;
   const period = previousPeriod(periodOf(nowMs));
   const due = await all(db, `SELECT creator_id FROM storage_usage_days d WHERE day LIKE ? || '-%'
-    AND NOT EXISTS (SELECT 1 FROM storage_statements s WHERE s.creator_id = d.creator_id AND s.period = ?) GROUP BY creator_id LIMIT ?`, period, period, BATCH);
+    AND NOT EXISTS (SELECT 1 FROM storage_statements s WHERE s.creator_id = d.creator_id AND s.period = ?)
+    AND NOT EXISTS (SELECT 1 FROM creators c WHERE c.id = d.creator_id AND c.source = 'catalog') GROUP BY creator_id LIMIT ?`, period, period, BATCH);
   let issued = 0;
   const livemode = paymentProvider(app).livemode(app.config);
   for (const { creator_id: creatorId } of due) {

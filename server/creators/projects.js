@@ -1,20 +1,21 @@
 // Studio projects (D1 projects with source 'studio', and their project_sites row): create, rename, delete, publish
-// state, and the access check for an account that may change one. Catalog projects (data/projects.js) are read-only here.
+// state, and the access check for an account that may change one. Catalog projects (data/projects.js) are never
+// renamed, deleted or built here; only routes for their products and content opt in to them ({ allowCatalog: true }).
 import { stmt, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { LIMITS } from "./policy.js";
+import { LIMITS, limitOf } from "./policy.js";
 import { getProject, requireCreator } from "./creators.js";
 import { projectSlugFree, holdStmt, taken, isUnique, holdsOf, MAX_HOLDS } from "./holds.js";
 
-// A Studio project and its creator, for an account that may change it.
-export async function requireProject(db, projectId, user, roles) {
+// A Studio project (or, with allowCatalog, a first-party one) and its creator, for an account that may change it.
+export async function requireProject(db, projectId, user, roles, { allowCatalog = false } = {}) {
   const project = typeof projectId === "string" ? await getProject(db, projectId) : null;
-  if (!project || project.source !== "studio") fail(404, "not_found", "Nothing here.");
-  const { creator, role } = await requireCreator(db, project.creator_id, user, roles);
+  if (!project || !(project.source === "studio" || (allowCatalog && project.source === "catalog"))) fail(404, "not_found", "Nothing here.");
+  const { creator, role } = await requireCreator(db, project.creator_id, user, roles, { allowCatalog });
   return { project, creator, role };
 }
 
-// The limit is checked inside the insert itself, so parallel requests can't each add one more project.
+// The limit (none for a first-party creator) is checked inside the insert itself, so parallel requests can't each add one more project.
 export async function createProject(db, creator, user, { slug, name }) {
   if (!(await projectSlugFree(db, creator.id, slug))) taken();
   const id = newId("prj");
@@ -24,7 +25,7 @@ export async function createProject(db, creator, user, { slug, name }) {
     [res] = await db.batch([
       stmt(db, `INSERT INTO projects (id, name, features, published, created_at, updated_at, creator_id, slug, source, created_by)
         SELECT ?, ?, '[]', 0, ?, ?, ?, ?, 'studio', ?
-        WHERE (SELECT COUNT(*) FROM projects WHERE creator_id = ? AND deleted_at IS NULL) < ?`, id, name, t, t, creator.id, slug, user.id, creator.id, LIMITS.projectsPerCreator),
+        WHERE (SELECT COUNT(*) FROM projects WHERE creator_id = ? AND deleted_at IS NULL) < ?`, id, name, t, t, creator.id, slug, user.id, creator.id, limitOf(creator, "projectsPerCreator")),
       stmt(db, "INSERT INTO project_sites (project_id, draft, draft_updated_at) SELECT ?, '{}', ? WHERE EXISTS (SELECT 1 FROM projects WHERE id = ?)", id, t, id)
     ]);
   } catch (e) {

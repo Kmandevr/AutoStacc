@@ -1,17 +1,17 @@
 // Listen, a drop-in for any [data-listen] element: an embedded player (with a backup) for one release and, with
 // data-links, that release's streaming links under it. data-release picks the release (a release page; counts as a
-// release view); otherwise data/music.js `featured` when it belongs to the project, else the project's newest.
-// data-project picks the project (default: the open project's; none: every project). Outside the project's pages it
-// wears the project's look. Needs data/projects.js, data/music.js and js/util.js.
+// release view); otherwise the project's release marked featured in the Studio, else its newest. data-project picks the
+// project (default: the open project's; none: every project's newest). Releases come from the content API through
+// js/project-content.js. Outside the project's pages it wears the project's look. Needs data/projects.js, js/util.js
+// and js/project-content.js.
 (function () {
   "use strict";
 
-  const { escapeHTML, isSet, parseDate, moduleProject, wear } = window.GS;
-  const MUSIC = window.MUSIC || {};
+  const { escapeHTML, isSet, parseDate, moduleProject, wear, content } = window.GS;
   const PROJECTS = window.PROJECTS || [];
   const boxes = [...document.querySelectorAll("[data-listen]")];
-  if (!boxes.length) return;
-  const RELEASES = (MUSIC.releases || []).filter((r) => !r.draft).sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  if (!boxes.length || !content) return;
+  const newest = (list) => list.slice().sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
   // Only well-known players are embedded, so a typo can't load an unrelated page into the site.
   const PLAYERS = ["open.spotify.com", "w.soundcloud.com", "widget.deezer.com", "bandcamp.com", "embed.music.apple.com",
@@ -45,11 +45,11 @@
     return ytApi;
   }
 
-  function mount(box) {
+  async function mount(box) {
     const project = moduleProject(box);
-    const mine = project ? RELEASES.filter((r) => r.project === project) : RELEASES;
-    const release = RELEASES.find((r) => r.id === box.dataset.release) || mine.find((r) => r.id === MUSIC.featured) || mine[0] || {};
-    const artist = (PROJECTS.find((p) => p.id === release.project) || {}).name || "";
+    const mine = newest((await content.forProject(project)).releases).filter((r) => !project || r.project === project);
+    const release = mine.find((r) => r.id === box.dataset.release) || mine.find((r) => r.featured) || mine[0] || {};
+    const artist = release.projectName || (PROJECTS.find((p) => p.id === release.project) || {}).name || "";
     // A release page (not a Listen section) counts as a release view (privacy-friendly, js/util.js).
     if (box.dataset.release && release.id) window.GS.track("release_view", release.id);
     wear(box, release.project || project);
@@ -95,7 +95,7 @@
     platforms.innerHTML = live.length
       ? `<span class="platforms-label">Stream ${escapeHTML(release.title)} on</span>` +
         live.map((p) => `<a class="btn ghost" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.name)}</a>`).join("") +
-        `<a class="btn" href="${escapeHTML(window.GS.projectPath(release.project, "music", release.id))}">${escapeHTML(release.title)}: release page</a>`
+        `<a class="btn" href="${escapeHTML(content.href(release, "music"))}">${escapeHTML(release.title)}: release page</a>`
       : `<p class="empty">Streaming links land here with the first release. <a href="#newsletter">Get told first</a>.</p>`;
   }
 

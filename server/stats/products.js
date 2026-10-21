@@ -27,7 +27,7 @@ export default {
     const rate = (p) => (p.views >= MIN_VIEWS ? { percent: Math.round((p.units / p.views) * 1000) / 10 } : null);
     return [
       count("published", "Published", "record", catalog.published),
-      count("drafts", "Drafts", "record", catalog.drafts, "In data/products.js but not published."),
+      count("drafts", "Drafts", "record", catalog.drafts, "Saved in the Studio but not published."),
       count("paused", "Sales paused", "record", catalog.paused),
       rows("per-product", "Per product", "record", ["Product", "Status", "Sold", "Views", "View → buy", "Owners"],
         list.map((p) => [p.title, p.published ? (p.paused ? "paused" : "published") : "draft", p.units, p.views, rate(p), p.owners]),

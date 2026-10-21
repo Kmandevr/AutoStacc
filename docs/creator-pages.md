@@ -2,7 +2,7 @@
 title: Creator pages
 summary: PLANNED / NOT IMPLEMENTED. Blueprint for customizable project pages: creator HTML/CSS (later JavaScript) isolated in a sandboxed iframe on sandbox.autostacc.com, seamless under /<creator>/<project>.
 covers: [server/sites/, functions/[[path]].js, functions/media/sites/, _headers, server/lib/http.js, server/auth/index.js, server/orders/guest.js, server/impersonation/sessions.js]
-updated: 2026-10-15
+updated: 2026-10-21
 ---
 
 # Creator pages (sandboxed customization)
@@ -279,7 +279,7 @@ How these map to free and paid creators is a business decision the owner hasn't 
 
 ## Building it later (order)
 
-1. Creator accounts tied to projects, and page data in D1 (prerequisites, not designed here). **Done** (2026-10-08) as the Studio: `creators`, `creator_members`, `project_sites`, `site_pages` and `site_assets` (uploaded images) in D1, rendered at publish by `server/sites/` and served by `functions/[[path]].js` with edge caching. Its block document is a simpler cousin of Level 1 (preset, accent and font instead of design tokens; no platform modules such as polls or follow, no first-party projects).
+1. Creator accounts tied to projects, and page data in D1 (prerequisites, not designed here). **Done** (2026-10-08) as the Studio: `creators`, `creator_members`, `project_sites`, `site_pages` and `site_assets` (uploaded images) in D1, rendered at publish by `server/sites/` and served by `functions/[[path]].js` with edge caching (since 2026-10-21 that Function first tries the Studio's release and news pages, `server/content/public.js`, then the site pages; images a release uses as artwork count as in use, `stillUsed` in `server/sites/images.js`). Its block document is a simpler cousin of Level 1 (preset, accent and font instead of design tokens; no platform modules such as polls or follow, no first-party projects).
 2. Level 1: sections, design tokens, the shell route, edge caching.
 3. Cookie hardening (`__Host-` prefix), header changes for project shells only, tests for the rules in [trade-offs](#trade-offs-of-a-subdomain).
 4. The sandbox Worker, the runtime, the bridge (resize, navigate, ready, error) and fallbacks.

@@ -1,8 +1,9 @@
 // Studio storage (GS.studioStorage, for js/studio.js): what a creator stores, split by kind, against its limit, the same
 // figures uploads are checked against. For the owner, paid storage too (server/billing/): the monthly cap they chose, this
 // month so far, statements with the daily measurements behind them, paying one, and the billing log. Members who aren't
-// the owner see the storage only (the server sends nothing more). Talks to /api/studio/creators/:id/storage
-// (server/studio/storage.js). Needs js/util.js.
+// the owner see the storage only (the server sends nothing more). A first-party creator (storage.unlimited) has no limit
+// and is never charged for storage, so it sees what it stores and nothing to buy. Talks to
+// /api/studio/creators/:id/storage (server/studio/storage.js). Needs js/util.js.
 (function () {
   "use strict";
 
@@ -20,6 +21,7 @@
 
   function billingPanel(x) {
     const b = x.billing, plan = x.plan, s = x.storage;
+    if (s.unlimited) return '<p class="small-print">AutoStacc\'s own creator: no storage limit and no storage charges.</p>';
     if (!b) return "";
     const live = plan && ["active", "past_due", "cancelled"].includes(plan.status);
     // A monthly spending cap in dollars (owner, 2026-10-16); what it buys at the rate is shown as it's typed.
@@ -53,9 +55,10 @@
     if (!res.ok) { el.innerHTML = ""; return; }
     const x = res.data, s = x.storage;
     el.innerHTML = `<h3>Storage</h3>
-      <p><meter min="0" max="${s.quotaBytes}" value="${Math.min(s.usedBytes, s.quotaBytes)}" aria-label="Storage used"></meter> ${e(size(s.usedBytes))} of ${e(size(s.quotaBytes))}</p>
+      ${s.unlimited || s.quotaBytes === null ? `<p>${e(size(s.usedBytes))} stored, no limit</p>`
+        : `<p><meter min="0" max="${s.quotaBytes}" value="${Math.min(s.usedBytes, s.quotaBytes)}" aria-label="Storage used"></meter> ${e(size(s.usedBytes))} of ${e(size(s.quotaBytes))}</p>`}
       <details><summary>What counts</summary><ul>${Object.entries(s.byPart).map(([k, n]) => `<li>${e(PART[k] || k)}: ${e(size(n))}</li>`).join("")}</ul>
-        <p class="small-print">A file kept by several products or versions counts once. Files a new version replaced count for the 30 days buyers can still download them. At the limit only new uploads stop.</p></details>
+        <p class="small-print">A file kept by several products or versions counts once. Files a new version replaced count for the 30 days buyers can still download them.${s.unlimited ? "" : " At the limit only new uploads stop."}</p></details>
       ${billingPanel(x)}<p class="msg" role="status" data-say hidden></p>`;
     const say = (text) => { const m = $("[data-say]", el); m.hidden = false; m.className = "msg error"; m.textContent = text; };
     const form = $("form[data-form=storage-plan]", el);

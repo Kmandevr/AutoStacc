@@ -16,7 +16,7 @@ describe("layout in the browser", { concurrency: true }, () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/autostacc/glitches-and-stitches",
+      for (const p of ["/shop", "/product?p=stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/autostacc/glitches-and-stitches",
         "/privacy", "/terms", "/refunds", "/license", "/help", "/contact", "/security", "/no-such-page"]) {
         await page.goto(p);
         await settle(page);
@@ -80,10 +80,10 @@ describe("layout in the browser", { concurrency: true }, () => {
     const first = await page.locator(".prose-toc a").nth(2).getAttribute("href");
     await page.click(`.prose-toc a[href='${first}']`);
     assert.ok(await page.locator(first).isVisible());
-    // The product page names its licence and links to the full terms.
-    await page.goto("/shop/sample-pack-vol1");
-    assert.ok(await page.locator(".license-box strong", { hasText: "Sound licence" }).isVisible());
-    assert.ok(await page.locator(".license-box a[href='/license#sounds']").isVisible());
+    // The product page links to the licence and the terms the buyer accepts.
+    await page.goto("/product?p=sample-pack-vol1");
+    await page.waitForSelector("#product-app .product-info");
+    for (const href of ["/license", "/terms", "/refunds"]) assert.ok(await page.locator(`#product-app a[href='${href}']`).isVisible(), `product page links ${href}`);
     await page.goto("/license#sounds");
     assert.ok(await page.locator("#sounds >> text=You can't").isVisible());
     await page.goto("/login#signup");

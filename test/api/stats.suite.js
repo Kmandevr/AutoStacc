@@ -1,6 +1,6 @@
 // Admin statistics and the audit log: numbers move with real data (a purchase, a sign-up, a page view), only the
 // owner can read them (not customers, strangers or an impersonated customer), aggregates carry no customer details,
-// every statistics query is served by an index rather than a full scan of a growing table, and catalog and admin
+// every statistics query is served by an index rather than a full scan of a growing table, and database and admin
 // changes land in the append-only audit log under the right name.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -94,13 +94,15 @@ export default (ctx) => describe("stats", () => {
     }
   });
 
-  test("catalog and admin changes are in the audit log, under the right name", async () => {
+  test("database and admin changes are in the audit log, under the right name", async () => {
     const admin = await adminClient(ctx.mock.url);
     sql(ctx.mock.stateDir, "UPDATE products SET price_cents = price_cents + 1 WHERE id = 'dev-paused'");
     sql(ctx.mock.stateDir, "UPDATE products SET published = 1 - published WHERE id = 'dev-unpublished'");
     assert.equal((await admin.req("PATCH", "/api/admin/products/vj-loops", { body: { salesPaused: true } })).status, 200);
     assert.equal((await admin.req("PATCH", "/api/admin/products/vj-loops", { body: { salesPaused: false } })).status, 200);
     const log = (await admin.get("/api/admin/audit?action=product")).data.entries;
+    // A change made in the database itself (not through the API) is still recorded, by its trigger (migration 0004),
+    // under the label that trigger writes.
     const price = log.find((e) => e.action === "product.price_changed" && e.targetId === "dev-paused");
     assert.equal(price.actor, "catalog sync");
     assert.equal(price.detail.toCents, price.detail.fromCents + 1);

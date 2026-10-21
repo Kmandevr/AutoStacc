@@ -2,7 +2,8 @@
 // space per creator (a profile page can't take a project's address, nor a project a page's), the last 20 publishes
 // with restore, scheduled publishing (once, on the first visit after its time), creators' CSS refused when it reaches
 // outside the page, fonts checked by their bytes, one storage quota for site files and paid files, and files that old
-// versions still use kept until nothing does. Everything here belongs to its creator: others get 404.
+// versions still use kept until nothing does, and the Releases and Events elements showing only the creator's own
+// published releases and events. Everything here belongs to its creator: others get 404.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, sql } from "../support/client.js";
@@ -171,6 +172,41 @@ export default (ctx) => describe("visual builder", () => {
     await c.req("PUT", `${api}/site`, { body: v2([page("", "Home", [heading("No picture")])]) });
     assert.equal((await c.post(`${api}/publish`, {})).status, 200);
     assert.equal((await anon.get(img.src)).status, 404, "released once nothing uses it");
+  });
+
+  test("releases and project events: a creator's own published ones, as cards linking to their pages; never another creator's", async () => {
+    const { c, creator: cr } = await creator(ctx.mock.url, "rel");
+    const { c: other, creator: cr2 } = await creator(ctx.mock.url, "relx");
+    const pr = (await c.post(`/api/studio/creators/${cr.id}/projects`, { name: "Music", slug: "music-home" })).data.project;
+    const theirs = (await other.post(`/api/studio/creators/${cr2.id}/projects`, { name: "Theirs", slug: "theirs" })).data.project;
+    const add = async (cl, projectId, kind, body, live = true) => {
+      const r = await cl.post(`/api/studio/projects/${projectId}/${kind}`, body);
+      assert.equal(r.status, 201, JSON.stringify(r.data));
+      if (live) assert.equal((await cl.req("PATCH", `/api/studio/${kind}/${r.data.item.id}`, { body: { published: true } })).status, 200);
+    };
+    const soon = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+    await add(c, pr.id, "releases", { slug: "first-light", title: "First Light", type: "Single", date: "2026-01-02" });
+    await add(c, pr.id, "releases", { slug: "secret", title: "Secret Draft", type: "EP", date: "2026-02-02" }, false);
+    await add(c, pr.id, "events", { slug: "launch", title: "Launch night", date: soon, city: "Berlin" });
+    await add(other, theirs.id, "releases", { slug: "not-yours", title: "Not Yours", type: "Album", date: "2026-03-03" });
+    const box = (y) => ({ x: 0, y, w: 12, h: 6 });
+    const site = v2([page("", "Home", [
+      { id: "r1", type: "releases", title: "Out now", project: pr.id, count: 4, box: box(0) },
+      { id: "v1", type: "events", title: "Dates", project: pr.id, items: [], box: box(6) },
+      { id: "r2", type: "releases", project: theirs.id, count: 4, box: box(12) }
+    ])]);
+    const api = `/api/studio/projects/${pr.id}`;
+    assert.equal((await c.req("PUT", `${api}/site`, { body: site })).status, 200);
+    assert.equal((await c.post(`${api}/publish`, {})).status, 200);
+    const html = (await new Client(ctx.mock.url).get(`/${cr.slug}/music-home`)).data;
+    assert.match(html, new RegExp(`href="/${cr.slug}/music-home/music/first-light"`));
+    assert.match(html, /First Light/);
+    assert.match(html, new RegExp(`href="/${cr.slug}/music-home/events/launch"`));
+    assert.match(html, /Launch night/);
+    assert.ok(!/Secret Draft/.test(html), "drafts never show");
+    assert.ok(!/Not Yours/.test(html), "another creator's project shows nothing");
+    const noProject = v2([page("", "Home", [{ id: "r1", type: "releases", project: "", box: box(0) }])]);
+    assert.equal((await c.req("PUT", `${api}/site`, { body: noProject })).status, 400, "a Releases element names a project");
   });
 
   test("templates: four starters, checked documents with no files", async () => {

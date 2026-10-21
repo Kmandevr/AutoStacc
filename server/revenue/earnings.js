@@ -3,9 +3,11 @@
 // SELLING.holdDays (the refund and chargeback window); after that it is "cleared" and can be paid out. Payout requests
 // (server/revenue/payouts.js) take from what has cleared, as do deductions (deductions.js: paid storage settled from
 // earnings), counted like money paid out. Pure arithmetic in shareAfterRefund and summarise, SQL in earningsOf.
-// Nothing here reveals who bought: only the product, the date and the amounts.
+// Nothing here reveals who bought: only the product, the date and the amounts. A first-party creator (AutoStacc's own,
+// policy.js isFirstParty) has no earnings here: its sales are AutoStacc's revenue, never shared, held or paid out (#171),
+// so even lines written with a share before that rule count nothing.
 import { all, first } from "../lib/db.js";
-import { SELLING, feeBpsOf } from "../creators/policy.js";
+import { SELLING, feeBpsOf, isFirstParty } from "../creators/policy.js";
 import { deductedCents } from "./deductions.js";
 
 // A line's share after refunds: a full refund (order status "refunded") leaves nothing, a partial one takes its
@@ -52,8 +54,8 @@ export async function earningsOf(db, creator, { livemode, nowMs = Date.now() }) 
       COALESCE(SUM(CASE WHEN status = 'requested' THEN amount_cents END), 0) AS requested FROM payout_requests WHERE creator_id = ?`, creator.id),
     deductedCents(db, creator.id, livemode)
   ]);
-  const lines = rows.map((r) => ({ productId: r.product_id, title: r.title, netCents: r.net_cents || 0, platformFeeCents: r.platform_fee_cents || 0, creatorShareCents: r.creator_share_cents || 0,
+  const lines = isFirstParty(creator) ? [] : rows.map((r) => ({ productId: r.product_id, title: r.title, netCents: r.net_cents || 0, platformFeeCents: r.platform_fee_cents || 0, creatorShareCents: r.creator_share_cents || 0,
       orderId: r.order_id, paidAt: r.paid_at, orderTotalCents: r.total_cents, orderRefundedCents: r.refunded_cents || 0, orderStatus: r.status }));
   return { ...summarise(lines, { nowMs, paidOutCents: payouts.paid, requestedCents: payouts.requested, deductedCents: deducted }),
-    feeBps: feeBpsOf(creator), holdDays: SELLING.holdDays, minPayoutCents: SELLING.minPayoutCents, currency: "USD" };
+    feeBps: feeBpsOf(creator), firstParty: isFirstParty(creator), holdDays: SELLING.holdDays, minPayoutCents: SELLING.minPayoutCents, currency: "USD" };
 }

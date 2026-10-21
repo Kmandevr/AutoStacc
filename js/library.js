@@ -1,12 +1,12 @@
 // Your Stacc (/library): everything the visitor can use, organized by project → Stacclet → Pac → content type or by
 // content type across everything, with filters, per-file and selected downloads (docs/library.md). Ownership and
-// files come from the store API; structure from data/ via GS.stacc (js/stacc-model.js), computed on a background thread
+// files, and the names of the owned Pacs and their Stacclets, come from the store API (/api/library); projects and
+// content types from data/; joined by GS.stacc (js/stacc-model.js), computed on a background thread
 // through GS.staccClient (js/stacc-client.js, js/stacc-worker.js), and markup from GS.libraryView (js/library-view.js).
 // Each download asks for a fresh 5-minute private link. Also redeems the guest key in a receipt link (/library#key=...).
 // A drop-in for any [data-stacc] element: data-project starts it filtered to one project (and wears that project's
 // look), data-stacc-view="kinds" starts it by content type instead of by project.
-// Needs js/util.js, js/stacc-model.js, js/stacc-client.js, js/library-view.js and data/projects.js, stacclets.js,
-// pacs.js, content-types.js.
+// Needs js/util.js, js/stacc-model.js, js/stacc-client.js, js/library-view.js and data/projects.js, content-types.js.
 (function () {
   "use strict";
 
@@ -26,9 +26,10 @@
     const uid = ++mounted;
     const addressed = !root.dataset.project && uid === 1;
     const model = window.GS.staccClient();
-    const catalog = { projects: [...(window.PROJECTS || [])], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
-    const nameIn = (list, key) => (id) => ((list.find((x) => x.id === id) || {})[key]) || id || "Other";
-    const names = { project: nameIn(catalog.projects, "name"), stacclet: nameIn(catalog.stacclets, "title"), pac: nameIn(catalog.pacs, "title") };
+    const catalog = { projects: [...(window.PROJECTS || [])], stacclets: [], pacs: [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
+    // Looked up when asked: the store's answer fills in the Stacclets and Pacs after mounting.
+    const nameIn = (list, key) => (id) => ((catalog[list].find((x) => x.id === id) || {})[key]) || id || "Other";
+    const names = { project: nameIn("projects", "name"), stacclet: nameIn("stacclets", "title"), pac: nameIn("pacs", "title") };
     const state = { view: root.dataset.staccView === "kinds" ? "kinds" : "projects", filter: { q: "", project: root.dataset.project || "", kind: "", format: "", collection: "", tag: "" }, selected: new Set(), assets: [], items: [], follows: null, discover: [], personal: null };
     root.staccSelection = () => [...state.selected];
     let asked = 0, shown = null; // the newest model request, and the last answer drawn
@@ -104,6 +105,9 @@
         return;
       }
       const { items, signedIn } = res.data;
+      // The owned products' Stacclets and Pacs, named by the store (#176: none are defined in code).
+      catalog.stacclets = Array.isArray(res.data.stacclets) ? res.data.stacclets : [];
+      catalog.pacs = Array.isArray(res.data.pacs) ? res.data.pacs : [];
       // Projects made in the Studio aren't in data/projects.js; the store names them.
       items.forEach((i) => {
         if (i.projectId && i.projectName && !catalog.projects.some((p) => p.id === i.projectId)) catalog.projects.push({ id: i.projectId, name: i.projectName });

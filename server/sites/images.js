@@ -6,7 +6,7 @@
 // version of one of their sites still uses it is hidden instead (still served and counted) until nothing does.
 import { all, first, run, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { LIMITS, quotaOf } from "../creators/policy.js";
+import { LIMITS, quotaOf, limitOf } from "../creators/policy.js";
 import { inUseSql, storageUsed } from "../creators/storage.js";
 
 const TYPES = [
@@ -45,7 +45,8 @@ export async function uploadImage(app, creator, user, filename) {
   if (!declared) fail(411, "length_required", "Send the file with its size.");
   if (declared > LIMITS.imageBytes) fail(413, "too_large", `Images must be under ${LIMITS.imageBytes / 1048576} MB, fonts under ${LIMITS.fontBytes / 1048576} MB.`);
   const [usage, used] = await Promise.all([usageOf(app.db, creator.id), storageUsed(app.db, creator.id)]);
-  if (usage.files >= LIMITS.imagesPerCreator) fail(409, "limit_reached", `Up to ${LIMITS.imagesPerCreator} files per creator. Delete some first.`);
+  const maxFiles = limitOf(creator, "imagesPerCreator");
+  if (usage.files >= maxFiles) fail(409, "limit_reached", `Up to ${LIMITS.imagesPerCreator} files per creator. Delete some first.`);
   if (used + declared > quotaOf(creator)) over();
   const bytes = new Uint8Array(await app.request.arrayBuffer());
   if (bytes.length > LIMITS.imageBytes || bytes.length !== declared) fail(400, "bad_upload", "The upload didn't arrive whole. Try again.");
@@ -60,7 +61,7 @@ export async function uploadImage(app, creator, user, filename) {
      SELECT ?2, ?1, ?3, ?4, ?5, ?6, 'active', ?7, ?8
      WHERE ${inUseSql("?1")} + ?6 <= ?9
        AND (SELECT COUNT(*) FROM site_assets WHERE creator_id = ?1 AND status = 'active') < ?10`,
-    creator.id, id, key, filename, kind.type, bytes.length, user.id, now(), quotaOf(creator), LIMITS.imagesPerCreator);
+    creator.id, id, key, filename, kind.type, bytes.length, user.id, now(), quotaOf(creator), maxFiles);
   if (!res.meta.changes) {
     await app.env.PREVIEWS.delete(key);
     over();
@@ -77,7 +78,8 @@ export async function stillUsed(db, creatorId, id) {
     OR EXISTS (SELECT 1 FROM site_versions WHERE kind = 'profile' AND site_id = ?1 AND doc LIKE ?2)
     OR EXISTS (SELECT 1 FROM project_sites s JOIN projects p ON p.id = s.project_id WHERE p.creator_id = ?1 AND p.deleted_at IS NULL AND (s.published LIKE ?2 OR s.scheduled_draft LIKE ?2))
     OR EXISTS (SELECT 1 FROM creator_sites WHERE creator_id = ?1 AND (published LIKE ?2 OR scheduled_draft LIKE ?2))
-    OR EXISTS (SELECT 1 FROM library_pieces WHERE creator_id = ?1 AND status = 'active' AND assets LIKE ?2) AS used`, creatorId, like);
+    OR EXISTS (SELECT 1 FROM library_pieces WHERE creator_id = ?1 AND status = 'active' AND assets LIKE ?2)
+    OR EXISTS (SELECT 1 FROM project_releases r JOIN projects p ON p.id = r.project_id WHERE p.creator_id = ?1 AND r.deleted_at IS NULL AND r.artwork LIKE ?2) AS used`, creatorId, like);
   return Boolean(row && row.used);
 }
 

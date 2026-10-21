@@ -126,7 +126,7 @@ window.GUIDES = {
 
     // ---------- Creator manual ----------
     {
-      id: "becoming-a-creator", section: "creators", updated: "2026-10-16",
+      id: "becoming-a-creator", section: "creators", updated: "2026-10-21",
       title: "Becoming a creator",
       summary: "Claim a creator name in the Studio, start projects and understand your addresses on AutoStacc. Free, with no plan or card.",
       body: [
@@ -134,7 +134,7 @@ window.GUIDES = {
         { steps: [
           "Open the [Studio](/studio).",
           "Claim your creator name. It becomes your address: autostacc.com/<your name>.",
-          "Create a project for each thing you make (up to 10), then open one to build its site or add products."
+          "Create a project for each thing you make (up to 10), then open one to build its site, add products, or add its music and events."
         ] },
         { heading: "Choosing a name", id: "names" },
         { list: [
@@ -147,14 +147,17 @@ window.GUIDES = {
         { list: [
           "**/<creator>**: your profile, the one you design or else a list of your projects.",
           "**/<creator>/<project>**: a project's home page, and **/<creator>/<project>/<page>** its other pages.",
+          "**/<creator>/<project>/music/<release>** and **/<creator>/<project>/events/<event>**: a release's and an event's own pages, and **/shop/<product>** a product's.",
           "Renaming a creator or project sends the old address to the new one for 90 days, and holds the old name for you so nobody can pose as you."
         ] },
+        { heading: "Music and events", id: "music-events" },
+        "Each project in the Studio has **Music** and **Events**. Music holds your releases (title, date, artwork, tracks, players, listening links and tags). Events holds your dates (title, day and time with its time zone, venue, city and country, a ticket link, tags and a description). Each stays a draft until you publish it. Once published, a release and an event each get their own page, and an event also appears on the public [events calendar](/events), with **Add to calendar** for visitors. Tags are up to 8 short lowercase words, the same as product tags.",
         { heading: "Being verified", id: "trusted" },
         "New creators' pages are kept out of search engines and their products carry an **Unverified creator** label until AutoStacc marks them trusted. That stops spam from riding on AutoStacc's name while giving everyone the same tools."
       ]
     },
     {
-      id: "building-your-site", section: "creators", updated: "2026-10-16",
+      id: "building-your-site", section: "creators", updated: "2026-10-21",
       title: "Building your site",
       summary: "The visual builder for your profile and project sites: templates, elements, sections, pages, your look, files, preview, publishing and versions.",
       body: [
@@ -166,7 +169,7 @@ window.GUIDES = {
           "Text: headings and text with **bold**, italic and links.",
           "Media: images, galleries with a lightbox, slideshows, an audio player for a product's preview clip, and music or video players from YouTube, Spotify, SoundCloud or Apple Music share links.",
           "Layout: dividers, boxes, tabs, FAQ / accordion.",
-          "Your work: products, projects, events, a countdown, social links, a Follow button and a cart link."
+          "Your work: products, projects, a project's releases or upcoming events (from its Music and Events in the Studio; events can also be typed in), a countdown, social links, a Follow button and a cart link."
         ] },
         { heading: "Sections, pages and your look", id: "structure" },
         "Group elements into sections with their own backgrounds. A site can have up to 12 pages with a menu. Set the look once: a style preset, accent colour, a font (or upload your own WOFF2 font) and your logo. You can also add your own CSS; it's checked and kept to your page area.",
@@ -184,11 +187,11 @@ window.GUIDES = {
       ]
     },
     {
-      id: "selling", section: "creators", updated: "2026-10-16",
+      id: "selling", section: "creators", updated: "2026-10-21",
       title: "Selling your products",
       summary: "Create products in the Product Studio: files, store page, store details, preview clips, pricing, release, and what happens before a product goes on sale.",
       body: [
-        "Each project has a **Products** page in the Studio. Create a draft there, then open it: every product has its own workspace, the Product Studio.",
+        "Each project has a **Products** page in the Studio. Create a draft there, then open it: every product has its own workspace, the Product Studio. Once published, it has its own page at **/shop/<product>**, naming you and the project.",
         { heading: "The Product Studio", id: "workspace" },
         { list: [
           "**Overview**: what's ready and what's missing before release.",
