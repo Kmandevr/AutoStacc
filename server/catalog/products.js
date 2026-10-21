@@ -1,5 +1,5 @@
 // Catalog reads: the authoritative product record (price, availability) for every commerce decision.
-// Products are written only by the catalog sync (db/catalog.sql) and the admin's sales switch.
+// Products are written by the Studio (server/creators/products.js), test fixtures and the admin's sales switch.
 import { all, first, parseJson } from "../lib/db.js";
 import { salePrice } from "../promotions/promotions.js";
 
@@ -29,6 +29,17 @@ export async function sellersOf(db, products) {
   return new Map(rows.map((r) => [r.id, r]));
 }
 
+// Who made a product, for its page (server/shop/): its project and creator, any source, with whether search engines may
+// index it (a trusted, active, published creator and a published project). null when it has no creator.
+const MAKER = `j.name AS project_name, j.slug AS project_slug, c.name AS creator_name, c.slug AS creator_slug,
+  (c.trusted = 1 AND c.status = 'active' AND c.published = 1 AND c.deleted_at IS NULL AND j.published = 1 AND j.deleted_at IS NULL) AS indexable`;
+export const makerOf = (db, productId) => first(db, `SELECT ${MAKER}, c.trusted FROM products p JOIN projects j ON j.id = p.project_id
+  JOIN creators c ON c.id = j.creator_id WHERE p.id = ?`, productId);
+// The visible products whose pages search engines may index, with their last change (the shop sitemap).
+export const indexableProducts = (db) => all(db, `SELECT p.id, p.updated_at FROM products p JOIN projects j ON j.id = p.project_id
+  JOIN creators c ON c.id = j.creator_id WHERE p.published = 1 AND p.deleted_at IS NULL AND c.trusted = 1 AND c.status = 'active'
+  AND c.published = 1 AND c.deleted_at IS NULL AND j.published = 1 AND j.deleted_at IS NULL ORDER BY p.id LIMIT 50000`);
+
 // Visible in the store: published and not removed from data/.
 export const isVisible = (p) => Boolean(p && p.published && !p.deleted_at);
 // Can be bought right now.
@@ -36,8 +47,8 @@ export const isPurchasable = (p) => isVisible(p) && !p.sales_paused && p.price_c
 // Can be claimed for free by a signed-in customer.
 export const isFree = (p) => isVisible(p) && !p.sales_paused && p.price_cents === 0;
 
-// Where a product's page is: catalog products have generated pages, Studio products share the /product template.
-export const productPath = (p) => (p.source === "studio" ? `/product?p=${p.id}` : `/shop/${p.id}`);
+// Where a product's page is: every product, any creator, has its server-rendered page at /shop/<id> (server/shop/).
+export const productPath = (p) => `/shop/${p.id}`;
 
 // The shape browsers see: no internal columns. With the running sales (server/promotions), priceCents is the price
 // right now and listPriceCents the catalog price, plus the sale's name and end while one applies.

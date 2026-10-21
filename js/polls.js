@@ -1,9 +1,9 @@
 // Polls (generic platform feature, docs/architecture.md): fills each [data-polls-for="<project id>"] with that
 // project's published polls from data/polls.js, live tallies from the store API, and vote buttons for signed-in
 // customers, with a link to what the poll is about (its `about`: a published release of the poll's project, from the
-// content API through js/project-content.js, or a product on the page's data). The enclosing section stays hidden
-// until a poll exists. Needs data/polls.js and js/util.js (and js/project-content.js or data/products.js for the
-// "About" link).
+// content API through js/project-content.js, or a published product, from GET /api/products/:id). The enclosing
+// section stays hidden until a poll exists. Needs data/polls.js and js/util.js (and js/project-content.js for a
+// release's "About" link).
 (function () {
   "use strict";
 
@@ -17,8 +17,10 @@
       return r ? { title: r.title, href: content.href(r, "music") } : null;
     }
     if (kind === "product") {
-      const p = (window.PRODUCTS || []).find((x) => x.id === id);
-      return p && { title: p.title, href: window.GS.shopItemPath(p) };
+      if (!/^[a-z0-9_-]{1,80}$/i.test(id || "")) return null;
+      const res = await api(`/api/products/${encodeURIComponent(id)}`);
+      const p = res.ok && res.data.product;
+      return p ? { title: p.title, href: window.GS.shopItemPath(p) } : null;
     }
     return null;
   }

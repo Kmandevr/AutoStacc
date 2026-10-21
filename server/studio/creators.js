@@ -3,15 +3,15 @@
 // ignoring case); renames keep the old address redirecting and the old name held. Only the account's own creators
 // answer; anyone else's look like nothing there. First-party creators (owner, 2026-10-21) are listed for their members,
 // limited to products and content (their pages are hand-written: no renames, deletes, new projects, builder or
-// profile site), and an AutoStacc admin may become the first owner of one that has none.
+// profile site); their owner is the verified account the FIRST_PARTY_OWNERS secret names (#172).
 import { json, readJson, str, fail } from "../lib/http.js";
 import { isOpen } from "../settings/settings.js";
-import { requireUser, isAdmin } from "../auth/session.js";
+import { requireUser } from "../auth/session.js";
 import { audit } from "../audit/log.js";
 import { limit } from "../lib/ratelimit.js";
 import { LIMITS, quotaOf } from "../creators/policy.js";
 import { rolesFor, capabilitiesOf } from "../creators/roles.js";
-import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, updateCreator, publicCreator, publicProject, catalogCreators, claimCatalogCreator } from "../creators/creators.js";
+import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, updateCreator, publicCreator, publicProject, assignFirstPartyOwner } from "../creators/creators.js";
 import { requireProject, createProject, updateProject, deleteProject } from "../creators/projects.js";
 import { republishCreator } from "../sites/publish.js";
 import { storageUsed } from "../creators/storage.js";
@@ -23,30 +23,24 @@ const name = (v, field = "name") => str(v, field, { max: 60 });
 const FIRST_PARTY_CAPABILITIES = ["site.edit", "site.publish", "products"];
 const capabilitiesIn = (c) => capabilitiesOf(c.role).filter((cap) => c.source === "studio" || FIRST_PARTY_CAPABILITIES.includes(cap));
 
+// The account FIRST_PARTY_OWNERS names for a first-party creator becomes its owner when it opens the Studio: only once
+// its email is confirmed, never while it is being impersonated (the isAdmin rule), and each change is audited.
+async function ensureFirstPartyOwner(app, user) {
+  const ids = !user.impersonated && user.emailVerified && app.config.firstPartyOwners.get(String(user.email).toLowerCase());
+  if (!ids) return;
+  for (const id of await assignFirstPartyOwner(app.db, ids, user.id)) await audit(app, "creator.owner_assigned", { targetType: "creator", targetId: id });
+}
+
 async function overview(app) {
   const user = await requireUser(app);
-  const [creators, firstParty] = await Promise.all([creatorsOfUser(app.db, user.id), isAdmin(app, user) ? catalogCreators(app.db) : []]);
+  await ensureFirstPartyOwner(app, user);
+  const creators = await creatorsOfUser(app.db, user.id);
   const out = await Promise.all(creators.filter((c) => c.source === "studio" || c.source === "catalog").map(async (c) => {
     const [projects, used] = await Promise.all([projectsOf(app.db, c.id), storageUsed(app.db, c.id)]);
     return { ...publicCreator(c), firstParty: c.source === "catalog", role: c.role, capabilities: capabilitiesIn(c), path: `/${c.slug}`,
       storage: { usedBytes: used, quotaBytes: quotaOf(c) }, projects: projects.map((p) => ({ ...publicProject(p), path: `/${c.slug}/${p.slug}` })) };
   }));
-  // First-party creators without an owner yet, which this admin may take (POST .../claim).
-  const claimable = firstParty.filter((c) => !c.owners && !creators.some((m) => m.id === c.id))
-    .map((c) => ({ ...publicCreator(c), firstParty: true, path: `/${c.slug}` }));
-  return json({ creators: out, claimable, limits: LIMITS });
-}
-
-// An AutoStacc admin becomes the first owner of a first-party creator, so its products and content can be run from the
-// Studio; anyone else, or a creator that already has an owner, gets "nothing here".
-async function claimCreator(app, { creatorId }) {
-  const user = await requireUser(app);
-  if (!isAdmin(app, user)) fail(404, "not_found", "Nothing here.");
-  await limit(app, "studio-create", 10, 3600);
-  const target = typeof creatorId === "string" ? (await catalogCreators(app.db)).find((c) => c.id === creatorId) : null;
-  if (!target || !(await claimCatalogCreator(app.db, target.id, user.id))) fail(404, "not_found", "Nothing here.");
-  await audit(app, "creator.claimed", { targetType: "creator", targetId: target.id });
-  return json({ creator: { ...publicCreator(target), firstParty: true, role: "owner", path: `/${target.slug}` } }, 201);
+  return json({ creators: out, limits: LIMITS });
 }
 
 async function newCreator(app) {
@@ -103,7 +97,6 @@ export const routes = [
   ["GET", "/api/studio", overview],
   ["POST", "/api/studio/creators", newCreator],
   ["PATCH", "/api/studio/creators/:creatorId", editCreator],
-  ["POST", "/api/studio/creators/:creatorId/claim", claimCreator],
   ["POST", "/api/studio/creators/:creatorId/projects", newProject],
   ["PATCH", "/api/studio/projects/:projectId", editProject],
   ["DELETE", "/api/studio/projects/:projectId", removeProject]

@@ -1,7 +1,7 @@
 // Product card template (GS.productCard) for the store (js/store-browse.js, js/store-sections.js) and the product grids
 // on other pages (js/shop.js): one item as a tile in its project's look, opening the product's own page. Takes either
-// shape: a data/products.js entry (price in dollars, facets as values) or a store API product (priceCents, sale, facets
-// with labels, badges). Shows only what the data says: labels from its facets, "New", a running sale's percent off and
+// shape: a store API product (priceCents, sale, facets with labels, badges) or js/shop.js's short form of one (price in
+// dollars; facets, if any, as values). Shows only what the data says: labels from its facets, "New", a running sale's percent off and
 // a floor of recent confirmed sales. Studio products are marked "Unverified creator" until AutoStacc trusts their
 // creator. Needs js/util.js, data/product-types.js and data/projects.js (data/vocabulary.js for labels of data entries).
 (function () {
@@ -46,8 +46,8 @@
     const priceText = live ? (p.free ? "Free" : `${p.sale ? `<s class="price-was">${e(cents(p.listPriceCents, p.currency))}</s> ` : ""}${e(cents(p.priceCents, p.currency))}`)
       : (p.price ? money(p.price) : "Free");
     // Static fallback; js/store.js swaps in the live control (Add to cart, STACC'D, ...).
-    const button = p.draft || (live && p.available === false)
-      ? `<span class="btn" aria-disabled="true">${p.draft ? "Coming soon" : "Unavailable"}</span>`
+    const button = live && p.available === false
+      ? `<span class="btn" aria-disabled="true">Unavailable</span>`
       : live && p.free ? `<button class="btn" type="button" data-claim="${e(p.id)}">Get it free</button>`
       : `<button class="btn" type="button" data-add-to-cart="${e(p.id)}">Add to cart</button>`;
     const by = p.projectName || projectOf(project).name || "";
@@ -56,7 +56,7 @@
     const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
       // Buyers' reviews (server/reviews/), only when there are any.
       p.rating ? `★ ${p.rating.average} (${p.rating.count} review${p.rating.count === 1 ? "" : "s"})` : ""].filter(Boolean);
-    const art = p.artwork || (p.image && "/" + p.image.src.replace(/^\/+/, ""));
+    const art = p.artwork;
     const size = mixed ? (p.featured ? " feature" : " capsule") : "";
     // A data entry's clip is { file }, the store API's a URL.
     const clip = typeof p.preview === "string" ? p.preview : p.preview && p.preview.file ? `/media/previews/${p.preview.file}` : "";

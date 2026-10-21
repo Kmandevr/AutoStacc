@@ -1,28 +1,28 @@
 // New releases feed, a drop-in for any [data-release-feed] list: published releases (the content API through
-// js/project-content.js, newest first) and store items (data/products.js), from every project, each row in its
-// project's look; a store item opens the store filtered to its project with it selected. data-limit="6" caps the rows.
+// js/project-content.js, newest first) and store items (GET /api/products), from every project, each row in its
+// project's look; a store item opens its product page. data-limit="6" caps the rows.
 // data-personal (the dashboard only) also asks the store what the visitor owns and follows: followed projects rise to
 // the top and owned items are marked. Without it nothing private is fetched, so it is safe on public pages. Needs
-// js/util.js, js/project-content.js and data/projects.js, product-types.js, products.js.
+// js/util.js, js/project-content.js and data/projects.js, product-types.js.
 (function () {
   "use strict";
 
-  const { escapeHTML: e, api, fmtDate, money, look, shopItemPath, content } = window.GS;
+  const { escapeHTML: e, api, fmtDate, cents, look, shopItemPath, content } = window.GS;
   const lists = [...document.querySelectorAll("[data-release-feed]")];
   if (!lists.length || !content) return;
   const PROJECTS = window.PROJECTS || [];
   const TYPES = window.PRODUCT_TYPES || {};
-  const names = new Map(); // project names the content API gave, for projects this page's data doesn't list
+  const names = new Map(); // project names the content and store APIs gave, for projects this page's data doesn't list
   const projectName = (id) => (PROJECTS.find((p) => p.id === id) || {}).name || names.get(id) || "";
-  let RELEASES = [];
+  let RELEASES = [], PRODUCTS = [];
 
   function draw(list, owned, followed) {
     const releases = RELEASES.filter((r) => !r.draft).map((r) => ({
       href: content.href(r, "music"), title: r.title, project: r.project, tag: r.type, track: "midi", meta: fmtDate(r.date), date: r.date
     }));
-    const products = (window.PRODUCTS || []).map((p) => ({
-      href: shopItemPath(p), title: p.title, project: p.project, tag: (TYPES[p.type] || {}).label || p.type, track: p.type === "presets" ? "presets" : p.type === "music" ? "midi" : "samples",
-      meta: owned.has(p.id) ? "In Your Stacc ✓" : p.draft ? "Coming soon" : p.price ? money(p.price) : "Free", date: ""
+    const products = PRODUCTS.map((p) => ({
+      href: shopItemPath(p), title: p.title, project: p.projectId, tag: (TYPES[p.type] || {}).label || p.type, track: p.type === "presets" ? "presets" : p.type === "music" ? "midi" : "samples",
+      meta: owned.has(p.id) ? "In Your Stacc ✓" : p.free ? "Free" : cents(p.priceCents, p.currency), date: ""
     }));
     const rows = [...releases.sort((a, b) => b.date.localeCompare(a.date)), ...products]
       .map((x, i) => ({ ...x, rank: (followed.has(x.project) ? 0 : 1) * 1000 + i }))
@@ -33,8 +33,8 @@
       <span class="clip-end">${e(x.meta)}</span></a></li>`).join("") || `<li class="small-print">Nothing released yet.</li>`;
   }
 
-  // Store items show at once; releases join when the content API answers, and personal lists once the store says
-  // what the visitor owns and follows.
+  // Releases and store items join as their APIs answer (offline: the empty row), and personal lists once the store
+  // says what the visitor owns and follows.
   lists.forEach((list) => draw(list, new Set(), new Set()));
   const personal = lists.filter((list) => "personal" in list.dataset);
   let mine = { owned: new Set(), followed: new Set() };
@@ -42,6 +42,12 @@
   content.latest().then((got) => {
     RELEASES = got.releases;
     for (const r of RELEASES) if (r.projectName) names.set(r.project, r.projectName);
+    drawAll();
+  });
+  api("/api/products").then((res) => {
+    if (!res.ok) return;
+    PRODUCTS = res.data.products;
+    for (const p of PRODUCTS) if (p.projectName) names.set(p.projectId, p.projectName);
     drawAll();
   });
   if (!personal.length) return;

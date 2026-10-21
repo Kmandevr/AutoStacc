@@ -1,55 +1,57 @@
-// Project content every creator makes in the Studio, first-party included (D1 project_releases, project_news,
-// project_shows; docs/creators.md): the rows, their writes (always a draft first; publish, unpublish, soft delete) and
-// their public shapes, which mirror data/music.js, data/news.js and data/shows.js so the pages change little. Public
-// reads only ever see published content of visible projects (server/projects/projects.js). Release and news pages
-// (functions/, server/sites/) and the sitemap read them through getPublished, newsAboutRelease and sitemapEntries.
+// Project content every creator makes in the Studio, first-party included (D1 project_releases and project_events;
+// docs/creators.md): the rows, their writes (always a draft first; publish, unpublish, soft delete) and their public
+// shapes. Public reads only ever see published content of visible projects (server/projects/projects.js). Release and
+// event pages (server/content/public.js), the events calendar (events.js) and the sitemap (sitemap.js) read them
+// through getPublished, select and PUBLISHED. News (project_news) is off until each creator's community opens (#174): its
+// rows are kept as they are and nothing here reads them. releasesWithLocalArtwork and swapReleaseArtwork move artwork
+// migrated from data/ into the creator's own images (#179).
 import { all, first, stmt, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
+import { storedTags } from "../lib/tags.js";
 import { VISIBLE, projectAddress, getVisibleProject } from "../projects/projects.js";
 import { taken, isUnique } from "../creators/holds.js";
-import { markup } from "../sites/text.js";
 import { embedFor } from "../sites/embeds.js";
 import { imageSrc } from "../sites/images.js";
 
-// Each kind: its table, id prefix, the page folder (null: no page), the date column and its fields as [column, json?].
+// Each kind: its table, id prefix, page folder, date column and its fields as [column, json?].
 export const KIND = {
   releases: { table: "project_releases", prefix: "rel", folder: "music", date: "release_date", max: 200, fields: {
     slug: ["slug"], title: ["title"], type: ["type"], date: ["release_date"], upc: ["upc"], description: ["description"],
     artwork: ["artwork", true], tracks: ["tracks", true], credits: ["credits", true], embedUrl: ["embed_url"],
-    fallbackEmbedUrl: ["fallback_embed_url"], links: ["links", true], featured: ["featured"] } },
-  news: { table: "project_news", prefix: "nws", folder: "news", date: "post_date", max: 500, fields: {
-    slug: ["slug"], date: ["post_date"], title: ["title"], tag: ["tag"], release: ["release_slug"], summary: ["summary"], body: ["body"] } },
-  shows: { table: "project_shows", prefix: "shw", folder: null, date: "show_date", max: 200, fields: {
-    date: ["show_date"], city: ["city"], venue: ["venue"], ticketUrl: ["ticket_url"] } }
+    fallbackEmbedUrl: ["fallback_embed_url"], links: ["links", true], featured: ["featured"], tags: ["tags", true] } },
+  events: { table: "project_events", prefix: "evt", folder: "events", date: "event_date", max: 200, fields: {
+    slug: ["slug"], title: ["title"], date: ["event_date"], time: ["start_time"], endDate: ["end_date"], timeZone: ["time_zone"],
+    venue: ["venue"], city: ["city"], country: ["country"], ticketUrl: ["ticket_url"], tags: ["tags", true], description: ["description"] } }
 };
 
-const today = () => now().slice(0, 10);
+export const today = () => now().slice(0, 10);
 const toDb = (k, v) => (k === "featured" ? (v ? 1 : 0) : v);
-const pathOf = (kind, r) => (KIND[kind].folder ? `${projectAddress({ creator_slug: r.creator_slug, slug: r.project_slug, id: r.project_id })}/${KIND[kind].folder}/${r.slug}` : null);
+export const pathOf = (kind, r) => `${projectAddress({ creator_slug: r.creator_slug, slug: r.project_slug, id: r.project_id })}/${KIND[kind].folder}/${r.slug}`;
 
 // A row's values under the field names the API uses (JSON columns parsed).
 export function valuesOf(kind, row) {
   const out = {};
   for (const [k, [col, isJson]] of Object.entries(KIND[kind].fields)) out[k] = isJson ? parseJson(row[col], k === "artwork" ? null : []) : row[col];
   if (kind === "releases") out.featured = Boolean(row.featured);
+  out.tags = storedTags(row.tags);
   return out;
 }
 
 const artworkOut = (a) => (a && a.asset ? { src: imageSrc(a.asset), width: a.width, height: a.height, alt: a.alt } : a || null);
 const playerOut = (v) => (v ? (embedFor(v) || {}).src || v : "");
+const host = (r) => ({ creator: r.creator_slug || "", creatorName: r.creator_name || "", projectName: r.project_name || "" });
 
 // ---------- public shapes ----------
 export function publicRelease(r) {
   const v = valuesOf("releases", r);
   return { id: r.slug, project: r.project_id, title: v.title, type: v.type, date: v.date, upc: v.upc || "", description: v.description,
     artwork: artworkOut(v.artwork), tracks: v.tracks, credits: v.credits, embedUrl: playerOut(v.embedUrl),
-    fallbackEmbedUrl: playerOut(v.fallbackEmbedUrl), links: v.links, featured: v.featured, path: pathOf("releases", r) };
+    fallbackEmbedUrl: playerOut(v.fallbackEmbedUrl), links: v.links, featured: v.featured, tags: v.tags, path: pathOf("releases", r) };
 }
-// release: only when the release it names is published too (release_live, from the query).
-export const publicNews = (r) => ({ id: r.slug, project: r.project_id, date: r.post_date, title: r.title, tag: r.tag,
-  release: r.release_live || null, summary: r.summary, bodyHtml: markup(r.body), path: pathOf("news", r) });
-export const publicShow = (r) => ({ project: r.project_id, date: r.show_date, city: r.city, venue: r.venue, ticketUrl: r.ticket_url || "" });
-export const PUBLIC = { releases: publicRelease, news: publicNews, shows: publicShow };
+export const publicEvent = (r) => ({ id: r.slug, project: r.project_id, title: r.title, date: r.event_date, time: r.start_time || "",
+  endDate: r.end_date || "", timeZone: r.time_zone || "", venue: r.venue || "", city: r.city, country: r.country || "",
+  ticketUrl: r.ticket_url || "", tags: storedTags(r.tags), description: r.description || "", path: pathOf("events", r), ...host(r) });
+export const PUBLIC = { releases: publicRelease, events: publicEvent };
 
 // What the Studio shows: every stored value (not yet resolved for the public), its state and its address.
 export const studioView = (kind, r) => ({ id: r.id, ...valuesOf(kind, r), published: Boolean(r.published), updatedAt: r.updated_at,
@@ -57,61 +59,55 @@ export const studioView = (kind, r) => ({ id: r.id, ...valuesOf(kind, r), publis
 
 // ---------- reads ----------
 const JOIN = "JOIN projects p ON p.id = x.project_id LEFT JOIN creators c ON c.id = p.creator_id";
-const NAMES = "p.slug AS project_slug, c.slug AS creator_slug";
-const LIVE_RELEASE = "(SELECT r.slug FROM project_releases r WHERE r.project_id = x.project_id AND r.slug = x.release_slug AND r.published = 1 AND r.deleted_at IS NULL)";
-const select = (kind) => `SELECT x.*, ${NAMES}${kind === "news" ? `, ${LIVE_RELEASE} AS release_live` : ""} FROM ${KIND[kind].table} x ${JOIN}`;
-const PUBLISHED = `x.published = 1 AND x.deleted_at IS NULL AND ${VISIBLE}`;
+export const select = (kind) => `SELECT x.*, p.slug AS project_slug, p.name AS project_name, c.slug AS creator_slug, c.name AS creator_name FROM ${KIND[kind].table} x ${JOIN}`;
+export const PUBLISHED = `x.published = 1 AND x.deleted_at IS NULL AND ${VISIBLE}`;
+// An event still to come or still running.
+export const UPCOMING = "COALESCE(x.end_date, x.event_date) >= ?";
 
-// Published content of visible projects (one project's, or every project's newest), shows upcoming only.
+// Published content of visible projects (one project's, or every project's newest), events upcoming only.
 async function published(db, where, params, max) {
-  const day = today();
-  const [releases, news, shows] = await Promise.all([
+  const [releases, events] = await Promise.all([
     all(db, `${select("releases")} WHERE ${PUBLISHED}${where} ORDER BY x.release_date DESC, x.created_at DESC LIMIT ?`, ...params, max),
-    all(db, `${select("news")} WHERE ${PUBLISHED}${where} ORDER BY x.post_date DESC, x.created_at DESC LIMIT ?`, ...params, max),
-    all(db, `${select("shows")} WHERE ${PUBLISHED}${where} AND x.show_date >= ? ORDER BY x.show_date, x.created_at LIMIT ?`, ...params, day, max)
+    all(db, `${select("events")} WHERE ${PUBLISHED}${where} AND ${UPCOMING} ORDER BY x.event_date, x.start_time, x.created_at LIMIT ?`, ...params, today(), max)
   ]);
-  return { releases: releases.map(publicRelease), news: news.map(publicNews), shows: shows.map(publicShow) };
+  return { releases: releases.map(publicRelease), events: events.map(publicEvent) };
 }
 export const projectContent = (db, projectId) => published(db, " AND p.id = ?", [projectId], 500);
 export const latestContent = (db, max) => published(db, "", [], max);
 
-// A published release or news post at /<creator>/<project>/<folder>/<slug>, with its visible project (creator name,
-// trust and look included), or null.
+// A published release or event at /<creator>/<project>/<folder>/<slug>, with its visible project, or null.
 export async function getPublished(db, kind, creatorSlug, projectSlug, slug) {
-  if (!KIND[kind] || !KIND[kind].folder) return null;
+  if (!KIND[kind]) return null;
   const row = await first(db, `${select(kind)} WHERE ${PUBLISHED} AND c.slug = ? AND COALESCE(p.slug, p.id) = ? AND x.slug = ?`,
     String(creatorSlug).toLowerCase(), String(projectSlug).toLowerCase(), String(slug).toLowerCase());
   const project = row && (await getVisibleProject(db, row.project_id));
   return project ? { item: PUBLIC[kind](row), row, project } : null;
 }
 
-export const newsAboutRelease = async (db, projectId, slug) =>
-  (await all(db, `${select("news")} WHERE ${PUBLISHED} AND x.project_id = ? AND x.release_slug = ? ORDER BY x.post_date DESC LIMIT 20`, projectId, slug)).map(publicNews);
-
-// Release and news pages search engines may index: published, of visible projects whose creator AutoStacc trusts
-// (the others are noindex). [{ kind, path, lastmod }]
-export async function sitemapEntries(db) {
-  const rows = await Promise.all(["releases", "news"].map((kind) =>
-    all(db, `${select(kind)} WHERE ${PUBLISHED} AND c.trusted = 1 ORDER BY x.${KIND[kind].date} DESC LIMIT 5000`)
-      .then((list) => list.map((r) => ({ kind, path: pathOf(kind, r), lastmod: String(r.updated_at).slice(0, 10) })))));
-  return rows.flat();
-}
-
-// Every project's published release, news and show dates: { [projectId]: { releases: [], news: [], shows: [] } }.
+// Every project's published release and event dates: { [projectId]: { releases: [], events: [] } }.
 export async function contentDates(db) {
-  const rows = await all(db, ["releases", "news", "shows"].map((k) =>
+  const rows = await all(db, Object.keys(KIND).map((k) =>
     `SELECT project_id, '${k}' AS kind, ${KIND[k].date} AS d FROM ${KIND[k].table} WHERE published = 1 AND deleted_at IS NULL`).join(" UNION ALL "));
   const out = {};
-  for (const r of rows) ((out[r.project_id] ||= { releases: [], news: [], shows: [] })[r.kind]).push(r.d);
+  for (const r of rows) ((out[r.project_id] ||= { releases: [], events: [] })[r.kind]).push(r.d);
   return out;
 }
+
+// ---------- artwork from data/ (#179) ----------
+// Releases whose artwork is still a root-relative file of the site (no stored image): [{ id, project_id, creator_id, artwork }].
+export const releasesWithLocalArtwork = async (db) => (await all(db, `SELECT x.id, x.project_id, p.creator_id, x.artwork FROM project_releases x
+  JOIN projects p ON p.id = x.project_id WHERE x.deleted_at IS NULL AND x.artwork IS NOT NULL AND json_extract(x.artwork, '$.asset') IS NULL
+  AND json_extract(x.artwork, '$.src') LIKE '/%'`)).map((r) => ({ ...r, artwork: parseJson(r.artwork, null) }));
+// Compare-and-set: the release's artwork becomes { asset, width, height, alt } only while it still is oldSrc. -> changed?
+export const swapReleaseArtwork = async (db, releaseId, oldSrc, artwork) => Boolean((await stmt(db, `UPDATE project_releases
+  SET artwork = ?, updated_at = ? WHERE id = ? AND json_extract(artwork, '$.asset') IS NULL AND json_extract(artwork, '$.src') = ?`,
+  JSON.stringify({ asset: artwork.asset, width: artwork.width, height: artwork.height, alt: artwork.alt }), now(), releaseId, oldSrc).run()).meta.changes);
 
 // ---------- the Studio ----------
 export const getItem = (db, kind, id) => first(db, `${select(kind)} WHERE x.id = ? AND x.deleted_at IS NULL`, id);
 export const listItems = (db, kind, projectId) =>
   all(db, `${select(kind)} WHERE x.project_id = ? AND x.deleted_at IS NULL ORDER BY x.${KIND[kind].date} DESC, x.created_at DESC`, projectId);
 
-const releaseExists = (db, projectId, slug) => first(db, "SELECT 1 AS ok FROM project_releases WHERE project_id = ? AND slug = ? AND deleted_at IS NULL", projectId, slug);
 const unfeature = (db, projectId, id) => stmt(db, "UPDATE project_releases SET featured = 0 WHERE project_id = ? AND id <> ? AND featured = 1", projectId, id);
 
 async function write(db, statements) {
@@ -126,7 +122,6 @@ async function write(db, statements) {
 // A new item, always a draft. The project's limit is checked inside the insert, so parallel requests can't pass it.
 export async function createItem(db, kind, project, user, values) {
   const k = KIND[kind];
-  if (values.release && !(await releaseExists(db, project.id, values.release))) fail(400, "invalid_field", "That release isn't in this project.", { field: "release" });
   const id = newId(k.prefix);
   const t = now();
   const cols = Object.keys(values).filter((f) => k.fields[f]);
@@ -145,7 +140,6 @@ export async function createItem(db, kind, project, user, values) {
 export async function updateItem(db, kind, row, values) {
   const k = KIND[kind];
   if (values.slug && values.slug !== row.slug && row.published) fail(409, "slug_locked", "A published page keeps its address. Unpublish it first, or keep this one.", { field: "slug" });
-  if (values.release && !(await releaseExists(db, row.project_id, values.release))) fail(400, "invalid_field", "That release isn't in this project.", { field: "release" });
   const sets = [];
   const params = [];
   for (const [f, v] of Object.entries(values)) {

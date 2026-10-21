@@ -1,9 +1,10 @@
 // Relationships between pieces of content: which track was built from which fragment, what remixes what. Generic:
 // any project whose `features` include "relationships" (data/projects.js) can use them. Model: docs/architecture.md.
-// Releases are Studio content in the store database now, so data/ can't check a link to one and refuses it.
+// Products, Stacclets, Pacs and releases are Studio content in the store database now (#176), so data/ can't check a
+// link to one and refuses it; only polls (data/polls.js) can be linked here until relationships move to the Studio.
 // RELATIONSHIPS: [{ from: "kind:id", to: "kind:id", type }] read as "<from> <type> <to>", e.g.
-//   { from: "pac:new-loops", to: "pac:older-loops", type: "evolved-from" }.
-//   kind is product, stacclet, pac or poll; the id must exist in its data file. Only confirmed links.
+//   { from: "poll:second-vote", to: "poll:first-vote", type: "evolved-from" }.
+//   kind is poll; the id must exist in data/polls.js. Only confirmed links.
 // RELATIONSHIP_TYPES: label is shown on the `from` side, reverse on the `to` side.
 window.RELATIONSHIP_TYPES = {
   "built-from": { label: "Built from", reverse: "Featured in" },

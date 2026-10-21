@@ -1,10 +1,9 @@
-// Admin API (owner only; every route starts with requireAdmin, which answers 404 to everyone else).
-// Catalog content and prices live in data/products.js (reviewed in git, shown on the static pages); here the owner
-// pauses sales and manages orders, customers and entitlements (paid files and previews: admin/files.js). Every change is
-// written to the audit log (server/audit/log.js) under the admin's name.
-import { refreshSearchText } from "../discovery/facets.js";
+// Admin API (owner only; every route starts with requireAdmin, which answers 404 to everyone else): the summary, every
+// product with its files and the Pacs (for the Control Center's lists), orders, customers and entitlements. Products are
+// made in the Studio by their creators; the owner's moderation of them and their paid files is admin/files.js. Every
+// change is written to the audit log (server/audit/log.js) under the admin's name.
 import { json, fail, readJson, str, email as emailField, id } from "../lib/http.js";
-import { all, first, run, newId, now } from "../lib/db.js";
+import { all, first, newId } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
 import { getProduct, publicProduct } from "../catalog/products.js";
 import { getOrder, orderItems, publicOrder } from "../orders/orders.js";
@@ -34,53 +33,22 @@ async function summary(app) {
 
 async function products(app) {
   await requireAdmin(app);
-  const [rows, files] = await Promise.all([
+  const [rows, files, pacs] = await Promise.all([
     all(app.db, "SELECT * FROM products ORDER BY deleted_at IS NOT NULL, title"),
-    all(app.db, "SELECT id, product_id, filename, label, size_bytes, active, status, created_at, pac_id, kind FROM product_files ORDER BY sort, filename")
+    all(app.db, "SELECT id, product_id, filename, label, size_bytes, active, status, created_at, pac_id, kind FROM product_files ORDER BY sort, filename"),
+    all(app.db, "SELECT id, title FROM pacs")
   ]);
   return json({
+    pacs: Object.fromEntries(pacs.map((x) => [x.id, x.title])),
     products: rows.map((p) => ({ ...publicProduct(p), published: Boolean(p.published), salesPaused: Boolean(p.sales_paused), deleted: Boolean(p.deleted_at),
       updatedAt: p.updated_at, createdAt: p.created_at, files: files.filter((f) => f.product_id === p.id) }))
   });
 }
 
-// PATCH any of { salesPaused, priceCents, published, deleted, title, description }: the owner's controls over a product. A
-// change to price, published, deleted, title or description marks the row admin-managed, so the next deploy's catalog sync (scripts/lib/catalog.js) leaves
-// it alone. Price, publishing and removal are recorded in the audit log by database triggers (migration 0004).
-async function updateProduct(app, { productId }) {
+// The Pacs the Pack Builder can fill (every creator's, from the database): [{ id, title, project }].
+async function pacs(app) {
   await requireAdmin(app);
-  const body = await readJson(app.request);
-  const sets = [], args = [];
-  const flag = (name, col) => {
-    if (body[name] === undefined) return;
-    if (typeof body[name] !== "boolean") fail(400, "invalid_field", `${name} must be true or false.`);
-    sets.push(`${col} = ?`); args.push(body[name] ? 1 : 0);
-  };
-  flag("salesPaused", "sales_paused");
-  flag("published", "published");
-  if (body.deleted !== undefined) {
-    if (typeof body.deleted !== "boolean") fail(400, "invalid_field", "deleted must be true or false.");
-    sets.push("deleted_at = ?"); args.push(body.deleted ? now() : null);
-    if (body.deleted) sets.push("published = 0");
-  }
-  if (body.priceCents !== undefined) {
-    if (!Number.isInteger(body.priceCents) || body.priceCents < 0 || body.priceCents > 1000000) fail(400, "invalid_field", "priceCents must be a whole number of cents from 0 to 1,000,000.");
-    sets.push("price_cents = ?"); args.push(body.priceCents);
-  }
-  if (body.title !== undefined) { sets.push("title = ?"); args.push(str(body.title, "title", { min: 3, max: 80 }).trim()); }
-  if (body.description !== undefined) {
-    if (typeof body.description !== "string" || body.description.length > 2000) fail(400, "invalid_field", "The description can be up to 2,000 characters.");
-    sets.push("description = ?"); args.push(body.description.trim());
-  }
-  if (!sets.length) fail(400, "invalid_field", "Nothing to change.");
-  if (["priceCents", "published", "deleted", "title", "description"].some((k) => body[k] !== undefined)) sets.push("admin_managed = 1");
-  const res = await run(app.db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), id(productId));
-  if (!res.meta.changes) fail(404, "not_found", "No product with that id.");
-  if (body.title !== undefined || body.description !== undefined) await refreshSearchText(app.db, productId);
-  if (body.salesPaused !== undefined) await audit(app, body.salesPaused ? "product.sales_paused" : "product.sales_resumed", { targetType: "product", targetId: productId });
-  const changed = ["priceCents", "published", "deleted", "title", "description"].filter((k) => body[k] !== undefined);
-  if (changed.length) await audit(app, "product.changed_by_admin", { targetType: "product", targetId: productId, detail: Object.fromEntries(changed.map((k) => [k, body[k]])) });
-  return json({ ok: true });
+  return json({ pacs: await all(app.db, "SELECT id, title, project_id AS project FROM pacs WHERE deleted_at IS NULL ORDER BY title, id") });
 }
 
 async function orders(app) {
@@ -169,7 +137,7 @@ async function revokeEntitlement(app, { entitlementId }) {
 export const routes = [
   ["GET", "/api/admin/summary", summary],
   ["GET", "/api/admin/products", products],
-  ["PATCH", "/api/admin/products/:productId", updateProduct],
+  ["GET", "/api/admin/pacs", pacs],
   ["GET", "/api/admin/orders", orders],
   ["GET", "/api/admin/orders/:orderId", order],
   ["POST", "/api/admin/orders/:orderId/resend", resendConfirmation],

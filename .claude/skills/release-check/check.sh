@@ -20,9 +20,13 @@ done
 
 git ls-files --error-unmatch .dev.vars >/dev/null 2>&1 && report FAIL secrets-tracked ".dev.vars is tracked"
 git grep -nE '(sk|rk)_live_[A-Za-z0-9]{8,}|whsec_[A-Za-z0-9]{20,}|xkeysib-[a-f0-9]{20,}' -- ':!*.md' >/dev/null 2>&1 && report FAIL secrets "a live-looking key is committed (git grep for sk_live_/whsec_/xkeysib-)" || report PASS secrets "no keys committed"
-grep -q 'email: ""' data/projects.js && report WARN placeholder "a project has no booking email (data/projects.js)"
-grep -q "draft: true" data/*.js && report WARN placeholder "draft (placeholder) entries kept out of search (data/)"
-grep -q 'newsletterAction: ""' data/projects.js && report WARN placeholder "a project has an empty newsletterAction (data/projects.js)"
+# Facts not set yet are empty strings, never placeholders (#173): warn so the owner fills them in.
+grep -q 'email: ""' data/projects.js && report WARN unset "a project has no booking email (data/projects.js)"
+grep -q 'newsletterAction: ""' data/projects.js && report WARN unset "a project has an empty newsletterAction (data/projects.js)"
+# The code-based catalog is retired (#176): products, Stacclets, Pacs, releases and events are Studio content.
+for f in data/products.js data/pacs.js data/stacclets.js data/news.js data/shows.js data/music.js; do
+  [ -e "$f" ] && report FAIL retired-data "$f is back; that content is made in the Studio"
+done
 # Context hygiene: no requirement lost from CLAUDE.md or the rules, CLAUDE.md within budget, handoff sound.
 ctx=$(.claude/skills/handoff/check.sh) || fail=1
 echo "$ctx" | grep -v '^PASS context$' || true

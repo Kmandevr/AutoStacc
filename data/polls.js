@@ -3,5 +3,6 @@
 // A page shows a poll with <div data-poll="<id>"></div> plus js/polls.js. Model: docs/architecture.md.
 // Fields: id (lowercase-hyphenated, permanent), project, question (plain text),
 //   options: [{ id (lowercase-hyphenated), label }], at least two. opens / closes: optional YYYY-MM-DD (UTC days).
-//   about: optional "kind:id" the poll is about (product, stacclet, pac or poll; see data/relationships.js). draft: true = not shown, no votes.
+//   about: optional "poll:<id>" the poll is about (products, Stacclets, Pacs and releases are made in the Studio, so data/
+//   can't link to them; see data/relationships.js). draft: true = not shown, no votes.
 window.POLLS = [];

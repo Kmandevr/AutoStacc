@@ -1,7 +1,7 @@
 ---
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
-covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, server/settings/, data/workspaces.js, db/migrations/0004_admin_ops.sql]
+covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/admin/artwork.js, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, server/settings/, data/workspaces.js, db/migrations/0004_admin_ops.sql]
 updated: 2026-10-21
 ---
 
@@ -23,7 +23,7 @@ On Stats, above its sections, the figures and the summary list payment events th
 | Estimate | calculated from the others (average order value, view → buy) | never a measurement; rates appear only from 50 views |
 
 - Money is paid orders, before provider fees, per currency; refunds are counted apart. **Live** figures read only live-mode orders, so test orders can never show up as revenue; **Test** reads only test orders.
-- Activity counters (page, project, product, release and news views; cart and checkout steps) store an event, an id and a day, nothing about the visitor. Event pages aren't counted because events have no page of their own.
+- Activity counters (page, project, product and release views, and news views from before news was hidden; cart and checkout steps) store an event, an id and a day, nothing about the visitor. Event pages aren't counted.
 - An admin browsing as a customer (impersonation) is never counted as a visitor, and their downloads are counted apart from customers'.
 - No statistic names a customer: sections return counts and product titles only.
 - Adding a metric: add it to a section's `metrics()` (or a new section file in `SECTIONS`), returning one of the shapes in `server/stats/metric.js`; the page draws it without changes. Put its SQL in the section's `queries` so the plan test checks it.
@@ -43,7 +43,7 @@ Each one is a percentage (1–90%) or an amount, on everything, chosen products,
 - **Charged exactly:** Stripe is sent each line at the price charged, with a code's share folded into the line, so the payment equals the order total to the cent (anything else is refused, as before).
 - **Recorded:** each order keeps the catalog price and sale per line, and the code and discount; the receipt shows the discount. The tab lists every promotion with its status (scheduled, running, ended), paid orders and how much it took off; the Overview has a "Sales & promo codes" section. Creating and ending one are in the audit log.
 - **Not edited, ended:** "end now" (or "cancel" before it starts) stops it at once; orders already placed keep what they got. To change terms, end it and create another, so every order points at the terms it actually got.
-- **Static pages:** the price written into the static product pages and search results stays the catalog price; the live price on the page (and what checkout charges) is the sale price.
+- **Product pages:** a product's server-rendered page (`/shop/<id>`) and its Product JSON-LD state its own price; the live price drawn on the page (and what checkout charges) is the sale price.
 
 ## Customer preview
 
@@ -82,9 +82,9 @@ It is the production checkout, not a copy: the order is created by `POST /api/ch
 - admin signed in (with two-step sign-in on, once, after the code); two-step sign-in switched on or off (`auth.two_factor_enabled`, `auth.two_factor_disabled`; never the key or a code); impersonation started, ended (with reason) and every write inside it; test purchase started; customer previewed
 - product sales paused or resumed, product changed in the Control Center (price, published, removed), file added, replaced (new version), published, held back, rejected or deactivated, preview uploaded; receipt resent; entitlement granted or revoked; promotion created or ended; creator updated; creator purchases paused or allowed; payout paid or declined, a payout transfer Stripe refused or one sent but not recorded; AutoStacc news sent, a product announced to followers; usage spending allowed or stopped, storage cap set; Pack Builder steps (version created, edited, held, approved, rejected, published or discarded; drafts, additions and preview clips)
 - by the system: each daily retention sweep (`maintenance.sweep`)
-- by the database itself, as "catalog sync": product created, price changed, published, unpublished, removed; project created, published, unpublished
+- by the database itself, as "catalog sync": project created, published, unpublished (products stopped being synced from `data/` on 2026-10-21, #176; older product entries from the sync stay)
 
-Not recorded here: news posts and events, which are edited in `data/` and published by deploy. Their history is git's. No passwords, tokens, keys, card data or customer emails are stored in entries; customers are identified by account id and shown by email only when an admin reads the log.
+Not recorded here: releases and events edited in the Studio (each row keeps when it changed). The one-time release artwork move is recorded (`release.artwork_moved`). No passwords, tokens, keys, card data or customer emails are stored in entries; customers are identified by account id and shown by email only when an admin reads the log.
 
 ## Community library
 
@@ -121,6 +121,17 @@ Pick a Pac, choose one of the products that sell it and upload the Pac's content
 Creators build their own products' packs in the Studio the same way. A clean version goes live when they publish it; one the automated review flags (unsafe or damaged entries, files that aren't what their names say, programs, password-protected files; and, unless the creator is trusted, unsupported types, mostly unknown formats, nothing new, or a revision that removes much of the live one) waits in **Waiting for review** at the top of this tab, and the admins get an email. Open it to see the flags with examples, then **Approve and publish** (audited as an override, with the flags) or **Reject…** with a note the creator sees (the upload is deleted and the creator can upload again). In the Creators tab, **Review every Pac** holds all of a creator's versions, clean or not.
 
 The Pacs tab also has the Pac editor ([packs](packs.md#pac-editor-built-2026-10-15)): "Edit this Pac" for a draft copied from the live version, then files added into folders, folders made, renamed or removed, a read me written there, and up to three preview clips for the Pac.
+
+## Release artwork move
+
+Built 2026-10-21 for #179. Release artwork that is still a file of the site, not an upload, keeps showing until this has run: HAIL's cover in `/img/releases/`, migrated from `data/`. SQL can't upload bytes, so the move is a one-time admin action rather than a migration. **Manage › Products** shows **Release artwork into storage** only while a release still waits (`js/admin-artwork.js`; `GET /api/admin/content/artwork`).
+
+**Move artwork** (`POST /api/admin/content/artwork/move`, `server/admin/artwork.js`) does the following for each waiting release:
+- It fetches the file from the deployed static assets. Only plain root-relative paths of the site's own files are accepted, up to 10 MB.
+- It stores the file in the creator's site storage through the same checks as any Studio image (type sniffing, size, quota).
+- It points the release at the stored file, keeping its width, height and alt text. This is a compare-and-set: if the release changed meanwhile, the stored copy is deleted again.
+
+The action is idempotent and audited (`release.artwork_moved`), and it is refused while impersonating. Run it once after the deploy that adds it. **Follow-up:** delete `img/releases/` only after it has run in production and nothing else references it. Migration `0040_project_content.sql` names the old path, and migrations are never edited.
 
 ## Paid files: hold back, then publish
 

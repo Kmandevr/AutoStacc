@@ -2,7 +2,7 @@
 title: Store setup
 summary: The owner's checklist to switch the store on: Cloudflare token permissions, secrets, Stripe and Brevo setup, first admin, uploading files, going live.
 covers: [.github/workflows/deploy.yml, scripts/cloudflare.js, scripts/deploy-check.js, server/lib/config.js, wrangler.toml, server/payments/stripe.js, server/payments/tax-codes.js, server/email/providers.js]
-updated: 2026-10-16
+updated: 2026-10-21
 ---
 
 # Store setup (owner)
@@ -32,6 +32,7 @@ Before the repository goes public (and from then on), keep these in the `product
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` of the webhook endpoint in step 3 | Stripe → Developers → Webhooks → the endpoint → Signing secret |
 | `BREVO_API_KEY` | API key `xkeysib-...` (not the SMTP key `xsmtpsib-...`; the deploy refuses that) | Brevo → SMTP & API → API keys |
 | `ADMIN_EMAILS` | Your email(s), comma-separated: those accounts become admins once verified (optional to the deploy, but without it nobody can open `/admin`) | You |
+| `FIRST_PARTY_OWNERS` | Who owns each first-party creator in the Studio: `<creator>=<email>` pairs, comma-separated, e.g. `autostacc=<your email>` (owner, 2026-10-21, #172). That account becomes the creator's owner the first time it opens `/studio` once its email is verified (audited). It is a secret so the address stays out of the public repository. Optional to the deploy, but without it nobody can manage `autostacc`'s products, releases and events. A creator named twice is refused | You |
 
 Optional, for AutoStacc news in Brevo: `BREVO_NEWS_LIST` = the id of a Brevo list for it. Accounts that switch on AutoStacc news are kept in it. You can also send news straight from the Control Center's News tab without it.
 
@@ -66,8 +67,9 @@ If mail doesn't arrive: each deploy warns how many sends failed in the last 7 da
 ## 5. First admin and products
 
 1. Create an account at `https://autostacc.com/login#signup` with an email listed in `ADMIN_EMAILS`, confirm it, then open `/admin`.
-2. For each real product: set the real title, price, description and type in `data/products.js` and remove `draft: true` (the `add-product` skill does this), push, let it deploy. Then in `/admin` upload its paid file(s) and, if wanted, a preview clip (and set `preview: { file: "..." }` on the product); a product that delivers a Pac gets its files in the Packs tab instead ([packs](packs.md)).
-3. Buy one yourself with a real card and refund it from Stripe: you should get the receipt, see it in your library, download it, then lose access after the refund.
+2. Sign in with the account `FIRST_PARTY_OWNERS` names and open `/studio`: you are now `autostacc`'s owner. For each real product, create it in Glitches & Stitches' product list and the Product Studio (title, price, description, type, files or a whole pack, preview clip), then publish it (the `add-product` skill walks through it). Its page appears at `/shop/<id>`. Releases and events go in the project's Music and Events editors ([creators](creators.md#music-and-events)).
+3. Once, after the first deploy with it: in `/admin`, run the release artwork move (`POST /api/admin/content/artwork/move`), which copies HAIL's cover from `img/releases/` into storage ([admin](admin.md#release-artwork-move)).
+4. Buy one yourself with a real card and refund it from Stripe: you should get the receipt, see it in your library, download it, then lose access after the refund.
 
 ## Switching on two-step sign-in
 
@@ -88,4 +90,4 @@ Local development needs none of this (mock payments, emails in the database): se
 - The Cloudflare token permissions and R2 enabled (step 1).
 - Stripe account activation, live keys and the webhook endpoint (step 3).
 - Brevo account, domain authentication and API key (step 4).
-- Real products, prices and files (issue #5) — every product is still a placeholder (`draft: true`), so nothing can be bought on the live site yet even when the store is on.
+- `FIRST_PARTY_OWNERS` set to your account (step 2), and the real products, prices and files made in the Studio (issue #5). The placeholders were deleted (#173), so nothing can be bought on the live site until you publish products, even when the store is on.

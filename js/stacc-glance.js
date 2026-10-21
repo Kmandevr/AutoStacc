@@ -1,14 +1,14 @@
 // Your Stacc at a glance, a drop-in for any [data-stacc-glance] element: one meter per content type (scaled to the
 // biggest) and what was added last, through GS.stacc. data-project counts only that project's items (and wears its
 // look); data-limit="4" caps the latest additions. Signed-out visitors (with no guest order) get a link to log in. Needs js/util.js,
-// js/stacc-model.js and data/projects.js, stacclets.js, pacs.js, content-types.js.
+// js/stacc-model.js and data/projects.js, content-types.js; Stacclets and Pacs are named by /api/library.
 (function () {
   "use strict";
 
   const { escapeHTML: e, api, loginPath, wear } = window.GS;
   const boxes = [...document.querySelectorAll("[data-stacc-glance]")];
   if (!boxes.length) return;
-  const catalog = { projects: window.PROJECTS || [], stacclets: window.STACCLETS || [], pacs: window.PACS || [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
+  const catalog = { projects: window.PROJECTS || [], stacclets: [], pacs: [], contentTypes: window.CONTENT_TYPES || {}, kindAliases: window.CONTENT_TYPE_ALIASES || {} };
   const projectName = (id, item) => (catalog.projects.find((p) => p.id === id) || {}).name || item.projectName || "";
 
   function draw(box, all) {
@@ -37,6 +37,8 @@
       if (library.status === 401 || (library.ok && !library.data.signedIn && !library.data.items.length)) {
         box.innerHTML = `<p class="small-print"><a href="${e(loginPath(location.pathname + location.search))}">Log in</a> to open Your Stacc.</p>`;
       } else if (library.ok) {
+        catalog.stacclets = library.data.stacclets || [];
+        catalog.pacs = library.data.pacs || [];
         draw(box, library.data.items);
       } else {
         box.innerHTML = `<p class="small-print">${library.status === 503 ? "The store is offline for maintenance. Your files are safe." : "Couldn't reach the store right now."} <a href="/library">Open Your Stacc</a></p>`;

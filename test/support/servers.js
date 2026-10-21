@@ -14,6 +14,9 @@ export const WEBHOOK_SECRET = "whsec_test_" + "a".repeat(32);
 export const MARKETPLACE_WEBHOOK_SECRET = "whsec_test_" + "b".repeat(32);
 export const MARKETPLACE_KEY = "sk_test_marketplace_key_for_tests";
 export const ADMIN_EMAIL = "admin@autostacc.test";
+// The account FIRST_PARTY_OWNERS names as the first-party creator "autostacc"'s owner (#172).
+export const FIRST_PARTY_OWNER = "owner@autostacc.test";
+const FIRST_PARTY_OWNERS = `autostacc=${FIRST_PARTY_OWNER}`;
 
 export async function startStores({ mock = true, stripe = true, name = "", ports = {}, vars: extraVars = {} } = {}) {
   const { mock: mockPort = 8801, stripe: stripePort = 8802, fakeStripe: fakePort = 8812 } = ports;
@@ -35,7 +38,7 @@ export async function startStores({ mock = true, stripe = true, name = "", ports
   await Promise.all([
     mock && (async () => {
       const stateDir = state("mock");
-      const s = start({ port: mockPort, stateDir, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, ...extraVars } });
+      const s = start({ port: mockPort, stateDir, vars: { APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, FIRST_PARTY_OWNERS, ...extraVars } });
       out.mock = { url: await s.ready, stateDir, log: s.log };
     })(),
     stripe && (async () => {
@@ -44,7 +47,7 @@ export async function startStores({ mock = true, stripe = true, name = "", ports
       const stateDir = state("stripe");
       out.stripe = { fake, stateDir };
       const s = start({ port: stripePort, stateDir, vars: {
-        APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, PAYMENT_PROVIDER: "stripe", STRIPE_SECRET_KEY: "sk_test_fake_key_for_tests",
+        APP_ENV: "test", ADMIN_EMAILS: ADMIN_EMAIL, FIRST_PARTY_OWNERS, PAYMENT_PROVIDER: "stripe", STRIPE_SECRET_KEY: "sk_test_fake_key_for_tests",
         STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET, STRIPE_API_BASE: fake.url,
         STRIPE_MARKETPLACE_KEY: MARKETPLACE_KEY, STRIPE_MARKETPLACE_WEBHOOK_SECRET: MARKETPLACE_WEBHOOK_SECRET, ...extraVars
       } });

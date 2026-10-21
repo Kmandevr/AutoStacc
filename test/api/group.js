@@ -4,9 +4,10 @@
 import { before, after } from "node:test";
 import { startStores } from "../support/servers.js";
 import content from "./content.suite.js";
+import events from "./events.suite.js";
 
-// Project content (releases, news, shows) runs with the Studio suites: a mock store, an admin, no Stripe.
-const ALSO = { studio: [content] };
+// Project content (releases and events, the events calendar) runs with the Studio suites: a mock store, an admin, no Stripe.
+const ALSO = { studio: [content, events] };
 
 export function runGroup({ name, ports, mock = true, stripe = true, vars }, suites) {
   const ctx = {};

@@ -3,10 +3,11 @@
 // server's own split (server/revenue/split.js). The price buyers pay is still combined only in server/cart/pricing.js;
 // if a store-wide sale from AutoStacc is lower, that one applies and storeSale says so. Owners and editors may use it
 // (earnings figures are the owner's only); anyone else gets "nothing here". Rows: server/promotions/creator-sales.js.
+// A first-party creator pays no fee (feeBps 0) and keeps every sale (policy.js).
 import { json, readJson, fail } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
-import { SELLING, feeBpsOf } from "../creators/policy.js";
+import { SELLING, feeBpsOf, isFirstParty } from "../creators/policy.js";
 import { requireOwnProduct } from "../creators/products.js";
 import { recordEvent } from "../creators/events.js";
 import { splitLine } from "../revenue/split.js";
@@ -39,7 +40,7 @@ export async function pricingOf(db, { product, creator, role }) {
     ? { name: best.sale.name, percentOff: best.sale.percent_off || null, amountOffCents: best.sale.amount_off_cents || null, endsAt: best.sale.ends_at || null, priceCents: best.priceCents }
     : null;
   return {
-    priceCents: product.price_cents, currency: product.currency, feeBps: owner ? feeBps : null,
+    priceCents: product.price_cents, currency: product.currency, feeBps: owner ? feeBps : null, firstParty: isFirstParty(creator),
     effectivePriceCents: best.priceCents,
     estimate: { list: product.price_cents > 0 ? estimate(product.price_cents, feeBps, owner) : null, sale: saleCents !== null ? estimate(saleCents, feeBps, owner) : null },
     sales, storeSale,

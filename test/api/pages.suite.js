@@ -6,8 +6,8 @@ import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
 import { adminClient } from "../support/flows.js";
 
-const PUBLIC = ["/", "/shop", "/product?p=wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music",
-  "/autostacc/glitches-and-stitches/music/hail", "/autostacc/glitches-and-stitches/news/hail-out-now", "/about"];
+const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music",
+  "/autostacc/glitches-and-stitches/music/hail", "/autostacc/glitches-and-stitches/events", "/events", "/about"];
 const GATED = ["/dashboard", "/settings", "/settings/profile", "/settings/security", "/settings/orders", "/settings/email", "/settings/privacy", "/studio"];
 const goesToLogin = (r, next) => {
   assert.equal(r.status, 302);
@@ -24,6 +24,9 @@ export default (ctx) => describe("pages", () => {
       assert.equal(r.status, 200, p);
       assert.match(r.data, /<html lang="en">/, p);
     }
+    // News waits for each creator's community (#174): its old addresses lead to the project's home.
+    const news = await anon.get("/autostacc/glitches-and-stitches/news/hail-out-now");
+    assert.deepEqual([news.status, new URL(news.headers.get("location"), ctx.mock.url).pathname], [301, "/autostacc/glitches-and-stitches"]);
     // The home page is the public cover: it offers signing in and creating an account, and the app's links start hidden.
     const home = (await anon.get("/")).data;
     assert.match(home, /href="\/login#signup" data-auth="out"/);

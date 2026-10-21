@@ -7,7 +7,7 @@
 
 The site is static HTML, CSS and JavaScript with no framework, hosted on Cloudflare Pages at https://autostacc.com. Beside it are a small store API (see [The store](#the-store)) and a processing engine for creators' files (see [The engine](#the-engine)). One Node script, `scripts/build.js`, generates from `data/`:
 - the search metadata;
-- the product pages (for `data/products.js`, empty for now) and creator profile pages;
+- creator profile pages (product, release and event pages are rendered by the server: `server/shop/`, `server/content/`);
 - the sitemap and `llms.txt`;
 - the store's catalog.
 
@@ -34,7 +34,6 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `404.html` | Shown for any address that doesn't exist |
 | `community.html` | Generated from `scripts/lib/community-page.js`: the "opening soon" page at `/community`, and the frame its Function (`functions/community.js`) fills with spaces and threads once the community is switched on ([docs/community.md](docs/community.md)) |
 | `guide.html`, `guide/` | Generated guides from `data/guides.js`: `/guide` and one page per article (`/guide/<id>`), buying, Your Stacc and refunds, and the creator manual ([docs/guides.md](docs/guides.md)). Don't edit them; change the data and rebuild |
-| `shop/` | Generated: one page per product in `data/products.js` (`/shop/<id>`). Don't edit them; change `data/` and rebuild |
 
 Studio creators' pages aren't files: they're stored in the database and rendered by `functions/[[path]].js`. Neither are release and news pages (`/<creator>/<project>/music/<slug>`, `/news/<slug>`), first-party included: every creator makes releases, news and shows in the Studio, and the same Function renders the pages from the database and lists them in `/sitemap-content.xml` ([docs/creators.md](docs/creators.md)). Community pages (switched off for now) are rendered by `functions/community.js` and `functions/community/[[path]].js`. Old addresses (`/music`, `/news`, `/press`) redirect to the project's own (`_redirects`).
 
@@ -59,7 +58,7 @@ Also published:
 | `img/` | Images |
 | `docs/` | Project notes, an Obsidian vault ([docs/index.md](docs/index.md)) |
 
-Generated output (also committed): `shop/` for product pages, `guide/` for guide articles, and each first-party creator's profile (`autostacc.html`). The project pages in `autostacc/` are hand-written.
+Generated output (also committed): `guide/` for guide articles, and each first-party creator's profile (`autostacc.html`). The project pages in `autostacc/` are hand-written.
 
 Every file starts with a one-line purpose comment, and every top-level folder has a `.purpose` file; `.claude/tools/tree.sh [dir]` prints the map from them. Setup for Claude Code is described in `.claude/README.md`.
 
@@ -71,8 +70,7 @@ All content lives in `data/`. Edit these files, run `node scripts/build.js`, and
 | --- | --- |
 | `data/site.js` | AutoStacc itself: name, address, home page title and description, contact, logo |
 | `data/creators.js`, `data/projects.js` | First-party creators and their projects. A project's identity (name, bio, booking email, press kit, official profiles, newsletter, skin) is its entry in `data/projects.js` ([docs/projects.md](docs/projects.md)). Leave a profile's `url` empty until the real profile exists |
-| `data/products.js`, `data/product-types.js` | Catalog items for sale (each with a page at `/shop/<id>`; empty since 2026-10-21, as AutoStacc's own products are made in the Studio like every creator's), and the kinds of product |
-| `data/stacclets.js`, `data/pacs.js` | How a project's content is organised in Your Stacc ([docs/architecture.md](docs/architecture.md)) |
+| `data/product-types.js` | The kinds of product. Products themselves are made in the Studio by every creator, AutoStacc included (pages at `/shop/<id>`, `server/shop/`) |
 | `data/polls.js`, `data/relationships.js` | Community votes, and typed links between products, Stacclets, Pacs and polls |
 | `data/legal.js`, `data/help.js`, `data/licenses.js` | The trust pages' text |
 | `data/guides.js` | The guides' sections and articles (`/guide`) |

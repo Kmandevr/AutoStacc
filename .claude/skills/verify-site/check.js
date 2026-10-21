@@ -14,18 +14,18 @@ const { createServer } = require(path.join(root, "scripts/serve.js"));
 const { loadData, contentAddress } = require(path.join(root, "scripts/lib/data.js"));
 const htmlUnder = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const { SITE, products, projects, creators } = loadData(root);
-// Root pages, product pages and every first-party creator's folder (its projects' pages), as in scripts/seo-test.js.
-const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("shop"), ...creators.flatMap((c) => htmlUnder(c.id))];
+const { SITE, projects, creators } = loadData(root);
+// Root pages and every first-party creator's folder (its projects' pages), as in scripts/seo-test.js. Product, release
+// and event pages are rendered by the store API (server/shop/, server/content/), so there are no files for them.
+const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...creators.flatMap((c) => htmlUnder(c.id))];
 const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
-const drafts = new Set(products.filter((p) => p.draft).map((p) => `shop/${p.id}.html`));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
-const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|product)(\/|$)/;
+const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart)(\/|$)/;
 const out = [];
 const line = (level, check, detail, file) => `${level} ${check} - ${detail}${file ? ` (${file})` : ""}`;
-// Releases, news and shows are Studio content from the store API, not data files, so they have no entry here.
-const DATA_GLOBALS = { SITE: "data/site.js", PROJECTS: "data/projects.js", PRODUCTS: "data/products.js" };
+// Products, releases and events are Studio content from the store API, not data files, so they have no entry here.
+const DATA_GLOBALS = { SITE: "data/site.js", PROJECTS: "data/projects.js" };
 
 // Independent checks run at the same time (static checks, page tabs in a pool, the crawl); each job keeps its own
 // lines and they are printed in the fixed order static -> pages (as listed, 1280 then 390) -> crawl, never interleaved.
@@ -58,7 +58,7 @@ async function staticChecks() {
     for (const r of refs) if (!fs.existsSync(r)) add("FAIL", "broken-reference", `missing ${r}`, page);
     const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1].replace(/^\//, ""));
     for (const s of scripts.filter((s) => s.startsWith("js/") && fs.existsSync(s))) {
-      const used = [...new Set([...fs.readFileSync(s, "utf8").matchAll(/window\.(SITE|PRODUCTS)\b/g)].map((m) => m[1]))];
+      const used = [...new Set([...fs.readFileSync(s, "utf8").matchAll(/window\.(SITE)\b/g)].map((m) => m[1]))];
       for (const g of used) if (!scripts.includes(DATA_GLOBALS[g])) add("FAIL", "missing-data-script", `${s} reads window.${g} but the page does not load ${DATA_GLOBALS[g]}`, page);
       if (!scripts.includes("js/util.js") && /window\.GS/.test(fs.readFileSync(s, "utf8"))) add("FAIL", "missing-util", `${s} needs js/util.js loaded first`, page);
     }
@@ -87,7 +87,7 @@ async function checkPage(browser, base, page, width) {
     const res = await tab.goto(base + urlOf(page));
     if (page === "404.html" && res.status() !== 404) problems.push(["FAIL", "404-status", `unknown address returned ${res.status()}, not 404`]);
     await tab.waitForTimeout(250);
-    if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, projects, page, path: urlOf(page), noindex: page === "404.html" || drafts.has(page) || PRIVATE.test(urlOf(page)) })) problems.push(p);
+    if (width === 1280) for (const p of await SEO.checkHead(tab, { SITE, projects, page, path: urlOf(page), noindex: page === "404.html" || PRIVATE.test(urlOf(page)) })) problems.push(p);
     const facts = await tab.evaluate(() => ({
       overflow: document.documentElement.scrollWidth - innerWidth,
       header: (!!document.querySelector(".side-nav") && !!document.querySelector(".topbar")) || (!!document.querySelector(".as-strip") && !!document.querySelector(".project-header")),
@@ -126,10 +126,9 @@ async function checkPage(browser, base, page, width) {
         }
       } else problems.push(["WARN", "nav-toggle", "menu button not visible at 390px"]);
     }
-    // The store page with the store API offline (this checker serves static files): it must still draw its grid (any
-    // products in data/products.js, which is empty now that first-party products are made in the Studio, or its empty
-    // state) and say that search and filters are offline. Filters and search themselves are tested against a real store
-    // by test/browser/flows.test.js.
+    // The store page with the store API offline (this checker serves static files): it must still draw its grid (or its
+    // empty state: products are Studio content in the store database) and say that search and filters are offline.
+    // Filters and search themselves are tested against a real store by test/browser/flows.test.js.
     if (page === "shop.html" && width === 1280) {
       await tab.waitForSelector(".browse-grid .card, .browse-grid .empty", { timeout: 5000 }).catch(() => {});
       const drawn = await tab.locator(".browse-grid .card, .browse-grid .empty").count();
@@ -150,12 +149,13 @@ async function checkPage(browser, base, page, width) {
   return problems.map(([level, check, detail]) => line(level, `${check}@${width}`, detail, page));
 }
 
-// A release or news page is rendered by the content Function from the store database (scripts/lib/data.js
-// contentAddress), which is offline here, so a link to one can't load: a note, not a broken link. seo-test.js checks
-// that each recorded one is moved into the database by a migration.
+// Product pages (/shop/<id>), release and event pages (scripts/lib/data.js contentAddress) and the /events calendar are
+// rendered by the store API from the database, which is offline here, so a link to one can't load: a note, not a broken
+// link. Their own tests are in test/api/ (store-check); seo-test.js checks each recorded address still has a home.
+const SERVED = /^\/(shop\/[^/?#]+|events)\/?(?:[?#]|$)/;
 const offlineContent = (p) => {
   const m = p[1] === "broken-link" && /^(\S+) returned 404$/.exec(p[2]);
-  return m && contentAddress(m[1]) ? ["WARN", "content-offline", `${m[1]} is served by the store API (offline here)`, p[3]] : p;
+  return m && (SERVED.test(m[1]) || contentAddress(m[1])) ? ["WARN", "content-offline", `${m[1]} is served by the store API (offline here)`, p[3]] : p;
 };
 
 async function browserChecks() {

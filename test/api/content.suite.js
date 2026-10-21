@@ -1,12 +1,14 @@
-// Project content made in the Studio (server/content/): every creator's releases, news posts and shows, first-party
-// included. Writes need the right team capability (site.edit for drafts, site.publish for what is live) and look like
-// nothing there to anyone else; text is never HTML, links are https only, players and artwork are checked; only
-// published content of visible projects reaches the public API, the release and news pages (canonical, Open Graph,
-// JSON-LD; noindex for creators AutoStacc doesn't trust) and /sitemap-content.xml; anything else is the site's 404.
+// Project content made in the Studio (server/content/): every creator's releases and events, first-party included.
+// Writes need the right team capability (site.edit for drafts, site.publish for what is live) and look like nothing
+// there to anyone else; text is never HTML, links are https only, players and artwork are checked; only published
+// content of visible projects reaches the public API, the release pages (canonical, Open Graph, JSON-LD; noindex for
+// creators AutoStacc doesn't trust) and /sitemap-content.xml; anything else is the site's 404. News is off (#174): no
+// Studio route, no API field, and its addresses answer a 301 to the project's home. Events: events.suite.js.
 import { describe, test, before } from "node:test";
 import assert from "node:assert/strict";
-import { Client, sql } from "../support/client.js";
+import { Client, sql, verifiedUser } from "../support/client.js";
 import { newBuyer, adminClient } from "../support/flows.js";
+import { FIRST_PARTY_OWNER } from "../support/servers.js";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 const YOUTUBE = "https://www.youtube.com/watch?v=EzVo6Mc8Yt0";
@@ -14,6 +16,19 @@ const FIRST_PARTY = { creator: "autostacc", project: "glitches-and-stitches" };
 const HOME = `/${FIRST_PARTY.creator}/${FIRST_PARTY.project}`;
 const slug = (tag) => `${tag}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const iso = () => new Date().toISOString();
+const path = (r) => r.headers.get("location").replace(/^https?:\/\/[^/]+/, "");
+// The account FIRST_PARTY_OWNERS names: signed up and confirmed once per store, then signed in.
+const owners = new Map();
+export function ownerClient(base) {
+  if (!owners.has(base)) owners.set(base, (async () => {
+    const c = new Client(base);
+    const password = "owner-password-123";
+    if ((await c.post("/api/auth/sign-in/email", { email: FIRST_PARTY_OWNER, password })).status !== 200) await verifiedUser(c, FIRST_PARTY_OWNER, password);
+    assert.equal((await c.get("/api/studio")).status, 200, "the Studio makes the named account the owner");
+    return c;
+  })());
+  return owners.get(base);
+}
 const ldOf = (html) => {
   const m = String(html).match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(m, "the page has JSON-LD");
@@ -58,19 +73,19 @@ export default (ctx) => describe("content", () => {
   const release = (o = {}) => ({ title: "First Light", type: "Single", date: "2026-01-15", description: "A test single.",
     tracks: [{ title: "First Light", duration: "3:05", isrc: "QZABC2600001" }], links: [{ name: "Listen", url: "https://example.org/first-light" }], ...o });
 
-  test("the real first-party release and news post (seeded by the migration) are public, with their facts", async () => {
+  test("the real first-party release (seeded by the migration) is public, with its facts; news is not", async () => {
     const content = await publicContent(FIRST_PARTY.project);
     const hail = content.releases.find((r) => r.id === "hail");
     assert.ok(hail, "the HAIL release is in the store database");
     assert.deepEqual([hail.title, hail.type, hail.date, hail.upc, hail.path], ["HAIL", "Single", "2025-10-15", "199746791737", `${HOME}/music/hail`]);
     assert.deepEqual(hail.tracks, [{ title: "HAIL", duration: "2:27", isrc: "QT3FF2517426" }]);
     assert.equal(hail.artwork.src, "/img/releases/hail.jpg");
-    const post = content.news.find((n) => n.id === "hail-out-now");
-    assert.deepEqual([post.date, post.tag, post.release, post.path], ["2025-10-15", "Release", "hail", `${HOME}/news/hail-out-now`]);
-    assert.match(post.bodyHtml, /<a href="https:\/\/music\.apple\.com\/[^"]+" rel="noopener noreferrer nofollow ugc" target="_blank">Apple Music<\/a>/);
-    assert.match(post.bodyHtml, /<a href="\/autostacc\/glitches-and-stitches\/music\/hail">/);
-    assert.ok(content.shows.every((s) => s.date >= iso().slice(0, 10)), "upcoming shows only");
-    assert.ok(content.shows.some((s) => s.city === "Test City"), "the dev seed's test show");
+    assert.deepEqual(hail.tags, []);
+    assert.deepEqual(Object.keys(content).sort(), ["events", "releases"], "no news, no shows");
+    assert.ok(content.events.every((e) => (e.endDate || e.date) >= iso().slice(0, 10)), "upcoming events only");
+    assert.ok(content.events.some((e) => e.city === "Test City"), "the dev seed's test event");
+    // The migrated post is kept in the database, untouched, for the community (#174).
+    assert.deepEqual(db("SELECT published, deleted_at FROM project_news WHERE slug = 'hail-out-now'"), [{ published: 1, deleted_at: null }]);
     // Short public caching; unknown and malformed project ids fail closed.
     const r = await anon().get(`/api/projects/${FIRST_PARTY.project}/content`);
     assert.match(r.headers.get("cache-control"), /^public, max-age=\d+$/);
@@ -78,11 +93,12 @@ export default (ctx) => describe("content", () => {
     assert.ok([400, 404].includes((await anon().get("/api/projects/..%2Fadmin/content")).status));
     const latest = await anon().get("/api/content/latest?limit=1");
     assert.equal(latest.status, 200);
-    for (const k of ["releases", "news", "shows"]) assert.ok(latest.data[k].length <= 1, k);
+    assert.deepEqual(Object.keys(latest.data).sort(), ["events", "releases"]);
+    for (const k of ["releases", "events"]) assert.ok(latest.data[k].length <= 1, k);
     for (const bad of ["0", "51", "abc", "1.5"]) assert.equal((await anon().get(`/api/content/latest?limit=${bad}`)).status, 400, bad);
   });
 
-  test("release and news pages: title, canonical, Open Graph and JSON-LD for a trusted creator, the site's 404 otherwise", async () => {
+  test("release pages: title, canonical, Open Graph and JSON-LD for a trusted creator, the site's 404 otherwise; news pages lead home", async () => {
     const rel = await page(`${HOME}/music/hail`);
     assert.equal(rel.status, 200);
     assert.match(rel.headers.get("content-type"), /^text\/html/);
@@ -101,13 +117,16 @@ export default (ctx) => describe("content", () => {
     assert.match(rel.data, /<h1 class="glitch"/);
     assert.equal((rel.data.match(/<h1\b/g) || []).length, 1, "one h1");
 
-    const post = await page(`${HOME}/news/hail-out-now`);
-    assert.equal(post.status, 200);
-    assert.match(post.data, /<title>HAIL is out now · Glitches &amp; Stitches · AutoStacc<\/title>/);
-    assert.match(post.data, /<meta property="og:type" content="article">/);
-    assert.match(post.data, new RegExp(`<link rel="canonical" href="${base()}${HOME}/news/hail-out-now">`));
-    assert.equal(ldOf(post.data).find((x) => x["@type"] === "NewsArticle").headline, "HAIL is out now");
-    assert.match(post.data, new RegExp(`href="${HOME}/music/hail"`), "links the release it is about");
+    assert.doesNotMatch(rel.data, /NewsArticle|\/news\//, "no news section");
+
+    // News is off: every news address of the project answers a 301 to its home (never a 404, never the post).
+    for (const p of [`${HOME}/news/hail-out-now`, `${HOME}/news`, `${HOME}/news/no-such-post`, `${HOME}/NEWS/Hail-Out-Now`]) {
+      const r = await page(p);
+      assert.ok([301, 308].includes(r.status), p);
+      const to = path(r);
+      if (r.status === 301 && to === HOME) continue;
+      assert.equal(path(await page(to)), HOME, p); // a mixed-case address is first made lowercase
+    }
 
     // HEAD answers without a body; mixed case and a trailing slash go to the one clean address.
     const head = await page(`${HOME}/music/hail`, "HEAD");
@@ -119,21 +138,20 @@ export default (ctx) => describe("content", () => {
       assert.equal(r.headers.get("location").replace(/^https?:\/\/[^/]+/, ""), `${HOME}/music/hail`, odd);
     }
     // Anything unknown is the static 404 page, never an error or another page.
-    for (const missing of [`${HOME}/music/no-such-release`, `${HOME}/news/no-such-post`, `${HOME}/music/hail/extra`, `/${FIRST_PARTY.creator}/no-such-project/music/hail`,
+    for (const missing of [`${HOME}/music/no-such-release`, `${HOME}/music/hail/extra`, `/no-such-creator/${FIRST_PARTY.project}/news`, `/${FIRST_PARTY.creator}/no-such-project/music/hail`,
       `/no-such-creator/${FIRST_PARTY.project}/music/hail`, `${HOME}/music/hail%3Cscript%3E`, `${HOME}/music/..%2F..%2Fadmin`]) {
       const r = await page(missing);
       assert.equal(r.status, 404, missing);
       assert.doesNotMatch(String(r.data), /MusicAlbum|NewsArticle/, missing);
     }
-    // The old addresses still lead there.
-    for (const [old, to] of [["/music/hail", `${HOME}/music/hail`], ["/news/hail-out-now", `${HOME}/news/hail-out-now`], ["/projects/glitches-and-stitches/music/hail", `${HOME}/music/hail`]]) {
+    // The old addresses still lead there; old news addresses lead to the project's home.
+    for (const [old, to] of [["/music/hail", `${HOME}/music/hail`], ["/news/hail-out-now", HOME], ["/projects/glitches-and-stitches/music/hail", `${HOME}/music/hail`]]) {
       const r = await page(old);
       assert.equal(r.status, 301, old);
       assert.equal(r.headers.get("location").replace(/^https?:\/\/[^/]+/, ""), to, old);
     }
-    // The hand-written list pages stay static.
+    // The hand-written music page stays static.
     assert.equal((await page(`${HOME}/music`)).status, 200);
-    assert.equal((await page(`${HOME}/news`)).status, 200);
   });
 
   test("signed out, other creators and teammates without the capability reach nothing", async () => {
@@ -141,7 +159,7 @@ export default (ctx) => describe("content", () => {
     const thief = await maker("ct-thief");
     const item = await create(owner.c, owner.project.id, "releases", release());
     const shop = await teammate(owner.creator.id, "store_manager", "ct-shop");
-    for (const kind of ["releases", "news", "shows"]) {
+    for (const kind of ["releases", "events"]) {
       assert.equal((await anon().get(kindApi(owner.project.id, kind))).status, 401, `${kind} list signed out`);
       assert.equal((await anon().post(kindApi(owner.project.id, kind), {})).status, 401, `${kind} create signed out`);
       assert.equal((await thief.c.get(kindApi(owner.project.id, kind))).status, 404, `${kind} list by another creator`);
@@ -153,8 +171,13 @@ export default (ctx) => describe("content", () => {
     assert.equal((await patch(thief.c, "releases", item.id, { title: "Stolen" })).status, 404);
     assert.equal((await thief.c.req("DELETE", `/api/studio/releases/${item.id}`)).status, 404);
     assert.equal((await patch(shop.c, "releases", item.id, { title: "x" })).status, 404);
-    // An item id of another kind is not this kind's.
-    assert.equal((await patch(owner.c, "news", item.id, { title: "x" })).status, 404);
+    // An item id of another kind is not this kind's; news and shows have no Studio routes any more.
+    assert.equal((await patch(owner.c, "events", item.id, { title: "x" })).status, 404);
+    for (const kind of ["news", "shows"]) {
+      assert.equal((await owner.c.get(kindApi(owner.project.id, kind))).status, 404, kind);
+      assert.equal((await owner.c.post(kindApi(owner.project.id, kind), { title: "x", date: "2026-01-01", city: "X" })).status, 404, kind);
+    }
+    assert.equal(db(`SELECT COUNT(*) AS n FROM project_news WHERE project_id = '${owner.project.id}'`)[0].n, 0);
     // Another site can't write with the owner's cookies.
     const evil = new Client(base(), { origin: "https://evil.example" });
     evil.jar = owner.c.jar;
@@ -169,21 +192,21 @@ export default (ctx) => describe("content", () => {
   test("an editor drafts; only a publisher puts things live, changes what is live or deletes", async () => {
     const owner = await maker("ct-team");
     const editor = await teammate(owner.creator.id, "editor", "ct-editor");
-    const list = await editor.c.get(kindApi(owner.project.id, "news"));
+    const list = await editor.c.get(kindApi(owner.project.id, "events"));
     assert.equal(list.status, 200);
     assert.equal(list.data.canPublish, false);
-    const draft = await create(editor.c, owner.project.id, "news", { title: "Studio diary", date: "2026-02-01", body: "Day one." });
+    const draft = await create(editor.c, owner.project.id, "events", { title: "Studio night", date: "2099-02-01", city: "Leeds", description: "Day one." });
     assert.equal(draft.published, false);
-    assert.equal((await patch(editor.c, "news", draft.id, { body: "Day two." })).status, 200, "drafts are the editor's");
-    const live = await patch(editor.c, "news", draft.id, { published: true });
+    assert.equal((await patch(editor.c, "events", draft.id, { description: "Day two." })).status, 200, "drafts are the editor's");
+    const live = await patch(editor.c, "events", draft.id, { published: true });
     assert.equal(live.status, 403);
     assert.equal(live.data.error.code, "not_allowed");
-    assert.equal((await editor.c.req("DELETE", `/api/studio/news/${draft.id}`)).status, 404);
-    assert.equal((await patch(owner.c, "news", draft.id, { published: true })).status, 200);
-    assert.equal((await patch(editor.c, "news", draft.id, { title: "Changed live" })).status, 403, "what is live takes a publisher");
+    assert.equal((await editor.c.req("DELETE", `/api/studio/events/${draft.id}`)).status, 404);
+    assert.equal((await patch(owner.c, "events", draft.id, { published: true })).status, 200);
+    assert.equal((await patch(editor.c, "events", draft.id, { title: "Changed live" })).status, 403, "what is live takes a publisher");
     const publisher = await teammate(owner.creator.id, "publisher", "ct-publisher");
-    assert.equal((await patch(publisher.c, "news", draft.id, { title: "Changed live" })).status, 200);
-    assert.equal((await publisher.c.req("DELETE", `/api/studio/news/${draft.id}`)).status, 200);
+    assert.equal((await patch(publisher.c, "events", draft.id, { title: "Changed live" })).status, 200);
+    assert.equal((await publisher.c.req("DELETE", `/api/studio/events/${draft.id}`)).status, 200);
   });
 
   test("a draft is invisible; publishing shows it, unpublishing and deleting take it away; a live address never changes", async () => {
@@ -223,21 +246,9 @@ export default (ctx) => describe("content", () => {
     assert.notEqual(db(`SELECT deleted_at FROM project_releases WHERE id = '${item.id}'`)[0].deleted_at, null, "kept, marked deleted");
     await create(s.c, s.project.id, "releases", release({ slug: "renamed" }));
 
-    // A news post names a release of its own project only, and only a published one shows as its release.
-    assert.equal((await s.c.post(kindApi(s.project.id, "news"), { title: "News", date: "2026-02-02", release: "no-such-release" })).status, 400);
-    const news = await create(s.c, s.project.id, "news", { title: "About the second", date: "2026-02-02", release: second.slug });
-    await patch(s.c, "news", news.id, { published: true });
-    assert.equal((await publicContent(s.project.id)).news[0].release, null, "its release is still a draft");
-    await patch(s.c, "releases", second.id, { published: true });
-    assert.equal((await publicContent(s.project.id)).news[0].release, second.slug);
-
-    // Shows: upcoming only, and only once published.
-    const past = await create(s.c, s.project.id, "shows", { date: "2020-05-05", city: "Yesterday" });
-    const next = await create(s.c, s.project.id, "shows", { date: "2099-05-05", city: "Tomorrow", venue: "Hall", ticketUrl: "https://tickets.example.org/x" });
-    assert.deepEqual((await publicContent(s.project.id)).shows, []);
-    await patch(s.c, "shows", past.id, { published: true });
-    await patch(s.c, "shows", next.id, { published: true });
-    assert.deepEqual((await publicContent(s.project.id)).shows.map((x) => x.city), ["Tomorrow"]);
+    // Tags follow the store's rule and reach the public shape.
+    assert.equal((await patch(s.c, "releases", second.id, { tags: ["ambient", "field-recordings"], published: true })).status, 200);
+    assert.deepEqual((await publicContent(s.project.id)).releases.find((r) => r.id === second.slug).tags, ["ambient", "field-recordings"]);
 
     // A project nobody can see (its site unpublished) shows nothing, page or API.
     db(`UPDATE projects SET published = 0 WHERE id = '${s.project.id}'`);
@@ -260,15 +271,12 @@ export default (ctx) => describe("content", () => {
     };
     for (const url of ["http://example.org/x", "javascript:alert(1)", "data:text/html,x", "//evil.example/x", "https://user:pw@example.org/"])
       await bad("releases", release({ links: [{ name: "x", url }] }), /links/);
-    await bad("shows", { date: "2099-01-01", city: "X", ticketUrl: "http://tickets.example.org/" }, /ticketUrl/);
-    await bad("shows", { date: "2099-01-01", city: "X", ticketUrl: "javascript:alert(1)" }, /ticketUrl/);
     await bad("releases", release({ embedUrl: "https://evil.example/player" }), /embedUrl/);
     await bad("releases", release({ embedUrl: "javascript:alert(1)" }), /embedUrl/);
     for (const v of [{ type: "Mixtape" }, { date: "2026-02-30" }, { date: "tomorrow" }, { slug: "Not A Slug" }, { slug: "../x" }, { upc: "12ab" },
       { tracks: [{ title: "x", isrc: "nope" }] }, { tracks: "x" }, { featured: "yes" }, { title: "" }])
       await bad("releases", release(v));
-    await bad("news", { title: "x" }, /date/);
-    await bad("shows", { date: "2099-01-01" }, /city/);
+    for (const tags of [["Not Ok"], ["a".repeat(25)], "ambient", ["1", "2", "3", "4", "5", "6", "7", "8", "9"], [7]]) await bad("releases", release({ tags }), /tags/);
     assert.equal((await s.c.post(kindApi(s.project.id, "releases"), { raw: "x" })).status, 400);
     // Artwork is one of the creator's own images; someone else's, or a made-up one, is refused.
     const other = await maker("ct-art-other");
@@ -286,15 +294,9 @@ export default (ctx) => describe("content", () => {
     const evil = "<script>alert(1)</script><img src=x onerror=alert(1)>";
     const rel = await create(s.c, s.project.id, "releases", release({ title: `Tricky ${evil}`, slug: "tricky", description: `${evil} "quoted"`, links: [{ name: evil, url: "https://example.org/ok" }] }));
     await patch(s.c, "releases", rel.id, { published: true });
-    const news = await create(s.c, s.project.id, "news", { title: `News ${evil}`, slug: "tricky-news", date: "2026-03-03", summary: evil,
-      body: `Hello **bold** [safe](https://example.org/a) [bad](javascript:alert(1)) [api](/api/account) ${evil}\n\nSecond paragraph.` });
-    await patch(s.c, "news", news.id, { published: true });
-    const out = (await publicContent(s.project.id)).news.find((n) => n.id === "tricky-news");
-    assert.doesNotMatch(out.bodyHtml, /<script|<img|href="javascript:|href="\/api\//i);
-    assert.match(out.bodyHtml, /<strong>bold<\/strong>/);
-    assert.match(out.bodyHtml, /<a href="https:\/\/example\.org\/a" rel="noopener noreferrer nofollow ugc" target="_blank">safe<\/a>/);
-    assert.match(out.bodyHtml, /&lt;script&gt;/);
-    for (const p of [`${s.home}/music/tricky`, `${s.home}/news/tricky-news`]) {
+    const ev = await create(s.c, s.project.id, "events", { title: `Party ${evil}`, slug: "tricky-event", date: "2099-03-03", city: evil, venue: evil, description: `${evil} "quoted"` });
+    await patch(s.c, "events", ev.id, { published: true });
+    for (const p of [`${s.home}/music/tricky`, `${s.home}/events/tricky-event`]) {
       const html = (await page(p)).data;
       const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
       // Outside the JSON-LD (where "<" is \u003c and the rest is inert data), no tag of the text survives.
@@ -323,7 +325,8 @@ export default (ctx) => describe("content", () => {
     assert.match(map.headers.get("content-type"), /xml/);
     assert.doesNotMatch(map.data, new RegExp(p));
     assert.match(map.data, new RegExp(`<loc>${base()}${HOME}/music/hail</loc>`), "the trusted first-party release is listed");
-    assert.match(map.data, new RegExp(`<loc>${base()}${HOME}/news/hail-out-now</loc>`));
+    assert.doesNotMatch(map.data, /\/news\//, "news pages are off");
+    assert.match(map.data, new RegExp(`<loc>${base()}/events</loc>`), "the events calendar");
     // Once AutoStacc trusts the creator, its page is indexable and listed; drafts never are.
     db(`UPDATE creators SET trusted = 1 WHERE id = '${s.creator.id}'`);
     const draft = await create(s.c, s.project.id, "releases", release({ slug: "draft-one" }));
@@ -336,85 +339,76 @@ export default (ctx) => describe("content", () => {
   });
 
   describe("first-party content", () => {
-    let admin;
-    before(async () => { admin = await adminClient(base()); });
+    let owner, admin;
+    before(async () => { [owner, admin] = await Promise.all([ownerClient(base()), adminClient(base())]); });
 
-    test("only an AutoStacc admin may take an ownerless first-party creator, once", async () => {
+    test("only the account FIRST_PARTY_OWNERS names owns the first-party creator; an admin or anyone else reaches nothing", async () => {
       const { c } = await newBuyer(base(), "ct-claimer");
-      assert.equal((await c.post(`/api/studio/creators/${FIRST_PARTY.creator}/claim`, {})).status, 404);
-      assert.equal((await c.get(kindApi(FIRST_PARTY.project, "releases"))).status, 404);
-      const overview = (await admin.get("/api/studio")).data;
-      assert.ok(overview.claimable.some((x) => x.id === FIRST_PARTY.creator), "offered to the admin");
-      const claim = await admin.post(`/api/studio/creators/${FIRST_PARTY.creator}/claim`, {});
-      assert.equal(claim.status, 201, JSON.stringify(claim.data));
-      assert.equal((await admin.post(`/api/studio/creators/${FIRST_PARTY.creator}/claim`, {})).status, 404, "never twice");
-      assert.equal((await admin.post("/api/studio/creators/no-such-creator/claim", {})).status, 404);
-      const mine = (await admin.get("/api/studio")).data.creators.find((x) => x.id === FIRST_PARTY.creator);
+      for (const who of [c, admin]) {
+        assert.equal((await who.get(kindApi(FIRST_PARTY.project, "releases"))).status, 404);
+        assert.equal((await who.post(`/api/studio/creators/${FIRST_PARTY.creator}/claim`, {})).status, 404, "the claim path is gone");
+      }
+      const mine = (await owner.get("/api/studio")).data.creators.find((x) => x.id === FIRST_PARTY.creator);
       assert.equal(mine.firstParty, true);
       assert.equal(mine.role, "owner");
-      assert.ok(mine.capabilities.includes("site.publish") && !mine.capabilities.includes("projects") && !mine.capabilities.includes("money"));
-      assert.deepEqual(db(`SELECT role FROM creator_members WHERE creator_id = '${FIRST_PARTY.creator}'`), [{ role: "owner" }]);
-      assert.ok(db(`SELECT 1 AS ok FROM admin_audit WHERE action = 'creator.claimed' AND target_id = '${FIRST_PARTY.creator}'`).length, "audited");
+      assert.ok(mine.capabilities.includes("site.publish") && !mine.capabilities.includes("projects"));
     });
 
-    test("its owner runs releases, news and shows like any creator; its pages are indexed; its hand-written pages can't be renamed or deleted", async () => {
-      const list = await admin.get(kindApi(FIRST_PARTY.project, "releases"));
+    test("its owner runs releases and events like any creator; its pages are indexed; the project can't be renamed or deleted", async () => {
+      const list = await owner.get(kindApi(FIRST_PARTY.project, "releases"));
       assert.equal(list.status, 200, JSON.stringify(list.data));
       assert.equal(list.data.canPublish, true);
       const hail = list.data.items.find((x) => x.slug === "hail");
       assert.ok(hail && hail.published, "the migrated release is editable");
       // Migrated values the new rules would refuse (root-relative artwork, a Deezer widget) survive an unrelated edit.
-      const kept = await patch(admin, "releases", hail.id, { description: hail.description });
+      const kept = await patch(owner, "releases", hail.id, { description: hail.description });
       assert.equal(kept.status, 200, JSON.stringify(kept.data));
       const row = db(`SELECT artwork, fallback_embed_url FROM project_releases WHERE id = '${hail.id}'`)[0];
       assert.equal(JSON.parse(row.artwork).src, "/img/releases/hail.jpg");
       assert.equal(row.fallback_embed_url, "https://widget.deezer.com/widget/dark/track/3605198432");
-      assert.equal((await patch(admin, "releases", hail.id, { slug: "hail-renamed" })).data.error.code, "slug_locked", "its live address is kept");
+      assert.equal((await patch(owner, "releases", hail.id, { slug: "hail-renamed" })).data.error.code, "slug_locked", "its live address is kept");
 
-      const post = await create(admin, FIRST_PARTY.project, "news", { title: "Studio test post", slug: slug("fp-post"), date: "2026-04-04", tag: "Update", body: "From the Studio." });
-      assert.equal((await page(`${HOME}/news/${post.slug}`)).status, 404, "a draft has no page");
-      assert.equal((await patch(admin, "news", post.id, { published: true })).status, 200);
-      const live = await page(`${HOME}/news/${post.slug}`);
+      const ev = await create(owner, FIRST_PARTY.project, "events", { title: "Studio City night", slug: slug("fp-event"), date: "2099-01-02", city: "Studio City", tags: ["live"] });
+      assert.equal((await page(`${HOME}/events/${ev.slug}`)).status, 404, "a draft has no page");
+      assert.equal((await patch(owner, "events", ev.id, { published: true })).status, 200);
+      const live = await page(`${HOME}/events/${ev.slug}`);
       assert.equal(live.status, 200);
-      assert.match(live.data, /<title>Studio test post · Glitches &amp; Stitches · AutoStacc<\/title>/);
-      assert.match(live.data, new RegExp(`<link rel="canonical" href="${base()}${HOME}/news/${post.slug}">`));
+      assert.match(live.data, /<title>Studio City night · Glitches &amp; Stitches · AutoStacc<\/title>/);
+      assert.match(live.data, new RegExp(`<link rel="canonical" href="${base()}${HOME}/events/${ev.slug}">`));
       assert.match(live.data, /css\/projects\/glitches-and-stitches\/skin\.css/, "wears the project's own look");
-      assert.match((await page("/sitemap-content.xml")).data, new RegExp(`${HOME}/news/${post.slug}</loc>`));
-      assert.ok((await publicContent(FIRST_PARTY.project)).news.some((n) => n.id === post.slug));
-      const show = await create(admin, FIRST_PARTY.project, "shows", { date: "2099-01-02", city: "Studio City" });
-      await patch(admin, "shows", show.id, { published: true });
+      assert.match((await page("/sitemap-content.xml")).data, new RegExp(`${HOME}/events/${ev.slug}</loc>`));
       const browse = (await anon().get("/api/projects/browse")).data.projects.find((p) => p.id === FIRST_PARTY.project);
-      assert.ok(browse.releases >= 1 && browse.news >= 2, "the projects browser counts its content from the database");
-      assert.equal(browse.nextShow, "2099-01-02");
-      assert.equal((await admin.req("DELETE", `/api/studio/shows/${show.id}`)).status, 200);
-      assert.equal((await admin.req("DELETE", `/api/studio/news/${post.id}`)).status, 200);
-      assert.equal((await page(`${HOME}/news/${post.slug}`)).status, 404, "deleted: gone");
+      assert.ok(browse.releases >= 1, "the projects browser counts its content from the database");
+      assert.equal(browse.news, undefined, "no news count");
+      assert.ok(browse.nextEvent && browse.nextEvent <= "2099-01-02");
+      assert.equal((await owner.req("DELETE", `/api/studio/events/${ev.id}`)).status, 200);
+      assert.equal((await page(`${HOME}/events/${ev.slug}`)).status, 404, "deleted: gone");
 
       // Products and content only: the first-party project is never renamed, deleted or given a new sibling here.
-      assert.equal((await admin.req("PATCH", `/api/studio/projects/${FIRST_PARTY.project}`, { body: { name: "Renamed" } })).status, 404);
-      assert.equal((await admin.req("DELETE", `/api/studio/projects/${FIRST_PARTY.project}`, { body: {} })).status, 404);
-      assert.equal((await admin.req("PATCH", `/api/studio/creators/${FIRST_PARTY.creator}`, { body: { name: "Renamed" } })).status, 404);
-      assert.equal((await admin.post(`/api/studio/creators/${FIRST_PARTY.creator}/projects`, { name: "Side", slug: "side" })).status, 404);
+      assert.equal((await owner.req("PATCH", `/api/studio/projects/${FIRST_PARTY.project}`, { body: { name: "Renamed" } })).status, 404);
+      assert.equal((await owner.req("DELETE", `/api/studio/projects/${FIRST_PARTY.project}`, { body: {} })).status, 404);
+      assert.equal((await owner.req("PATCH", `/api/studio/creators/${FIRST_PARTY.creator}`, { body: { name: "Renamed" } })).status, 404);
+      assert.equal((await owner.post(`/api/studio/creators/${FIRST_PARTY.creator}/projects`, { name: "Side", slug: "side" })).status, 404);
       assert.equal(db(`SELECT name FROM projects WHERE id = '${FIRST_PARTY.project}'`)[0].name, "Glitches & Stitches");
     });
 
     test("its owner lists and makes products and uploads artwork; artwork a release uses outlives deleting the file", async () => {
-      const products = await admin.get(`/api/studio/projects/${FIRST_PARTY.project}/products`);
+      const products = await owner.get(`/api/studio/projects/${FIRST_PARTY.project}/products`);
       assert.equal(products.status, 200, JSON.stringify(products.data));
-      const made = await admin.post(`/api/studio/projects/${FIRST_PARTY.project}/products`, { title: "First-party Kit", type: "sample-pack", priceCents: 900, description: "Drums.", includes: ["kicks"] });
+      const made = await owner.post(`/api/studio/projects/${FIRST_PARTY.project}/products`, { title: "First-party Kit", type: "sample-pack", priceCents: 900, description: "Drums.", includes: ["kicks"] });
       assert.equal(made.status, 201, JSON.stringify(made.data));
       assert.equal(made.data.product.published, false, "starts as a draft");
-      assert.ok((await admin.get(`/api/studio/projects/${FIRST_PARTY.project}/products`)).data.products.some((p) => p.id === made.data.product.id));
-      assert.equal((await admin.req("PATCH", `/api/studio/products/${made.data.product.id}`, { body: { deleted: true } })).status, 200, "and removes them");
+      assert.ok((await owner.get(`/api/studio/projects/${FIRST_PARTY.project}/products`)).data.products.some((p) => p.id === made.data.product.id));
+      assert.equal((await owner.req("PATCH", `/api/studio/products/${made.data.product.id}`, { body: { deleted: true } })).status, 200, "and removes them");
 
-      const up = await admin.req("PUT", `/api/studio/creators/${FIRST_PARTY.creator}/images?filename=cover.png`, { raw: PNG, headers: { "Content-Type": "image/png" } });
+      const up = await owner.req("PUT", `/api/studio/creators/${FIRST_PARTY.creator}/images?filename=cover.png`, { raw: PNG, headers: { "Content-Type": "image/png" } });
       assert.equal(up.status, 201, JSON.stringify(up.data));
-      const rel = await create(admin, FIRST_PARTY.project, "releases", release({ slug: slug("fp-art"), artwork: { asset: up.data.image.id, width: 1, height: 1, alt: "Cover" } }));
-      const del = await admin.req("DELETE", `/api/studio/creators/${FIRST_PARTY.creator}/images/${up.data.image.id}`, { body: {} });
+      const rel = await create(owner, FIRST_PARTY.project, "releases", release({ slug: slug("fp-art"), artwork: { asset: up.data.image.id, width: 1, height: 1, alt: "Cover" } }));
+      const del = await owner.req("DELETE", `/api/studio/creators/${FIRST_PARTY.creator}/images/${up.data.image.id}`, { body: {} });
       assert.equal(del.status, 200, JSON.stringify(del.data));
       assert.equal(del.data.kept, true, "a release still shows it");
       assert.equal(db(`SELECT status FROM site_assets WHERE id = '${up.data.image.id}'`)[0].status, "active");
-      assert.equal((await admin.req("DELETE", `/api/studio/releases/${rel.id}`)).status, 200);
+      assert.equal((await owner.req("DELETE", `/api/studio/releases/${rel.id}`)).status, 200);
     });
 
     test("a first-party editor drafts but doesn't publish; the hand-written pages stay where they are", async () => {
@@ -422,8 +416,8 @@ export default (ctx) => describe("content", () => {
       const draft = await create(editor.c, FIRST_PARTY.project, "releases", release({ slug: slug("fp-draft") }));
       assert.equal((await patch(editor.c, "releases", draft.id, { published: true })).status, 403);
       assert.equal((await editor.c.req("DELETE", `/api/studio/releases/${draft.id}`)).status, 404);
-      assert.equal((await admin.req("DELETE", `/api/studio/releases/${draft.id}`)).status, 200);
-      for (const p of [HOME, `${HOME}/music`, `${HOME}/news`]) assert.equal((await page(p)).status, 200, p);
+      assert.equal((await owner.req("DELETE", `/api/studio/releases/${draft.id}`)).status, 200);
+      for (const p of [HOME, `${HOME}/music`]) assert.equal((await page(p)).status, 200, p);
     });
   });
 });

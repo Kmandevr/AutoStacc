@@ -1,15 +1,16 @@
-// Product page for creators' products (/product?p=<id>): fetches the product from the store API (the store, not this
-// page, decides what exists and what it costs) and shows it with who made it, its preview clip and tags, and Add to cart,
-// Get it free, or STACC'D when the visitor already has it. A creator AutoStacc hasn't verified is said so plainly.
-// Products from data/products.js keep their own generated pages at /shop/<id>. The markup is js/product-view.js (shared
-// with the Product Studio's preview). Needs js/util.js and js/product-view.js.
+// Brings a product's page (/shop/<id>, drawn by the server in server/shop/page.js) to life: fetches the product and the
+// visitor's state from the store API (the store, not this page, decides what exists and what it costs) and redraws it
+// with its details, preview clip and Add to cart, Get it free, or STACC'D when the visitor already has it. A creator
+// AutoStacc hasn't verified is said so plainly. The markup is js/product-view.js (shared with the Product Studio's
+// preview). A page without a product (the server's 404) stays as it is. Needs js/util.js and js/product-view.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML: e, api, cart } = window.GS;
   const root = $("#product-app");
   if (!root) return;
-  const id = new URLSearchParams(location.search).get("p") || "";
+  const id = root.dataset.product || "";
+  if (!id) return;
 
   const missing = () => { root.innerHTML = '<p class="msg error">That product isn\'t available. <a href="/shop">Back to the store</a></p>'; };
 
@@ -20,7 +21,7 @@
     const p = res.data.product;
     const owned = live.ok && live.data.products[id] && live.data.products[id].owned;
     document.title = `${p.title} · AutoStacc`;
-    $("h1").textContent = p.title;
+    $("main h1").textContent = p.title;
     root.innerHTML = window.GS.productView.render(p, { owned });
     // Tell the store's on-device history (js/taste.js) and the wishlist hearts (js/wishlist.js) what's on the page.
     document.dispatchEvent(new CustomEvent("gs:taste", { detail: { t: "view", id: p.id } }));

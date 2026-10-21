@@ -1,13 +1,14 @@
 // The Studio (/studio): claim a creator name, see your creator's address and storage, make, rename and delete
 // projects, open your profile or a project's site in the visual builder (js/builder.js; #profile=<creator id> and
-// #project=<id> reopen them), a project's products
-// (js/studio-products.js; #products=<id>), its Music, News and Shows (js/studio-content.js; #content=<id>&kind=...), one product in the Product Studio (js/studio-workspace.js;
-// #product=<id>&section=<key>), see storage and paid storage (js/studio-storage.js) and earnings (js/studio-earnings.js). All checks
-// (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js (and the
-// modules it needs), js/studio-team.js (the Team panel; #invite=<token> opens an emailed invitation), js/studio-products.js,
-// js/studio-workspace.js, js/studio-content.js, js/studio-storage.js and js/studio-earnings.js. What each member's role allows (capabilities
-// from the API) decides which actions show; the server checks again. First-party creators (AutoStacc's own, hand-written
-// pages) show only their products and content; an AutoStacc admin may become the first owner of one that has none.
+// #project=<id> reopen them), a project's products (js/studio-products.js; #products=<id>), its Music and Events
+// (js/studio-content.js; #content=<id>&kind=music|events), one product in the Product Studio (js/studio-workspace.js;
+// #product=<id>&section=<key>), see storage and paid storage (js/studio-storage.js) and earnings (js/studio-earnings.js).
+// All checks (unique names, limits, ownership) happen on the server (server/studio/). Needs js/util.js, js/builder.js
+// (and the modules it needs), js/studio-team.js (the Team panel; #invite=<token> opens an emailed invitation),
+// js/studio-products.js, js/studio-workspace.js, js/studio-content.js, js/studio-storage.js and js/studio-earnings.js.
+// What each member's role allows (capabilities from the API) decides which actions show; the server checks again.
+// First-party creators (AutoStacc's own, owned by the account the deploy names) show only their products and content,
+// with no limits and no platform fee.
 (function () {
   "use strict";
 
@@ -23,17 +24,10 @@
     <div class="field"><label for="${prefix}-slug">Address</label><input id="${prefix}-slug" name="slug" required minlength="3" maxlength="40" pattern="${SLUG}" value="${e(slug)}">
       <p class="small-print">${hint}Lowercase letters, numbers and hyphens. It has to be unique${prefix === "pr" ? " among your projects" : " on AutoStacc"}.</p></div>`;
 
-  // First-party creators with no owner yet, which this AutoStacc admin may take (the API lists them only for admins).
-  const claimable = (list = []) => (list.length ? `<section class="panel wide studio-claim"><h2>First-party creators</h2>
-      <p>AutoStacc's own creators have hand-written pages. Become the owner of one to run its products, music, news and shows here; you can add a team later.</p>
-      <ul class="studio-claim-list">${list.map((c) => `<li><strong>${e(c.name)}</strong> <span class="studio-address">${e(location.host + c.path)}</span>
-        <button class="btn small" type="button" data-claim="${e(c.id)}">Become its owner<span class="sr-only"> (${e(c.name)})</span></button></li>`).join("")}</ul>
-      <p class="msg" role="status" hidden></p></section>` : "");
-
   function overview(data) {
     root.onclick = root.oninput = root.onchange = root.onsubmit = null;
     if (!data.creators.length) {
-      root.innerHTML = `${claimable(data.claimable)}<div class="studio-start">
+      root.innerHTML = `<div class="studio-start">
         <form class="panel" data-form="creator"><h2>Claim your creator name</h2>
           <p>Your space will live at <strong>${e(location.host)}/<span data-preview>you</span></strong>. Free: no plan, no card.</p>
           ${nameFields("cr")}<button class="btn" type="submit">Claim it</button><p class="msg" role="status" hidden></p></form>
@@ -56,12 +50,13 @@
         </div>
         ${c.trusted ? "" : '<p class="small-print">New creators\' pages are kept out of search engines until AutoStacc has had a look.</p>'}
         <ul class="studio-meters">
-          <li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>of ${size(c.storage.quotaBytes)}</small></strong>
-            <meter min="0" max="${c.storage.quotaBytes}" value="${c.storage.usedBytes}" aria-label="Storage used"></meter></li>
+          ${c.firstParty ? `<li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>no limit</small></strong></li>`
+            : `<li><span>Storage</span><strong>${size(c.storage.usedBytes)} <small>of ${size(c.storage.quotaBytes)}</small></strong>
+            <meter min="0" max="${c.storage.quotaBytes}" value="${c.storage.usedBytes}" aria-label="Storage used"></meter></li>`}
           ${own(c) ? `<li><span>Projects</span><strong>${c.projects.length} <small>of ${data.limits.projectsPerCreator}</small></strong>
             <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>` : ""}
         </ul>
-        ${own(c) ? "" : '<p class="small-print">AutoStacc\'s own creator: its pages are hand-written, so here you run its products and its music, news and shows.</p>'}
+        ${own(c) ? "" : '<p class="small-print">AutoStacc\'s own creator: its pages are hand-written, so here you run its products, music and events. No limits, no storage charges and no platform fee: every sale is AutoStacc\'s own.</p>'}
         ${own(c) ? `<div class="studio-profile"><div><h3 class="studio-sub">Your profile</h3><p class="small-print">Your home at ${e(location.host + c.path)}: who you are, your music, your projects.</p></div>
           ${may(c, "site.edit") ? `<button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button>` : ""}</div>` : ""}
         <h3 class="studio-sub">Projects</h3>
@@ -71,7 +66,7 @@
           <div class="studio-project-actions">
             ${own(c) && may(c, "site.edit") ? `<button class="btn small" type="button" data-edit="${e(p.id)}">Edit site</button>` : ""}
             ${may(c, "products") ? `<button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>` : ""}
-            ${may(c, "site.edit") ? ["music", "news", "shows"].map((k) => `<button class="btn ghost small" type="button" data-content="${e(p.id)}" data-kind="${k}">${k[0].toUpperCase() + k.slice(1)}<span class="sr-only"> of ${e(p.name)}</span></button>`).join("") : ""}
+            ${may(c, "site.edit") ? ["music", "events"].map((k) => `<button class="btn ghost small" type="button" data-content="${e(p.id)}" data-kind="${k}">${k[0].toUpperCase() + k.slice(1)}<span class="sr-only"> of ${e(p.name)}</span></button>`).join("") : ""}
           </div>
           ${own(c) && may(c, "projects") ? `<details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
@@ -83,10 +78,11 @@
         ${own(c) && c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
         ${own(c) ? `<div class="studio-team-panel" data-team="${e(c.id)}"></div>
-        <div class="studio-earnings" data-storage="${e(c.id)}"></div>` : ""}
+` : ""}
+        <div class="studio-earnings" data-storage="${e(c.id)}"></div>
         ${own(c) && c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
         <p class="msg" role="status" hidden></p>
-      </section>`).join("") + claimable(data.claimable);
+      </section>`).join("");
     root.querySelectorAll("[data-earnings]").forEach((el) => window.GS.studioEarnings.draw(el, el.dataset.earnings));
     root.querySelectorAll("[data-storage]").forEach((el) => window.GS.studioStorage.draw(el, el.dataset.storage));
     root.querySelectorAll("[data-team]").forEach((el) => window.GS.studioTeam.draw(el, el.dataset.team));
@@ -155,16 +151,6 @@
     if (content) {
       history.replaceState(null, "", `#content=${encodeURIComponent(content.dataset.content)}&kind=${encodeURIComponent(content.dataset.kind)}`);
       return window.GS.studioContent.open(root, content.dataset.content, content.dataset.kind, back);
-    }
-    const claim = ev.target.closest("[data-claim]");
-    if (claim) {
-      claim.disabled = true;
-      const res = await api(`/api/studio/creators/${encodeURIComponent(claim.dataset.claim)}/claim`, { method: "POST", body: {} });
-      claim.disabled = false;
-      if (res.ok) return load();
-      const msg = $(".msg", claim.closest(".panel"));
-      if (msg) { msg.hidden = false; msg.className = "msg error"; msg.setAttribute("role", "alert"); msg.textContent = res.error.message; }
-      return;
     }
     const prod = ev.target.closest("[data-products]");
     if (prod) {

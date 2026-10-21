@@ -1,11 +1,13 @@
-/* Latest from every project (js/latest.js, [data-latest]): three panels, new releases, news and upcoming shows. Home
-   page and dashboard. */
-.latest { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+/* Latest from every project (js/latest.js, [data-latest]): two panels, new releases and upcoming events. Home page and
+   dashboard. */
+.latest { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .latest-col .small-print { margin-block: 0; }
 .latest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .latest-list a { display: grid; gap: 2px; padding: 8px 10px; color: var(--text); background: var(--panel); text-decoration: none; border-left: 3px solid var(--accent); border-radius: 6px; }
 .latest-list a:hover, .latest-list a:focus-visible { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .latest-title { font-weight: 600; }
 .latest-meta { color: var(--muted); font-size: .84rem; }
+.latest-more { margin: 10px 0 0; font-size: .9rem; }
+.latest-more a { display: inline-block; padding-block: 8px; }
 
 @media (max-width: 900px) { .latest { grid-template-columns: minmax(0, 1fr); } }

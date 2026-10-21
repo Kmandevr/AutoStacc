@@ -18,7 +18,7 @@ How the suites work and what they attack: [docs/development.md](../../../docs/de
    echo "== build (exit $e1)"; cat $L/build.txt; echo "== unit (exit $e2)"; grep -E '^(not ok|# (pass|fail) |ℹ (pass|fail) )' $L/unit.txt
    ```
 
-   The catalog and pages must be current (tests start from the build). A build error or any unit FAIL: fix before going on.
+   The platform sync (`db/catalog.sql`: creators, projects, polls) and pages must be current (tests start from the build; test products are fixtures in `test/support/catalog-fixtures.js`, never data). A build error or any unit FAIL: fix before going on.
 3. `npm run test:store`: the API and browser suites together, about 2.5 minutes on 4 cores. It builds `dist/` once, then runs every group in parallel, each with its own store: API `accounts` (port 8801) and `payments` (8804, Stripe mode on 8802, fake Stripe on 8812), browser `flows` (8803), `layout` (8805) and `features` (8806); each store's devtools port is its port + 1000. Chromium needs global Playwright (preinstalled in cloud sessions). Make sure no old store holds those ports: `pgrep -x workerd | xargs -r kill` (never `pkill -f` with a pattern your own command line contains: it kills the shell).
 
 Never run `npm run test:api` and `npm run test:browser` at the same time: each rebuilds `dist/` first, under the other's running stores. `test:store` is the parallel way.

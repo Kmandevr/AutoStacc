@@ -5,7 +5,7 @@
 // bytes didn't change keep their id. Also the queue of creators' versions held by the automated review, to approve or
 // reject. Talks to /api/admin/packs; uploads through js/packs-upload.js, draws a version with js/packs-version.js and
 // its review with js/packs-review.js; the Pac editor (js/pac-editor.js, js/pac-previews.js) builds it one file at a time.
-// Starts on "gs:admin". Needs js/util.js and data/pacs.js.
+// The Pacs to choose from come from the database (GET /api/admin/pacs). Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
 
@@ -15,7 +15,7 @@
   const pct = (x) => `${Math.round(x * 100)}%`;
   let el, pacId, poll;
 
-  const pacOptions = () => (window.PACS || []).map((p) => `<option value="${e(p.id)}"${p.id === pacId ? " selected" : ""}>${e(p.title)} (${e(p.id)})</option>`).join("");
+  const pacOptions = (pacs) => pacs.map((p) => `<option value="${e(p.id)}"${p.id === pacId ? " selected" : ""}>${e(p.title)} (${e(p.id)})</option>`).join("");
 
   async function showVersion(id) {
     clearTimeout(poll);
@@ -69,7 +69,7 @@
         <div class="actions"><button class="btn" type="submit"${pac.draftVersionId ? " disabled data-locked" : ""}>Upload and check</button></div>
         <progress max="1" value="0" hidden></progress><p class="msg" role="status">${pac.draftVersionId ? "A version is in progress below: publish or discard it first." : ""}</p>
       </form>` : ""}
-      ${products.length ? "" : `<p class="msg">No product includes this Pac yet (a product's <code>pacs</code> in data/products.js).</p>`}
+      ${products.length ? "" : `<p class="msg">No product includes this Pac yet (a creator adds it to a product in the Studio).</p>`}
       ${products.length ? "<div data-pac-editor></div>" : ""}
       <div data-pack-version></div>
       <div data-pac-previews></div>
@@ -168,12 +168,14 @@
     if (!el) return;
     el.innerHTML = `<div data-pack-queue></div>
       <p class="small-print">Upload a Pac's files as one ZIP. AutoStacc checks every file (type, damage, unsafe names), stores the originals byte for byte and suggests kinds, instruments, tempos and keys; you publish when it looks right.</p>
-      <div class="field"><label for="pack-pac">Pac</label><select id="pack-pac" data-pack-pac><option value="">Choose a Pac…</option>${pacOptions()}</select></div>
+      <div class="field"><label for="pack-pac">Pac</label><select id="pack-pac" data-pack-pac><option value="">Choose a Pac…</option></select></div>
       <div data-pack-body></div>`;
     $("[data-pack-pac]", el).addEventListener("change", (ev) => { pacId = ev.target.value; showPac(); });
     el.addEventListener("submit", onSubmit);
     el.addEventListener("change", onPick);
     window.GS.packReview.bind(el, draw, BASE);
     el.addEventListener("click", onClick);
+    // The panel (and the review queue's box in it) is drawn at once; the Pacs arrive after.
+    api("/api/admin/pacs").then((res) => { if (res.ok) $("[data-pack-pac]", el).insertAdjacentHTML("beforeend", pacOptions(res.data.pacs)); });
   });
 })();

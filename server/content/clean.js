@@ -1,15 +1,18 @@
-// Input checks for project content made in the Studio (releases, news posts, shows; server/content/content.js): every
-// field is validated and normalized here, so nothing a browser sends is stored as it came. Text is plain, or the safe
-// markup of js/site-text.js for a news body (never HTML); links are https only; players must be a link
-// js/site-embeds.js knows; artwork is one of the creator's own site images. Values migrated from data/ that these rules
-// would refuse (root-relative artwork, a Deezer widget) are kept only while the request leaves them unchanged.
+// Input checks for project content made in the Studio (releases and events; server/content/content.js): every field is
+// validated and normalized here, so nothing a browser sends is stored as it came. Text is plain (never HTML); links
+// are https only; players must be a link js/site-embeds.js knows; artwork is one of the creator's own site images; tags
+// follow the store's rule (server/lib/tags.js); an event's time zone is a real IANA zone and its country an ISO code.
+// Values migrated from data/ that these rules would refuse (root-relative artwork, a Deezer widget) are kept only while
+// the request leaves them unchanged.
 import { fail, str, int } from "../lib/http.js";
+import { cleanTags } from "../lib/tags.js";
 import { safeUrl } from "../sites/text.js";
 import { embedFor } from "../sites/embeds.js";
 import { ownImages } from "../sites/images.js";
 
 export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const bad = (field, message) => fail(400, "invalid_field", message, { field });
 const has = (body, k) => Object.prototype.hasOwnProperty.call(body, k);
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -63,6 +66,21 @@ async function artwork(db, creatorId, v, old) {
     alt: str(v.alt, "artwork.alt", { max: 300 }) };
 }
 
+// An event's last day: none, or a real date on or after its first (the one sent, else the stored one).
+function endDate(b, old) {
+  if (b.endDate === undefined || b.endDate === null || b.endDate === "") return null;
+  const d = date(b.endDate, "endDate");
+  const start = b.date !== undefined ? b.date : old.date;
+  return typeof start === "string" && d < start ? bad("endDate", "endDate is on or after the date.") : d;
+}
+
+// An IANA time zone the runtime knows ("Europe/Berlin"), or none.
+function zone(v) {
+  if (v === undefined || v === null || v === "") return null;
+  const z = str(v, "timeZone", { max: 64, pattern: /^[A-Za-z]+(?:[/_+-][A-Za-z0-9]+)*$/ });
+  try { return new Intl.DateTimeFormat("en-US", { timeZone: z }).resolvedOptions().timeZone && z; } catch { return bad("timeZone", "timeZone is not a known time zone."); }
+}
+
 // Each kind's fields: (body, old row's values, ctx) -> clean values for the fields the body names.
 const FIELDS = {
   releases: {
@@ -80,24 +98,23 @@ const FIELDS = {
     embedUrl: (b, old) => player(b.embedUrl, "embedUrl", old.embedUrl),
     fallbackEmbedUrl: (b, old) => player(b.fallbackEmbedUrl, "fallbackEmbedUrl", old.fallbackEmbedUrl),
     links: (b) => list(b.links, "links", 20, (l, n) => ({ name: str(l.name, `${n} name`, { max: 60 }), url: https(l.url, `${n} url`) || bad("links", `${n} needs a link.`) })),
-    featured: (b) => bool(b.featured, "featured")
+    featured: (b) => bool(b.featured, "featured"),
+    tags: (b) => cleanTags(b.tags)
   },
-  news: {
-    required: ["title", "date"],
+  events: {
+    required: ["title", "date", "city"],
     slug: (b) => slugOf(b.slug),
     title: (b) => str(b.title, "title", { max: 200 }),
     date: (b) => date(b.date),
-    tag: (b) => text(b.tag, "tag", 40),
-    release: (b) => (b.release === null || b.release === "" ? null : slugOf(b.release, "release")),
-    summary: (b) => text(b.summary, "summary", 300),
-    body: (b) => text(b.body, "body", 20000)
-  },
-  shows: {
-    required: ["date", "city"],
-    date: (b) => date(b.date),
-    city: (b) => str(b.city, "city", { max: 120 }),
+    time: (b) => optional(b.time, "time", 5, TIME),
+    endDate: (b, old) => endDate(b, old),
+    timeZone: (b) => zone(b.timeZone),
     venue: (b) => text(b.venue, "venue", 120),
-    ticketUrl: (b) => https(b.ticketUrl, "ticketUrl")
+    city: (b) => str(b.city, "city", { max: 120 }),
+    country: (b) => (optional(b.country, "country", 2, /^[A-Z]{2}$/) || ""),
+    ticketUrl: (b) => https(b.ticketUrl, "ticketUrl"),
+    tags: (b) => cleanTags(b.tags),
+    description: (b) => text(b.description, "description", 2000)
   }
 };
 
@@ -113,7 +130,8 @@ export async function cleanContent(kind, body, { create = false, old = {}, ctx }
     out[k] = await fn(body, old, ctx);
   }
   if (create) for (const k of fields.required) if (!has(out, k)) bad(k, `${k} is required.`);
-  if (create && kind !== "shows" && !out.slug) out.slug = slugFrom(out.title);
+  if (create && !out.slug) out.slug = slugFrom(out.title);
+  if (out.date && out.endDate === undefined && old.endDate && old.endDate < out.date) bad("endDate", "endDate is on or after the date.");
   if (has(body, "published")) out.published = bool(body.published, "published");
   if (!Object.keys(out).length) fail(400, "bad_request", "Nothing to change.");
   return out;

@@ -21,12 +21,13 @@ const PROJECT = "autostacc";
 const TOML = path.join(ROOT, "wrangler.toml");
 // Must match [env.production] in wrangler.toml.
 const PROD = { db: "autostacc", placeholder: "00000000-0000-0000-0000-000000000002", buckets: ["autostacc-files", "autostacc-previews"] };
-// The last six are optional (BREVO_NEWS_LIST: see docs/store-setup.md): ADMIN_EMAILS can come from the user table, the marketplace account (creators' sales and
+// The last seven are optional (BREVO_NEWS_LIST: see docs/store-setup.md): ADMIN_EMAILS can come from the user table, the marketplace account (creators' sales and
 // Connect payouts, docs/payouts-setup.md) is off until its key and webhook secret are both set, and a project's newsletter
-// sign-up says "coming soon" until BREVO_NEWSLETTER_LISTS names its Brevo list.
+// sign-up says "coming soon" until BREVO_NEWSLETTER_LISTS names its Brevo list. FIRST_PARTY_OWNERS ("autostacc=<email>")
+// names each first-party creator's owner, so the address stays out of the public repo (#172).
 const SECRETS = ["BETTER_AUTH_SECRET", "DOWNLOAD_SIGNING_SECRET", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "BREVO_API_KEY", "ADMIN_EMAILS",
-  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST", "SWEEP_TOKEN"];
-const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST", "SWEEP_TOKEN"]);
+  "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST", "SWEEP_TOKEN", "FIRST_PARTY_OWNERS"];
+const OPTIONAL = new Set(["ADMIN_EMAILS", "STRIPE_MARKETPLACE_KEY", "STRIPE_MARKETPLACE_WEBHOOK_SECRET", "PLATFORM_COUNTRY", "BREVO_NEWSLETTER_LISTS", "BREVO_NEWS_LIST", "SWEEP_TOKEN", "FIRST_PARTY_OWNERS"]);
 
 // quiet: capture and resolve with the output; otherwise it goes straight to the deploy log and resolves with "".
 // Rejects like execFileSync threw: the error carries stderr when quiet.

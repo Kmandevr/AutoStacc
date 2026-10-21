@@ -3,7 +3,10 @@
 // came with a piece they installed). Each interactive element works without a script: slides scroll, every tab shows,
 // accordions are <details>, audio has the browser's controls, a countdown shows its date; AutoStacc's runtime
 // (js/site-runtime.js) only improves them. Store pieces are links to AutoStacc's own pages, never carts or forms.
-// ctx: { images: Map(id → src), products: Map(id → { title, path, artwork, preview }), projects: Map(id → { name, path }) }.
+// Releases and a project's events come from the Studio (server/sites/content-refs.js), drawn as cards linking to their
+// own pages, and only for a project in ctx.projects; the editor, which has no such lists, shows where they go.
+// ctx: { images: Map(id → src), products: Map(id → { title, path, artwork, preview }), projects: Map(id → { name, path }),
+//   releases?: Map(projectId → [{ title, type, date, path, artwork }]), events?: Map(projectId → [{ title, date, time, venue, city, country, path }]) }.
 // Shared by the server and the Studio's editor; pure. Sets GS.siteElements in browsers.
 (function (root) {
   "use strict";
@@ -22,6 +25,17 @@
     return href ? `<a${cls ? ` class="${cls}"` : ""} href="${esc(href)}"${linkAttrs(href)}>${esc(label)}</a>` : "";
   };
   const items = (list, fn) => list.map(fn).filter(Boolean).join("");
+  const h2 = (title) => (title ? `<h2>${esc(title)}</h2>` : "");
+  // A project's Studio list: null when it can't show (not the creator's, not live), the editor's placeholder, or the cards.
+  const fromProject = (ctx, kind, project, what) => {
+    const p = ctx.projects.get(project);
+    if (ctx.editor && (!p || !ctx[kind])) return { hint: `<p class="cs-empty">${p ? `${what} from ${esc(p.name)} appear here` : "Pick one of your published projects"}</p>` };
+    return p && ctx[kind] ? { list: ctx[kind].get(project) || [] } : null;
+  };
+  const releaseCard = (r) => `<li><a href="${esc(r.path)}">${r.artwork ? `<img src="${esc(r.artwork.src)}" alt="" loading="lazy" decoding="async">` : ""}
+    <strong>${esc(r.title)}</strong><span>${esc([r.type, r.date && fmtDate(r.date)].filter(Boolean).join(" · "))}</span></a></li>`;
+  const eventCard = (x) => `<li><a href="${esc(x.path)}"><time datetime="${esc(x.date)}">${esc(fmtDate(x.date))}${x.time ? ` · ${esc(x.time)}` : ""}</time>
+    <strong>${esc(x.title)}</strong>${[x.venue, x.city, x.country].filter(Boolean).length ? `<span>${esc([x.venue, x.city, x.country].filter(Boolean).join(", "))}</span>` : ""}</a></li>`;
 
   const RENDER = {
     heading: (b) => `<h${b.level} class="cs-h">${esc(b.text)}</h${b.level}>`,
@@ -54,11 +68,24 @@
       if (e && ctx.editor) return `<div class="cs-embed cs-empty" style="min-height:${Math.min(e.height, 200)}px">${esc(e.title)} player</div>`;
       return e ? `<div class="cs-embed cs-embed-${e.provider}"><iframe src="${esc(e.src)}" title="${esc(e.title)} player" height="${e.height}"${e.ratio ? ` style="aspect-ratio:${e.ratio};height:auto"` : ""} loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe></div>` : "";
     },
-    events: (b) => `<section class="cs-events">${b.title ? `<h2>${esc(b.title)}</h2>` : ""}${b.items.length
-      ? `<ul>${[...b.items].sort((x, y) => x.date.localeCompare(y.date)).map((x) => `<li><time datetime="${esc(x.date)}">${esc(fmtDate(x.date))}</time>
+    events: (b, ctx) => {
+      if (b.project) {
+        const got = fromProject(ctx, "events", b.project, "Upcoming events");
+        if (!got) return "";
+        return `<section class="cs-events">${h2(b.title)}${got.hint || (got.list.length ? `<ul class="cs-cards">${got.list.map(eventCard).join("")}</ul>` : '<p class="cs-muted">No dates yet.</p>')}</section>`;
+      }
+      return `<section class="cs-events">${h2(b.title)}${b.items.length
+        ? `<ul>${[...b.items].sort((x, y) => x.date.localeCompare(y.date)).map((x) => `<li><time datetime="${esc(x.date)}">${esc(fmtDate(x.date))}</time>
         <span class="cs-event-what"><strong>${esc(x.title)}</strong>${[x.venue, x.city].filter(Boolean).length ? ` <span>${esc([x.venue, x.city].filter(Boolean).join(", "))}</span>` : ""}</span>
         ${x.url ? link(x.url, "Details", "cs-btn small") : ""}</li>`).join("")}</ul>`
-      : '<p class="cs-muted">No dates yet.</p>'}</section>`,
+        : '<p class="cs-muted">No dates yet.</p>'}</section>`;
+    },
+    releases: (b, ctx) => {
+      const got = fromProject(ctx, "releases", b.project, "Newest releases");
+      if (!got) return "";
+      const list = got.list ? got.list.slice(0, b.count) : [];
+      return `<section class="cs-releases">${h2(b.title)}${got.hint || (list.length ? `<ul class="cs-cards">${list.map(releaseCard).join("")}</ul>` : '<p class="cs-muted">No releases yet.</p>')}</section>`;
+    },
     socials: (b) => (b.links.length ? `<ul class="cs-socials">${b.links.map((x) => `<li>${link(x.url, x.network)}</li>`).join("")}</ul>` : ""),
     products: (b, ctx) => {
       const list = b.ids.filter((id) => ctx.products.has(id)).map((id) => ctx.products.get(id));

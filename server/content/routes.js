@@ -1,7 +1,9 @@
 // Project content API (server/content/content.js): the public reads of a project's (or every project's newest)
-// published releases, news and shows, and the Studio's list, create, change and delete for every creator, first-party
-// included. Writing a draft needs the "site.edit" capability; publishing, unpublishing, changing a live item and
-// deleting need "site.publish" (server/creators/roles.js). Anyone else gets "nothing here".
+// published releases and upcoming events, the events calendar's data (GET /api/events, events.js; with following=1 only
+// projects the signed-in account follows, never cached), and the Studio's list, create, change and delete of releases
+// and events for every creator, first-party included. Writing a draft needs the "site.edit" capability; publishing,
+// unpublishing, changing a live item and deleting need "site.publish" (server/creators/roles.js). Anyone else gets
+// "nothing here". News is off until each creator's community opens (#174): no news route reads or writes it.
 import { json, readJson, fail, id, int } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
@@ -11,10 +13,12 @@ import { getVisibleProject } from "../projects/projects.js";
 import { listImages, imageSrc } from "../sites/images.js";
 import { EMBED_PROVIDERS } from "../sites/embeds.js";
 import { KINDS, cleanContent } from "./clean.js";
+import { listFollows } from "../projects/follows.js";
+import { parseEventFilters, eventsBetween } from "./events.js";
 import { KIND, projectContent, latestContent, getItem, listItems, createItem, updateItem, deleteItem, studioView, valuesOf } from "./content.js";
 
 const CACHE = { "Cache-Control": "public, max-age=60" };
-const BODY = { releases: 24 * 1024, news: 32 * 1024, shows: 4 * 1024 };
+const BODY = { releases: 24 * 1024, events: 8 * 1024 };
 
 async function projectPublic(app, { projectId }) {
   const project = await getVisibleProject(app.db, id(projectId, "projectId"));
@@ -26,6 +30,19 @@ async function latest(app) {
   const raw = new URL(app.request.url).searchParams.get("limit");
   const max = raw === null || raw === "" ? 12 : int(Number(raw), "limit", { min: 1, max: 50 });
   return json(await latestContent(app.db, max), 200, CACHE);
+}
+
+// The calendar's events: the same filters as /events; following=1 only the followed projects' (signed in, private).
+async function calendar(app) {
+  const params = new URL(app.request.url).searchParams;
+  const following = params.get("following");
+  if (following !== null && following !== "" && following !== "0" && following !== "1") fail(400, "invalid_filter", "following is 0 or 1.", { field: "following" });
+  const f = parseEventFilters(params);
+  const out = { from: f.from, to: f.to };
+  if (following !== "1") return json({ ...out, events: await eventsBetween(app.db, f) }, 200, CACHE);
+  const user = await requireUser(app);
+  const ids = (await listFollows(app.db, user.id)).map((x) => x.project_id);
+  return json({ ...out, following: true, events: await eventsBetween(app.db, f, { projectIds: ids }) }, 200, { "Cache-Control": "private, no-store" });
 }
 
 // Catalog (first-party) projects take part too: content is the same for every creator (docs/creators.md).
@@ -82,6 +99,7 @@ const withKind = (kind, handler) => (app, params) => handler(app, { ...params, k
 export const routes = [
   ["GET", "/api/projects/:projectId/content", projectPublic],
   ["GET", "/api/content/latest", latest],
+  ["GET", "/api/events", calendar],
   ...KINDS.flatMap((kind) => [
     ["GET", `/api/studio/projects/:projectId/${kind}`, withKind(kind, list)],
     ["POST", `/api/studio/projects/:projectId/${kind}`, withKind(kind, create)],

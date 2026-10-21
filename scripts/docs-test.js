@@ -43,7 +43,7 @@ for (const note of NOTES) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fm.updated || "")) add("FAIL", "frontmatter", "updated: must be YYYY-MM-DD", note);
   if (fm.covers === undefined) continue;
   const list = fm.covers.match(/^\[(.*)\]$/);
-  if (!list) { add("FAIL", "covers", "covers: must be a one-line list, e.g. [server/cart/, data/products.js]", note); continue; }
+  if (!list) { add("FAIL", "covers", "covers: must be a one-line list, e.g. [server/cart/, data/projects.js]", note); continue; }
   covers[note] = list[1].split(",").map((s) => s.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
 }
 const toRegex = (pat) => new RegExp("^" + pat.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\0").replace(/\*/g, "[^/]*").replace(/\0/g, ".*") + (pat.endsWith("/") ? "" : "$"));

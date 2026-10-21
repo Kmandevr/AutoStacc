@@ -44,7 +44,7 @@ export default (ctx) => describe("selling", () => {
     const p = ok.data.product;
     assert.ok(p.id.startsWith(s.creator.slug + "-dusty-drums"));
     assert.equal(p.published, false);
-    assert.equal(p.path, `/product?p=${p.id}`);
+    assert.equal(p.path, `/shop/${p.id}`);
     assert.deepEqual(db(`SELECT source, created_by, project_id, published FROM products WHERE id = '${p.id}'`), [{ source: "studio", created_by: s.user.id, project_id: s.project.id, published: 0 }]);
     // Not visible to buyers until it is on sale.
     assert.equal((await anon.get(`/api/products/${p.id}`)).status, 404);
@@ -117,7 +117,7 @@ export default (ctx) => describe("selling", () => {
     let x = await listed();
     assert.ok(x, "in the store");
     assert.deepEqual([x.source, x.verified, x.projectName, x.creator.path, x.projectPath, x.path],
-      ["studio", false, "Beats", `/${s.creator.slug}`, `/${s.creator.slug}/beats`, `/product?p=${p.id}`]);
+      ["studio", false, "Beats", `/${s.creator.slug}`, `/${s.creator.slug}/beats`, `/shop/${p.id}`]);
     assert.equal((await new Client(base()).get(`/api/products/${p.id}`)).data.product.verified, false);
     db(`UPDATE creators SET trusted = 1 WHERE id = '${s.creator.id}'`);
     x = await listed();
@@ -210,8 +210,8 @@ export default (ctx) => describe("selling", () => {
     assert.ok(owned, "the buyer owns it");
     // Your Stacc names the Studio project and links to the product's real page.
     assert.equal(owned.projectName, "Beats");
-    assert.equal(owned.path, `/product?p=${p.id}`);
-    assert.equal((await buyer.get("/api/orders")).data.orders.find((o) => o.id === order.orderId).items[0].path, `/product?p=${p.id}`);
+    assert.equal(owned.path, `/shop/${p.id}`);
+    assert.equal((await buyer.get("/api/orders")).data.orders.find((o) => o.id === order.orderId).items[0].path, `/shop/${p.id}`);
 
     // Earnings: just paid, so on hold and not yet payable. No buyer is named.
     const e1 = (await s.c.get(`/api/studio/creators/${s.creator.id}/earnings`)).data.earnings;

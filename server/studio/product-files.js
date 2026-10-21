@@ -1,5 +1,6 @@
 // Studio API, a product's paid files: a creator uploads the files a buyer gets and removes their own. The same checks as
-// the owner's uploads (server/files/policy.js: listed types, contents must match the name), plus the creator's limits.
+// the owner's uploads (server/files/policy.js: listed types, contents must match the name), plus the creator's limits (none
+// for a first-party creator, server/creators/policy.js).
 // A trusted creator's files can be delivered at once; anyone else's wait as "pending" until AutoStacc approves them in
 // the Control Center, because a buyer pays for what these files are. A product with no deliverable file isn't on sale.
 // Also the product's public preview clip (played on its page).
@@ -7,7 +8,7 @@ import { json, fail, str } from "../lib/http.js";
 import { first, run, newId, now, randomToken } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
-import { LIMITS, filesQuotaOf } from "../creators/policy.js";
+import { filesQuotaOf, limitOf, UNLIMITED } from "../creators/policy.js";
 import { requireOwnProduct } from "../creators/products.js";
 import { storageUsed, inUseSql } from "../creators/storage.js";
 import { storedSql, storedBytes } from "../usage/storage.js";
@@ -31,8 +32,9 @@ async function upload(app, { productId }) {
   const filename = safeFilename(str(new URL(app.request.url).searchParams.get("filename") || "", "filename", { max: 160 }));
   const size = Number(app.request.headers.get("content-length") || 0);
   const [existing, used] = await Promise.all([countKept(app.db, product.id), storageUsed(app.db, creator.id)]);
-  if (existing >= LIMITS.filesPerProduct) fail(409, "limit_reached", `A product can have up to ${LIMITS.filesPerProduct} files.`);
-  checkUpload({ filename, sizeBytes: size, existing });
+  const maxFiles = limitOf(creator, "filesPerProduct");
+  if (existing >= maxFiles) fail(409, "limit_reached", `A product can have up to ${maxFiles} files.`);
+  checkUpload({ filename, sizeBytes: size, existing, maxFiles: maxFiles === UNLIMITED ? UNLIMITED : undefined });
   const quota = filesQuotaOf(creator);
   const full = () => fail(409, "quota_exceeded", `That would go over your ${Math.floor(quota / 1048576)} MB of file storage. Remove a file first.`);
   if (used + size > quota) full();

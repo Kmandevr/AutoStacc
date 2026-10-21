@@ -8,6 +8,9 @@ import { checkCss } from "../../server/sites/css.js";
 import { TEMPLATES } from "../../server/sites/templates.js";
 import { sniffFile, sniffImage } from "../../server/sites/images.js";
 import siteRender from "../../js/site-render.js";
+import builderModel from "../../js/builder-model.js";
+import siteElements from "../../js/site-elements.js";
+import { ELEMENT_TYPES } from "../../server/sites/elements.js";
 
 const A = (c) => "as_" + c.repeat(26);
 const ctx = (over = {}) => ({ images: new Map(), products: new Map(), projects: new Map(), ...over });
@@ -141,4 +144,13 @@ test("fonts are recognised by their bytes (a whole WOFF2 header) and never pass 
   assert.equal(sniffFile(lying), null, "the header's length must be the file's");
   assert.equal(sniffImage(woff2), null);
   assert.equal(sniffFile(new TextEncoder().encode("wOFF........")), null, "WOFF 1 isn't accepted");
+});
+
+test("the Add panel's elements are the server's and the renderer's; Releases and project Events show a placeholder in the editor", () => {
+  assert.deepEqual(Object.keys(builderModel.ELEMENTS).sort(), [...ELEMENT_TYPES].sort());
+  for (const t of ELEMENT_TYPES) assert.ok(siteElements.TYPES.includes(t), t);
+  const editor = ctx({ editor: true, projects: new Map([["p1", { name: "Mine", path: "/me/mine" }]]) });
+  assert.match(siteElements.render({ type: "releases", project: "p1", count: 4 }, editor), /cs-empty">Newest releases from Mine/);
+  assert.match(siteElements.render({ type: "events", project: "p1", items: [] }, editor), /Upcoming events from Mine/);
+  assert.equal(siteElements.render({ type: "releases", project: "p1", count: 4 }, ctx()), "", "nothing for a project that isn't live");
 });

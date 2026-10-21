@@ -1,6 +1,7 @@
 // Where signing in sends a visitor: the server gate's login redirect (server/pages/guard.js) and the login page's
 // return path (GS.safeNext in js/util.js). Both keep visitors on this site, and login never returns to itself. Also the
-// old release and news addresses in _redirects: they land on content addresses the content Function serves.
+// old release addresses in _redirects (they land on content addresses the content Function serves) and the old news
+// addresses (straight to the project home, since news is offline until the community opens, #174).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -59,20 +60,31 @@ test("the Control Center's sub-pages are the same in the gate, the page data and
   assert.deepEqual(rewrites.map(([from]) => from), ADMIN_PAGES.map((x) => `/admin/${x}`), "the store-off rewrites cover exactly the sub-pages");
 });
 
-test("old release and news addresses redirect to the content Function's addresses, kept for search engines", () => {
-  const { contentAddress } = createRequire(import.meta.url)("../../scripts/lib/data.js");
+test("old release addresses redirect to the content Function's addresses; old news addresses go straight to the project home", () => {
+  const { contentAddress, retiredAddress } = createRequire(import.meta.url)("../../scripts/lib/data.js");
   const rules = readFileSync(new URL("../../_redirects", import.meta.url), "utf8").split("\n").map((l) => l.trim().split(/\s+/))
-    .filter(([from, to, code]) => from && !from.startsWith("#") && /\/(music|news)\/(\*|:splat)$/.test(`${from} ${to}`) && code === "301");
-  assert.ok(rules.some(([from]) => from === "/music/*") && rules.some(([from]) => from === "/news/*"), "the old /music/* and /news/* still redirect");
-  for (const [from, to] of rules) {
-    if (!to.endsWith(":splat")) continue;
-    const found = contentAddress(to.replace(":splat", "hail"));
-    if (/\/(music|news)\/:splat$/.test(to)) assert.ok(found && found.slug === "hail", `${from} -> ${to} is a content address`);
-  }
-  // What it recognizes: exactly /<creator>/<published first-party project>/music|news/<slug>.
+    .filter(([from, , code]) => from && !from.startsWith("#") && code === "301");
+  const to = (from) => (rules.find(([f]) => f === from) || [])[1];
+  assert.equal(to("/music/*"), "/autostacc/glitches-and-stitches/music/:splat", "the old /music/* still redirects");
+  assert.ok(contentAddress(to("/music/*").replace(":splat", "hail")), "to a release address");
+  // News is offline until each creator's community opens (#174): no rule may land on a news address (a 301 chain).
+  for (const from of ["/news", "/news/*", "/news.html", "/projects/glitches-and-stitches/news", "/projects/glitches-and-stitches/news/*"])
+    assert.equal(to(from), "/autostacc/glitches-and-stitches", from);
+  // The first matching rule wins, so the news rules sit before the project's catch-all.
+  const order = rules.map(([f]) => f);
+  assert.ok(order.indexOf("/projects/glitches-and-stitches/news/*") < order.indexOf("/projects/glitches-and-stitches/*"));
+  for (const [from, target] of rules) assert.equal(retiredAddress(target.replace(":splat", "x")), null, `${from} -> ${target} is a chain`);
+  // What contentAddress recognizes: /<creator>/<published first-party project>/music/<slug> and /events[/<slug>].
   assert.deepEqual({ ...contentAddress("/autostacc/glitches-and-stitches/music/hail") }, { project: "glitches-and-stitches", kind: "music", slug: "hail" });
-  assert.deepEqual({ ...contentAddress("/autostacc/glitches-and-stitches/news/hail-out-now?x=1") }, { project: "glitches-and-stitches", kind: "news", slug: "hail-out-now" });
+  assert.deepEqual({ ...contentAddress("/autostacc/glitches-and-stitches/events/launch-night?x=1") }, { project: "glitches-and-stitches", kind: "events", slug: "launch-night" });
+  assert.deepEqual({ ...contentAddress("/autostacc/glitches-and-stitches/events") }, { project: "glitches-and-stitches", kind: "events", slug: "" });
   for (const no of ["/autostacc/glitches-and-stitches/music", "/autostacc/glitches-and-stitches/press/hail", "/autostacc/nope/music/hail",
-    "/autostacc/glitches-and-stitches/music/Hail", "/autostacc/glitches-and-stitches/music/hail/x", "/x/glitches-and-stitches/music/hail", "music/hail"])
+    "/autostacc/glitches-and-stitches/music/Hail", "/autostacc/glitches-and-stitches/music/hail/x", "/x/glitches-and-stitches/music/hail", "music/hail",
+    "/autostacc/glitches-and-stitches/news/hail-out-now"])
     assert.equal(contentAddress(no), null, no);
+  // A retired news address is answered with a 301 to the project home.
+  for (const p of ["/autostacc/glitches-and-stitches/news", "/autostacc/glitches-and-stitches/news/hail-out-now?x=1"])
+    assert.equal(retiredAddress(p), "/autostacc/glitches-and-stitches", p);
+  for (const no of ["/autostacc/nope/news", "/autostacc/glitches-and-stitches/news/Hail", "/autostacc/glitches-and-stitches/music/hail"])
+    assert.equal(retiredAddress(no), null, no);
 });

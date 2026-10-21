@@ -394,23 +394,40 @@ describe("features in the browser", () => {
     await page.click("[data-clear-filters]");
     await page.waitForFunction(() => !location.search.includes("q="));
 
-    // /explore: views as tabs, filters and chips in the address, drafts never shown.
+    // /explore: views as tabs (releases and events, no news), filters and chips in the address, event cards linking to
+    // their own pages and the events view pointing to the /events calendar.
     await page.goto("/explore");
     await page.waitForSelector(".ex-item");
-    await page.click("[data-view=news]");
-    await page.waitForURL(/view=news/);
-    await page.waitForSelector("[data-view=news][aria-selected=true]");
+    assert.deepEqual(await page.locator("[data-view]").evaluateAll((b) => b.map((x) => x.dataset.view)), ["releases", "events"]);
+    assert.ok(await page.locator("[data-calendar]").isHidden(), "the calendar link belongs to the events view");
+    await page.click("[data-view=events]");
+    await page.waitForURL(/view=events/);
+    await page.waitForSelector("[data-view=events][aria-selected=true]");
     await page.check("[data-f=project][data-v=glitches-and-stitches]");
     await page.waitForURL(/project=glitches-and-stitches/);
-    assert.ok(await page.locator(".ex-item").count() > 0);
-    await page.focus("[data-view=news]");
-    await page.keyboard.press("ArrowRight");
-    await page.waitForURL(/view=shows/);
-    await page.waitForSelector("[data-view=shows][aria-selected=true]");
+    await page.waitForSelector(".explore-list .ecard");
+    assert.match(await page.getAttribute(".explore-list .ecard-name a", "href"), /^\/autostacc\/glitches-and-stitches\/events\/[a-z0-9-]+$/);
+    assert.equal(await page.getAttribute("[data-calendar] a", "href"), "/events");
+    await page.focus("[data-view=events]");
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForURL((u) => !u.search.includes("view="));
+    await page.waitForSelector("[data-view=releases][aria-selected=true]");
+    // An old shows address opens the events view; an old news one falls back to releases.
+    await page.goto("/explore?view=shows");
+    await page.waitForSelector("[data-view=events][aria-selected=true]");
+    await page.goto("/explore?view=news");
+    await page.waitForSelector("[data-view=releases][aria-selected=true]");
 
-    // Home and dashboard: the latest lists, followed projects first, and the projects you follow.
+    // The project's home: upcoming events (no news) with a link to its events list.
+    await page.goto("/autostacc/glitches-and-stitches");
+    await page.waitForSelector("#events [data-events] .ecard");
+    assert.equal(await page.getAttribute("#events .section-head a", "href"), "/autostacc/glitches-and-stitches/events");
+    assert.equal(await page.locator("[data-news], [data-shows]").count(), 0);
+
+    // Home and dashboard: the latest releases and events, followed projects first, and the projects you follow.
     await page.goto("/");
     await page.waitForSelector("[data-latest] .latest-list li");
+    assert.deepEqual(await page.locator("[data-latest] .latest-col h3").allInnerTexts(), ["New releases", "Upcoming events"]);
     await page.goto("/dashboard");
     await page.waitForSelector("[data-picks=following] .pcard[data-project='glitches-and-stitches']");
     assert.equal(await page.locator("[data-project-picks]:not([data-picks]) .pcard[data-project='glitches-and-stitches']").count(), 0, "no suggesting what you already follow");

@@ -1,6 +1,6 @@
 // Creator sites, pure parts: slugs and the reserved list (every top-level page, folder and Function of the site is
 // reserved), safe text and links, embeds built only from known share links, the site document's checks, rendered
-// pages that can't carry scripts, and the revenue split.
+// pages that can't carry scripts, Releases and project Events only for the creator's live projects, and the revenue split.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -14,6 +14,7 @@ import { renderPage, cspFor } from "../../server/sites/render.js";
 import { projectSite } from "../../server/sites/targets.js";
 import { splitLine } from "../../server/revenue/split.js";
 import { sniffImage } from "../../server/sites/images.js";
+import { cleanFragment } from "../../server/library/pieces.js";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
@@ -88,6 +89,31 @@ test("a rendered page runs only AutoStacc's runtime, has a strict CSP, and shows
   const csp = cspFor("https://autostacc.com");
   for (const rule of ["default-src 'none'", "script-src https://autostacc.com/js/site-runtime.js", "connect-src 'none'", "form-action 'none'", "frame-ancestors 'none'", "base-uri 'none'"]) assert.ok(csp.includes(rule), rule);
   assert.ok(!/unsafe-eval|script-src[^;]*'unsafe-inline'|script-src[^;]*'self'/.test(csp));
+});
+
+test("Releases and project Events draw the creator's own cards; typed-in dates still work; library pieces drop them", () => {
+  const box = { x: 0, y: 0, w: 12, h: 6 };
+  const { doc } = cleanDocument({ version: 2, pages: [{ slug: "", title: "Home", sections: [{ elements: [
+    { type: "releases", project: "p1", count: 1, box }, { type: "events", project: "p1", items: [], box }, { type: "releases", project: "p2", box },
+    { type: "events", title: "Typed", items: [{ date: "2026-05-01", title: "Old gig", city: "Oslo" }], box }] }] }] });
+  const els = doc.pages[0].sections[0].elements;
+  assert.deepEqual([els[0].count, els[2].count, els[3].project], [1, 4, ""]);
+  assert.throws(() => cleanDocument({ version: 2, pages: [{ slug: "", title: "Home", sections: [{ elements: [{ type: "releases", project: "", box }] }] }] }));
+  const target = projectSite({ slug: "me", name: "Me" }, { id: "p1", slug: "p", name: "P" });
+  const ctx = { images: new Map(), products: new Map(), projects: new Map([["p1", { name: "P", path: "/me/p" }]]),
+    releases: new Map([["p1", [{ title: "New <one>", type: "Single", date: "2026-02-01", path: "/me/p/music/new", artwork: { src: "/media/sites/x", alt: "" } },
+      { title: "Older", type: "EP", date: "2025-01-01", path: "/me/p/music/older", artwork: null }]], ["p2", [{ title: "Hidden", path: "/me/q/music/h" }]]]),
+    events: new Map([["p1", [{ title: "Launch", date: "2026-11-01", time: "20:00", venue: "", city: "Berlin", country: "DE", path: "/me/p/events/launch" }]]]) };
+  const html = renderPage({ siteUrl: "https://autostacc.com", target, doc, page: doc.pages[0], indexable: false, ctx });
+  assert.match(html, /href="\/me\/p\/music\/new"/);
+  assert.match(html, /New &lt;one&gt;/);
+  assert.ok(!/Older/.test(html), "count limits it");
+  assert.ok(!/Hidden/.test(html), "only projects in ctx.projects");
+  assert.match(html, /href="\/me\/p\/events\/launch"[\s\S]*Launch[\s\S]*Berlin, DE/);
+  assert.match(html, /Old gig/);
+  const piece = cleanFragment("section", { id: "s1", rows: 8, elements: els });
+  assert.deepEqual(piece.fragment.elements.map((e) => [e.type, e.project]), [["events", ""], ["events", ""]]);
+  assert.equal(piece.fragment.elements[1].items.length, 1);
 });
 
 test("images are recognised by their bytes, not their names", () => {

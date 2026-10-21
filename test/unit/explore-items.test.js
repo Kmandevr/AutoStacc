@@ -1,6 +1,7 @@
-// The /explore items (js/explore-items.js) from the content API's answer: published items only (drafts, draft projects'
-// items and past shows never appear, a bad answer is empty lists), newest first (shows soonest first), search across
-// title, project and text, filters OR within and AND between, and each filter's counts worked out without itself.
+// The /explore items (js/explore-items.js) from the content API's answer ({ releases, events }; news is gone): published
+// items only (drafts, draft projects' items and ended events never appear, a bad answer is empty lists), releases newest
+// first and events soonest first, search across title, project, place, tags and text, filters OR within and AND
+// between, and each filter's counts worked out without itself.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,7 +12,7 @@ const source = fs.readFileSync(path.resolve(import.meta.dirname, "../../js/explo
 const future = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 
 // The content API's shape (server/content/content.js): published items only, but the model still drops anything marked
-// draft, of a draft or unknown project, or a past show, in case a stale or tampered answer carries one.
+// draft, of a draft or unknown project, or an event that has ended, in case a stale or tampered answer carries one.
 const CONTENT = {
   releases: [
     { id: "r1", project: "a", type: "Single", date: "2025-10-15", title: "Hail", tracks: [{}] },
@@ -21,10 +22,13 @@ const CONTENT = {
     { id: "r6", project: "", type: "Single", date: "2026-04-01", title: "Of no project" },
     { id: "r7", project: "a", type: "Single", title: "No date" }
   ],
-  news: [{ id: "n1", project: "a", date: "2025-10-15", title: "Out now", tag: "Release", summary: "Hail is out" },
-    { id: "n2", project: "b", date: "2026-01-01", title: "Draft", tag: "Tour", draft: true }],
-  shows: [{ project: "a", date: future(10), city: "Denver", venue: "Hall" }, { project: "a", date: "2020-01-01", city: "Old", venue: "Gone" },
-    { project: "b", date: future(5), city: "Austin", venue: "Patchbay", draft: true }]
+  news: [{ id: "n1", project: "a", date: "2025-10-15", title: "Out now" }],
+  events: [
+    { id: "denver", project: "a", title: "Hall night", date: future(10), city: "Denver", venue: "Hall", country: "US", tags: ["live-set"], path: "/c/a/events/denver" },
+    { id: "fest", project: "b", projectName: "Beta Studio", title: "Weekend", date: future(-1), endDate: future(1), city: "Austin", tags: [7, "festival"] },
+    { id: "old", project: "a", title: "Gone", date: "2020-01-01", city: "Old" },
+    { id: "draft", project: "b", title: "Patchbay", date: future(5), city: "Austin", draft: true }
+  ]
 };
 
 function load({ content = CONTENT, latest } = {}) {
@@ -38,25 +42,41 @@ function load({ content = CONTENT, latest } = {}) {
   return { all: () => plain(X.from)(content), from: plain(X.from), query: plain(X.query), load: async () => JSON.parse(JSON.stringify(await X.load())) };
 }
 
-test("drafts, draft projects' items and past shows never appear; newest first; links go to the project's own pages", () => {
+test("drafts, draft projects' items and ended events never appear; no news view; links go to the item's own page", () => {
   const X = load();
   const all = X.all();
+  assert.deepEqual(Object.keys(all), ["releases", "events"]);
   assert.deepEqual(all.releases.map((r) => r.id), ["r1", "r2"]);
-  assert.deepEqual(all.news.map((n) => n.id), ["n1"]);
-  assert.deepEqual(all.shows.map((s) => s.city), ["Denver"]);
+  assert.deepEqual(all.events.map((x) => x.city), ["Denver", "Austin"], "an event still running counts as upcoming");
   assert.equal(all.releases[0].href, "/c/a/music/r1");
   assert.equal(all.releases[1].href, "/studio-maker/b/music/r2", "the address the API gives wins");
-  assert.equal(all.news[0].href, "/c/a/news/n1");
+  assert.equal(all.events[0].href, "/c/a/events/denver");
+  assert.equal(all.events[1].href, "/c/b/events/fest", "else the project's events folder");
+  assert.deepEqual(all.events[1].tags, ["festival"], "only text tags");
   assert.deepEqual(X.query("releases", all.releases, {}).hits.map((r) => r.id), ["r2", "r1"]);
+  assert.deepEqual(X.query("events", all.events, {}).hits.map((x) => x.city), ["Austin", "Denver"], "soonest first");
 });
 
 test("a missing, empty or malformed answer gives empty lists, never an error", async () => {
   const X = load();
-  for (const bad of [undefined, null, {}, { releases: null, news: "x", shows: 3 }, { releases: [null, 1, "x"] }])
-    assert.deepEqual(X.from(bad), { releases: [], news: [], shows: [] }, JSON.stringify(bad));
-  assert.deepEqual(await load().load(), { releases: [], news: [], shows: [] }, "no content client: empty");
+  for (const bad of [undefined, null, {}, { releases: null, events: 3 }, { releases: [null, 1, "x"], events: [null, "x"] }])
+    assert.deepEqual(X.from(bad), { releases: [], events: [] }, JSON.stringify(bad));
+  assert.deepEqual(await load().load(), { releases: [], events: [] }, "no content client: empty");
   const fetched = await load({ latest: () => Promise.resolve(CONTENT) }).load();
   assert.deepEqual(fetched.releases.map((r) => r.id), ["r1", "r2"], "load() reads the content client");
+});
+
+test("events: search covers place and tags; filters by project, city and month, the project named as the API names it", () => {
+  const X = load();
+  const { events } = X.all();
+  assert.deepEqual(X.query("events", events, { q: "live-set" }).hits.map((x) => x.id), ["a/denver"]);
+  assert.deepEqual(X.query("events", events, { q: "austin" }).hits.map((x) => x.id), ["b/fest"]);
+  assert.deepEqual(X.query("events", events, { city: ["Denver", "Austin"], project: ["b"] }).hits.map((x) => x.id), ["b/fest"]);
+  const { facets } = X.query("events", events, {});
+  assert.deepEqual(facets.map((f) => f.key), ["project", "city", "month"]);
+  assert.ok(facets.find((f) => f.key === "project").values.some((v) => v.label === "Beta Studio"));
+  const months = facets.find((f) => f.key === "month").values.map((v) => v.value);
+  assert.deepEqual(months, [...months].sort(), "months in date order");
 });
 
 test("search and filters: OR within, AND between, counts without their own filter", () => {

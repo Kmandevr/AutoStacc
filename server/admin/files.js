@@ -1,6 +1,7 @@
-// Admin, paid files and previews: upload a product's file (or a new version of one), hold it back as pending or
-// publish it, reject or deactivate it, and upload public preview clips. Limits come from server/files/policy.js, the
-// lifecycle from server/files/files.js. Every change is written to the audit log under the admin's name.
+// Admin, product moderation, paid files and previews: pause sales, hide or remove any product (whoever made it), upload
+// a product's file (or a new version of one), hold it back as pending or publish it, reject or deactivate it, and upload
+// public preview clips. Limits come from server/files/policy.js, the lifecycle from server/files/files.js. Every change is
+// written to the audit log under the admin's name.
 import { json, fail, readJson, str, id } from "../lib/http.js";
 import { first, run, newId, now, parseJson } from "../lib/db.js";
 import { requireAdmin } from "../auth/session.js";
@@ -13,6 +14,31 @@ import { audit } from "../audit/log.js";
 import { refreshContents } from "../discovery/contents.js";
 
 const FILE_ID = /^pf_[a-z2-7]+$/;
+const FLAGS = [["salesPaused", "sales_paused"], ["published", "published"], ["deleted", "deleted_at"]];
+
+// PATCH any of { salesPaused, published, deleted }: moderation that applies to every product. Price, title and
+// description are the creator's, edited in the Studio. Showing, hiding and removal are also recorded by database
+// triggers (migration 0004).
+async function updateProduct(app, { productId }) {
+  await requireAdmin(app);
+  const body = await readJson(app.request);
+  const sets = [], args = [];
+  for (const [name, col] of FLAGS) {
+    if (body[name] === undefined) continue;
+    if (typeof body[name] !== "boolean") fail(400, "invalid_field", `${name} must be true or false.`);
+    sets.push(`${col} = ?`);
+    args.push(name === "deleted" ? (body.deleted ? now() : null) : body[name] ? 1 : 0);
+  }
+  if (!sets.length) fail(400, "invalid_field", "Nothing to change.");
+  if (body.deleted === true && body.published === true) fail(400, "invalid_field", "A removed product can't be in the store.");
+  if (body.deleted === true && body.published === undefined) sets.push("published = 0");
+  const res = await run(app.db, `UPDATE products SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`, ...args, now(), id(productId));
+  if (!res.meta.changes) fail(404, "not_found", "No product with that id.");
+  if (body.salesPaused !== undefined) await audit(app, body.salesPaused ? "product.sales_paused" : "product.sales_resumed", { targetType: "product", targetId: productId });
+  const changed = ["published", "deleted"].filter((k) => body[k] !== undefined);
+  if (changed.length) await audit(app, "product.changed_by_admin", { targetType: "product", targetId: productId, detail: Object.fromEntries(changed.map((k) => [k, body[k]])) });
+  return json({ ok: true });
+}
 
 // Raw upload: PUT the file bytes with ?filename=...&label=...&pac=...&kind=...&status=pending|published .
 // Stored privately under a random key. &replaces=<fileId> (a file of the same product) deactivates that file once the
@@ -102,6 +128,7 @@ async function uploadPreview(app) {
 }
 
 export const routes = [
+  ["PATCH", "/api/admin/products/:productId", updateProduct],
   ["PUT", "/api/admin/products/:productId/files", uploadFile],
   ["PATCH", "/api/admin/files/:fileId", fileStatus],
   ["DELETE", "/api/admin/files/:fileId", removeFile],

@@ -1,25 +1,17 @@
 // Writes llms.txt: a plain-text guide to the site for AI assistants and crawlers that don't run JavaScript (the
-// llmstxt.org format). Built from data/ like the sitemap, so it lists only what is published: no drafts. Releases and
-// news posts are Studio content in the store database, so it points at /sitemap-content.xml for them.
+// llmstxt.org format). Built from data/ like the sitemap, so it lists only what is published: no drafts. Products,
+// releases and events are Studio content in the store database, so it points at the sitemaps the store API serves.
 const { abs, projectPath } = require("./data");
 
 function llmsTxt(data) {
   const { SITE } = data;
   const url = (p) => abs(SITE, p);
   const projects = data.projects.filter((p) => !p.draft);
-  const products = data.products.filter((p) => !p.draft);
-  const money = (n, c) => `${c === "USD" ? "$" : ""}${Number(n).toFixed(2)}${c === "USD" ? "" : " " + c}`;
 
   const projectBlock = (x) => {
     const pages = (x.pages || []).filter((pg) => !pg.path.startsWith("#"))
       .map((pg) => `- [${pg.label}](${url(projectPath(x.id, ...(pg.path ? [pg.path] : [])))})`);
-    const sold = products.filter((p) => p.project === x.id)
-      .map((p) => `- [${p.title}](${url("/shop/" + p.id)}) (${p.category}, ${money(p.price, p.currency)}): ${p.description}`);
-    return [
-      `### ${x.name}`, "", `> ${x.summary}`, "",
-      ...pages, "",
-      ...(sold.length ? ["For sale on AutoStacc:", "", ...sold, ""] : [])
-    ].filter((l, i, a) => !(l === "" && a[i - 1] === ""));
+    return [`### ${x.name}`, "", `> ${x.summary}`, "", ...pages, ""];
   };
 
   return [
@@ -35,6 +27,7 @@ function llmsTxt(data) {
     `- [Store](${url("/shop")}): digital downloads, delivered right after checkout (payments by Stripe)`,
     `- [About](${url("/about")}): how ${SITE.name} works and what its words mean`,
     `- [Projects](${url("/projects")}): every project on ${SITE.name}`,
+    `- [Events](${url("/events")}): a calendar of what projects have coming up, where and when`,
     `- [Guides](${url("/guide")}): step-by-step help for buying, Your Stacc and refunds, and the creator manual for the Studio, selling, packs and payouts`,
     "",
     "## Words",
@@ -50,7 +43,8 @@ function llmsTxt(data) {
     "## Optional",
     "",
     `- [Sitemap](${url("/sitemap.xml")})`,
-    `- [Releases and news sitemap](${url("/sitemap-content.xml")}): every release and news page projects publish`,
+    `- [Releases and events sitemap](${url("/sitemap-content.xml")}): every release and event page projects publish`,
+    `- [Store sitemap](${url("/sitemap-shop.xml")}): the product pages of trusted creators`,
     ""
   ].join("\n");
 }

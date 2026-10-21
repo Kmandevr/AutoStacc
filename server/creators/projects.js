@@ -3,7 +3,7 @@
 // renamed, deleted or built here; only routes for their products and content opt in to them ({ allowCatalog: true }).
 import { stmt, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
-import { LIMITS } from "./policy.js";
+import { LIMITS, limitOf } from "./policy.js";
 import { getProject, requireCreator } from "./creators.js";
 import { projectSlugFree, holdStmt, taken, isUnique, holdsOf, MAX_HOLDS } from "./holds.js";
 
@@ -15,7 +15,7 @@ export async function requireProject(db, projectId, user, roles, { allowCatalog 
   return { project, creator, role };
 }
 
-// The limit is checked inside the insert itself, so parallel requests can't each add one more project.
+// The limit (none for a first-party creator) is checked inside the insert itself, so parallel requests can't each add one more project.
 export async function createProject(db, creator, user, { slug, name }) {
   if (!(await projectSlugFree(db, creator.id, slug))) taken();
   const id = newId("prj");
@@ -25,7 +25,7 @@ export async function createProject(db, creator, user, { slug, name }) {
     [res] = await db.batch([
       stmt(db, `INSERT INTO projects (id, name, features, published, created_at, updated_at, creator_id, slug, source, created_by)
         SELECT ?, ?, '[]', 0, ?, ?, ?, ?, 'studio', ?
-        WHERE (SELECT COUNT(*) FROM projects WHERE creator_id = ? AND deleted_at IS NULL) < ?`, id, name, t, t, creator.id, slug, user.id, creator.id, LIMITS.projectsPerCreator),
+        WHERE (SELECT COUNT(*) FROM projects WHERE creator_id = ? AND deleted_at IS NULL) < ?`, id, name, t, t, creator.id, slug, user.id, creator.id, limitOf(creator, "projectsPerCreator")),
       stmt(db, "INSERT INTO project_sites (project_id, draft, draft_updated_at) SELECT ?, '{}', ? WHERE EXISTS (SELECT 1 FROM projects WHERE id = ?)", id, t, id)
     ]);
   } catch (e) {

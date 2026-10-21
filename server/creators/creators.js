@@ -3,8 +3,9 @@
 // Studio projects are changed in projects.js; renames' slug holds live in holds.js. Slugs are lowercase and unique
 // (creators site-wide, projects within their creator). Catalog creators and projects (data/creators.js,
 // data/projects.js) are read here too, but only the deploy's sync writes their rows; their members may manage their
-// products and content in the Studio (owner, 2026-10-21) when a route opts in with { allowCatalog: true }.
-import { all, first, run, stmt, newId, now } from "../lib/db.js";
+// products and content in the Studio (owner, 2026-10-21) when a route opts in with { allowCatalog: true }, and their
+// owner comes from the FIRST_PARTY_OWNERS secret (assignFirstPartyOwner).
+import { all, first, stmt, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { slugProblem } from "../lib/slugs.js";
 import { LIMITS } from "./policy.js";
@@ -59,7 +60,8 @@ export function cleanSlug(raw, { creator = false } = {}) {
 
 const reservedName = () => fail(409, "name_taken", "That name belongs to a project on AutoStacc. Pick another.", { field: "name" });
 
-// The limit is checked inside the insert itself, so parallel requests can't each squeeze in one more creator.
+// The limit is checked inside the insert itself, so parallel requests can't each squeeze in one more creator. Owning a
+// first-party creator doesn't count toward it.
 export async function createCreator(db, user, { slug, name }) {
   const [free, posing] = await Promise.all([creatorSlugFree(db, slug), namePosesAsFirstParty(db, name)]);
   if (!free) taken();
@@ -71,7 +73,7 @@ export async function createCreator(db, user, { slug, name }) {
     [res] = await db.batch([
       stmt(db, `INSERT INTO creators (id, slug, name, source, status, published, created_by, created_at, updated_at)
         SELECT ?, ?, ?, 'studio', 'active', 1, ?, ?, ?
-        WHERE (SELECT COUNT(*) FROM creator_members WHERE user_id = ? AND role = 'owner') < ?`, id, slug, name, user.id, t, t, user.id, LIMITS.creatorsPerAccount),
+        WHERE (SELECT COUNT(*) FROM creator_members m JOIN creators o ON o.id = m.creator_id WHERE m.user_id = ? AND m.role = 'owner' AND o.source <> 'catalog') < ?`, id, slug, name, user.id, t, t, user.id, LIMITS.creatorsPerAccount),
       stmt(db, `INSERT INTO creator_members (creator_id, user_id, role, created_at) SELECT ?, ?, 'owner', ? WHERE EXISTS (SELECT 1 FROM creators WHERE id = ?)`,
         id, user.id, t, id)
     ]);
@@ -133,17 +135,26 @@ export const creatorSaleIds = async (db, productIds) => {
   return new Set(rows.map((r) => r.id));
 };
 
-// First-party creators, for the Studio overview: an AutoStacc admin sees them and may take one that has no owner yet.
-export const catalogCreators = (db) => all(db, `SELECT c.*, (SELECT COUNT(*) FROM creator_members m WHERE m.creator_id = c.id AND m.role = 'owner') AS owners
-  FROM creators c WHERE c.source = 'catalog' AND c.${LIVE} ORDER BY c.name`);
-
-// The first owner of a first-party creator (an AutoStacc admin, checked by the caller). Only while it has none, so a
-// second request or another admin can't add a second owner.
-export async function claimCatalogCreator(db, creatorId, userId) {
-  const res = await run(db, `INSERT INTO creator_members (creator_id, user_id, role, created_at) SELECT ?, ?, 'owner', ?
-    WHERE EXISTS (SELECT 1 FROM creators WHERE id = ? AND source = 'catalog' AND ${LIVE})
-      AND NOT EXISTS (SELECT 1 FROM creator_members WHERE creator_id = ? AND (role = 'owner' OR user_id = ?))`, creatorId, userId, now(), creatorId, creatorId, userId);
-  return res.meta.changes === 1;
+// The owner of first-party (catalog) creators named for this account in FIRST_PARTY_OWNERS (owner, 2026-10-21, #172;
+// the caller checks the account). Any other owner there becomes a team admin and this account's team role goes, in one
+// batch per creator. Safe to repeat; returns the ids it made this account the owner of, for the audit log.
+export async function assignFirstPartyOwner(db, creatorIds, userId) {
+  const ids = await all(db, `SELECT c.id FROM creators c WHERE c.id IN (${creatorIds.map(() => "?").join(",")}) AND c.source = 'catalog' AND c.${LIVE}
+    AND NOT EXISTS (SELECT 1 FROM creator_members m WHERE m.creator_id = c.id AND m.user_id = ? AND m.role = 'owner')`, ...creatorIds, userId);
+  const t = now();
+  const made = [];
+  for (const { id } of ids) {
+    const res = await db.batch([
+      stmt(db, `INSERT INTO creator_roles (creator_id, user_id, role, created_at, updated_at) SELECT creator_id, user_id, 'admin', ?, ? FROM creator_members
+        WHERE creator_id = ? AND role = 'owner' AND user_id <> ? ON CONFLICT (creator_id, user_id) DO UPDATE SET role = 'admin', updated_at = excluded.updated_at`, t, t, id, userId),
+      stmt(db, "UPDATE creator_members SET role = 'editor' WHERE creator_id = ? AND role = 'owner' AND user_id <> ?", id, userId),
+      stmt(db, "DELETE FROM creator_roles WHERE creator_id = ? AND user_id = ?", id, userId),
+      stmt(db, `INSERT INTO creator_members (creator_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)
+        ON CONFLICT (creator_id, user_id) DO UPDATE SET role = 'owner' WHERE creator_members.role <> 'owner'`, id, userId, t)
+    ]);
+    if (res[3].meta.changes) made.push(id);
+  }
+  return made;
 }
 
 // The upload limit paid storage gives a creator (server/billing/ is the only caller; null takes it away). A statement for

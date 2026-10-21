@@ -1,6 +1,6 @@
 // Projects: the creative work on AutoStacc, each owned by a creator (data/creators.js). Everything a project publishes
-// in data/ names it with `project: "<id>"` (products, Stacclets, polls), so adding a project is data, not code. Its
-// releases, news posts and shows are made in the Studio like every creator's (store database, docs/creators.md). A
+// in data/ names it with `project: "<id>"` (polls), so adding a project is data, not code. Its products, Stacclets,
+// Pacs, releases and events are made in the Studio like every creator's (store database, docs/creators.md). A
 // project lives at /<creator>/<id> (hand-written pages <creator>/<id>.html and <creator>/<id>/); it is synced into the
 // store database by db/catalog.sql (`node scripts/build.js`). Projects made in the Studio are database-only.
 // Model: docs/architecture.md; contract: docs/projects.md.
@@ -10,14 +10,14 @@
 //   creator: id of the creator that owns it (data/creators.js).
 //   summary: one plain-text line for the directory and dashboard, confirmed facts only.
 //   title, description: the project home page's search title and description.
-//   features: the platform features it uses: "releases", "news", "shows", "store", "polls", "relationships".
+//   features: the platform features it uses: "releases", "events", "store", "polls", "relationships".
 //     Polls and relationships are refused by the build for projects that don't list them.
 //   pages: its own pages, the nav of its own header: [{ label, path }], path relative to /<creator>/<id>
-//     ("" = its home, "music", "#shows"). wordmark: optional lettering for its header logo (else its name).
+//     ("" = its home, "music", "events"). wordmark: optional lettering for its header logo (else its name).
 //     Its pages wear its own header and footer (js/project-frame.js) under a thin AutoStacc strip.
 //   skin: true = its pages, header and footer load css/projects/<id>/skin.css (its own look). sounds: true = its pages load the UI sounds
 //     and easter eggs (js/sound.js, eggs.js, terminal.js). Platform pages never play sounds. The sync copies skin, sounds
-//     and entity into the store database (projects.look) for its server-rendered release and news pages.
+//     and entity into the store database (projects.look) for its server-rendered release and event pages.
 //   entity: schema.org type for structured data ("MusicGroup", "Person", "Organization").
 //   bio, tagline, genres, alternateNames (search only, never shown), image { src, width, height, alt }, logo,
 //   email (booking/press; empty hides it, never a made-up address), pressKitUrl, newsletterAction (form endpoint;
@@ -33,13 +33,12 @@ window.PROJECTS = [
     wordmark: "GLITCHES&STITCHES",
     summary: "An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.",
     title: "Glitches & Stitches — Experimental electronic music · AutoStacc",
-    description: "Glitches & Stitches on AutoStacc: experimental electronic music built from broken pieces. Releases, news and press.",
-    features: ["releases", "news", "shows", "store", "polls", "relationships"],
+    description: "Glitches & Stitches on AutoStacc: experimental electronic music built from broken pieces. Releases, events and press.",
+    features: ["releases", "events", "store", "polls", "relationships"],
     pages: [
       { label: "Home", path: "" },
       { label: "Music", path: "music" },
-      { label: "Shows", path: "#shows" },
-      { label: "News", path: "news" },
+      { label: "Events", path: "events" },
       { label: "Press", path: "press" }
     ],
     skin: true,

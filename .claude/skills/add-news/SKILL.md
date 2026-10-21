@@ -1,18 +1,19 @@
 ---
 name: add-news
-description: Add, edit or remove a news post (or tour date) in AutoStacc. Use for announcements, releases and updates shown on the home and news pages. News posts and shows are made in the Studio's News and Shows editors (store database), not in data/; this skill gathers the facts and walks the owner through it.
+description: Add, edit or remove an event (show, tour date, release party, stream) made in the Studio's Events editor, and answer requests for news posts, which wait for each creator's community. Gathers the facts and walks the owner through it; nothing in data/ changes.
 ---
 
-# Add or change news or shows
+# Add or change an event (news waits for the community)
 
-**No file in the repo changes.** Since 2026-10-21 every project's news posts and show dates, Glitches & Stitches' included, are Studio content in the store database (`project_news`, `project_shows`; owner decision in `docs/decisions.md`, how it works in `docs/creators.md` "Music, news and shows"). The project's news list, its home page's latest posts, the shows list and each post's page (`/<creator>/<project>/news/<slug>`, in `/sitemap-content.xml`) all come from there. Never re-create data/news.js or data/shows.js, and don't edit HTML, CSS or scripts. How news relates to the planned community Updates is still open (#174).
+**No file in the repo changes.** Since 2026-10-21 shows are **events**, Studio content in the store database for every creator, Glitches & Stitches included (`project_events`; owner decision #178 in `docs/decisions.md`, how it works in `docs/creators.md`). Each event has its own page (`/<creator>/<project>/events/<slug>`, with Event JSON-LD and Add to calendar), shows on the project's Events page, on the public calendar at `/events` and in `/sitemap-content.xml`, and can be placed on a builder page with the Events element (`docs/builder.md`). Never re-create data/shows.js or data/news.js, and don't edit HTML, CSS or scripts.
 
-1. Get the content from the owner: date, title, tag, summary, body. For a show: date, city, venue, ticket link. **Never invent** releases, dates, venues or details. If something is missing, ask, or open a GitHub issue for it.
+**News posts and announcements:** there is no news editor (#174). Posts, updates and announcements belong on each creator's Community page, which only appears when the community opens (`docs/community.md`). Until then tell the owner so, and don't make an event or a page to stand in for a post. Old news addresses answer a 301 to the project's home; their rows are kept to become community posts later.
+
+1. Get the facts from the owner: title, date, start time if known, last day for a multi-day event, time zone, venue, city, country, ticket link, a short description. **Never invent** dates, venues, line-ups or details. If something is missing, ask, or open a GitHub issue for it.
 2. Prepare it in the editor's format:
-   - The slug is lowercase-hyphenated and never changed once published.
-   - The summary is plain text, shown on cards and as the page's search description.
-   - The body is the Studio's safe text markup (`js/site-text.js`), never HTML: paragraphs separated by blank lines, `**bold**`, `*italic*`, and `[label](url)` links. Links to AutoStacc pages are root-relative clean addresses (`/autostacc/glitches-and-stitches/music/hail`, `/shop`); others are https.
-   - Reuse an existing tag unless the owner wants a new one. Set the release (a release slug of the same project) if the post is about one.
-   - Shows: a ticket link is https or empty. Past dates hide by themselves.
-3. The owner (or a team member with `site.edit`; publishing, unpublishing and deleting need `site.publish`) enters it in **`/studio` → the project → News** (or **Shows**), checks the preview, then publishes. You can't sign in as the owner, so give them the text ready to paste. To test, run it locally under `npm run dev`.
+   - The slug is the address: lowercase-hyphenated, never changed once published.
+   - Time zone is an IANA name (`Europe/Berlin`); country a two-letter code (`DE`). A ticket link is https or empty.
+   - The description is plain text. Tags follow the store's rule (`server/lib/tags.js`): up to 8, lowercase letters, numbers and hyphens, at most 24 characters each. Reuse existing tags unless the owner wants a new one.
+   - Past events drop off the upcoming lists by themselves.
+3. The owner (or a team member with `site.edit`; publishing, unpublishing and deleting need `site.publish`) enters it in **`/studio` → the project → Events**, checks it, then publishes. You can't sign in as the owner, so give them the values ready to paste. To test, run it locally under `npm run dev` (its dev store has a test event).
 4. Add a line to `docs/log.md` if the owner asked you to record it. No build is needed.

@@ -3,8 +3,8 @@
 // browser never loads the catalog). The address holds the whole state (/shop?q=&category=&genre=a,b&price_max=&sort=
 // &page=), so Back, reload and a shared link all land on the same results, and returning from a product keeps them.
 // Filter and search choices go to js/taste.js (gs:taste) for recommendations; gs:store-view tells the recommendation
-// sections whether anything is narrowed (they hide while it is). Offline, it shows data/products.js (empty now) or an empty state.
-// Needs js/util.js, js/product-card.js, js/store-filters.js, data/products.js, data/product-types.js, data/vocabulary.js.
+// sections whether anything is narrowed (they hide while it is). Offline, it shows an empty state (no products are defined
+// in code, #176). Needs js/util.js, js/product-card.js, js/store-filters.js, data/product-types.js, data/vocabulary.js.
 (function () {
   "use strict";
 
@@ -128,11 +128,10 @@
     return out.join("");
   }
 
-  // Offline (or the store API failing): AutoStacc's own catalog from data/, without filters.
+  // Offline (or the store API failing): the empty state; every product lives in the store.
   function offline() {
-    const all = window.PRODUCTS || [];
-    grid.innerHTML = all.map((p) => card(p, { level: 3, mixed: true })).join("") || `<p class="empty">Nothing here yet.</p>`;
-    $(".browse-count", root).textContent = all.length ? "Search and filters are offline right now; here is AutoStacc's own catalog." : "Search and filters are offline right now; please try again soon.";
+    grid.innerHTML = `<p class="empty">Nothing here yet.</p>`;
+    $(".browse-count", root).textContent = "The store is offline right now; please try again soon.";
     $("[data-panel]", root).innerHTML = "";
     dispatchEvent(new CustomEvent("gs:cards"));
     dispatchEvent(new CustomEvent("gs:store-view", { detail: { narrowed: false, offline: true } }));

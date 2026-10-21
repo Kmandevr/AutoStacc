@@ -556,8 +556,8 @@ describe("store in the browser", () => {
     assert.ok(await page.locator(".topbar a[href='/login']").isVisible(), "Log in in the top bar");
     assert.equal(await page.locator(".topbar .account-button").isVisible(), false, "no account menu for a stranger");
     assert.equal(await page.locator(".side a[href='/dashboard']").isVisible(), false, "no app links for a stranger");
-    // Products from the store: its picks, or the featured grid while it has none (data/products.js sells nothing of its
-    // own, so the grid is filled from the store API).
+    // Products from the store: its picks, or the featured grid while it has none (both from the store API; no products
+    // are defined in code, #176).
     await page.waitForSelector("[data-store-sections] .card, [data-shop] .card");
     assert.deepEqual(privateCalls, [], "the cover asks nothing about the visitor's things");
     for (const p of ["/dashboard", "/settings", "/settings/security"]) {

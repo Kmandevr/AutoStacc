@@ -94,8 +94,7 @@
     card.append($(".project-header", header), main, ...(footer ? [footer] : []));
   }
 
-  // Anonymous counters (GS.track): the page kind, the project, and which news post (its address) was read.
+  // Anonymous counters (GS.track): the page kind and the project.
   if (document.body.dataset.page) GS.track("page_view", document.body.dataset.page);
   GS.track("project_view", P.id);
-  if (document.body.dataset.page === "news-item") GS.track("news_view", location.pathname.replace(/\.html$|\/$/, "").split("/").pop());
 })();

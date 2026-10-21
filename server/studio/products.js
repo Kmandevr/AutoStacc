@@ -5,7 +5,7 @@
 import { json, readJson, fail } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
-import { LIMITS, SELLING } from "../creators/policy.js";
+import { LIMITS, SELLING, isFirstParty } from "../creators/policy.js";
 import { requireProject } from "../creators/projects.js";
 import { cleanProductInput, requireOwnProduct, createProduct, updateProduct, listProjectProductRows, productViews, countProducts } from "../creators/products.js";
 import { listImages, imageSrc } from "../sites/images.js";
@@ -27,7 +27,10 @@ async function list(app, { projectId }) {
     products: await productViews(app.db, rows),
     images: images.map((i) => ({ id: i.id, src: imageSrc(i.id), filename: i.filename })),
     trusted: Boolean(creator.trusted),
-    limits: { products: LIMITS.productsPerCreator, used, filesPerProduct: LIMITS.filesPerProduct, ...SELLING }
+    // A first-party creator has no limits (null, unlimited: server/creators/policy.js).
+    limits: isFirstParty(creator)
+      ? { products: null, used, filesPerProduct: null, unlimited: true, ...SELLING }
+      : { products: LIMITS.productsPerCreator, used, filesPerProduct: LIMITS.filesPerProduct, unlimited: false, ...SELLING }
   });
 }
 

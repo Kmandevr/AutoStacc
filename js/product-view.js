@@ -1,6 +1,7 @@
 // Product view template (GS.productView, for js/product-page.js and the Product Studio's live preview in
 // js/studio-section-store.js and js/studio-section-release.js): the buyer-facing markup of a creator's product, from the
-// store API's product shape. Pure: returns HTML, touches nothing. With { preview: true } the buttons are disabled and
+// store API's product shape (server/shop/page.js draws the same parts first, without the visitor's state). Pure: returns
+// HTML, touches nothing. With { preview: true } the buttons are disabled and
 // say "Preview", and nothing carries the hooks that add to the cart, save to a wishlist or count plays.
 // Needs js/util.js and data/product-types.js.
 (function () {

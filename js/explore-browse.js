@@ -1,8 +1,9 @@
-// The /explore browser ([data-explore]): releases, news and upcoming shows from every project on AutoStacc, with search,
-// filters (project, type, topic, year, city), removable chips and pages. Real data only (published content from the
-// content API through js/project-content.js). The address holds the state (/explore?view=news&q=&project=&type=&tag=
-// &year=&city=&page=). Searches and filters feed the on-device history (gs:taste) like the store's. Needs js/util.js,
-// js/project-content.js, js/explore-items.js and data/projects.js.
+// The /explore browser ([data-explore]): releases and upcoming events from every project on AutoStacc, with search,
+// filters (project, type, year, city, month), removable chips and pages; the events view links to the /events calendar.
+// Real data only (published content from the content API through js/project-content.js). The address holds the state
+// (/explore?view=events&q=&project=&type=&year=&city=&month=&page=; the old view=shows opens events). Searches and
+// filters feed the on-device history (gs:taste) like the store's. Needs js/util.js, js/project-content.js,
+// js/explore-items.js, js/project-events.js (event cards) and data/projects.js.
 (function () {
   "use strict";
 
@@ -11,8 +12,8 @@
   const root = $("[data-explore]");
   if (!root || !GS.exploreItems) return;
   const X = GS.exploreItems;
-  const VIEWS = [["releases", "Releases"], ["news", "News"], ["shows", "Shows"]];
-  const NOUN = { releases: ["release", "releases"], news: ["news post", "news posts"], shows: ["show", "shows"] };
+  const VIEWS = [["releases", "Releases"], ["events", "Events"]];
+  const NOUN = { releases: ["release", "releases"], events: ["event", "events"] };
   const PER = 12;
   let items = null; // filled once the content API answers; until then the list says it is loading
   const count = (v) => (items ? String(items[v].length) : "");
@@ -21,6 +22,7 @@
   const read = () => {
     params = new URLSearchParams();
     for (const [k, v] of new URLSearchParams(location.search)) if (v && v.length <= 80) params.set(k, v);
+    if (params.get("view") === "shows") params.set("view", "events");
     if (!VIEWS.some(([v]) => v === params.get("view"))) params.delete("view");
   };
   const view = () => params.get("view") || "releases";
@@ -45,6 +47,7 @@
           <button type="button" class="btn ghost browse-filter-toggle" aria-controls="ex-filters" aria-expanded="false" data-open-filters>Filters</button>
           <p class="browse-count" aria-live="polite"></p>
         </div>
+        <p class="ex-calendar" data-calendar hidden>Every event by date and place, with filters for city and host: <a class="btn small" href="/events">Open the events calendar</a></p>
         <div class="browse-chips" data-chips></div>
         <h2 class="browse-results-head" id="ex-head" tabindex="-1"></h2>
         <div class="explore-list" data-list aria-busy="true"><p class="small-print">Loading…</p></div>
@@ -61,14 +64,9 @@
     releases: (x) => `<article class="ex-item ${look(x.project)}"><a class="ex-art" href="${e(x.href)}" tabindex="-1" aria-hidden="true">${art(x)}</a>
       <div><h3><a href="${e(x.href)}">${e(x.title)}</a></h3><p class="ex-meta"><span class="tag">${e(x.type)}</span> ${e(x.projectName)} · <time datetime="${e(x.date)}">${e(fmtDate(x.date))}</time>${x.tracks ? ` · ${x.tracks} track${x.tracks === 1 ? "" : "s"}` : ""}</p>
       ${x.text ? `<p class="ex-text">${e(x.text)}</p>` : ""}</div></article>`,
-    news: (x) => `<article class="ex-item ex-news ${look(x.project)}"><div><h3><a href="${e(x.href)}">${e(x.title)}</a></h3>
-      <p class="ex-meta"><span class="tag">${e(x.tag)}</span> ${e(x.projectName)} · <time datetime="${e(x.date)}">${e(fmtDate(x.date))}</time></p>
-      ${x.text ? `<p class="ex-text">${e(x.text)}</p>` : ""}</div></article>`,
-    shows: (x) => `<article class="ex-item ex-show ${look(x.project)}"><p class="ex-date"><time datetime="${e(x.date)}">${e(fmtDate(x.date, { month: "short", day: "numeric" }))}</time></p>
-      <div><h3>${e(x.title)}</h3><p class="ex-meta">${e(x.city)} · <a href="${e(x.href)}">${e(x.projectName)}</a></p></div>
-      ${x.ticketUrl ? `<a class="btn small" href="${e(x.ticketUrl)}" target="_blank" rel="noopener">Tickets<span class="sr-only"> for ${e(x.title)}, ${e(x.city)}</span></a>` : ""}</article>`
+    events: (x) => `<li>${GS.eventCard(x)}</li>`
   };
-  const EMPTY = { releases: "No releases yet.", news: "No news yet.", shows: "No shows announced right now. Follow a project to hear when dates are confirmed." };
+  const EMPTY = { releases: "No releases yet.", events: "No events announced right now. Follow a project to hear when dates are confirmed." };
 
   function render(focusId) {
     if (!items) return;
@@ -90,8 +88,10 @@
     $("[data-chips]", root).innerHTML = chips ? `${chips}<button type="button" class="chip-clear" data-clear-all>Clear all</button>` : "";
     const name = VIEWS.find(([x]) => x === v)[1];
     $(".browse-count", root).textContent = hits.length ? `${hits.length} ${NOUN[v][hits.length === 1 ? 0 : 1]}` : "";
-    $("#ex-head", root).textContent = chips ? `${name}: results` : v === "shows" ? "Upcoming shows" : `Latest ${name.toLowerCase()}`;
-    $("[data-list]", root).innerHTML = hits.length ? hits.slice((page - 1) * PER, page * PER).map(row[v]).join("")
+    $("#ex-head", root).textContent = chips ? `${name}: results` : v === "events" ? "Upcoming events" : `Latest ${name.toLowerCase()}`;
+    $("[data-calendar]", root).hidden = v !== "events";
+    const shown = hits.slice((page - 1) * PER, page * PER).map(row[v]).join("");
+    $("[data-list]", root).innerHTML = hits.length ? (v === "events" ? `<ul class="ecards">${shown}</ul>` : shown)
       : `<div class="empty browse-empty"><p><strong>${chips ? "Nothing matches all of that." : e(EMPTY[v])}</strong>${chips ? " Try removing a filter:" : ""}</p>${chips ? `<div class="browse-relax">${chips}</div>` : ""}</div>`;
     $(".browse-pages", root).innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => i + 1)
       .map((n) => `<button type="button" data-page="${n}"${n === page ? ' aria-current="page"' : ` aria-label="Page ${n}"`}>${n}</button>`).join("") : "";

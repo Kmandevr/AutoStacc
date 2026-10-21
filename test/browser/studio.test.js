@@ -1,7 +1,9 @@
 // Browser group for the Product Studio (docs/studio.md) against its own local store: from the Creator Dashboard's
 // product list, make a product, land in the workspace at the Pac Builder, edit the Store Page (autosave, live preview),
 // set the price, see Release refuse to publish without a file, and use the sidebar; on a phone, the sections drawer
-// (Escape closes it, focus returns) with nothing scrolling sideways. Usage: npm run test:browser.
+// (Escape closes it, focus returns) with nothing scrolling sideways; a project's Events editor (title, date, time, time
+// zone, place, tags) publishes an event and Music has tags, with no News editor and no "become the owner" offer.
+// Usage: npm run test:browser.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { sql, unique } from "../support/client.js";
@@ -11,6 +13,13 @@ const t = browserStore({ name: "studio", port: 8824 });
 const { open, signUp } = t;
 let productId = "";
 let account = "";
+async function logIn(page) {
+  await page.goto("/login");
+  await page.fill("#email", account);
+  await page.fill("#password", "browser-pass-123");
+  await page.click("button[type=submit]");
+  await page.waitForURL((u) => u.pathname === "/dashboard");
+}
 
 describe("the Product Studio in the browser", () => {
   test("dashboard → product list → new product opens the Pac Builder; Store Page autosaves and previews; Pricing; Release blocks; sidebar", async () => {
@@ -100,11 +109,7 @@ describe("the Product Studio in the browser", () => {
 
   test("on a phone the sections are a drawer: it opens, traps focus, closes with Escape, and nothing scrolls sideways", async () => {
     const { ctx, page } = await open(PHONE);
-    await page.goto("/login");
-    await page.fill("#email", account);
-    await page.fill("#password", "browser-pass-123");
-    await page.click("button[type=submit]");
-    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await logIn(page);
     await page.goto(`/studio#product=${productId}&section=overview`);
     await page.waitForSelector("[data-ws-open]");
     assert.equal(await page.locator('[data-ws-item="store"]').isVisible(), false, "the sidebar starts closed");
@@ -128,6 +133,34 @@ describe("the Product Studio in the browser", () => {
       const wide = await page.evaluate(() => document.scrollingElement.scrollWidth - innerWidth);
       assert.ok(wide <= 0, `${key} overflows by ${wide}px at 390px`);
     }
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
+
+  test("Events: a new event with time, zone, place and tags is published; Music has tags; no News and no claim offer", async () => {
+    const { ctx, page } = await open(DESK);
+    await logIn(page);
+    await page.goto("/studio");
+    await page.waitForSelector("[data-content][data-kind=events]");
+    assert.equal(await page.locator("[data-kind=news], [data-kind=shows], [data-claim]").count(), 0);
+    await page.click("[data-content][data-kind=events]");
+    await page.click("[data-act=open][data-id=new]");
+    await page.fill("#cx-title", "Warehouse Night");
+    await page.fill("#cx-date", "2030-06-12");
+    await page.fill("#cx-time", "21:30");
+    await page.fill("#cx-timeZone", "Europe/Berlin");
+    await page.fill("#cx-city", "Berlin");
+    await page.fill("#cx-country", "de");
+    await page.fill("#cx-tags", "techno, Live-Set");
+    await page.click("button[data-publish=true]");
+    await page.waitForSelector("form[data-cx] .msg:text('Published.')");
+    const ev = sql(t.stateDir, "SELECT event_date, start_time, time_zone, city, country, tags, published FROM project_events WHERE title = 'Warehouse Night'")[0];
+    assert.deepEqual(ev, { event_date: "2030-06-12", start_time: "21:30", time_zone: "Europe/Berlin", city: "Berlin", country: "DE", tags: '["techno","live-set"]', published: 1 });
+    await page.click("[data-act=list]");
+    assert.match(await page.locator(".cx-item").innerText(), /Warehouse Night[\s\S]*Berlin, DE[\s\S]*techno/);
+    await page.click(".cx-tabs a:text('Music')");
+    await page.click("[data-act=open][data-id=new]");
+    await page.waitForSelector("#cx-tags");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

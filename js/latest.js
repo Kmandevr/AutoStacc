@@ -1,8 +1,8 @@
-// Latest from every project, a drop-in for any [data-latest] (the home page): the newest releases and news posts and
-// the next shows (the content API through js/project-content.js and js/explore-items.js; only published items), each
-// list linking to its view on /explore. Projects the visitor follows come first once js/follow.js says which
-// (gs:follows). data-limit="3" caps each list. Needs js/util.js, js/project-content.js, js/explore-items.js and
-// data/projects.js.
+// Latest from every project, a drop-in for any [data-latest] (the home page and dashboard): the newest releases and the
+// next upcoming events (the content API through js/project-content.js and js/explore-items.js; only published items),
+// each list linking to its view on /explore, events also to the /events calendar. Projects the visitor follows come
+// first once js/follow.js says which (gs:follows). data-limit="3" caps each list. Needs js/util.js,
+// js/project-content.js, js/explore-items.js and data/projects.js.
 (function () {
   "use strict";
 
@@ -12,11 +12,11 @@
   if (!roots.length || !GS.exploreItems) return;
   let items = null; // filled once the content API answers
   let followed = new Set();
-  const COLS = [["releases", "New releases", "No releases yet.", "midi"], ["news", "News", "No news yet.", "samples"], ["shows", "Upcoming shows", "No shows announced right now.", "presets"]];
+  const COLS = [["releases", "New releases", "No releases yet.", "midi"], ["events", "Upcoming events", "No events announced right now.", "presets"]];
 
-  const line = (x) => `<li class="${look(x.project)}"><a href="${e(x.view === "shows" && x.ticketUrl ? x.ticketUrl : x.href)}"${x.view === "shows" && x.ticketUrl ? ' target="_blank" rel="noopener"' : ""}>
+  const line = (x) => `<li class="${look(x.project)}"><a href="${e(x.href)}">
     <span class="latest-title">${e(x.title)}</span>
-    <span class="latest-meta">${e(x.type || x.tag || x.city)} · ${e(x.projectName)} · <time datetime="${e(x.date)}">${e(fmtDate(x.date))}</time></span></a></li>`;
+    <span class="latest-meta">${e(x.type || x.city)} · ${e(x.projectName)} · <time datetime="${e(x.date)}">${e(fmtDate(x.date))}</time></span></a></li>`;
 
   function draw(root, n) {
     if (!items) return;
@@ -26,7 +26,8 @@
         .map((x, i) => ({ x, rank: (followed.has(x.project) ? 0 : 1e4) + i })).sort((a, b) => a.rank - b.rank).slice(0, limit).map((r) => r.x);
       return `<section class="mix-panel latest-col" data-track="${track}" aria-labelledby="lt${n}-${view}">
         <div class="mix-head"><h3 id="lt${n}-${view}">${title}</h3><a href="/explore${view === "releases" ? "" : `?view=${view}`}">All<span class="sr-only"> ${title.toLowerCase()}</span> &rarr;</a></div>
-        ${list.length ? `<ul class="latest-list">${list.map(line).join("")}</ul>` : `<p class="small-print">${empty}</p>`}</section>`;
+        ${list.length ? `<ul class="latest-list">${list.map(line).join("")}</ul>` : `<p class="small-print">${empty}</p>`}
+        ${view === "events" ? `<p class="latest-more"><a href="/events">Events calendar &rarr;</a></p>` : ""}</section>`;
     }).join("");
   }
   GS.exploreItems.load().then((got) => {
