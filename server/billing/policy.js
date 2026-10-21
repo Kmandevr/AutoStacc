@@ -5,6 +5,7 @@
 // The rate is the owner's (store setting storage_rate, hundredths of a cent per GB-month: $0.05, owner 2026-10-16).
 // A creator caps what they spend a month in dollars; the cap buys an upload limit at the rate, so in the usual case a
 // month can't cost more than the cap (storage above a lowered cap is still charged until it's back under: owner).
+// What earnings don't cover is charged to the saved card on set days, retried within the grace period (charges.js).
 // docs/creators.md, "Paid storage".
 
 export const GB = 1024 ** 3;
@@ -17,8 +18,15 @@ export const BILLING = {
   // Days after a statement is issued before an unpaid one withdraws the paid limit (the grace period).
   graceDays: 14,
   // The smallest amount charged: Stripe's card minimum in USD. Less is added to the next month's statement.
-  minChargeCents: 50
+  minChargeCents: 50,
+  // Days after a statement is issued that the daily sweep charges the saved card (the first try, then retries after a
+  // decline), all inside the grace period (owner, 2026-10-21, #142).
+  chargeDays: [0, 3, 7, 12]
 };
+
+/** When the next automatic charge is due, after this many tries (ISO time), or null when there are no tries left. */
+export const nextChargeAt = (issuedAtMs, attemptsDone) => (attemptsDone < BILLING.chargeDays.length
+  ? new Date(issuedAtMs + BILLING.chargeDays[attemptsDone] * 86400000).toISOString() : null);
 
 // "YYYY-MM" of a time, the month before it, and its number of days (UTC).
 export const periodOf = (ms) => new Date(ms).toISOString().slice(0, 7);

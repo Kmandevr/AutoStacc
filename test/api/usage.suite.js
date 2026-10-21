@@ -1,7 +1,8 @@
 // The budget guard (server/usage/; docs/packs.md, "Staying inside the $5 Workers Paid plan"): every finished job and
 // upload is metered once; from 80% of the free allowance processing skips analysis; from 95% a new version waits for
 // next month (it can be discarded) until the owner allows spending this month, and the sweep or its next look sends it,
-// oldest first; creators' uploads stop at the storage cap, AutoStacc's own don't. Admin only, audited. Each test puts
+// oldest first; creators' uploads stop at the storage cap, AutoStacc's own don't; the cap is the owner's base plus what
+// active paid storage plans hold above free storage (#142). Admin only, audited. Each test puts
 // the store's meters and settings back as it found them.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -120,6 +121,47 @@ export default (ctx) => describe("usage: the budget guard", () => {
       if (own.status === 201) await admin.post(`/api/admin/packs/versions/${own.data.version.id}/discard`, {});
     } finally {
       db("DELETE FROM site_assets WHERE id = 'sa_usage_fill'; DELETE FROM store_settings WHERE key = 'storage_cap_gb'");
+    }
+  });
+
+  test("the cap grows by exactly what active paid plans hold above free storage; the owner's setting stays the base", async () => {
+    const { c, products } = await P.creatorWithProducts(base(), "us-paidcap");
+    const { creator: payer } = await P.creatorWithProducts(base(), "us-paidcap-payer");
+    const { creator: late } = await P.creatorWithProducts(base(), "us-paidcap-late");
+    const { creator: small } = await P.creatorWithProducts(base(), "us-paidcap-small");
+    const admin = await adminClient(base());
+    const usage = async () => (await admin.get("/api/admin/usage")).data.usage;
+    const FREE = 550 * 1024 * 1024; // the default free storage (server/creators/policy.js LIMITS)
+    const plan = (id, status, capBytes) => db(`INSERT INTO storage_plans (creator_id, status, cap_cents, cap_bytes, started_at, updated_at)
+      VALUES ('${id}', '${status}', 500, ${capBytes}, 'x', 'x') ON CONFLICT(creator_id) DO UPDATE SET status = excluded.status, cap_bytes = excluded.cap_bytes`);
+    db(`INSERT INTO site_assets (id, creator_id, r2_key, filename, content_type, size_bytes, status, created_at)
+      VALUES ('sa_usage_fill3', '${payer.id}', 'x', 'x.png', 'image/png', 1000000000, 'active', 'x')`);
+    const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVE"), Buffer.alloc(2000)]);
+    const put = () => c.req("PUT", `/api/studio/products/${products[0].id}/files?filename=kick.wav`, { raw: wav, headers: { "Content-Type": "audio/wav" } });
+    try {
+      assert.equal((await admin.req("PUT", "/api/admin/usage", { body: { capGb: 1 } })).status, 200);
+      const before = await usage();
+      assert.deepEqual([before.baseCapBytes, before.capBytes], [1e9, 1e9 + before.paidCapBytes]);
+      assert.equal((await put()).data.error.code, "storage_full", "a full 1 GB base");
+      // An active plan adds its limit above the creator's free storage; past-due or one under the free storage adds nothing.
+      plan(payer.id, "active", FREE + 2e9);
+      plan(late.id, "past_due", FREE + 5e9);
+      plan(small.id, "active", FREE - 1000);
+      const grown = await usage();
+      assert.equal(grown.paidCapBytes, before.paidCapBytes + 2e9);
+      assert.deepEqual([grown.baseCapBytes, grown.capBytes], [1e9, 1e9 + grown.paidCapBytes], "base + paid = the cap");
+      const ok = await put();
+      assert.equal(ok.status, 201, `uploads go ahead under the grown cap: ${JSON.stringify(ok.data)}`);
+      // Setting the cap changes the base only.
+      assert.equal((await admin.req("PUT", "/api/admin/usage", { body: { capGb: 2 } })).status, 200);
+      const rebased = await usage();
+      assert.deepEqual([rebased.baseCapBytes, rebased.paidCapBytes, rebased.capBytes], [2e9, grown.paidCapBytes, 2e9 + grown.paidCapBytes]);
+      // The plan goes past due: its room leaves the cap again.
+      plan(payer.id, "past_due", FREE + 2e9);
+      assert.equal((await usage()).paidCapBytes, before.paidCapBytes);
+    } finally {
+      db(`DELETE FROM site_assets WHERE id = 'sa_usage_fill3'; DELETE FROM store_settings WHERE key = 'storage_cap_gb';
+        DELETE FROM storage_plans WHERE creator_id IN ('${payer.id}', '${late.id}', '${small.id}')`);
     }
   });
 

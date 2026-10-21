@@ -1,7 +1,7 @@
 // Control Center: Usage and storage, the budget guard (server/usage/, docs/packs.md). This month's Container time,
 // storage writes and storage against Cloudflare's free allowance, the level (from 80% processing skips listening to
 // audio; from 95% new processing waits for next month), the switch that allows spending past it this month, and how
-// much storage creators' uploads may fill. Talks to /api/admin/usage (server/admin/usage.js). Starts on "gs:admin".
+// much storage creators' uploads may fill: the base the owner sets, plus what paid plans add (shown, not edited). Talks to /api/admin/usage (server/admin/usage.js). Starts on "gs:admin".
 // Needs js/util.js.
 (function () {
   "use strict";
@@ -11,6 +11,7 @@
   const LABEL = { container_ms: "Container time", class_a: "Storage writes (Class A)", r2_bytes: "Storage" };
   const amount = (meter, n) => meter === "container_ms" ? `${(n / 3600000).toFixed(1)} h`
     : meter === "r2_bytes" ? `${(n / 1e9).toFixed(2)} GB` : n.toLocaleString("en");
+  const gb = (n) => `${((n || 0) / 1e9).toFixed(2)} GB`;
   const LEVEL = {
     ok: "Inside the free allowance.",
     alert: "Over 80% of the free allowance: Pac processing skips listening to audio until next month.",
@@ -30,7 +31,8 @@
         <button class="btn small${u.allowed ? " ghost" : " ghost danger"}" type="button" data-allow="${!u.allowed}">${u.allowed ? "Stop at the allowance again" : "Allow spending this month"}</button></div>
       <form class="panel admin-switch" data-cap><h3>Storage for creators</h3>
         <p>Creators' uploads are refused once AutoStacc stores this much (the free allowance is 10 GB; more costs about $0.015 per GB a month).</p>
-        <label>Cap <input type="number" name="capGb" min="1" max="9999" step="1" required value="${Math.round(u.capBytes / 1e9)}"> GB</label>
+        <p>Base ${e(gb(u.baseCapBytes))} + paid storage ${e(gb(u.paidCapBytes))} = cap ${e(gb(u.capBytes))}. The paid part is what creators' active plans hold above their free storage; it grows and shrinks with the plans on its own.</p>
+        <label>Base <input type="number" name="capGb" min="1" max="9999" step="1" required value="${Math.round(u.baseCapBytes / 1e9)}"> GB</label>
         <button class="btn small" type="submit">Save</button></form>`;
   }
 

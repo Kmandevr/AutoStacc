@@ -3,12 +3,14 @@
 // Container time and R2 Class A operations, plus R2 storage measured live (storage.js). At ALERT of any allowance the
 // admins get one alert a month per meter and jobs skip the optional analysis; at PAUSE new processing waits for the
 // next month unless the owner allowed spending this month (setting usage_override). Creators' uploads are refused past
-// the storage cap (setting storage_cap_gb). A leaf module: the packs and studio code call it; it calls neither.
+// the storage cap: the owner's base (setting storage_cap_gb) plus the paid limits creators' active plans hold above
+// their free storage (storage.js paidCapBytes; owner 2026-10-21, #142), so paying creators never meet the site-wide
+// wall. A leaf module: the packs and studio code call it; it calls neither.
 // Soft by nature: two requests at once can both see 94% and both go ahead.
 import { all, stmt, now } from "../lib/db.js";
 import { getSetting } from "../settings/settings.js";
 import { alertAdmins } from "../email/alerts.js";
-import { storedBytes } from "./storage.js";
+import { storedBytes, paidCapBytes } from "./storage.js";
 
 // Included each month (Cloudflare's pricing, checked 2026-10-10). The basic Container (1 GiB) uses its 25 GiB-hours of
 // memory before its 375 vCPU-minutes (¼ vCPU) or disk, so memory time is the Container's meter.
@@ -39,8 +41,15 @@ export function meterStmts(db, cost, { when = "1", params = [] } = {}) {
     .map(([meter, n]) => stmt(db, add.replace("%s", when), month, meter, Math.round(n), t, ...params));
 }
 
-/** The storage creators' uploads may fill, in bytes (setting storage_cap_gb). */
-export const capBytes = async (db) => Number(await getSetting(db, "storage_cap_gb")) * 1e9;
+/** The cap's parts, in bytes: the owner's base (setting storage_cap_gb), what active paid plans add, and the sum. */
+export async function capParts(db) {
+  const [gb, paidBytes] = await Promise.all([getSetting(db, "storage_cap_gb"), paidCapBytes(db)]);
+  const baseBytes = Number(gb) * 1e9;
+  return { baseBytes, paidBytes, capBytes: baseBytes + paidBytes };
+}
+
+/** The storage creators' uploads may fill, in bytes: the effective cap (base + paid), which every upload guard uses. */
+export const capBytes = async (db) => (await capParts(db)).capBytes;
 
 /** The message for a creator's upload refused at the cap. */
 export const STORAGE_FULL = "AutoStacc's file storage is full for now. Your upload can go ahead once more room is added; nothing you already have is affected.";
@@ -53,12 +62,12 @@ export async function budget(app) {
   used.r2_bytes = await storedBytes(app.db);
   // Storage the owner chose to pay for (a cap above the free 10 GB) is the storage allowance; creators' uploads stop at
   // the cap, so storage alone pauses processing only when AutoStacc's own files fill it.
-  const cap = await capBytes(app.db);
+  const { baseBytes, paidBytes, capBytes: cap } = await capParts(app.db);
   const allowances = { ...ALLOWANCE, r2_bytes: Math.max(ALLOWANCE.r2_bytes, cap) };
   const meters = Object.fromEntries(Object.entries(allowances).map(([m, allowance]) => [m, { used: used[m] || 0, allowance, share: (used[m] || 0) / allowance }]));
   const top = Math.max(...Object.values(meters).map((m) => m.share));
   const allowed = (await getSetting(app.db, "usage_override")) === month;
-  return { month, meters, level: top >= PAUSE ? "pause" : top >= ALERT ? "alert" : "ok", allowed, capBytes: cap };
+  return { month, meters, level: top >= PAUSE ? "pause" : top >= ALERT ? "alert" : "ok", allowed, capBytes: cap, baseCapBytes: baseBytes, paidCapBytes: paidBytes };
 }
 
 /** Whether new processing may start now, and whether it should skip analysis (from ALERT on). */

@@ -95,18 +95,29 @@ export const templates = {
     };
   },
 
-  // A creator's paid storage (server/billing/): a statement to pay, a statement past its grace period, or a payment.
-  "storage-billing": ({ stage, period, amountCents, currency, dueAt, studioUrl }) => {
+  // A creator's paid storage (server/billing/): a statement (charged to the saved card, or to pay in the Studio), a card
+  // charge that didn't go through or that the bank wants the owner to confirm, a statement past due, or a payment.
+  "storage-billing": ({ stage, period, amountCents, currency, dueAt, studioUrl, card, nextTryAt }) => {
     const due = String(dueAt || "").slice(0, 10);
-    const head = stage === "issued" ? `Your AutoStacc storage statement for ${period}: ${money(amountCents, currency)}`
-      : stage === "past_due" ? `Your storage statement for ${period} is overdue` : `Thanks: your storage statement for ${period} is paid`;
-    const body = stage === "issued" ? `It's for what you stored above your free storage in ${period}, measured once a day. Pay it in the Studio by ${due}. The daily figures are there too.`
-      : stage === "past_due" ? "Your paid storage limit is paused until it's paid, so new uploads stop once you're over your free storage. Nothing you've stored is deleted or hidden, and buyers keep their downloads."
-        : "Your paid storage limit is in place.";
+    const amount = money(amountCents, currency);
+    const yours = card && (card.brand || card.last4) ? `your ${card.brand ? card.brand[0].toUpperCase() + card.brand.slice(1) : "card"}${card.last4 ? ` ending ${card.last4}` : ""}` : "your saved card";
+    const kept = "Nothing you've stored is deleted or hidden, and buyers keep their downloads.";
+    const measured = `It's for what you stored above your free storage in ${period}, measured once a day.`;
+    const [head, body, label] = {
+      issued: [`Your AutoStacc storage statement for ${period}: ${amount}`, card
+        ? `${measured} It's charged to ${yours} on ${String(card.chargeOn || "").slice(0, 10)}; you don't need to do anything. The daily figures are in the Studio.`
+        : `${measured} Pay it in the Studio by ${due}. The daily figures are there too.`],
+      charge_failed: [`We couldn't charge your card for your ${period} storage`, `The charge of ${amount} to ${yours} didn't go through. ${nextTryAt ? `We'll try again on ${String(nextTryAt).slice(0, 10)}. ` : ""}` +
+        `You can update your card or pay in the Studio. If it's still unpaid on ${due}, your paid storage limit pauses and new uploads stop once you're over your free storage. ${kept}`, "Update your card or pay"],
+      action_required: [`Your bank wants you to confirm your ${period} storage payment`, `Your bank asked you to confirm the charge of ${amount}, so we can't charge your card automatically this time. ` +
+        `Pay it in the Studio by ${due}, where your bank can ask you to confirm. ${kept}`, "Pay in the Studio"],
+      past_due: [`Your storage statement for ${period} is overdue`, `Your paid storage limit is paused until it's paid, so new uploads stop once you're over your free storage. ${kept}`],
+      paid: [`Thanks: your storage statement for ${period} is paid`, "Your paid storage limit is in place."]
+    }[stage] || [`Your storage statement for ${period}`, "Details are in the Studio."];
     return {
       subject: `${head} — AutoStacc`,
       text: `${head}.\n${body}\n\nThe Studio: ${studioUrl}`,
-      html: layout(head, para(body) + button(studioUrl, "Open the Studio"))
+      html: layout(head, para(body) + button(studioUrl, label || "Open the Studio"))
     };
   },
 

@@ -1,9 +1,10 @@
 // Paid creator storage arithmetic (server/billing/policy.js): the free allowance, billable bytes, month boundaries and
-// partial months, rate changes mid-month, rounding, the card minimum and carrying, and the most a limit can cost; and that a first-party
+// partial months, rate changes mid-month, rounding, the card minimum and carrying, the most a limit can cost, and the
+// days a saved card is charged (all inside the grace period); and that a first-party
 // creator has no quota, fee or Studio limits (server/creators/policy.js).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GB, BILLING, billableBytes, usageCents, statementOf, periodOf, previousPeriod, daysInPeriod, dayOf, capBytesFor } from "../../server/billing/policy.js";
+import { GB, BILLING, billableBytes, usageCents, statementOf, periodOf, previousPeriod, daysInPeriod, dayOf, capBytesFor, nextChargeAt } from "../../server/billing/policy.js";
 
 const MB = 1024 ** 2;
 const FREE = 550 * MB;
@@ -80,6 +81,18 @@ test("a monthly spending cap buys an upload limit at the rate, so a full month a
   assert.equal(limit, FREE + 40 * GB);
   const days = Array.from({ length: 30 }, () => ({ billable_bytes: billableBytes({ usedBytes: limit, includedBytes: FREE, charged: true }), rate: RATE }));
   assert.equal(usageCents(days, "2026-11"), 200);
+});
+
+test("a saved card is charged on days 0, 3, 7 and 12 after the statement, all before the grace period ends, then no more (#142)", () => {
+  const issued = Date.parse("2026-11-01T06:00:00.000Z");
+  const day = 86400000;
+  assert.deepEqual(BILLING.chargeDays, [0, 3, 7, 12]);
+  assert.deepEqual([0, 1, 2, 3].map((n) => nextChargeAt(issued, n)), [0, 3, 7, 12].map((d) => new Date(issued + d * day).toISOString()));
+  assert.equal(nextChargeAt(issued, 4), null, "four tries, then the pay page");
+  assert.equal(nextChargeAt(issued, 9), null);
+  assert.ok(BILLING.chargeDays.every((d, i) => d < BILLING.graceDays && (i === 0 || d > BILLING.chargeDays[i - 1])), "ascending, inside the 14 days");
+  assert.equal(BILLING.graceDays, 14);
+  assert.equal(BILLING.minChargeCents, 50);
 });
 
 test("a first-party creator has no storage limit, no paid storage to buy, no fee and no Studio limits (#171, #177)", async () => {

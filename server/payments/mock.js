@@ -29,6 +29,26 @@ export const mockProvider = {
   async retrieveCheckout(app, sessionId) {
     // The mock has no remote state: whatever the test buttons did is already in the database.
     return { type: "pending", sessionId };
+  },
+
+  // Saved cards for storage billing (server/billing/cards.js, charges.js). No remote state: the setup session id
+  // carries its creator, and every setup saves the same test card; every charge succeeds.
+  async ensureCustomer(app, { creatorId }) {
+    return { customerId: `mock_cus_${creatorId}` };
+  },
+  async createCardSetup(app, { creatorId, successUrl }) {
+    const sessionId = `mock_cs_setup_${randomToken(12)}.${creatorId}`;
+    return { sessionId, url: `${successUrl}&mock=${sessionId}` };
+  },
+  async retrieveCardSetup(app, sessionId) {
+    const creatorId = String(sessionId).split(".").slice(1).join(".") || null;
+    return { status: "complete", creatorId, customerId: creatorId && `mock_cus_${creatorId}`, paymentMethodId: "mock_pm",
+      brand: "visa", last4: "4242", livemode: false };
+  },
+  async detachCard() {},
+  async chargeCard(app, { statement, attempt }) {
+    return { paymentId: `mock_pi_charge_${statement.id}_${attempt}`, status: "succeeded", declineCode: null, livemode: false,
+      amount: statement.amount_cents, currency: statement.currency };
   }
 };
 

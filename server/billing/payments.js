@@ -1,5 +1,6 @@
-// Paid creator storage, paying a statement: what earnings didn't cover is paid on a hosted Checkout page on AutoStacc's
-// main Stripe account (storage is AutoStacc's own service, not a creator's sale), confirmed only by a verified payment
+// Paid creator storage, paying a statement: what earnings didn't cover is charged to the saved card (charges.js) or paid
+// on a hosted Checkout page on AutoStacc's main Stripe account (storage is AutoStacc's own service, not a creator's
+// sale), confirmed only by a verified payment
 // event (server/payments/events.js hands statement events here, after its once-per-event check). A payment must match
 // its statement (by the session, or by the statement id the session carries when an earlier attempt was paid after a
 // new one opened), the account, live/test mode, amount and currency; moves are compare-and-set, so a repeated or late
@@ -13,7 +14,7 @@ import { preTaxRefund } from "../payments/refund-amount.js";
 import { paidStorageStmt } from "../creators/creators.js";
 import { deduct } from "../revenue/deductions.js";
 import { logStmt, restoreIfSettled } from "./plans.js";
-import { mailOwner } from "./statements.js";
+import { mailOwner } from "./mail.js";
 
 const ACCOUNT = "main";
 
@@ -26,6 +27,9 @@ const statementById = (db, provider, id) => first(db, "SELECT * FROM storage_sta
 /** A payment page for an open statement. A new attempt replaces the last one, unless the last one was already paid. */
 export async function startCheckout(app, creator, statement, user) {
   if (statement.status !== "open") fail(409, "not_payable", "This statement has nothing to pay.");
+  // The saved card is being charged right now (charges.js): wait for its answer rather than pay twice.
+  if (statement.charge_status === "processing" && await first(app.db, "SELECT 1 FROM storage_billing_log WHERE statement_id = ? AND action = 'charge.started' AND at > ? LIMIT 1",
+    statement.id, new Date(Date.now() - 3600000).toISOString())) fail(409, "charge_in_progress", "Your saved card is being charged for this statement. Check again in a few minutes.");
   const provider = providerForAccount(app, ACCOUNT);
   if (statement.provider_session_id && statement.provider === provider.name) {
     // Paid a moment ago and the confirmation is still on its way: record it instead of opening a second page.
@@ -54,7 +58,7 @@ export async function startCheckout(app, creator, statement, user) {
 const reject = (detail) => ({ outcome: "rejected", detail });
 
 // The statement an event is about: its current session, else (a payment on an earlier page) the statement id the session
-// carries, else (refunds and disputes) its payment.
+// carries, else (an automatic card charge, charges.js) the statement id it carries, else (refunds and disputes) its payment.
 async function find(db, ev) {
   if (ev.sessionId) {
     const s = await statementBySession(db, ev.provider, ev.sessionId);
@@ -62,6 +66,7 @@ async function find(db, ev) {
     if (ev.statementId && ev.type === "paid") return statementById(db, ev.provider, ev.statementId);
     return null;
   }
+  if (ev.statementId && ev.type === "paid") return statementById(db, ev.provider, ev.statementId);
   return ev.paymentId ? statementByPayment(db, ev.provider, ev.paymentId) : null;
 }
 
@@ -85,8 +90,9 @@ export async function applyStatementEvent(app, ev) {
   switch (ev.type) {
     case "paid": {
       if (ev.amount !== s.amount_cents || String(ev.currency).toUpperCase() !== s.currency) return reject("amount mismatch");
-      const moved = await run(db, "UPDATE storage_statements SET status = 'paid', paid_at = ?, provider_payment_id = ?, provider_session_id = COALESCE(?, provider_session_id) WHERE id = ? AND status = 'open'",
-        now(), ev.paymentId || null, ev.sessionId || null, s.id);
+      const moved = await run(db, `UPDATE storage_statements SET status = 'paid', paid_at = ?, provider_payment_id = ?, provider_session_id = COALESCE(?, provider_session_id),
+        charge_status = CASE WHEN ? THEN 'succeeded' ELSE charge_status END, next_charge_at = NULL WHERE id = ? AND status = 'open'`,
+      now(), ev.paymentId || null, ev.sessionId || null, ev.chargeAttempt ? 1 : 0, s.id);
       if (!moved.meta.changes) {
         if (s.status === "paid" && (!ev.paymentId || s.provider_payment_id === ev.paymentId)) return { outcome: "already paid" };
         // Money taken twice (two pages both paid) or for a statement that was waived: processPaymentEvent alerts the admins.

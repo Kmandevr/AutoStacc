@@ -1,7 +1,8 @@
 // Admin, usage and storage (the budget guard, server/usage/): GET shows this month's meters against the free allowance,
-// the level (ok, alert from 80%, pause from 95%), whether spending past it is allowed this month, the storage cap and
-// how many versions wait for the allowance. PUT { allowThisMonth } lets processing go past the allowance until the
-// month ends (or takes that back); PUT { capGb } sets how much storage creators' uploads may fill. Audited.
+// the level (ok, alert from 80%, pause from 95%), whether spending past it is allowed this month, the storage cap (the
+// owner's base + what active paid plans add = the effective cap) and how many versions wait for the allowance.
+// PUT { allowThisMonth } lets processing go past the allowance until the month ends (or takes that back); PUT { capGb }
+// sets the base only (the paid part follows the plans on its own). Audited.
 import { json, readJson, fail } from "../lib/http.js";
 import { requireAdmin } from "../auth/session.js";
 import { audit } from "../audit/log.js";
