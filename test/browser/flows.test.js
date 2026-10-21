@@ -516,6 +516,23 @@ describe("store in the browser", () => {
     await ctx.close();
   });
 
+  test("pressing Add to cart on the server's first draw survives the script's redraw: focus and the message stay", async () => {
+    const { ctx, page } = await open(DESK);
+    let release;
+    const held = new Promise((r) => { release = r; });
+    await page.route(/\/api\/products\/sample-pack-vol1$/, async (route) => { await held; await route.continue(); });
+    await page.goto("/shop/sample-pack-vol1", { waitUntil: "domcontentloaded" });
+    await page.locator("#product-app [data-buy]").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForSelector("#product-app .msg[role=status] a[href='/cart']");
+    release();
+    await page.waitForFunction(() => document.title.startsWith("Sample") || document.querySelector("#product-app .product-desc"));
+    await page.waitForTimeout(300);
+    assert.ok(await page.isVisible("#product-app .msg[role=status] a[href='/cart']"), "the message is still there after the redraw");
+    assert.ok(await page.evaluate(() => document.activeElement.matches("#product-app [data-buy]")), "focus is back on the button");
+    await ctx.close();
+  });
+
   test("removing a cart line by keyboard keeps focus in the cart and announces it", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/shop");

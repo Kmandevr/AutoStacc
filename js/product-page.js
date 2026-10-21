@@ -22,7 +22,15 @@
     const owned = live.ok && live.data.products[id] && live.data.products[id].owned;
     document.title = `${p.title} · AutoStacc`;
     $("main h1").textContent = p.title;
+    // The server drew the page first: a visitor may already have pressed a button on it. Keep their focus and what
+    // the status line said (our own messages) across the redraw.
+    const active = root.contains(document.activeElement) ? ["data-buy", "data-claim"].find((a) => document.activeElement.hasAttribute(a)) : null;
+    const said = (($(".msg[role=status]", root) || {}).hidden === false) ? $(".msg[role=status]", root).innerHTML : "";
     root.innerHTML = window.GS.productView.render(p, { owned });
+    const status = $(".msg[role=status]", root);
+    if (said && status) { status.hidden = false; status.innerHTML = said; }
+    const again = active && root.querySelector(`[${active}]`);
+    if (again) again.focus();
     // Tell the store's on-device history (js/taste.js) and the wishlist hearts (js/wishlist.js) what's on the page.
     document.dispatchEvent(new CustomEvent("gs:taste", { detail: { t: "view", id: p.id } }));
     dispatchEvent(new CustomEvent("gs:cards"));
