@@ -8,6 +8,7 @@ updated: 2026-10-20
 
 Newest first.
 
+- 2026-10-21: Sidebar no longer lists each first-party project (Glitches & Stitches); Projects keeps All projects, as for every creator (owner) (`js/layout.js`, `css/layout.css`).
 - 2026-10-20: Owner deferred the community's legal setup and DMCA agent until an LLC (after traction); no longer launch gates.
 - 2026-10-20: Owner switched on Cloudflare's CSAM Scanning Tool (community launch gate); DMCA agent to be registered later.
 - 2026-10-20: `docs/community.md`: status corrected from "nothing exists yet" to partly built behind the off switch (read side, posting, moderation); build order steps 3 and 4 marked.

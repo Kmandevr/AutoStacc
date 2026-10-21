@@ -1,18 +1,17 @@
-// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Explore, About; Projects: one link per project in
-// data/projects.js; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
+// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Explore, About; Projects: All projects, the same for
+// every creator; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
 // Create account, cart count, the slot js/theme.js fills, and the account menu's slot, [data-account-menu], which
 // js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
 // carry data-auth="in" and start hidden; js/account-nav.js shows the set that matches the visitor. On a computer the
 // sidebar is an icon rail that expands (remembered); on phones it is a drawer. <body data-page> marks the current page
 // (and data-section the section it sits in). A project's pages use js/project-frame.js instead.
-// Needs data/site.js, data/projects.js and js/util.js. Structured data is static, from scripts/build.js.
+// Needs data/site.js and js/util.js. Structured data is static, from scripts/build.js.
 (function () {
   "use strict";
 
   const GS = window.GS;
   const { $, escapeHTML: e } = GS;
   const SITE = window.SITE || {};
-  const PROJECTS = (window.PROJECTS || []).filter((p) => !p.draft);
   const body = document.body.dataset;
   const KEY = "gs:side";
   const svg = (key, paths) => `<svg class="side-icon side-icon-${key}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
@@ -37,7 +36,6 @@
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
   const item = (href, label, icon, attrs = "") =>
     `<li><a href="${e(href)}" title="${e(label)}"${attrs}>${icon}<span class="side-text">${e(label)}</span></a></li>`;
-  const projectChip = (p) => `<span class="side-chip" aria-hidden="true">${e((p.name || "?").charAt(0))}</span>`;
 
   const main = GS.skipLink();
   const header = $("#site-header");
@@ -55,7 +53,6 @@
           </ul>
           <p class="side-label" id="side-projects">Projects</p>
           <ul aria-labelledby="side-projects">
-            ${PROJECTS.map((p) => item(GS.projectPath(p.id), p.name, projectChip(p))).join("")}
             ${item("/projects", "All projects", ICONS.all, current("projects"))}
           </ul>
           <div data-auth="in" hidden>

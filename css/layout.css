@@ -86,7 +86,6 @@ body:has(> .site-frame) { padding-left: var(--side); }
 .side-icon-stacc { stroke: var(--amber); }
 .side-icon-about { stroke: var(--violet); }
 .side-icon-all { stroke: var(--lime); }
-.side-chip { display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; margin-inline: -1px; border-radius: 6px; background: var(--coral); color: #fff; font-size: .78rem; font-weight: 750; }
 /* expand/collapse, at the foot of the sidebar (computers only) */
 .side-collapse {
   margin-top: auto;
