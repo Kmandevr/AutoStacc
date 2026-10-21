@@ -45,6 +45,16 @@ const emphasis = (html) => html
 // Code spans, labelled links and bare addresses are found on the raw text, then each piece is escaped on its own.
 const TOKEN = /`([^`\n]+)`|\[([^\]\n]{1,200})\]\(([^)\s]{1,2000})\)|(https?:\/\/[^\s<>"'`]+)/g;
 
+// Whether this text would show a link once formatted: the same tokens and URL rule the formatter itself uses, so a
+// check built on it (no links at three copyright strikes) can't disagree with what readers see.
+export function hasLink(raw) {
+  for (const m of String(clean(raw)).matchAll(TOKEN)) {
+    if (m[2] !== undefined && safeUrl(m[3])) return true;
+    if (m[4] !== undefined && safeUrl(m[4].replace(/[.,;:!?)\]]+$/, ""))) return true;
+  }
+  return false;
+}
+
 export function inline(raw, ext = NO_EXT) {
   raw = clean(raw);
   let out = "";

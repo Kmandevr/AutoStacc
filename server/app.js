@@ -38,6 +38,7 @@ import { routes as studioMembers } from "./studio/members.js";
 import { routes as communityLibrary } from "./library/routes.js";
 import { routes as community } from "./community/index.js";
 import { routes as copyright } from "./copyright/routes.js";
+import { copyrightGate } from "./copyright/policy.js";
 import { routes as adminLibrary } from "./library/admin.js";
 import { routes as studioProducts } from "./studio/products.js";
 import { routes as content } from "./content/routes.js";
@@ -98,6 +99,8 @@ export async function handleApi(request, env, ctx) {
     if (!match) throw new HttpError(404, "not_found", "Nothing here.");
     if (match.methodNotAllowed) throw new HttpError(405, "method_not_allowed", "That method isn't allowed here.");
     if (!match.route.opts.external) assertSameOrigin(request, config.siteUrl);
+    // Three copyright strikes: no Studio changes, with a few exceptions (server/copyright/policy.js).
+    await copyrightGate(app, { path, route: match.route });
     if (!gate) return await match.route.handler(app, match.params);
     return await auditImpersonated(app, gate, match.route, () => match.route.handler(app, match.params));
   } catch (e) {

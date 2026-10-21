@@ -160,6 +160,7 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 
 ## Security model
 
+- **Copyright text-only gate** (`server/copyright/policy.js`, called by `server/app.js`): an account at three copyright strikes can't change anything under `/api/studio/*` except what routes allow with `{ copyright: "allow" }` (payouts, the payout account, storage billing, reading an invitation) and deletions ([copyright](copyright.md)).
 - The browser is never trusted with prices, totals, ownership, payment status or order status. Prices come from D1, ownership from `entitlements`, payment status from verified Stripe events or Stripe's API.
 - Secrets live only in Cloudflare (production, copied there by the deploy from GitHub secrets, kept in the `production` Environment: [store-setup](store-setup.md), step 2) or `.dev.vars` (local, generated, gitignored). `server/lib/config.js` refuses to run with test Stripe keys or the mock provider in production, live keys outside production, the log mailer in production, or missing/short/reused secrets; the API then answers 503 "store offline" and the rest of the site works. The deploy runs the same check after setting the secrets and prints each broken rule (by name, never the value) as an error in the "Store resources" step.
 - Unguessable ids everywhere (`ord_`, `ent_`, `pf_` + 128 random bits); guest and download keys are 256-bit or HMAC-signed; only hashes of guest keys are stored.

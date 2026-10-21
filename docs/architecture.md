@@ -91,6 +91,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |
 | a community feature | a folder in `server/community/features/` with a manifest, one line in `features/index.js` ([community](community.md#built-as-independent-features-owner-2026-10-20)) |
+| a request-wide rule | a gate called once in `server/app.js` before the route runs, beside the impersonation policy (the copyright text-only gate, `server/copyright/policy.js`) |
 | a server feature | a folder in `server/` with its own `routes`, one import and one line in `server/app.js` (a module with no routes of its own, like `server/usage/`, is called by the modules that need it; one area may wire more than one route table, like `server/packs/` or `server/account/`) |
 | a store-wide switch the owner flips | a key in `SETTINGS` (`server/settings/settings.js`) |
 | a section of the Product Studio or Control Center | an entry in `data/workspaces.js` and a section module ([studio](studio.md)) |

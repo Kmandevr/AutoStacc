@@ -8,6 +8,7 @@ import { cleanDocument } from "./document.js";
 import { publishSite } from "./publish.js";
 import { projectSite, profileSite } from "./targets.js";
 import { getCreator, getProject } from "../creators/creators.js";
+import { accountLevel } from "../copyright/standing.js";
 
 const YEAR = 366 * 24 * 3600 * 1000;
 
@@ -28,8 +29,13 @@ export const cancelSchedule = (db, target) =>
 
 // Publishes this site's scheduled copy if it is due. Returns true when it did.
 export async function runIfDue(app, target) {
-  const row = await first(app.db, `SELECT scheduled_at, scheduled_draft FROM ${target.table} WHERE ${target.key} = ? AND scheduled_at IS NOT NULL AND scheduled_at <= ?`, target.id, now());
+  const row = await first(app.db, `SELECT scheduled_at, scheduled_draft, scheduled_by FROM ${target.table} WHERE ${target.key} = ? AND scheduled_at IS NOT NULL AND scheduled_at <= ?`, target.id, now());
   if (!row) return false;
+  // Scheduled by an account that has since reached three copyright strikes: it's dropped, not published (security review).
+  if (row.scheduled_by && (await accountLevel(app.db, row.scheduled_by)).level >= 3) {
+    await run(app.db, `UPDATE ${target.table} SET scheduled_at = NULL, scheduled_draft = NULL, scheduled_by = NULL WHERE ${target.key} = ? AND scheduled_at = ?`, target.id, row.scheduled_at);
+    return false;
+  }
   const taken = await run(app.db, `UPDATE ${target.table} SET scheduled_at = NULL, scheduled_draft = NULL, scheduled_by = NULL WHERE ${target.key} = ? AND scheduled_at = ?`, target.id, row.scheduled_at);
   if (!taken.meta.changes) return false;
   try {

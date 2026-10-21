@@ -28,5 +28,5 @@ async function connect(app, { creatorId }) {
 
 export const routes = [
   ["GET", "/api/studio/creators/:creatorId/payout-account", status],
-  ["POST", "/api/studio/creators/:creatorId/payout-account", connect]
+  ["POST", "/api/studio/creators/:creatorId/payout-account", connect, { copyright: "allow" }]
 ];

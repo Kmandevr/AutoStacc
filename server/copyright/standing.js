@@ -46,5 +46,9 @@ export async function creatorsSellingPaused(db, creatorIds) {
 export const anyCreatorStanding = async (db) => Boolean(await first(db, `SELECT 1 AS n WHERE EXISTS (SELECT 1 FROM copyright_strikes
   WHERE subject = 'creator' AND state = 'active' AND expires_at > ?) OR EXISTS (SELECT 1 FROM copyright_holds WHERE subject = 'creator')`, new Date().toISOString()));
 
+// Whether any account has an active strike or a hold at all, so the Studio gate skips its reads almost always.
+export const anyAccountStanding = async (db) => Boolean(await first(db, `SELECT 1 AS n WHERE EXISTS (SELECT 1 FROM copyright_strikes
+  WHERE subject = 'account' AND state = 'active' AND expires_at > ?) OR EXISTS (SELECT 1 FROM copyright_holds WHERE subject = 'account')`, new Date().toISOString()));
+
 // Whether this account may publish or price products (owner: a member at 2 strikes can't, in any creator space).
 export const mayPublish = async (db, userId) => (await accountLevel(db, userId)).level < 2;
