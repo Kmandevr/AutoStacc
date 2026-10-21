@@ -3,7 +3,7 @@
 // Phase 7): how many files and how big, their kinds, tempo range, formats, keys and the rest, the Pacs' public preview
 // clips and read me, and the folders with their files. Only for products whose files were published from the Pack
 // Builder; stays hidden otherwise, when switched off, or when the store is offline. Names and sizes only, never a link
-// to a file (the clips are public previews). Needs js/util.js.
+// to a file (the clips are public previews). Placeholder while loading (js/skeleton.js, optional). Needs js/util.js.
 (function () {
   "use strict";
 
@@ -17,8 +17,10 @@
   (async () => {
     const id = root.dataset.productContents || new URLSearchParams(location.search).get("p") || "";
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) return;
+    // Placeholder lines while loading (js/skeleton.js, when loaded); the section goes again if there's nothing inside.
+    if (window.GS.skeleton) { root.hidden = false; root.innerHTML = `<div class="wrap"></div>`; window.GS.skeleton.show(root.firstElementChild, "panel", 1); }
     const res = await api(`/api/products/${encodeURIComponent(id)}/contents`);
-    if (!res.ok || !res.data.files) return;
+    if (!res.ok || !res.data.files) { root.hidden = true; root.innerHTML = ""; return; }
     const c = res.data;
     const facts = c.facets.filter((g) => SHOWN.includes(g.id)).sort((a, b) => SHOWN.indexOf(a.id) - SHOWN.indexOf(b.id))
       .map((g) => `<dt>${e(g.label)}</dt><dd>${g.values.sort((a, b) => b.count - a.count).map((v) => `${e(v.label)} <span class="small-print">(${v.count})</span>`).join(", ")}</dd>`).join("");

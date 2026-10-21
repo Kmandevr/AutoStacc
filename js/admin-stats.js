@@ -58,8 +58,10 @@
   async function draw() {
     const el = $("#admin-overview");
     const out = $("[data-stats-out]", el);
-    out.innerHTML = `<p class="msg pending">Counting…</p>`;
+    const sk = window.GS.skeleton; // chart-sized placeholders while the figures are counted (js/skeleton.js)
+    if (sk) sk.show(out, "panel", 3); else out.innerHTML = `<p class="msg pending">Counting…</p>`;
     const res = await api(`/api/admin/stats?days=${state.days}${state.mode ? `&mode=${state.mode}` : ""}`);
+    if (sk) sk.done(out);
     if (!res.ok) { out.innerHTML = `<p class="msg error">${e(res.error.message)}</p>`; return; }
     const d = res.data;
     state.mode = d.mode;

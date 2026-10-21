@@ -1,8 +1,8 @@
 ---
 title: Modules
 summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
-covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/news.js, js/shows.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, data/shows.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
-updated: 2026-10-16
+covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/project-events.js, js/events-calendar.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, js/project-content.js, js/skeleton.js, css/skeleton.css, js/prefetch.js, js/creators-browse.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
+updated: 2026-10-21
 ---
 
 # Modules
@@ -31,17 +31,16 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Project cards and follow controls (`js/project-card.js`, `js/follow.js`) | `[data-follow-slot]` | the project id, `data-name` |
 | Projects to follow (`js/project-picks.js`) | `[data-project-picks]` | `data-limit`, `data-picks="following"` (the projects you follow instead) |
 | Latest releases, news and shows (`js/latest.js`) | `[data-latest]` | `data-limit` (per list) |
-| Projects browser, explore (`js/projects-browse.js`, `js/explore-browse.js`) | `[data-projects-browse]`, `[data-explore]` | none: one per page, state in the address ([browse](browse.md)) |
+| Projects browser, creators browser, explore (`js/projects-browse.js`, `js/creators-browse.js`, `js/explore-browse.js`) | `[data-projects-browse]`, `[data-creators-browse]`, `[data-explore]` | none: one per page, state in the address ([browse](browse.md)) |
 | DAW backdrop (`js/daw-stage.js`, `css/daw-stage.css`) | `[data-daw-stage]` | `[data-daw-hero]` on the element it sits behind (it stops moving when that is out of view) |
 | New releases feed (`js/release-feed.js`) | `[data-release-feed]` | `data-limit`, `data-personal` (dashboard only: followed projects first, owned items marked) |
 | Account links and menu (`js/account-nav.js`) | `[data-auth="in"\|"out"]`, `[data-account-menu]`, `[data-signout]` | |
 | Site notice (`js/site-notice.js`) | every page's `<main>` (loaded after `js/account-nav.js`, in `scripts/lib/pages.js` too) | the owner's one-line notice from `GET /api/site-status`, text only; nothing when there's none |
 | Polls (`js/polls.js`) | `[data-polls-for]` | the project id |
-| News (`js/news.js`) | `[data-news]` | `data-project`, `data-limit`, `data-full` (whole posts as h2 sections, the news page; otherwise headlines and summaries as h3) |
-| Shows (`js/shows.js`) | `[data-shows]` | `data-project` (shows carry `project` in `data/shows.js`; ticketed ones go into structured data once per project) |
+| Events (`js/project-events.js`, `GS.eventCard`) | `[data-events]` | `data-project`, `data-limit` (the project's upcoming published events from the content API, soonest first, each card linking to the event's page; made in the Studio's Events editor). The site-wide calendar is `/events` (`server/content/calendar.js`, enhanced by `js/events-calendar.js`) |
 | Releases (`js/releases.js`) | `[data-releases]` (a list) | `data-project`, `data-limit` |
 | Official profiles (`js/profiles.js`) | `[data-profiles]` | `data-project` (music and press pages) |
-| Listen player (`js/music.js`) | `[data-listen]` | `data-release` (a release page; counts a release view), else `featured` in `data/music.js` if it is the project's, else its newest; `data-project`; `data-links` (the release's streaming links under the player) |
+| Listen player (`js/music.js`) | `[data-listen]` | `data-release` (counts a release view), else the project's `featured` release, else its newest (releases from `GET /api/projects/:id/content`, made in the Studio's Music editor; the release pages themselves are server-rendered by `server/content/render.js` and don't load this module); `data-project`; `data-links` (the release's streaming links under the player) |
 | Newsletter sign-up (`js/newsletter.js`) | `[data-newsletter]` holding a `<form>` and a `.form-msg` (an empty element gets the standard form) | `data-project` (the list it joins); reads `?newsletter=<result>` from the confirmation link |
 | Press contact (`js/press.js`) | `[data-press-contact]` | `data-project`; also wires `[data-copy="<id>"]` copy buttons |
 | Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link; Auto-Stacc grants say "added by Auto-Stacc" |
@@ -49,6 +48,17 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` (link columns: Explore with Community, Help with Guides, Legal with Copyright and Community rules) | the page's `data-project` |
 
 Store items wear their project's look in the store, the new releases feed (home page, dashboard) and on their product page; clicking one opens the store filtered to its project with it selected at the top.
+
+## Shared helpers every feature uses
+
+- **Loading placeholders, `GS.skeleton`** (`js/skeleton.js`, loaded right after `js/util.js`; styles `css/skeleton.css`; owner, 2026-10-21). One helper for every feature that loads from the API, so none draws its own spinner or "Loading…" text:
+  - `html(shape, n)`: n placeholders as an HTML string, hidden from screen readers. Shapes: `card` (cover, two lines, a button), `row` (round avatar, two lines), `line`, `text` (three lines), `button`, `tile`, `panel` (a heading line and a block).
+  - `show(el, shape, n)`: fills a region with placeholders plus one spoken "Loading…" and sets `aria-busy`. The region keeps its own classes (its grid or list) and only its children change, so the real content arrives without a layout shift; inside a list or table body the placeholders are list items or rows.
+  - `done(el)`: the region is ready (no longer busy); the caller then writes the content.
+  - `busy(button, on)`: a request button disabled and `aria-busy` with a small spinner before its unchanged label (login, sign-up, reset and other forms).
+  - `pending(el, shape, n)`: `show()` until the code that draws `el` first writes, appends or empties it, then `done()` runs by itself (Studio sections and Control Center tabs, whose drawing modules need no clean-up).
+  - The shimmer and the spinner move only without reduced motion. Features guard it (`const sk = window.GS.skeleton;`) and work without it. Store-offline and error states stay each feature's own. Generated pages get both files when they load content (`scripts/lib/pages.js`); server-rendered pages list them in their own CSS and script lists.
+- **Preloading, `js/prefetch.js`** (every platform page, last script). Browsers with Speculation Rules read `/speculation-rules.json` (named by the `Speculation-Rules` header, [production](production.md#security)) and the script does nothing. Others get one `<link rel=prefetch>` for a same-origin link after a short hover, or at once on press or keyboard focus, with the rules file's exclusions; skipped when the visitor saves data. A link opts out with `data-no-prefetch`.
 
 ## Single-use by nature
 

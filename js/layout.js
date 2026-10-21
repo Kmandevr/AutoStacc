@@ -1,20 +1,20 @@
-// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Explore, About; Projects: one link per project in
-// data/projects.js; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
+// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Explore,
+// Community, About; Projects: Projects and Creators, the same for every creator; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
 // Create account, cart count, the slot js/theme.js fills, and the account menu's slot, [data-account-menu], which
 // js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
 // carry data-auth="in" and start hidden; js/account-nav.js shows the set that matches the visitor. On a computer the
 // sidebar is an icon rail that expands (remembered); on phones it is a drawer. <body data-page> marks the current page
 // (and data-section the section it sits in). A project's pages use js/project-frame.js instead.
-// Needs data/site.js, data/projects.js and js/util.js. Structured data is static, from scripts/build.js.
+// Needs data/site.js and js/util.js. Structured data is static, from scripts/build.js.
 (function () {
   "use strict";
 
   const GS = window.GS;
   const { $, escapeHTML: e } = GS;
   const SITE = window.SITE || {};
-  const PROJECTS = (window.PROJECTS || []).filter((p) => !p.draft);
   const body = document.body.dataset;
   const KEY = "gs:side";
+  // Phones get a bottom bar instead: Store, Projects, Community, Your Stacc or Log in, and Menu (opens the drawer).
   const svg = (key, paths) => `<svg class="side-icon side-icon-${key}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
   const ICONS = {
     store: svg("store", '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>'),
@@ -26,18 +26,19 @@
     home: svg("home", '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9.5h11V10"/>'),
     explore: svg("explore", '<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>'),
     about: svg("about", '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.4"/>'),
+    community: svg("community", '<path d="M4.5 6.5h11a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H10l-3.5 3v-3h-2A1.5 1.5 0 0 1 3 14V8a1.5 1.5 0 0 1 1.5-1.5z"/><path d="M17 10h2.5A1.5 1.5 0 0 1 21 11.5v5a1.5 1.5 0 0 1-1.5 1.5H19v2.5L16 18h-3"/>'),
+    creators: svg("creators", '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="m17.5 5 .9 1.9 2.1.3-1.5 1.5.4 2.1-1.9-1-1.9 1 .4-2.1-1.5-1.5 2.1-.3z"/>'),
     all: svg("all", '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>')
   };
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
   // Studio, Settings and the rest of the account live in the top bar's account menu (js/account-nav.js).
   const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"]];
-  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/explore", "Explore", "explore", "explore"], ["/about", "About", "about", "about"]];
+  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/explore", "Explore", "explore", "explore"], ["/community", "Community", "community", "community"], ["/about", "About", "about", "about"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
   const item = (href, label, icon, attrs = "") =>
     `<li><a href="${e(href)}" title="${e(label)}"${attrs}>${icon}<span class="side-text">${e(label)}</span></a></li>`;
-  const projectChip = (p) => `<span class="side-chip" aria-hidden="true">${e((p.name || "?").charAt(0))}</span>`;
 
   const main = GS.skipLink();
   const header = $("#site-header");
@@ -55,8 +56,8 @@
           </ul>
           <p class="side-label" id="side-projects">Projects</p>
           <ul aria-labelledby="side-projects">
-            ${PROJECTS.map((p) => item(GS.projectPath(p.id), p.name, projectChip(p))).join("")}
-            ${item("/projects", "All projects", ICONS.all, current("projects"))}
+            ${item("/projects", "Projects", ICONS.all, current("projects"))}
+            ${item("/creators", "Creators", ICONS.creators, current("creators"))}
           </ul>
           <div data-auth="in" hidden>
             <p class="side-label" id="side-you">You</p>
@@ -71,6 +72,7 @@
       <nav class="tabbar" aria-label="Quick links">
         <a href="/shop"${current("shop")}>${ICONS.store}<span>Store</span></a>
         <a href="/projects"${current("projects")}>${ICONS.all}<span>Projects</span></a>
+        <a href="/community"${current("community")}>${ICONS.community}<span>Community</span></a>
         <a href="/library" data-auth="in" hidden${current("library")}>${ICONS.stacc}<span>Your Stacc</span></a>
         <a href="/login" data-auth="out"${current("login")}>${ICONS.account}<span>Log in</span></a>
         <button type="button" data-tab-menu aria-controls="side" aria-expanded="false">${ICONS.settings}<span>Menu</span></button>
@@ -149,7 +151,7 @@
           <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
           ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
-        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/explore", "Releases, news and shows"], ["/about", "About"], ["/community", "Community"], ["/studio", "Studio"]])}
+        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/creators", "Creators"], ["/explore", "Releases"], ["/events", "Events"], ["/about", "About"], ["/community", "Community"], ["/studio", "Studio"]])}
         ${col("Help", [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/security", "Security"]])}
         ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/copyright", "Copyright"], ["/community-rules", "Community rules"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>

@@ -1,11 +1,13 @@
 // Settings › Orders: every order with its status, items and total (/api/orders), a way back into a pending checkout,
-// and the way to Your Stacc. Draws into #settings-app when js/settings.js opens this section. Needs js/util.js.
+// and the way to Your Stacc. Draws into #settings-app when js/settings.js opens this section. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, cents, fmtDate, api, loginPath } = window.GS;
+  const { $, escapeHTML, cents, fmtDate, api, loginPath, skeleton: sk } = window.GS;
   const root = $('#settings-app[data-section="orders"]');
   if (!root) return;
+  // A request button: GS.skeleton's spinner when it's loaded, otherwise just disabled while the request runs.
+  const busy = (btn, on) => (sk ? sk.busy(btn, on) : (btn.disabled = on));
 
   const day = (iso) => fmtDate(iso.slice(0, 10));
   const short = (id) => id.slice(-6).toUpperCase();
@@ -68,7 +70,8 @@
   }
 
   addEventListener("gs:settings", () => {
-    root.innerHTML = `<section class="panel wide appear" aria-labelledby="orders-title"><h2 id="orders-title">Orders</h2><p class="msg pending">Loading your orders…</p></section>`;
+    root.innerHTML = `<section class="panel wide appear" aria-labelledby="orders-title"><h2 id="orders-title">Orders</h2>${sk ? "<div data-wait></div>" : '<p class="msg pending">Loading your orders…</p>'}</section>`;
+    if (sk) sk.show($("[data-wait]", root), "row", 3);
     draw();
   }, { once: true });
 
@@ -76,9 +79,9 @@
     const btn = ev.target.closest("[data-refund]");
     if (!btn || btn.disabled) return;
     if (!confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
-    btn.disabled = true;
+    busy(btn, true);
     const res = await api(`/api/orders/${encodeURIComponent(btn.dataset.refund)}/refund`, { method: "POST", body: {} });
-    if (!res.ok) { btn.disabled = false; return draw(res.error.message); }
+    if (!res.ok) { busy(btn, false); return draw(res.error.message); }
     draw("Refunded. The money usually shows on your statement within 5 to 10 days.");
   });
 })();

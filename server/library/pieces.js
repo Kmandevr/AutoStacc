@@ -1,20 +1,23 @@
 // The community library's pieces (owner, 2026-10-15; docs/builder.md, phase 8): elements, sections and whole-site
 // templates that trusted creators share, free or for sale. A piece is a fragment of a site document, checked like any
-// document (sites/document.js) and stripped of what belongs to its creator alone (their products, projects and audio
-// players); its images and fonts must be the creator's own files and stay theirs, counted against their storage only.
+// document (sites/document.js) and stripped of what belongs to its creator alone (their products, projects, releases,
+// events and audio players); its images and fonts must be the creator's own files and stay theirs, counted against
+// their storage only.
 // Installing copies the fragment into the installer's draft (the editor gives it new ids) and lets their sites show the
 // piece's files. A paid piece is a store product of type "template"; owning it is what lets someone install it.
 import { all, first, run, newId, now, parseJson } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { cleanDocument } from "../sites/document.js";
 import { ownImages, imageSrc } from "../sites/images.js";
+import { productPath } from "../catalog/products.js";
 
 export const KINDS = ["element", "section", "template"];
 export const MAX_PIECE_BYTES = 100 * 1024;
-// Elements that point at their creator's own products or projects: a buyer's site couldn't show them.
-const PERSONAL = new Set(["audio", "follow"]);
-
-const strip = (section) => ({ ...section, elements: section.elements.filter((e) => !PERSONAL.has(e.type)).map((e) => (e.type === "products" ? { ...e, ids: [] } : e)) });
+// Elements that point at their creator's own products or projects: a buyer's site couldn't show them. Products lose
+// their ids and an events list its project (its typed-in dates stay).
+const PERSONAL = new Set(["audio", "follow", "releases"]);
+const OWN = { products: (e) => ({ ...e, ids: [] }), events: (e) => ({ ...e, project: "" }) };
+const strip = (section) => ({ ...section, elements: section.elements.filter((e) => !PERSONAL.has(e.type)).map((e) => (OWN[e.type] ? OWN[e.type](e) : e)) });
 
 // A checked fragment and the files it uses: { fragment, assets: [ids] }. Throws a 400 naming the problem.
 export function cleanFragment(kind, raw) {
@@ -41,7 +44,7 @@ export function cleanFragment(kind, raw) {
 
 const publicPiece = (p, extra = {}) => ({
   id: p.id, kind: p.kind, title: p.title, description: p.description, priceCents: p.price_cents, productId: p.product_id,
-  productPath: p.product_id ? `/product?p=${p.product_id}` : null, installs: p.installs, status: p.status, createdAt: p.created_at,
+  productPath: p.product_id ? productPath({ id: p.product_id }) : null, installs: p.installs, status: p.status, createdAt: p.created_at,
   creator: { id: p.creator_id, name: p.creator_name, path: `/${p.creator_slug}` }, ...extra
 });
 

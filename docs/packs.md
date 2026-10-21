@@ -2,7 +2,7 @@
 title: Pack Builder and processing engine
 summary: BUILT (Phases 0–9 and the Pac editor; Phase 10 optional). Approved plan and status of the Pack Builder, the Pac editor, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
 covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, db/migrations/0023_pac_editor.sql, js/pac-*.js, js/pack-*.js, js/packs-*.js, js/admin-packs*.js, js/studio-packs.js, js/zip-make.js, js/zip-thin.js, js/library-bundle.js, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Pack Builder and processing engine
@@ -51,6 +51,8 @@ updated: 2026-10-20
 > Main branch unchanged since rev. 3 (f2e0ae3) [V].
 
 Labels: **[V]** verified in the repo or in Cloudflare's docs this session · **[R]** recommendation · **[A]** assumption, checked in Phase 0 · **[O]** open (section H).
+
+The Control Center's review queue (`js/admin-packs-queue.js`) shows placeholder rows on its first load (`GS.skeleton`, 2026-10-21).
 
 ## Pac editor (built 2026-10-15)
 
@@ -352,7 +354,7 @@ Migration db/migrations/0014_packs.sql (forward-only).
 
 | Table / change | Key columns | Notes |
 | --- | --- | --- |
-| `stacclets`, `pacs` | id, project_id/stacclet_id, title, description, draft, source; `pacs.live_version_id`, `draft_version_id` | Synced from `data/` by `scripts/lib/platform-catalog.js` (`catalog`), plus Studio-made ones |
+| `stacclets`, `pacs` | id, project_id/stacclet_id, title, description, draft, source; `pacs.live_version_id`, `draft_version_id` | Studio-made only since 2026-10-21 (the code-defined ones in `data/` were retired, #176; older `catalog` rows stay as history) |
 | `pac_versions` | id, pac_id, number, origin (zip\|files\|revision\|import), base_version_id, status, idempotency_key UNIQUE, stats JSON, created_by, reviewed_by, review_note, published_at | Status: draft → uploading → processing → ready → (in_review) → published → superseded; or failed / discarded. CAS transitions |
 | `uploads` | id, version_id, kind (zip\|file), r2_key (`incoming/…`), upload_id, size, parts JSON, status | Incoming originals or ZIP before processing; deleted after publish or discard |
 | `processing_jobs` | see B | Owned by the engine Worker (status) and server/packs (create/import) |
@@ -437,7 +439,7 @@ Facts can't be overridden; disagreements are flagged. Moves and renames never ch
 
 **Smallest end-to-end slice = Phases 0–3:**
 
-1. Admin uploads a ZIP for a first-party product.
+1. A creator (AutoStacc included, in the Studio) or an admin uploads a ZIP for a product.
 2. The Container stores byte-exact originals with facts.
 3. Admin publishes.
 4. The library shows folders.
@@ -630,8 +632,8 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 3. **Cheap work stays off the container:** downloads, bundles, edits, search and resolution run in Pages, which costs almost nothing.
 4. **Global storage budget:** creators' quotas (500 MB each) are promises against a shared 10 GB.
    - Admins see total use vs 10 GB.
-   - New creator uploads are refused, with a clear message, once storing them would pass a configurable cap (default 9 GB total), until the owner raises it. Raising it costs $0.015 per GB-month.
-   - This connects to the planned creator-paid storage.
+   - New creator uploads are refused, with a clear message, once storing them would pass the cap: a configurable base (default 9 GB total) plus the paid limits creators hold. Raising the base costs $0.015 per GB-month.
+   - Creator-paid storage is built: each active paid plan raises the cap by its limit above that creator's free storage ([creators](creators.md#paid-storage-built-2026-10-16-off), #142).
 5. **App-level budget guard** (server/usage/, new small module, since Cloudflare has no hard spending cap):
    - Keeps monthly meters in D1: container seconds × instance size (from job start/stop), R2 bytes stored, Class A operations.
    - At 80% of any allowance: admin alert, and the optional analysis stage is skipped (suggestions only from filenames and tags).
@@ -642,7 +644,7 @@ The admin can mark a creator "always hold" (per-creator setting). Trusted creato
 > - **80%** of any allowance: one admin alert a month per meter and level, and jobs skip the optional audio analysis.
 > - **95%**: a new version waits (job `queued`, version noted `waiting_for_allowance`, shown as "checking starts on the 1st") and can be discarded. The daily sweep sends waiting jobs three at a time, oldest first, once the allowance allows (a new month, or the owner's override); a creator's look sends theirs only when it's first in line. A job's time-out counts from when it's sent (`processing_jobs.sent_at`, migration 0021). Soft: two requests at once can both see 94% and both go ahead.
 > - **Override:** "Allow spending this month" in the Control Center (Usage and storage; setting `usage_override`, audited).
-> - **Storage cap:** creators' uploads stop once AutoStacc would store more than the cap (setting `storage_cap_gb`, default 9 GB of the free 10 GB, set in the same place): checked in the same atomic insert as each creator's quota for a pack archive and a single file, and at import for the unpacked size. AutoStacc's own uploads aren't held. `409 storage_full`.
+> - **Storage cap:** creators' uploads stop once AutoStacc would store more than the cap. The cap is the owner's base (setting `storage_cap_gb`, default 9 GB of the free 10 GB, set in the same place) plus the paid limits creators hold: each active paid plan adds its limit above that creator's free storage (`capParts` in `usage.js`, `paidCapBytes` in `storage.js`, #142), so paying creators never hit the site-wide wall. The cap is checked in the same atomic insert as each creator's quota for a pack archive and a single file, and at import for the unpacked size. AutoStacc's own uploads aren't held. `409 storage_full`.
 > - **Holding room:** an archive upload with no part for 24 hours is dropped by the sweep (a reservation counts at its full size), and a removed single file's bytes are deleted a day after it's removed, counting against its creator's quota until then (`server/files/retention.js`); so neither abandoned reservations nor deleting and uploading again can fill the cap. Storage pauses processing only past the larger of the free 10 GB and the owner's cap (storage the owner chose to pay for). A waiting job whose version ended is cancelled and never blocks the line.
 > - **Older files' checksums** (the plan's "legacy import"): the daily sweep reads up to 512 MB a day of delivered files that aren't stored originals and records their SHA-256 and CRC-32 in `product_files.meta` (`server/files/legacy.js`, streamed), after which they join ZIP downloads; a missing or wrong-sized object is marked and the admins told. They aren't turned into stored originals: their storage and deletion rules stay as they were. Done in the store, not the Container: it's a hash, not a parse, and costs no Container time.
 > - Not built: Cloudflare's own billing notification (an owner step in the Cloudflare dashboard).
@@ -688,7 +690,7 @@ The vertical slice (0–3) is the first point of real value.
 | Risk | Mitigation |
 | --- | --- |
 | Containers' maturity/GA and cold starts [A] | Phase 0 gate; the engine sits behind `engine-client.js` + contract, so the runner can be swapped |
-| Container/R2 cost beyond the $5 plan | `basic` instance, one job at a time, sleep after 30 s; dedup; analysis skipped near the cap; server/usage/ budget guard (80% alert, 95% pause); global storage cap 9 GB of the 10 GB free R2; cost per GB measured in Phase 0 |
+| Container/R2 cost beyond the $5 plan | `basic` instance, one job at a time, sleep after 30 s; dedup; analysis skipped near the cap; server/usage/ budget guard (80% alert, 95% pause); global storage cap: a 9 GB base of the 10 GB free R2 plus creators' paid limits; cost per GB measured in Phase 0 |
 | `basic` instance too slow for big packs | Phase 0 benchmark; switch to standard-1 with one config line (fewer free hours: ~6/month) |
 | WASM speed and memory differ between browsers | Engine works in bounded chunks (4 MiB) per Web Worker; worker count adapts; whole-ZIP upload fallback; Phase 0 benchmarks three browsers |
 | Browser and Container results disagree | The Container's result always wins; a mismatch is logged with both engine versions and covered by a parity test on the conformance fixtures (WASM vs native) |

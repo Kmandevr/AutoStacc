@@ -82,7 +82,7 @@
 .chip-clear { min-height: 34px; padding: 4px 6px; background: none; border: 0; font: inherit; font-size: .85rem; color: var(--link); text-decoration: underline; cursor: pointer; }
 .browse-results-head { margin: 12px 0 14px; font-size: 1.2rem; }
 .browse-results-head:focus { outline: none; }
-.browse-grid[aria-busy="true"] { opacity: .55; transition: opacity .15s; }
+.browse-grid[aria-busy="true"]:not(:has(.sk)) { opacity: .55; transition: opacity .15s; }
 .browse-empty { display: grid; justify-items: start; gap: 12px; grid-column: 1 / -1; padding: 28px; border: 1px dashed var(--line); border-radius: var(--radius); font-family: var(--font); }
 .browse-empty p { margin: 0; color: var(--text); }
 .browse-relax { display: flex; flex-wrap: wrap; gap: 8px; }

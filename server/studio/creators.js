@@ -1,27 +1,44 @@
 // Studio API, creators and projects: any account with a confirmed email can claim a creator name (free, within
 // LIMITS) and make projects under it. Names are unique (creators across AutoStacc, projects within their creator,
 // ignoring case); renames keep the old address redirecting and the old name held. Only the account's own creators
-// answer; anyone else's look like nothing there.
+// answer; anyone else's look like nothing there. First-party creators (owner, 2026-10-21) are listed for their members,
+// limited to products and content (their pages are hand-written: no renames, deletes, new projects, builder or
+// profile site); their owner is the verified account the FIRST_PARTY_OWNERS secret names (#172).
 import { json, readJson, str, fail } from "../lib/http.js";
 import { isOpen } from "../settings/settings.js";
 import { requireUser } from "../auth/session.js";
+import { audit } from "../audit/log.js";
 import { limit } from "../lib/ratelimit.js";
 import { LIMITS, quotaOf } from "../creators/policy.js";
 import { rolesFor, capabilitiesOf } from "../creators/roles.js";
-import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, updateCreator, publicCreator, publicProject } from "../creators/creators.js";
+import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, updateCreator, publicCreator, publicProject, assignFirstPartyOwner } from "../creators/creators.js";
 import { requireProject, createProject, updateProject, deleteProject } from "../creators/projects.js";
 import { republishCreator } from "../sites/publish.js";
 import { storageUsed } from "../creators/storage.js";
 
 const name = (v, field = "name") => str(v, field, { max: 60 });
 
+// What a member of a first-party creator may do here: its products and its projects' content only (the server refuses
+// the rest for catalog creators anyway; this keeps the browser from offering it).
+const FIRST_PARTY_CAPABILITIES = ["site.edit", "site.publish", "products"];
+const capabilitiesIn = (c) => capabilitiesOf(c.role).filter((cap) => c.source === "studio" || FIRST_PARTY_CAPABILITIES.includes(cap));
+
+// The account FIRST_PARTY_OWNERS names for a first-party creator becomes its owner when it opens the Studio: only once
+// its email is confirmed, never while it is being impersonated (the isAdmin rule), and each change is audited.
+async function ensureFirstPartyOwner(app, user) {
+  const ids = !user.impersonated && user.emailVerified && app.config.firstPartyOwners.get(String(user.email).toLowerCase());
+  if (!ids) return;
+  for (const id of await assignFirstPartyOwner(app.db, ids, user.id)) await audit(app, "creator.owner_assigned", { targetType: "creator", targetId: id });
+}
+
 async function overview(app) {
   const user = await requireUser(app);
+  await ensureFirstPartyOwner(app, user);
   const creators = await creatorsOfUser(app.db, user.id);
-  const out = await Promise.all(creators.filter((c) => c.source === "studio").map(async (c) => {
+  const out = await Promise.all(creators.filter((c) => c.source === "studio" || c.source === "catalog").map(async (c) => {
     const [projects, used] = await Promise.all([projectsOf(app.db, c.id), storageUsed(app.db, c.id)]);
-    return { ...publicCreator(c), role: c.role, capabilities: capabilitiesOf(c.role), path: `/${c.slug}`, storage: { usedBytes: used, quotaBytes: quotaOf(c) },
-      projects: projects.map((p) => ({ ...publicProject(p), path: `/${c.slug}/${p.slug}` })) };
+    return { ...publicCreator(c), firstParty: c.source === "catalog", role: c.role, capabilities: capabilitiesIn(c), path: `/${c.slug}`,
+      storage: { usedBytes: used, quotaBytes: quotaOf(c) }, projects: projects.map((p) => ({ ...publicProject(p), path: `/${c.slug}/${p.slug}` })) };
   }));
   return json({ creators: out, limits: LIMITS });
 }

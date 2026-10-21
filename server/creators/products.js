@@ -1,11 +1,11 @@
 // Products a creator makes in the Studio (D1 products with source 'studio', one per row, under one of the creator's
-// projects): checking what they type, creating, changing and removing them, and the access check for an account that may
+// projects, first-party creators' included): checking what they type, creating, changing and removing them, and the access check for an account that may
 // manage one. Price, availability and ownership stay the store's (server/catalog, server/cart): this only writes the rows.
 // A product goes on sale (published) only when it passes the readiness check (server/creators/readiness.js), and every
 // change is written to its release history (server/creators/product-history.js).
 import { all, first, run, randomToken, now, parseJson } from "../lib/db.js";
 import { fail, str } from "../lib/http.js";
-import { LIMITS, SELLING } from "./policy.js";
+import { LIMITS, SELLING, limitOf } from "./policy.js";
 import { requireProject } from "./projects.js";
 import { getProject } from "./creators.js";
 import { productPath } from "../catalog/products.js";
@@ -73,13 +73,13 @@ export function cleanProductInput(body, { requireAll = false } = {}) {
   return out;
 }
 
-// A product of a Studio project that this account may change (by default, a member who may run products: roles.js).
-// Anything else looks like nothing there.
+// A Studio product this account may change (by default, a member who may run products: roles.js), under a Studio
+// project or a first-party one (their products are made in the Studio too). Anything else looks like nothing there.
 export async function requireOwnProduct(db, productId, user, roles = rolesFor("products")) {
   const product = typeof productId === "string" ? await first(db, "SELECT * FROM products WHERE id = ? AND source = 'studio'", productId) : null;
   const project = product && product.project_id ? await getProject(db, product.project_id) : null;
   if (!project) fail(404, "not_found", "Nothing here.");
-  const { creator, role } = await requireProject(db, project.id, user, roles);
+  const { creator, role } = await requireProject(db, project.id, user, roles, { allowCatalog: true });
   return { product, project, creator, role };
 }
 
@@ -133,7 +133,7 @@ async function saveDetails(db, product, details, { project, creator }) {
   return first(db, "SELECT * FROM products WHERE id = ?", product.id);
 }
 
-// A new draft. The limit is checked inside the insert, so parallel requests can't each add one more.
+// A new draft. The limit (none for a first-party creator) is checked inside the insert, so parallel requests can't each add one more.
 export async function createProduct(db, { creator, project, user, input }) {
   const details = cleanDetails(input.type, input);
   const id = await freshId(db, creator, input.title);
@@ -144,7 +144,7 @@ export async function createProduct(db, { creator, project, user, input }) {
      SELECT ?, ?, ?, ?, ?, 'USD', ?, ?, ?, 0, 0, 0, 1, ?, '[]', 'studio', ?, ?, ?
      WHERE (SELECT COUNT(*) FROM products p JOIN projects j ON j.id = p.project_id WHERE j.creator_id = ? AND p.source = 'studio' AND p.deleted_at IS NULL) < ?`,
     id, input.title, input.description || "", input.type, input.priceCents, art, JSON.stringify(input.tags || []), JSON.stringify(input.includes ? { includes: input.includes } : {}),
-    project.id, user.id, t, t, creator.id, LIMITS.productsPerCreator);
+    project.id, user.id, t, t, creator.id, limitOf(creator, "productsPerCreator"));
   if (!res.meta.changes) fail(409, "limit_reached", `A creator can have up to ${LIMITS.productsPerCreator} products.`);
   await recordEvent(db, { productId: id, kind: "created", actorId: user ? user.id : null, detail: { priceCents: input.priceCents } });
   return saveDetails(db, await first(db, "SELECT * FROM products WHERE id = ?", id), details, { project, creator });

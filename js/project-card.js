@@ -1,6 +1,6 @@
 // Project card template (GS.projectCard) for the projects browser (js/projects-browse.js) and the home page's rows: a
 // project as GET /api/projects/browse describes it: image or a generated tile, name, who runs it, "Unverified creator"
-// until AutoStacc trusts them, tagline, genres, what it makes, how recently it was active, its next show, and a link to
+// until AutoStacc trusts them, tagline, genres, what it makes, how recently it was active, its next event, and a link to
 // its items in the store (never a price or a buy button); `why` says why it was suggested. js/follow.js fills the follow slot. Needs js/util.js and
 // data/product-types.js.
 (function () {
@@ -23,11 +23,11 @@
     if (d < 365) return `${Math.round(d / 30)} months ago`;
     return `${Math.round(d / 365)} year${d < 730 ? "" : "s"} ago`;
   }
-  const showDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const eventDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
   function projectCard(p, { level = 3, compact = false, why = "" } = {}) {
     const initials = p.name.split(/\s+/).filter((w) => /\w/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
-    const facts = [p.releases ? plural(p.releases, "release") : "", p.items ? plural(p.items, "store item") : "", p.news ? plural(p.news, "news post") : ""].filter(Boolean);
+    const facts = [p.releases ? plural(p.releases, "release") : "", p.items ? plural(p.items, "store item") : ""].filter(Boolean);
     return `<article class="pcard${p.recent ? " is-recent" : ""} ${GS.look(p.id)}" data-project="${e(p.id)}">
       <a class="pcard-art" href="${e(p.path)}" tabindex="-1" aria-hidden="true">
         ${p.image ? `<img src="${e(p.image)}" alt="" width="96" height="96" loading="lazy">` : `<span>${e(initials || "?")}</span>`}
@@ -39,7 +39,7 @@
         ${p.genres.length ? `<ul class="pcard-tags" aria-label="Genres and styles">${p.genres.slice(0, 4).map((g) => `<li>${e(g.label)}</li>`).join("")}</ul>` : ""}
         ${p.makes.length && !compact ? `<p class="pcard-makes"><span class="sr-only">Makes: </span>${[...new Set(p.makes)].map((m) => `<span class="tag">${e(makesLabel(m))}</span>`).join(" ")}</p>` : ""}
         ${why ? `<p class="pcard-why">${e(why)}</p>` : ""}
-        <p class="pcard-activity">${p.nextShow ? `<strong>Show ${e(showDate(p.nextShow))}</strong> · ` : ""}${p.lastActive ? `Active ${e(ago(p.lastActive))}` : "New on AutoStacc"}${facts.length ? ` · ${e(facts.join(" · "))}` : ""}</p>
+        <p class="pcard-activity">${p.nextEvent ? `<strong>Event ${e(eventDate(p.nextEvent))}</strong> · ` : ""}${p.lastActive ? `Active ${e(ago(p.lastActive))}` : "New on AutoStacc"}${facts.length ? ` · ${e(facts.join(" · "))}` : ""}</p>
         <div class="pcard-actions">
           <a class="btn small" href="${e(p.path)}">Visit<span class="sr-only"> ${e(p.name)}</span></a>
           ${p.items ? `<a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.id)}">Store items<span class="sr-only"> from ${e(p.name)}</span></a>` : ""}

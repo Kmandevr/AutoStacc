@@ -1,7 +1,7 @@
 // "You might also like" on a product's page ([data-similar="<product id>"]): products whose kind, contents, formats,
 // genre and style are closest to this one (GET /api/store/similar/:id: no personal data, the same for everyone),
-// varied across creators. Stays hidden when there are none or the store is offline. Needs js/util.js and
-// js/product-card.js.
+// varied across creators. Placeholder cards while loading; hidden when there are none or the store is offline. Needs js/util.js and
+// js/product-card.js (js/skeleton.js optional).
 (function () {
   "use strict";
 
@@ -11,11 +11,13 @@
   if (!root || !GS.productCard) return;
 
   (async () => {
-    // A generated page names the product; the Studio product page (/product?p=<id>) has it in the address.
-    const id = root.dataset.similar || new URLSearchParams(location.search).get("p") || "";
+    // The product's page (/shop/<id>, server/shop/page.js) names the product.
+    const id = root.dataset.similar || "";
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) return;
+    // Placeholder cards in the row's own layout while the store answers (js/skeleton.js, when loaded).
+    if (GS.skeleton) { root.hidden = false; root.innerHTML = `<div class="wrap"><div class="store-row"></div></div>`; GS.skeleton.show(root.querySelector(".store-row"), "card", 3); }
     const res = await api(`/api/store/similar/${encodeURIComponent(id)}`);
-    if (!res.ok || !res.data.products.length) return;
+    if (!res.ok || !res.data.products.length) { root.hidden = true; root.innerHTML = ""; return; }
     root.innerHTML = `<div class="wrap"><div class="store-section-head"><h2 id="similar-head">You might also like</h2>
       <p class="small-print">Close in kind, contents, formats and style</p></div>
       <div class="store-row" aria-labelledby="similar-head">${res.data.products.map((p) => GS.productCard(p, { level: 3, wish: true, buy: false })).join("")}</div></div>`;

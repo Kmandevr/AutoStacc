@@ -3,7 +3,8 @@
 // "what they make", genre and style, recently active and (signed in) followed or not, with counts, removable chips,
 // sort and pages, all answered by GET /api/projects/browse. The address holds the state (/projects?q=&makes=&genre=
 // &style=&active=1&followed=1&sort=&page=). Offline, the page keeps its built list of AutoStacc's projects.
-// Needs js/util.js, js/project-card.js and data/product-types.js; js/follow.js fills the follow controls.
+// Needs js/util.js, js/project-card.js and data/product-types.js; js/skeleton.js draws placeholder cards while it
+// loads; js/follow.js fills the follow controls.
 (function () {
   "use strict";
 
@@ -11,7 +12,7 @@
   const { $, escapeHTML: e, api } = GS;
   const root = $("[data-projects-browse]");
   if (!root || !GS.projectCard) return;
-  const card = GS.projectCard;
+  const card = GS.projectCard, sk = GS.skeleton; // sk: placeholder cards while a search loads (optional)
   const KEYS = ["q", "makes", "genre", "style", "active", "followed", "sort", "page"];
   const SORTS = [["active", "Recently active"], ["name", "Name"], ["newest", "Newest on AutoStacc"], ["items", "Most store items"]];
   const fromAddress = () => {
@@ -46,7 +47,7 @@
         </div>
         <div class="browse-chips" data-chips></div>
         <h2 class="browse-results-head" id="projects-head" tabindex="-1">All projects</h2>
-        <div class="pgrid" aria-labelledby="projects-head" aria-busy="false"></div>
+        <div class="pgrid" aria-labelledby="projects-head"></div>
         <nav class="browse-pages" aria-label="Result pages"></nav>
       </div>
     </div>`;
@@ -92,12 +93,12 @@
     $("[data-sort]", root).value = d.sort;
     $(".browse-count", root).textContent = d.total ? `${d.total} project${d.total === 1 ? "" : "s"}` : "No projects match";
     $("#projects-head", root).textContent = c ? "Results" : "All projects";
+    if (sk) sk.done(grid); else grid.removeAttribute("aria-busy");
     grid.innerHTML = d.projects.length ? d.projects.map((p) => card(p)).join("")
       : `<div class="empty browse-empty"><p><strong>No project matches all of that.</strong> Try removing one filter:</p><div class="browse-relax">${c}</div>
         <button type="button" class="btn ghost" data-clear-all>Clear all filters</button></div>`;
     $(".browse-pages", root).innerHTML = d.pages > 1 ? Array.from({ length: d.pages }, (_, i) => i + 1)
       .map((n) => `<button type="button" data-page="${n}"${n === d.page ? ' aria-current="page"' : ` aria-label="Page ${n}"`}>${n}</button>`).join("") : "";
-    grid.setAttribute("aria-busy", "false");
     const again = id && document.getElementById(id);
     if (again && again !== document.activeElement) again.focus({ preventScroll: true });
     dispatchEvent(new CustomEvent("gs:projects"));
@@ -106,11 +107,12 @@
   async function load() {
     const mine = ++seq;
     input.value = params.get("q") || "";
-    grid.setAttribute("aria-busy", "true");
+    if (sk) sk.show(grid, "card", grid.querySelectorAll(".pcard").length || 6); else grid.setAttribute("aria-busy", "true");
     const res = await api(`/api/projects/browse?${params}`);
     if (mine !== seq) return;
     if (res.ok) return render(res.data);
     if (res.status === 400 && params.toString()) { params = new URLSearchParams(); return go(false); }
+    if (sk) sk.done(grid); else grid.removeAttribute("aria-busy");
     grid.innerHTML = fallback;
     $(".browse-count", root).textContent = "Search and filters are offline right now; here are AutoStacc's own projects.";
   }

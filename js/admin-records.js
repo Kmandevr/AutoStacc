@@ -26,9 +26,11 @@
   const showProduct = (pid) => `<a href="#products" data-show-product="${escapeHTML(pid)}">${escapeHTML(pid)}</a>`;
   async function orderDetail(id) {
     const el = $("#order-detail");
-    el.innerHTML = `<p class="msg pending" role="status">Loading ${escapeHTML(id)}…</p>`;
+    const sk = window.GS.skeleton; // a placeholder panel while the order loads (js/skeleton.js)
+    if (sk) sk.show(el, "panel", 1); else el.innerHTML = `<p class="msg pending" role="status">Loading ${escapeHTML(id)}…</p>`;
     el.scrollIntoView({ block: "nearest" });
     const res = await api(`/api/admin/orders/${encodeURIComponent(id)}`);
+    if (sk) sk.done(el);
     if (!res.ok) return fail(el, res);
     const { order: o, events, entitlements, emails } = res.data;
     el.innerHTML = `<div class="panel wide"><h2 tabindex="-1" data-order-heading>${escapeHTML(o.id)}</h2>

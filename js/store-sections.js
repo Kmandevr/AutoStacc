@@ -3,9 +3,8 @@
 // /api/store/recommendations with this browser's own history (js/taste.js profile; the server uses it and forgets it).
 // Each product appears once across sections. Visitors can pick genres and kinds they make ("Tune your picks"), say
 // "Not interested", forget their history or turn personal picks off. Saved products show as "Your wishlist" (live data
-// from /api/products/state), and AutoStacc's placeholder products as "Coming soon". Hidden while the store browser
-// is narrowed by a search or filter (gs:store-view). Elsewhere (the home page) data-sections="2" keeps the first sections
-// only and data-brief leaves out the wishlist and "Coming soon" rows. Needs js/util.js, js/product-card.js, js/taste.js, data/vocabulary.js.
+// from /api/products/state). Hidden while the store browser is narrowed by a search or filter (gs:store-view).
+// Elsewhere (the home page) data-sections="2" keeps the first sections only and data-brief leaves out the wishlist. Needs js/util.js, js/product-card.js, js/taste.js, data/vocabulary.js (js/skeleton.js optional).
 (function () {
   "use strict";
 
@@ -57,16 +56,15 @@
 
   function draw() { keepFocus(paint); }
   function paint() {
+    root.removeAttribute("aria-busy");
     if (hidden) { root.hidden = true; return; }
     root.hidden = false;
     const brief = "brief" in root.dataset;
     const secs = data ? data.sections.slice(0, Number(root.dataset.sections) || undefined) : [];
     const personal = new Set(["for-you", "your-genres", "similar", "different"]);
-    const soon = (window.PRODUCTS || []).filter((p) => p.draft);
     root.innerHTML = controls()
       + secs.map((s) => row(s.id, s.title, s.reason, s.products, { dismissable: personal.has(s.id) && taste.enabled() })).join("")
-      + (wished.length && !brief ? row("wishlist", "Your wishlist", "Saved for later", wished) : "")
-      + (soon.length && !brief ? row("soon", "Coming soon", "Announced by AutoStacc's projects; not on sale yet", soon) : "");
+      + (wished.length && !brief ? row("wishlist", "Your wishlist", "Saved for later", wished) : "");
     const alt = root.dataset.fallback && document.querySelector(root.dataset.fallback);
     if (alt) alt.hidden = secs.length > 0; // data-fallback: what to show instead while the store has no picks
     dispatchEvent(new CustomEvent("gs:cards"));
@@ -85,11 +83,19 @@
         taste.record("impression", { id: en.target.dataset.product });
       }
     }, { threshold: 0.5 });
-    root.querySelectorAll(".store-section:not([data-section=wishlist]):not([data-section=soon]) .card[data-product]").forEach((c) => observer.observe(c));
+    root.querySelectorAll(".store-section:not([data-section=wishlist]) .card[data-product]").forEach((c) => observer.observe(c));
+  }
+
+  // First load: one placeholder section in the row's own layout (js/skeleton.js, when loaded).
+  function placeholder(sk) {
+    root.setAttribute("aria-busy", "true");
+    root.innerHTML = `<section class="store-section" aria-hidden="true"><div class="store-section-head">${sk.html("line", 1)}</div>
+      <div class="store-row">${sk.html("card", 3)}</div></section><p class="sr-only">Loading…</p>`;
   }
 
   async function load() {
     const mine = ++seq;
+    if (!data && !hidden && GS.skeleton) placeholder(GS.skeleton);
     const res = await api("/api/store/recommendations", { method: "POST", body: taste.profile() });
     if (mine !== seq) return;
     data = res.ok ? res.data : { sections: [], personal: false };

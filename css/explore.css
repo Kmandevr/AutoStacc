@@ -1,5 +1,5 @@
-/* /explore (js/explore-browse.js): view tabs and the release, news and show rows. Search, filters, chips and pages
-   come from css/store.css. */
+/* /explore (js/explore-browse.js): view tabs, the release rows and the events view's link to the /events calendar.
+   Event cards come from css/events.css; search, filters, chips and pages from css/store.css. */
 .explore-views { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 18px; padding-bottom: 4px; }
 .explore-views button { flex: none; min-height: 44px; padding: 8px 18px; font: inherit; font-weight: 600; color: var(--text); background: var(--panel);
   border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
@@ -19,14 +19,12 @@
 .ex-art img { width: 100%; height: 100%; object-fit: cover; }
 .ex-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; color: var(--muted); font-size: .88rem; }
 .ex-text { margin: 8px 0 0; color: var(--text); font-size: .94rem; }
-.ex-news, .ex-show { grid-template-columns: minmax(0, 1fr); }
-.ex-show { grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; }
-.ex-date { margin: 0; font-family: var(--mono); font-weight: 700; text-align: center; }
+.ex-calendar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 14px; padding: 12px 14px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); border-left: 4px solid var(--accent); }
+.ex-calendar[hidden] { display: none; }
+.ex-calendar .btn.small { min-height: 44px; }
 
 @media (max-width: 600px) {
   .ex-item { grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
   .ex-art { width: 72px; }
-  .ex-news { grid-template-columns: minmax(0, 1fr); }
-  .ex-show { grid-template-columns: 60px minmax(0, 1fr); }
-  .ex-show .btn { grid-column: 1 / -1; }
 }

@@ -12,7 +12,7 @@ window.LEGAL = [
     title: "Privacy policy",
     description: "What AutoStacc collects when you browse, buy and download, why, how long it's kept, who else sees it, and how to download or delete your data.",
     summary: "What AutoStacc collects, why, how long it keeps it, and how you can download or delete it. Written to match what the site actually does.",
-    updated: "2026-10-20",
+    updated: "2026-10-21",
     review: "",
     sections: [
       { id: "who", heading: "Who runs AutoStacc", body: [
@@ -21,7 +21,7 @@ window.LEGAL = [
       { id: "short", heading: "The short version", body: [
         { list: [
           "AutoStacc keeps what it needs to run your account, sell you things and deliver your files. Nothing is sold to anyone.",
-          "Card details never reach AutoStacc: payments happen on Stripe's own page.",
+          "Card details never reach AutoStacc: payments happen on Stripe's own page, and a card a creator saves for paid storage is kept by Stripe.",
           "There are no advertising or tracking cookies. Visits are counted as anonymous daily totals.",
           "The store's picks for you come from history kept in your own browser; AutoStacc uses it for that one answer and keeps none of it.",
           "You can [download everything held about you](/settings/privacy) or [delete your account](/settings/privacy) at any time."
@@ -37,13 +37,14 @@ window.LEGAL = [
         "For every order: the email it was placed with, what was in it, the prices charged, any promo code, its status (paid, refunded and so on) and when. Stripe's reference numbers for the payment are kept so refunds and disputes can be matched to the order.",
         "What you own is recorded separately, so your library knows which files you can download.",
         "If you sell in the Studio: your products, what each sale earned you after AutoStacc's fee and refunds (never who bought), and, once you set up payouts, the reference of your Stripe payout account, the country of its bank account and whether it is ready (Stripe, not AutoStacc, collects and keeps your ID, tax and bank details; see [Stripe's privacy policy](https://stripe.com/privacy)). Each payout is recorded with its amount and Stripe's transfer reference. If payouts are still sent by hand, the payment details you type in (for example a PayPal address) are kept with the payout record, visible only to you and AutoStacc.",
-        "If you make a creator space in the Studio: its name and address, the profile and pages you design there and the images and fonts you upload for them (published pages are public), and who is on its team with which role. If someone invites you to a team, AutoStacc keeps your email address with the invitation until you accept it, it is withdrawn, or it expires after 7 days. Team members see each other's names; the owner and admins also see members' email addresses. Pieces you share to the community library are public to everyone using the Studio, with your creator name; AutoStacc records which creators install them. If you report a piece, AutoStacc keeps your report and who sent it, and doesn't show it to the creator. The last 20 published versions of each page are kept, with when they were published and whether by you, a member of your creator space or a schedule you set, so you can restore one; a file a published page or a kept version still uses stays until nothing does. For each of your products the Studio keeps a history of changes (what changed, such as the price or putting it on sale, when, and which member of your creator space did it), visible to your creator space and AutoStacc. Files you upload to sell are checked automatically by AutoStacc's own systems (that each is what its name says, undamaged and safe; for audio, its tempo and key are estimated and a waveform drawn), and a checksum of each is kept so it can be delivered byte for byte. Nothing you upload is sent to anyone else for this. Files you remove are deleted from storage a day later.",
-        "Storage: what your creator space stores is measured once a day (how much in all, split into paid files, Pac files, uploads in progress, preview clips and site files; a file several products or versions use counts once). If you take paid storage, AutoStacc keeps the limit you chose, each day's measurement, the most you chose to spend a month, a monthly statement worked out from those days (what was stored above your free storage, the rate, the amount, how much came from your earnings), whether and when it was paid with Stripe's reference for the payment, and a history of every change (who in your creator space or at AutoStacc made it, when). Only your creator space's owner and AutoStacc see the statements and history; your team sees the storage figures. They are kept as billing records, like orders.",
+        "If you make a creator space in the Studio: its name and address, the profile and pages you design there and the images and fonts you upload for them (published pages are public), and who is on its team with which role. If someone invites you to a team, AutoStacc keeps your email address with the invitation until you accept it, it is withdrawn, or it expires after 7 days. Team members see each other's names; the owner and admins also see members' email addresses. Pieces you share to the community library are public to everyone using the Studio, with your creator name; AutoStacc records which creators install them. If you report a piece, AutoStacc keeps your report and who sent it, and doesn't show it to the creator. The last 20 published versions of each page are kept, with when they were published and whether by you, a member of your creator space or a schedule you set, so you can restore one; a file a published page or a kept version still uses stays until nothing does. Releases and events you add to a project in the Studio (with their tags, and for an event its date, time, place and ticket link) are public once published, under the project's name, shown on the project's pages and the [events calendar](/events), and listed for search engines when AutoStacc trusts your creator space; AutoStacc keeps which member of your creator space added each and when each was last changed. One you delete leaves the site at once and is kept privately as a record. News posts added before news moved to the community aren't shown for now and are kept privately until they become your community's posts. \"Add to calendar\" on an event is a file and a Google Calendar link made the same for everyone, so using it tells AutoStacc nothing; the calendar's Following filter uses the projects you already follow. For each of your products the Studio keeps a history of changes (what changed, such as the price or putting it on sale, when, and which member of your creator space did it), visible to your creator space and AutoStacc. Files you upload to sell are checked automatically by AutoStacc's own systems (that each is what its name says, undamaged and safe; for audio, its tempo and key are estimated and a waveform drawn), and a checksum of each is kept so it can be delivered byte for byte. Nothing you upload is sent to anyone else for this. Files you remove are deleted from storage a day later.",
+        "Storage: what your creator space stores is measured once a day (how much in all, split into paid files, Pac files, uploads in progress, preview clips and site files; a file several products or versions use counts once). If you take paid storage, AutoStacc keeps the limit you chose, each day's measurement, the most you chose to spend a month, a monthly statement worked out from those days (what was stored above your free storage, the rate, the amount, how much came from your earnings), whether and when it was paid with Stripe's reference for the payment, each try at charging a saved card (when, and whether it went through or why the bank said no, never the card itself), and a history of every change (who in your creator space or at AutoStacc made it, when). Only your creator space's owner and AutoStacc see the statements and history; your team sees the storage figures. They are kept as billing records, like orders.",
         "If you review a product you own: your stars, what you wrote, and when. It's shown publicly as \"Verified buyer\", without your name or email, and only while you still own the product (after a refund it's no longer shown). AutoStacc can hide a review that breaks the rules. Your reviews are in your data download and are deleted with your account.",
         "If you buy without an account, the order is tied to your email and a private key kept in a cookie on your device, so you can open your purchases from the receipt link for 30 days."
       ] },
       { id: "payments", heading: "Payments", body: [
-        "Payments are taken by [Stripe](https://stripe.com/privacy) on its own checkout page. Your card number, expiry and security code go to Stripe, never to AutoStacc. For creators' products, Stripe also asks for the address it needs to work out sales tax. Stripe tells AutoStacc whether the payment succeeded, failed or was refunded."
+        "Payments are taken by [Stripe](https://stripe.com/privacy) on its own checkout page. Your card number, expiry and security code go to Stripe, never to AutoStacc. For creators' products, Stripe also asks for the address it needs to work out sales tax. Stripe tells AutoStacc whether the payment succeeded, failed or was refunded.",
+        "Paid storage: if you own a creator space and save a card for its storage statements, you enter the card on Stripe's page and Stripe keeps it. To set you up as a Stripe customer, AutoStacc gives Stripe your email address and your creator space's name. AutoStacc keeps only Stripe's customer reference, the card's brand and its last 4 digits (so the Studio can show which card is saved), and who saved or removed it and when. Each month, whatever your cleared earnings don't cover is charged to that card automatically; Stripe tells AutoStacc whether the charge went through. You can replace or remove the card in the Studio at any time; removing it deletes it from your Stripe customer, and AutoStacc keeps the record that it was removed."
       ] },
       { id: "downloads", heading: "Downloads", body: [
         "Each download link is made for you when you ask for it and stops working after a few minutes. AutoStacc records that a link was made and used (which file, for which purchase, and whether it was allowed), without your IP address."
@@ -53,7 +54,7 @@ window.LEGAL = [
         "\"Bestselling\" and \"bought recently\" come from completed purchases counted together, never from who bought what."
       ] },
       { id: "analytics", heading: "Visit counts", body: [
-        "To know what people look at, the site counts events per day: a page kind or a product, release or news id and a number. No cookie, IP address, account, browser or device is attached to a count, so a count can't be traced back to anyone.",
+        "To know what people look at, the site counts events per day: a page kind or a product or release id and a number. No cookie, IP address, account, browser or device is attached to a count, so a count can't be traced back to anyone.",
         "If your browser sends Global Privacy Control or Do Not Track, nothing is counted at all."
       ] },
       { id: "cookies", heading: "Cookies and storage on your device", body: [
@@ -68,7 +69,7 @@ window.LEGAL = [
         "No advertising, analytics or cross-site tracking cookies are used."
       ] },
       { id: "emails", heading: "Emails", body: [
-        "AutoStacc sends the emails an account and a purchase need: confirming your email, resetting your password, receipts and download links. A record of each (what kind, to whom, when) is kept so a receipt can be resent.",
+        "AutoStacc sends the emails an account and a purchase need: confirming your email, resetting your password, receipts and download links. A record of each (what kind, to whom, when) is kept so a receipt can be resent. A creator space's owner with paid storage also gets its billing emails: each monthly statement, each time a card charge fails (with a link to update the card or pay), when the bank asks you to confirm a payment yourself, and when a statement is overdue.",
         "Anything else (news about releases from projects you follow, AutoStacc news) is only sent if you switch it on under [Settings › Emails](/settings/email), and you can switch it off there at any time.",
         "Project mailing lists: if you sign up on a project's page, AutoStacc emails you a link to confirm. Only once you click it is your address added to that project's list at Brevo, which sends the newsletter; every newsletter has an unsubscribe link. AutoStacc doesn't keep the sign-up itself."
       ] },
@@ -77,7 +78,7 @@ window.LEGAL = [
       ] },
       { id: "others", heading: "Who else is involved", body: [
         { list: [
-          "**Stripe**: payments.",
+          "**Stripe**: payments, and the cards creators save for paid storage.",
           "**Brevo**: sending emails, and keeping the project mailing lists you confirmed and, if you switch on AutoStacc news, the AutoStacc news list.",
           "**Cloudflare**: hosts the site, the database and the files.",
           "**Google Fonts**: the site's fonts load from Google, which sees your IP address when they do.",
@@ -100,13 +101,14 @@ window.LEGAL = [
           "Orders: kept as sales records even after an account is deleted (tax, refunds and disputes need them), but no longer linked to you.",
           "Reviews: until you delete them or your account.",
           "Storage measurements, statements and their history (creators with paid storage): kept as billing records, like orders.",
+          "A saved card: at Stripe until you remove it. AutoStacc keeps the Stripe customer reference, and the card's brand and last 4 digits until you remove or replace it.",
           "Visit counts: kept as anonymous totals.",
           "Project mailing lists: at Brevo until you unsubscribe.",
           "Abuse counters: only the latest count for each IP address and kind of request, deleted within a day of it."
         ] }
       ] },
-      { id: "community", heading: "The community (when it opens)", body: [
-        "The [community](/community) isn't open yet. When it is, and you take part, AutoStacc keeps: the community name you choose and when you confirmed you're 16 or older; what you post (takes and replies, as you wrote them, with earlier versions of edited posts); your boosts and Helpful votes; and the time of your posts, which is used to pace posting and stop spam. Everything you post is public under your community name, never your email. If you report a post, AutoStacc keeps your report (the reason and your note) and who sent it; the space's team sees the report but not who made it. If you appeal a decision, the team sees your appeal and your community name. What a space's team does (hiding, removing, banning, with the reason) is kept in that space's log, which names the team member and the person by community name. Reports and appeals are kept for 12 months, then deleted; deleting your account removes your appeals and your name from your reports.",
+      { id: "community", heading: "The community", body: [
+        "If you take part in the [community](/community), AutoStacc keeps: the community name you choose and when you confirmed you're 16 or older; what you post (takes and replies, as you wrote them, with earlier versions of edited posts); your boosts and Helpful votes; and the time of your posts, which is used to pace posting and stop spam. Everything you post is public under your community name, never your email. If you report a post, AutoStacc keeps your report (the reason and your note) and who sent it; the space's team sees the report but not who made it. If you appeal a decision, the team sees your appeal and your community name. What a space's team does (hiding, removing, banning, with the reason) is kept in that space's log, which names the team member and the person by community name. Reports and appeals are kept for 12 months, then deleted; deleting your account removes your appeals and your name from your reports.",
         "Your posts stay until you delete them. A post you delete, or one a space's team removes, is kept privately for 12 months and then its text is deleted. If you block someone, AutoStacc keeps who you blocked (they aren't notified) until you unblock them. If AutoStacc removes a post of yours for a legal reason or suspends you from the community, it keeps the reason and, for a suspension, until when; a legally removed post is kept privately as the law requires. Deleting your account keeps your posts as \"deleted user\" and erases your name, votes and edit history. Your community data is in your data download."
       ] },
       { id: "copyright-notices", heading: "If you send a copyright notice", body: [
@@ -135,7 +137,7 @@ window.LEGAL = [
     title: "Terms of service",
     description: "The general rules for using AutoStacc: accounts, buying and downloading digital products, licences, acceptable use, and what happens when things go wrong.",
     summary: "The general rules for using AutoStacc, in plain words. What you can buy, what you can do with it, and what AutoStacc promises.",
-    updated: "2026-10-16",
+    updated: "2026-10-21",
     review: "",
     sections: [
       { id: "about", heading: "About these terms", body: [
@@ -167,13 +169,13 @@ window.LEGAL = [
         ] }
       ] },
       { id: "community", heading: "Community and copyright", body: [
-        "The [community rules](/community-rules) apply to the community when it opens. The [copyright policy](/copyright) explains how to report infringement, how to answer a report, and what repeat infringement costs an account."
+        "The [community rules](/community-rules) apply to the community. The [copyright policy](/copyright) explains how to report infringement, how to answer a report, and what repeat infringement costs an account."
       ] },
       { id: "creators", heading: "Artists and creators", body: [
         "Products and pages are made by the projects and creators named on them, who keep the rights in their work. AutoStacc sells and delivers it for them.",
         "If you make a creator space in the Studio, you're responsible for what you publish there and confirm you have the rights to it.",
         "Creators can sell products in the Studio. Sales of creators' products are taken on a separate Stripe account from AutoStacc's own, which is also why a cart holding both is paid in two steps. A sale is held for 14 days (the refund window) before it can be paid out. To be paid you connect a Stripe account; Stripe verifies you and its [connected account terms](https://stripe.com/legal/connect-account) apply to it. AutoStacc sends a payout when you ask and AutoStacc approves it. If a sale is refunded after you were paid for it, that amount is taken from your next sales. Sales tax on creators' products is worked out and collected at checkout by Stripe Tax; creators are responsible for their own income taxes. AutoStacc's fee, if any, is shown in the Studio before you sell.",
-        "Each creator space gets free storage (shown in the Studio). Where AutoStacc offers paid storage, you choose the most you'll spend a month; at the rate shown in the Studio that sets your storage limit, and uploads stop there. You pay only for what you actually store above your free storage, measured once a day; a day without a measurement isn't charged. Statements come after each month and are paid first from your earnings that have cleared the refund hold, then by card through Stripe for the rest; they're due 14 days after they're issued, and amounts under $0.50 are added to the next month's statement. If one isn't paid by then, or its payment is disputed, your paid limit pauses: new uploads stop while you're over your free storage, but nothing you've stored is deleted or hidden and buyers keep their downloads. If you lower your limit below what you store, or cancel, uploads stop and storage above your free storage is still charged until you're back within your limit; delete files or contact AutoStacc for help. You can see every day's measurement behind a statement in the Studio; write to AutoStacc if you think one is wrong.",
+        "Each creator space gets free storage (shown in the Studio). Where AutoStacc offers paid storage, you choose the most you'll spend a month; at the rate shown in the Studio that sets your storage limit, and uploads stop there. You pay only for what you actually store above your free storage, measured once a day; a day without a measurement isn't charged. Statements come after each month and are paid first from your earnings that have cleared the refund hold, then automatically from the card you saved through Stripe for the rest; they're due 14 days after they're issued, and amounts under $0.50 are added to the next month's statement. To take paid storage you save a card on Stripe's page, and you agree that AutoStacc may charge it each month for what your statement says, up to the most you chose. You can replace or remove the card in the Studio at any time. If a charge fails, AutoStacc tries again 3, 7 and 12 days after the statement is issued and emails you each time with a link to update your card or pay. If there's no card, or your bank asks you to confirm the payment yourself, you get an email with a link to a Stripe payment page instead. If a statement isn't paid by its due date, or its payment is disputed, your paid limit pauses: new uploads stop while you're over your free storage, but nothing you've stored is deleted or hidden and buyers keep their downloads. If you lower your limit below what you store, or cancel, uploads stop and storage above your free storage is still charged until you're back within your limit; delete files or contact AutoStacc for help. You can see every day's measurement behind a statement in the Studio; write to AutoStacc if you think one is wrong.",
         "AutoStacc's own storage has a ceiling too. While it's full, new uploads wait for everyone, paid storage included."
       ] },
       { id: "ip", heading: "Rights in the site", body: [
@@ -250,13 +252,10 @@ window.LEGAL = [
     id: "community-rules",
     title: "Community rules",
     description: "The rules for AutoStacc's community: what it's for, the base rules that apply everywhere, how each space can add its own, who moderates, and how reports work.",
-    summary: "AutoStacc's community is opening soon. These are the rules it will open with: a place for music and sound, run by the people in each space, inside a few rules that apply everywhere.",
-    updated: "2026-10-16",
+    summary: "The rules of AutoStacc's community: a place for music and sound, run by the people in each space, inside a few rules that apply everywhere.",
+    updated: "2026-10-21",
     review: "",
     sections: [
-      { id: "status", heading: "Opening soon", body: [
-        "The community isn't open yet. These rules apply from the day it opens, and this page will say so."
-      ] },
       { id: "about", heading: "What it's for", body: [
         "Making, sharing and talking about music and sound: production, sound design, gear and software, the creators and projects on AutoStacc, challenges, and ideas about AutoStacc and its products. It isn't a general social site; chat that has nothing to do with that belongs in a space's off-topic channel, and off-topic spaces and threads can be removed.",
         "Be welcoming. Everyone started somewhere, and basic questions are welcome."

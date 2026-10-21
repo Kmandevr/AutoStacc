@@ -1,6 +1,8 @@
 // Generates everything search engines read from data/: each page's <head> metadata, the trust pages (/privacy, /terms,
-// /refunds, /security, /contact, /help, /license), one page per product (shop/) and
-// per project release and news post (<project address>/music/, <project address>/news/), sitemap.xml, llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
+// /refunds, /security, /contact, /help, /license), creator profiles, sitemap.xml, llms.txt (the site for AI
+// assistants), the list of public URLs, and db/catalog.sql (the store database's copy of creators, projects and polls).
+// Product, release and event pages are Studio content the server renders (server/shop/, server/content/), listed in
+// its own sitemaps; generated copies left in shop/ or a creator's folder are removed as stale.
 // Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
@@ -8,7 +10,6 @@ const path = require("path");
 const { ROOT, loadData, abs, projectPath, projectDir } = require("./lib/data");
 const H = require("./lib/head");
 const P = require("./lib/pages");
-const C = require("./lib/catalog");
 const V = require("../server/discovery/vocabulary.js");
 const PL = require("./lib/platform");
 const { platformSql } = require("./lib/platform-catalog");
@@ -30,7 +31,7 @@ const outputs = new Map(); // file -> content
 // Each writes its own <title> and <meta name="description">, except the home page (from data/site.js) and each
 // project's home, <its folder>.html (from its entry in data/projects.js); everything else in the head block is
 // generated. A page opts out of search with its own <meta name="robots" content="noindex">.
-const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", news: "CollectionPage", projects: "CollectionPage", explore: "CollectionPage", press: "AboutPage", about: "AboutPage" };
+const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", projects: "CollectionPage", creators: "CollectionPage", explore: "CollectionPage", press: "AboutPage", about: "AboutPage" };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const strip = (html) => html.replace(new RegExp(`${H.START.slice(0, 15)}[\\s\\S]*?${H.END}`), "");
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
@@ -41,6 +42,10 @@ const creatorDirs = data.creators.map((c) => c.id);
 const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...creatorDirs.flatMap(htmlUnder)].filter((f) => !read(f).includes(P.GENERATED))
   .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
 const pages = []; // every page with its metadata, for the sitemap
+// First-party creators with a published project, for /creators' ItemList and its built list (js/creators-browse.js
+// replaces it with every visible creator, Studio ones included, from GET /api/creators).
+const listedCreators = data.creators.filter((c) => !c.draft && data.projects.some((x) => !x.draft && x.creator === c.id));
+const creatorLinks = listedCreators.map((c) => `<li class="ccard-static"><h3><a href="/${H.esc(c.id)}">${H.esc(c.name)}</a></h3>${c.summary ? `<p>${H.esc(c.summary)}</p>` : ""}</li>`).join("");
 const projectById = new Map(data.projects.map((x) => [x.id, x]));
 
 for (const file of handPages) {
@@ -74,12 +79,10 @@ for (const file of handPages) {
     const crumbs = project
       ? [["Home", "/"], ...P.ownerCrumb(data, project), ...(projectHome ? [] : [[project.name, projectPath(project.id)]]), [projectHome ? project.name : name, p]]
       : [["Home", "/"], [name, p]];
-    const ofProject = (x) => !project || x.project === project.id;
+    // An ItemList of what a list page shows, when data/ holds it (products, releases and events are in the store database).
     const lists = {
-      music: data.releases.filter(ofProject).map((r) => [r.title, projectPath(r.project, "music", r.id)]),
-      shop: data.products.filter((x) => !x.draft).map((x) => [x.title, "/shop/" + x.id]),
-      news: [...data.news].filter(ofProject).sort((a, b) => b.date.localeCompare(a.date)).map((n) => [n.title, projectPath(n.project, "news", n.id)]),
-      projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)])
+      projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)]),
+      creators: listedCreators.map((c) => [c.name, "/" + c.id])
     }[key];
     const extra = { breadcrumb: H.breadcrumbs(SITE, crumbs) };
     if (lists && lists.length) extra.mainEntity = H.itemList(SITE, lists);
@@ -94,15 +97,13 @@ for (const file of handPages) {
   // project pages are linked in the HTML itself (js/projects.js upgrades the list to cards with follow controls).
   const projectLinks = data.projects.filter((x) => !x.draft).map(projectCard).join("");
   outputs.set(file, html.replace(new RegExp(`${H.START.slice(0, 15)}[^\\n]*\\n[\\s\\S]*?${H.END}`), () => block)
-    .replace(/(<!-- projects:start[^>]*-->)[\s\S]*?(<!-- projects:end -->)/g, (m, a, b) => `${a}${projectLinks}${b}`));
+    .replace(/(<!-- projects:start[^>]*-->)[\s\S]*?(<!-- projects:end -->)/g, (m, a, b) => `${a}${projectLinks}${b}`)
+    .replace(/(<!-- creators:start[^>]*-->)[\s\S]*?(<!-- creators:end -->)/g, (m, a, b) => `${a}${creatorLinks}${b}`));
   pages.push(page);
 }
 
 // ---------- generated pages ----------
 const generated = [
-  ...data.releases.map((r) => P.releasePage(SITE, data, r)),
-  ...data.products.map((x) => P.productPage(SITE, data, x)),
-  ...data.news.map((n) => P.newsPage(SITE, data, n)),
   ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c)),
   ...trustPages(SITE, data),
   communityPage(SITE)
@@ -117,16 +118,11 @@ for (const g of generated) {
   outputs.set(g.file, g.html);
   pages.push({ ...g.page, file: g.file });
 }
-for (const r of data.releases) {
-  if (!r.artwork) errors.push(`release ${r.id}: add artwork (it is the page's preview image)`);
-  for (const t of r.tracks || []) if (!/^\d+:\d\d$/.test(t.duration || "")) errors.push(`release ${r.id}: track "${t.title}" needs a duration like "2:27"`);
-}
 
 // ---------- store catalog: db/catalog.sql (the deploy applies it to the store database) ----------
-// Projects and polls are synced after the products, in the same file. The platform links are checked first.
-errors.push(...C.validate(data.products, data.productTypes, data.projects));
+// Creators, projects and polls; products, Stacclets and Pacs are made in the Studio (#176). The links are checked first.
 errors.push(...PL.validate(data));
-outputs.set("db/catalog.sql", C.catalogSql(data.products, data.productTypes, data.projects) + platformSql(data));
+outputs.set("db/catalog.sql", platformSql(data));
 // The store vocabulary for the browser (labels and which filters apply to which kind), from the API's own copy.
 outputs.set("data/vocabulary.js", `// The store's controlled vocabulary for the browser: facet labels and values, which facets apply to each kind of
 // product, specs and the BPM range. Generated by scripts/build.js from server/discovery/vocabulary.js; don't edit.
@@ -159,7 +155,9 @@ window.CONTENT_TYPES = ${JSON.stringify(kindsForBrowser.types, null, 1)};
 window.CONTENT_TYPE_ALIASES = ${JSON.stringify(kindsForBrowser.aliases, null, 1)};
 `);
 
-// Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
+// Generated files that no longer match any data entry (an id was removed or made a draft) are deleted. That includes
+// the product pages once generated into shop/ and the release and news pages once generated into
+// <creator>/<project>/music/ and news/ (products and releases are now served from the database; news is offline).
 const stale = [];
 // (music/ and news/ at the root, then projects/, held the pages before they moved to their creator's space.)
 const rootHtml = fs.readdirSync(ROOT).filter((f) => f.endsWith(".html"));
@@ -181,8 +179,10 @@ ${urls.map((u) => `  <url><loc>${H.esc(u)}</loc></url>`).join("\n")}
 outputs.set("llms.txt", llmsTxt(data));
 
 // ---------- public URL record: new URLs are added, none is ever removed here ----------
-// scripts/seo-test.js fails if a recorded URL is neither in the sitemap nor redirected in _redirects,
-// so a page can't silently disappear from search. Remove a line by hand only when the removal is deliberate.
+// scripts/seo-test.js fails if a recorded URL is neither in the sitemap, redirected in _redirects, a release or event
+// address the content Function serves (lib/data.js contentAddress) nor a retired news address it redirects to the
+// project home (retiredAddress), so a page can't silently disappear from search. Remove a line by hand only when the
+// removal is deliberate.
 const RECORD = "scripts/public-urls.txt";
 const recorded = fs.existsSync(path.join(ROOT, RECORD)) ? read(RECORD).split("\n").filter((l) => l && !l.startsWith("#")) : [];
 const header = "# Public URLs ever published. scripts/build.js adds new ones; seo-test.js fails if one disappears without a redirect.\n";

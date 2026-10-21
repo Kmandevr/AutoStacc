@@ -3,6 +3,7 @@
 // and by checkout (to refuse them), so what the cart shows is what checkout charges.
 import { fail } from "../lib/http.js";
 import { getProducts, isVisible, isPurchasable, productPath } from "../catalog/products.js";
+import { creatorSaleIds } from "../creators/creators.js";
 import { runningSales, salePrice, findCode, usageProblem, codeDiscount, normalizeCode, publicPromotion } from "../promotions/promotions.js";
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -26,11 +27,13 @@ export function parseItems(raw) {
 }
 
 // promoCode: what the buyer typed (optional); email and userId: who is buying, for usage limits (optional).
-// creatorSales: { open, reason } from server/payments/creator-sales.js; while closed, creators' products that could
+// creatorSales: { open, reason } from server/payments/creator-sales.js; while closed, Studio creators' products that could
 // otherwise be bought are held (line.held = reason): kept in the cart and shown, but outside the totals and checkout.
 // copyrightPaused: product ids whose creator space has selling paused by copyright strikes (held as "seller_paused", which doesn't say why).
+// A first-party creator's Studio products are AutoStacc's own sales and never held while creator purchases are closed (server/creators/creators.js).
 export async function priceCart(db, items, { owned = [], promoCode = "", email = "", userId = null, creatorSales = { open: true, reason: null }, copyrightPaused = new Set() } = {}) {
-  const [products, sales] = await Promise.all([getProducts(db, items.map((i) => i.productId)), runningSales(db)]);
+  const ids = items.map((i) => i.productId);
+  const [products, sales, creatorMade] = await Promise.all([getProducts(db, ids), runningSales(db), creatorSales.open ? new Set() : creatorSaleIds(db, ids)]);
   const rows = new Map(products.map((p) => [p.id, p]));
   const ownedSet = new Set(owned);
   const lines = items.map(({ productId, quantity }) => {
@@ -44,7 +47,7 @@ export async function priceCart(db, items, { owned = [], promoCode = "", email =
     if (!isPurchasable(p)) line.problem = p.price_cents === 0 && !p.sales_paused ? "free" : "unavailable";
     else if (ownedSet.has(productId)) line.problem = "owned";
     else if (quantity > p.max_quantity) line.problem = "quantity";
-    else if (p.source === "studio" && !creatorSales.open) line.held = creatorSales.reason;
+    else if (creatorMade.has(productId)) line.held = creatorSales.reason;
     else if (copyrightPaused.has(productId)) line.held = "seller_paused";
     return line;
   });

@@ -228,3 +228,12 @@ test("each Pac carries its own previews (at most 3) and its product's read me; l
   assert.deepEqual([kit.readme, kit.previews], [null, []]);
   assert.deepEqual(stacc.tree(stacc.assetsFrom(owned, catalog), catalog)[0].stacclets[0].pacs[0].previews, [], "no extras given: none shown");
 });
+
+test("Stacclets and Pacs named by /api/library (no code-defined catalog, #176) organize a Studio product too", () => {
+  const owned = [{ productId: "sp_9", title: "Drum Kit", projectId: "pj_s", pacs: ["pc_9"], files: [file("pf_9", "Snare.wav", { pacId: "pc_9" })] }];
+  const fromApi = { ...catalog, stacclets: [{ id: "st_9", title: "Drum Kit", project: "pj_s" }], pacs: [{ id: "pc_9", title: "Drum Kit", stacclet: "st_9", project: "pj_s" }] };
+  const [asset] = stacc.assetsFrom(owned, fromApi);
+  assert.deepEqual([asset.projectId, asset.staccletId, asset.pacId], ["pj_s", "st_9", "pc_9"]);
+  assert.deepEqual(stacc.tree([asset], fromApi)[0].stacclets.map((s) => [s.title, s.pacs.map((p) => p.title)]), [["Drum Kit", ["Drum Kit"]]]);
+  assert.equal(stacc.assetsFrom(owned, { ...catalog, stacclets: [], pacs: [] })[0].staccletId, null, "unnamed: the file sits under its product");
+});

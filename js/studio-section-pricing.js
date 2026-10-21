@@ -1,7 +1,8 @@
 // Product Studio, Pricing (GS.studioSections.pricing, drawn by js/studio-workspace.js): the base price (PATCH priceCents:
 // free, or within the store's limits), the product's sales (GET /api/studio/products/:id/pricing; POST .../sales; DELETE
 // .../sales/:id ends one) and the earnings estimate the server works out. The server computes every real price; the
-// only sum here is a labelled estimate of a sale price while the form is filled in. Needs js/util.js.
+// only sum here is a labelled estimate of a sale price while the form is filled in. A first-party creator (firstParty)
+// pays no platform fee: each sale is AutoStacc's own, so the estimate shows what a sale brings in. Needs js/util.js.
 (function () {
   "use strict";
 
@@ -22,7 +23,9 @@
       function draw(pr) {
         const price = pr ? pr.priceCents : (ctx.product.product || {}).priceCents;
         const est = pr && pr.estimate;
-        const row = (label, x) => x ? `<tr><th scope="row">${label}</th><td>${money(x.priceCents)}</td><td>${money(x.platformFeeCents)}</td><td>${money(x.creatorShareCents)}</td></tr>` : "";
+        const fp = Boolean(pr && pr.firstParty);
+        const row = (label, x) => x ? `<tr><th scope="row">${label}</th><td>${money(x.priceCents)}</td>${fp ? `<td>${money(x.netCents)}</td>`
+          : `<td>${money(x.platformFeeCents)}</td><td>${money(x.creatorShareCents)}</td>`}</tr>` : "";
         const sales = (pr && pr.sales) || [];
         const open = sales.some((s) => s.status !== "ended");
         el.innerHTML = `
@@ -32,9 +35,10 @@
             <p class="small-print">Free, or ${money(lim.minPriceCents)} to ${money(lim.maxPriceCents)}.</p>
             <button class="btn small" type="submit">Save price</button><p class="msg" role="status"></p></form>
           ${pr === undefined ? '<p class="msg pending">Loading sales…</p>' : !pr ? '<p class="msg">Sales and earnings estimates aren\'t available right now. Try again in a moment.</p>' : `
-          ${est ? `<h3>Estimated earnings per sale</h3><div class="sk-table"><table><thead><tr><th scope="col"></th><th scope="col">Buyer pays</th><th scope="col">Platform fee${pr.feeBps ? ` (${pr.feeBps / 100}%)` : ""}</th><th scope="col">Your share</th></tr></thead>
+          ${est ? `<h3>Estimated earnings per sale</h3><div class="sk-table"><table><thead><tr><th scope="col"></th><th scope="col">Buyer pays</th>${fp ? '<th scope="col">AutoStacc receives</th>'
+            : `<th scope="col">Platform fee${pr.feeBps ? ` (${pr.feeBps / 100}%)` : ""}</th><th scope="col">Your share</th>`}</tr></thead>
             <tbody>${row("List price", est.list)}${row("During the sale", est.sale)}</tbody></table></div>
-            <p class="small-print">Estimates from the store's own split. Payment processing is AutoStacc's cost, not taken from your share.</p>` : ""}
+            <p class="small-print">${fp ? "AutoStacc's own creator: no platform fee and no creator share. Every sale goes to AutoStacc's own account." : "Estimates from the store's own split. Payment processing is AutoStacc's cost, not taken from your share."}</p>` : ""}
           ${pr.storeSale ? `<p class="msg">AutoStacc's store-wide sale "${e(pr.storeSale.name)}" also applies: buyers pay whichever price is lower (${money(pr.storeSale.priceCents)} with it).</p>` : ""}
           <h3>Sales</h3>
           ${sales.length ? `<div class="sk-table"><table><thead><tr><th scope="col">Discount</th><th scope="col">Starts</th><th scope="col">Ends</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead><tbody>

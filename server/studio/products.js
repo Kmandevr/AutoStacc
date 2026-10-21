@@ -5,7 +5,7 @@
 import { json, readJson, fail } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
 import { limit } from "../lib/ratelimit.js";
-import { LIMITS, SELLING } from "../creators/policy.js";
+import { LIMITS, SELLING, isFirstParty } from "../creators/policy.js";
 import { requireProject } from "../creators/projects.js";
 import { cleanProductInput, requireOwnProduct, createProduct, updateProduct, listProjectProductRows, productViews, countProducts } from "../creators/products.js";
 import { listImages, imageSrc } from "../sites/images.js";
@@ -21,20 +21,23 @@ async function publishGate(db, user, input) {
 
 async function list(app, { projectId }) {
   const user = await requireUser(app);
-  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"));
+  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"), { allowCatalog: true });
   const [rows, images, used] = await Promise.all([listProjectProductRows(app.db, project.id), listImages(app.db, creator.id), countProducts(app.db, creator.id)]);
   return json({
     products: await productViews(app.db, rows),
     images: images.map((i) => ({ id: i.id, src: imageSrc(i.id), filename: i.filename })),
     trusted: Boolean(creator.trusted),
-    limits: { products: LIMITS.productsPerCreator, used, filesPerProduct: LIMITS.filesPerProduct, ...SELLING }
+    // A first-party creator has no limits (null, unlimited: server/creators/policy.js).
+    limits: isFirstParty(creator)
+      ? { products: null, used, filesPerProduct: null, unlimited: true, ...SELLING }
+      : { products: LIMITS.productsPerCreator, used, filesPerProduct: LIMITS.filesPerProduct, unlimited: false, ...SELLING }
   });
 }
 
 async function create(app, { projectId }) {
   const user = await requireUser(app);
   await limit(app, "studio-product", 30, 3600);
-  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"));
+  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"), { allowCatalog: true });
   const input = cleanProductInput(await readJson(app.request, 8 * 1024), { requireAll: true });
   if (input.published || input.deleted || input.salesPaused) fail(400, "invalid_field", "A new product starts as a draft.");
   await publishGate(app.db, user, input);

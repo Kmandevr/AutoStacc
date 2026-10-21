@@ -30,8 +30,10 @@ describe("features in the browser", () => {
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
-    for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/autostacc/glitches-and-stitches"]) {
+    for (const path of ["/dashboard", "/library", "/product?p=wallpapers", "/autostacc/glitches-and-stitches"]) {
       await page.goto(path);
+      // A product page sets its title once the product arrives; the marker must survive that.
+      if (path.startsWith("/product")) await page.waitForSelector("#product-app .product-info");
       const bar = page.locator("#impersonation-bar.imp-active");
       await bar.waitFor();
       assert.match(await bar.innerText(), new RegExp(customer.replace(/[.]/g, "\\.")), path);
@@ -68,10 +70,10 @@ describe("features in the browser", () => {
       VALUES ('promo_browsercode', 'code', 'Browser code', 'BROWSER10', 10, 'all', ${T}, ${T}, ${T});`);
     try {
       const { ctx, page } = await open(PHONE);
-      await page.goto("/shop/vj-loops");
-      await page.waitForSelector("[data-price] .price-was");
-      assert.match(await page.locator("[data-price]").first().innerText(), /\$14\.99.*\$7\.50.*Browser sale/s);
-      await page.locator("[data-buy] [data-add-to-cart]").click();
+      await page.goto("/product?p=vj-loops");
+      await page.waitForSelector("#product-app .product-price s");
+      assert.match(await page.locator("#product-app .product-price").innerText(), /\$7\.50.*\$14\.99/s);
+      await page.locator("#product-app [data-buy]").click();
       await page.goto("/cart");
       await page.waitForSelector(".cart-line .price-sale");
       await page.fill("#promo-code", "browser10");
@@ -190,16 +192,23 @@ describe("features in the browser", () => {
     await ctx.close();
   });
 
-  test("phone quick-links bar: Store, Projects, Log in and Menu are within reach; Menu opens the drawer and Escape closes it", async () => {
+  test("phone quick-links bar: Store, Projects, Community, Log in and Menu are within reach at 320px; Menu opens the drawer and Escape closes it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/shop");
     const bar = page.locator(".tabbar");
     assert.equal(await bar.isVisible(), true);
     const names = await bar.locator("a:visible, button:visible").allTextContents();
-    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Projects", "Log in", "Menu"]);
+    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Projects", "Community", "Log in", "Menu"]);
     assert.equal(await bar.locator("a[aria-current]").textContent(), "Store");
     const small = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
     assert.equal(small, 0, "every quick link is at least 44px tall");
+    // The narrowest phone: five quick links still fit, each wide enough to tap, nothing scrolls sideways.
+    await page.setViewportSize({ width: 320, height: 640 });
+    const narrow = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width < 44).length);
+    assert.equal(narrow, 0, "every quick link is at least 44px wide at 320px");
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "nothing scrolls sideways at 320px");
+    await page.goto("/community");
+    assert.equal(await page.locator(".tabbar a[aria-current]").textContent(), "Community");
     await bar.locator("[data-tab-menu]").click();
     await page.waitForSelector(".side.open");
     await page.keyboard.press("Escape");
@@ -392,23 +401,40 @@ describe("features in the browser", () => {
     await page.click("[data-clear-filters]");
     await page.waitForFunction(() => !location.search.includes("q="));
 
-    // /explore: views as tabs, filters and chips in the address, drafts never shown.
+    // /explore: views as tabs (releases and events, no news), filters and chips in the address, event cards linking to
+    // their own pages and the events view pointing to the /events calendar.
     await page.goto("/explore");
     await page.waitForSelector(".ex-item");
-    await page.click("[data-view=news]");
-    await page.waitForURL(/view=news/);
-    await page.waitForSelector("[data-view=news][aria-selected=true]");
+    assert.deepEqual(await page.locator("[data-view]").evaluateAll((b) => b.map((x) => x.dataset.view)), ["releases", "events"]);
+    assert.ok(await page.locator("[data-calendar]").isHidden(), "the calendar link belongs to the events view");
+    await page.click("[data-view=events]");
+    await page.waitForURL(/view=events/);
+    await page.waitForSelector("[data-view=events][aria-selected=true]");
     await page.check("[data-f=project][data-v=glitches-and-stitches]");
     await page.waitForURL(/project=glitches-and-stitches/);
-    assert.ok(await page.locator(".ex-item").count() > 0);
-    await page.focus("[data-view=news]");
-    await page.keyboard.press("ArrowRight");
-    await page.waitForURL(/view=shows/);
-    await page.waitForSelector("[data-view=shows][aria-selected=true]");
+    await page.waitForSelector(".explore-list .ecard");
+    assert.match(await page.getAttribute(".explore-list .ecard-name a", "href"), /^\/autostacc\/glitches-and-stitches\/events\/[a-z0-9-]+$/);
+    assert.equal(await page.getAttribute("[data-calendar] a", "href"), "/events");
+    await page.focus("[data-view=events]");
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForURL((u) => !u.search.includes("view="));
+    await page.waitForSelector("[data-view=releases][aria-selected=true]");
+    // An old shows address opens the events view; an old news one falls back to releases.
+    await page.goto("/explore?view=shows");
+    await page.waitForSelector("[data-view=events][aria-selected=true]");
+    await page.goto("/explore?view=news");
+    await page.waitForSelector("[data-view=releases][aria-selected=true]");
 
-    // Home and dashboard: the latest lists, followed projects first, and the projects you follow.
+    // The project's home: upcoming events (no news) with a link to its events list.
+    await page.goto("/autostacc/glitches-and-stitches");
+    await page.waitForSelector("#events [data-events] .ecard");
+    assert.equal(await page.getAttribute("#events .section-head a", "href"), "/autostacc/glitches-and-stitches/events");
+    assert.equal(await page.locator("[data-news], [data-shows]").count(), 0);
+
+    // Home and dashboard: the latest releases and events, followed projects first, and the projects you follow.
     await page.goto("/");
     await page.waitForSelector("[data-latest] .latest-list li");
+    assert.deepEqual(await page.locator("[data-latest] .latest-col h3").allInnerTexts(), ["New releases", "Upcoming events"]);
     await page.goto("/dashboard");
     await page.waitForSelector("[data-picks=following] .pcard[data-project='glitches-and-stitches']");
     assert.equal(await page.locator("[data-project-picks]:not([data-picks]) .pcard[data-project='glitches-and-stitches']").count(), 0, "no suggesting what you already follow");

@@ -8,8 +8,9 @@ https://:version.:project.pages.dev/*
 
 # Every page: HTTPS only (browsers remember it for a year), no framing by other sites (clickjacking), no MIME
 # sniffing, no full URLs leaked to other sites, no camera/microphone/location, and a baseline content policy (no
-# plugins, no <base> hijacking, no framing elsewhere). Public pages embed music players from several services, so
-# they don't restrict scripts further; account and store pages below add a strict policy (docs/production.md).
+# plugins, no <base> hijacking, no framing elsewhere), plus the page-preloading rules (speculation-rules.json). Public
+# pages embed music players from several services, so they don't restrict scripts further; account and store pages
+# below add a strict policy (docs/production.md).
 /*
   Strict-Transport-Security: max-age=31536000
   X-Frame-Options: SAMEORIGIN
@@ -17,6 +18,13 @@ https://:version.:project.pages.dev/*
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
   Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+  Speculation-Rules: "/speculation-rules.json"
+
+# The preloading rules every page points at (above): browsers that support them load a same-origin page as a visitor
+# hovers or presses its link, so page changes are near instant. A file, not an inline script, so no policy is loosened.
+/speculation-rules.json
+  Content-Type: application/speculationrules+json
+  Cache-Control: no-cache
 
 # Plain addresses of scripts, styles and data (pages use fingerprinted /assets/ copies; these serve what loads files by
 # name) keep the same URL across deploys, so browsers re-check them on every visit (a quick "not modified"). Without this a phone can keep old files for hours and show a mix of versions.

@@ -7,7 +7,7 @@
 
 The site is static HTML, CSS and JavaScript with no framework, hosted on Cloudflare Pages at https://autostacc.com. Beside it are a small store API (see [The store](#the-store)) and a processing engine for creators' files (see [The engine](#the-engine)). One Node script, `scripts/build.js`, generates from `data/`:
 - the search metadata;
-- the product, release and news pages and creator profile pages;
+- creator profile pages (product, release and event pages are rendered by the server: `server/shop/`, `server/content/`);
 - the sitemap and `llms.txt`;
 - the store's catalog.
 
@@ -23,6 +23,7 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `shop.html` (`/shop`) | All products, with search and filters (kind, genre, tempo, key and more; [docs/discovery.md](docs/discovery.md)) |
 | `explore.html` (`/explore`) | New releases, news and shows from every project, searchable and filterable |
 | `projects.html` (`/projects`) | Every project: follow it, or switch on Auto-Stacc for its free releases |
+| `creators.html` (`/creators`) | Every creator and their projects, searchable and sortable |
 | `about.html` (`/about`) | How buying, downloads and Auto-Stacc work |
 | `autostacc.html` (`/autostacc`) | AutoStacc's creator profile (generated from `data/creators.js`) |
 | `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` | Glitches & Stitches' home, music, news and press pages, in its own skin |
@@ -34,9 +35,8 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `404.html` | Shown for any address that doesn't exist |
 | `community.html` | Generated from `scripts/lib/community-page.js`: the "opening soon" page at `/community`, and the frame its Function (`functions/community.js`) fills with spaces and threads once the community is switched on ([docs/community.md](docs/community.md)) |
 | `guide.html`, `guide/` | Generated guides from `data/guides.js`: `/guide` and one page per article (`/guide/<id>`), buying, Your Stacc and refunds, and the creator manual ([docs/guides.md](docs/guides.md)). Don't edit them; change the data and rebuild |
-| `shop/`, `<creator>/<project>/music/`, `<creator>/<project>/news/` | Generated: one page per product (`/shop/<id>`), release and news post. Don't edit them; change `data/` and rebuild |
 
-Studio creators' pages aren't files: they're stored in the database and rendered by `functions/[[path]].js`. Community pages (switched off for now) are rendered by `functions/community.js` and `functions/community/[[path]].js`. Old addresses (`/music`, `/news`, `/press`) redirect to the project's own (`_redirects`).
+Studio creators' pages aren't files: they're stored in the database and rendered by `functions/[[path]].js`. Neither are release and news pages (`/<creator>/<project>/music/<slug>`, `/news/<slug>`), first-party included: every creator makes releases, news and shows in the Studio, and the same Function renders the pages from the database and lists them in `/sitemap-content.xml` ([docs/creators.md](docs/creators.md)). Community pages (switched off for now) are rendered by `functions/community.js` and `functions/community/[[path]].js`. Old addresses (`/music`, `/news`, `/press`) redirect to the project's own (`_redirects`).
 
 Also published:
 - `img/`: icons, the link-preview image and release artwork;
@@ -59,7 +59,7 @@ Also published:
 | `img/` | Images |
 | `docs/` | Project notes, an Obsidian vault ([docs/index.md](docs/index.md)) |
 
-Generated output (also committed): `shop/` for product pages, `guide/` for guide articles, and `autostacc/` for the first-party creator's project pages.
+Generated output (also committed): `guide/` for guide articles, and each first-party creator's profile (`autostacc.html`). The project pages in `autostacc/` are hand-written.
 
 Every file starts with a one-line purpose comment, and every top-level folder has a `.purpose` file; `.claude/tools/tree.sh [dir]` prints the map from them. Setup for Claude Code is described in `.claude/README.md`.
 
@@ -71,19 +71,15 @@ All content lives in `data/`. Edit these files, run `node scripts/build.js`, and
 | --- | --- |
 | `data/site.js` | AutoStacc itself: name, address, home page title and description, contact, logo |
 | `data/creators.js`, `data/projects.js` | First-party creators and their projects. A project's identity (name, bio, booking email, press kit, official profiles, newsletter, skin) is its entry in `data/projects.js` ([docs/projects.md](docs/projects.md)). Leave a profile's `url` empty until the real profile exists |
-| `data/music.js` | Releases, each with a page at `/<creator>/<project>/music/<id>`: artwork, tracks, streaming links and the embedded player |
-| `data/products.js`, `data/product-types.js` | Items for sale (each with a page at `/shop/<id>`), and the kinds of product |
-| `data/stacclets.js`, `data/pacs.js` | How a project's content is organised in Your Stacc ([docs/architecture.md](docs/architecture.md)) |
-| `data/news.js` | News posts, each with a page at `/<creator>/<project>/news/<id>`; the newest is shown first |
-| `data/shows.js` | Tour dates. Past dates are hidden automatically; shows with a ticket link are also announced to Google |
-| `data/polls.js`, `data/relationships.js` | Community votes, and which tracks were built from which |
+| `data/product-types.js` | The kinds of product. Products themselves are made in the Studio by every creator, AutoStacc included (pages at `/shop/<id>`, `server/shop/`) |
+| `data/polls.js`, `data/relationships.js` | Community votes, and typed links between products, Stacclets, Pacs and polls |
 | `data/legal.js`, `data/help.js`, `data/licenses.js` | The trust pages' text |
 | `data/guides.js` | The guides' sections and articles (`/guide`) |
 | `data/guide-index.js` | Generated: the search index `/guide` and `/help` share; don't edit |
 | `data/workspaces.js` | The names and order of the sections in the Product Studio and the Control Center |
 | `data/content-types.js`, `data/vocabulary.js`, `data/features.js` | Generated by `scripts/build.js` from `server/` (file kinds, the store's facets and values, feature switches). Don't edit them |
 
-Entries marked `draft: true` are placeholders. They stay out of search, and draft news, shows and releases aren't shown. How search visibility works: [docs/seo.md](docs/seo.md). Google Search Console setup for the owner: [docs/search-console.md](docs/search-console.md).
+Releases, news posts and show dates are not in `data/`: every project, Glitches & Stitches included, makes them in the Studio's Music, News and Shows editors (`/studio`), and products there too. Entries marked `draft: true` are placeholders and stay out of search. How search visibility works: [docs/seo.md](docs/seo.md). Google Search Console setup for the owner: [docs/search-console.md](docs/search-console.md).
 
 ## The store
 
@@ -118,7 +114,7 @@ The server always re-checks what was uploaded. How it works and how to replace i
 
 ## Running locally
 
-Needs Node 22.13 or later. The local servers handle the site the way Cloudflare Pages does, with clean addresses like `/shop`, redirects and real 404s.
+Needs Node 22.13 or later. The local servers handle the site the way Cloudflare Pages does, with clean addresses like `/shop`, redirects and real 404s. Release and news pages come from the store database, so they only work under `npm run dev`. Its test data (`scripts/dev.js`) adds the six former placeholder products from `test/support/catalog-fixtures.js`, the real release and news post the migrations seed, and a test show; none of it is ever deployed.
 
 ```sh
 node scripts/serve.js        # static pages only, store offline: http://localhost:8000/

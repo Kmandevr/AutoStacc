@@ -1,8 +1,8 @@
 // Shared helpers for the community's browser scripts (GS.communityKit; loads before js/community.js and each
 // js/community-<feature>.js): building elements safely (text only through textContent), status lines, the visitor
 // (/api/community/me, asked once), their state in the open take or space (/mine, asked once), the space team's desk
-// (each feature adds its own part) and the "join" gate. No
-// feature logic lives here, so each feature script stays independent of the others.
+// (each feature adds its own part, with a loading placeholder until it's ready; GS.skeleton when loaded), request
+// buttons with a spinner, and the "join" gate. No feature logic lives here, so each feature script stays independent.
 (function () {
   "use strict";
   const GS = window.GS;
@@ -20,7 +20,14 @@
   };
   const status = () => el("p", { class: "msg", role: "status", hidden: true });
   const say = (box, msg, ok = false) => { box.textContent = msg; box.className = ok ? "msg" : "msg error"; box.hidden = !msg; };
-  const busy = (form, on) => form.querySelectorAll("button, input, textarea, select").forEach((x) => { x.disabled = on; });
+  // Loading placeholders and button spinners come from GS.skeleton (js/skeleton.js); without it, plain disabling.
+  const sk = () => window.GS.skeleton;
+  const press = (b, on) => { if (sk()) sk().busy(b, on); else b.disabled = on; };
+  const busy = (form, on) => {
+    form.querySelectorAll("button, input, textarea, select").forEach((x) => { x.disabled = on; });
+    const send = form.querySelector("[type=submit]");
+    if (send && sk()) sk().busy(send, on);
+  };
 
   let mePromise = null;
   const me = () => (mePromise = mePromise || GS.api("/api/community/me").then((r) => (r.ok ? r.data : { signedIn: false, features: [] })));
@@ -35,21 +42,34 @@
   const space = () => (spacePromise = spacePromise || (desk
     ? GS.api(`/api/community/spaces/${encodeURIComponent(desk.dataset.cmSpace)}/mine`).then((r) => (r.ok ? r.data : null))
     : Promise.resolve(null)));
-  // A titled part of the team desk, shown once a feature has something in it.
-  const deskPart = (title) => {
+  const deskOpen = () => {
     desk.hidden = false;
     if (!desk.querySelector(".cm-desk-title")) desk.prepend(el("h2", { class: "cm-desk-title", text: "Team desk" }));
-    return desk.appendChild(el("details", { class: "cm-desk-part" }, el("summary", { text: title })));
+  };
+  // A placeholder in the slot a desk part will take while its list loads (busy for screen readers); the feature
+  // hands it to deskPart() when the list is in, or removes it when the list can't load.
+  const deskWait = () => {
+    deskOpen();
+    const w = desk.appendChild(el("div", { class: "cm-desk-part" }));
+    if (sk()) sk().show(w, "line", 1);
+    return w;
+  };
+  // A titled part of the team desk, shown once a feature has something in it, in its placeholder's place if it had one.
+  const deskPart = (title, wait = null) => {
+    deskOpen();
+    const part = el("details", { class: "cm-desk-part" }, el("summary", { text: title }));
+    if (wait && wait.parentNode) wait.replaceWith(part); else desk.appendChild(part);
+    return part;
   };
   const notices = document.querySelector("[data-cm-notices]");
 
-  // A button that calls the API, disables itself until the answer, and runs done(data) on success.
+  // A button that calls the API, disables itself (with a spinner) until the answer, and runs done(data) on success.
   const action = (label, { path, method, body, pressed = null, cls = "btn ghost small", title = null, done }) => {
     const b = el("button", { class: cls, type: "button", text: label, title, "aria-pressed": pressed === null ? false : String(pressed) });
     b.addEventListener("click", async () => {
-      b.disabled = true;
+      press(b, true);
       const r = await GS.api(typeof path === "function" ? path() : path, { method: typeof method === "function" ? method() : method, body });
-      b.disabled = false;
+      press(b, false);
       if (r.ok) return done ? done(r.data, b) : location.reload();
       window.alert(r.error.message);
     });
@@ -86,5 +106,5 @@
     box.append(form);
   }
 
-  GS.communityKit = { el, status, say, busy, me, mine, action, gate, tools, desk, space, deskPart, notices };
+  GS.communityKit = { el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
 })();

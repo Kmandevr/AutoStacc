@@ -1,5 +1,5 @@
 // Control Center: Paid storage (server/billing/, docs/creators.md "Paid storage"). The owner's switches (on or off, the
-// rate; on needs a rate), AutoStacc's storage cap against the paid limits creators hold, every plan with its latest
+// rate; on needs a rate), AutoStacc's storage cap as base + paid = effective (it grows with active plans), every plan with its latest
 // measurement, statements to pay or overdue with waive and refund (a note required; audited), one creator's daily
 // measurements for a dispute, and the billing log. Talks to /api/admin/storage-billing (server/admin/storage-billing.js).
 // Starts on "gs:admin". Needs js/util.js.
@@ -10,11 +10,12 @@
   if (!$("#admin-app")) return;
   const GB = 1024 ** 3;
   const size = (n) => (n == null ? "–" : n >= GB ? `${(n / GB).toFixed(2)} GB` : `${(n / 1024 ** 2).toFixed(1)} MB`);
+  const gbs = (n) => `${((n || 0) / 1e9).toFixed(2)} GB`; // the cap is set in decimal GB (Usage and storage)
   const day = (iso) => (iso ? iso.slice(0, 10) : "");
 
   function draw(panel, x, message) {
     const st = x.settings;
-    const tight = x.platform.activePaidLimitBytes > x.platform.capBytes;
+    const pf = x.platform;
     panel.innerHTML = `${message ? `<p class="msg" role="status">${e(message)}</p>` : ""}
       <form class="panel admin-switch" data-billing><h3>Switches</h3>
         <p>Paid storage is <strong>${st.on ? "on" : "off"}</strong>${st.rate ? ` at ${st.rate} hundredths of a cent per GB-month ($${(st.rate / 10000).toFixed(4)})` : ", no rate set"}.
@@ -23,7 +24,8 @@
         <label><input type="checkbox" name="on"${st.state === "on" ? " checked" : ""}> Paid storage on</label>
         <p class="small-print">Turning it on lets creators choose a limit and starts real charges at month end. Confirm the price, the tax code and the main Stripe account first (docs/creators.md).</p>
         <button class="btn small" type="submit">Save</button></form>
-      <p${tight ? ' class="msg error"' : ""}>Paid limits held: ${e(size(x.platform.activePaidLimitBytes))}; AutoStacc's storage cap (Usage and storage): ${e(size(x.platform.capBytes))}.${tight ? " Creators could be refused uploads they pay for: raise the cap." : ""}</p>
+      <p>AutoStacc's storage cap: base ${e(gbs(pf.baseCapBytes))} (Usage and storage) + paid ${e(gbs(pf.paidCapBytes))} = ${e(gbs(pf.capBytes))}.
+        The paid part is what active plans hold above free storage, so creators who pay are never refused for the site-wide cap. Paid limits held in all: ${e(size(pf.activePaidLimitBytes))}.</p>
       <h3>Statements</h3>
       <div class="admin-table"><table><thead><tr><th>Creator</th><th>Month</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>${x.statements.map((s) => `<tr>
         <td><button class="btn ghost small" type="button" data-creator="${e(s.creatorId)}" data-period="${e(s.period)}">${e(s.name)}</button></td><td>${e(s.period)}</td>

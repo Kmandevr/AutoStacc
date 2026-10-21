@@ -1,4 +1,4 @@
-// Projects and follows: the project directory and its browser, and following a project with optional Auto-Stacc (free products of
+// Projects and follows: the project directory and its browser, the creators browser, and following a project with optional Auto-Stacc (free products of
 // that project are added to the account's library automatically, now and whenever the library opens).
 import { json, fail, readJson, id } from "../lib/http.js";
 import { currentUser, requireUser } from "../auth/session.js";
@@ -8,6 +8,7 @@ import { listFollows, setFollow, removeFollow, publicFollow } from "./follows.js
 import { autoStacc } from "../entitlements/autostacc.js";
 import { SELLING } from "../creators/policy.js";
 import { parseProjectFilters, projectEntries, browse } from "./browse.js";
+import { parseCreatorFilters, creatorEntries, browseCreators } from "./creators.js";
 
 // Published projects, plus this account's follows when signed in with a verified email (null otherwise, with
 // signedIn telling a signed-in but unconfirmed account apart from a visitor).
@@ -29,6 +30,13 @@ async function browsePage(app) {
   const entries = await projectEntries(app.db, { userId });
   return json({ ...browse(entries, f, { signedIn: Boolean(userId) }), signedIn: Boolean(user), canFollow: Boolean(userId) }, 200,
     { "Cache-Control": "private, no-store" });
+}
+
+// The creators browser (server/projects/creators.js): no per-user data, so the answer is cached publicly.
+async function creatorsPage(app) {
+  await limit(app, "browse", 120, 60);
+  const f = parseCreatorFilters(new URL(app.request.url).searchParams);
+  return json(browseCreators(await creatorEntries(app.db), f), 200, { "Cache-Control": "public, max-age=60" });
 }
 
 async function follow(app, { projectId }) {
@@ -54,6 +62,7 @@ async function unfollow(app, { projectId }) {
 export const routes = [
   ["GET", "/api/projects", projects],
   ["GET", "/api/projects/browse", browsePage],
+  ["GET", "/api/creators", creatorsPage],
   ["PUT", "/api/follows/:projectId", follow],
   ["DELETE", "/api/follows/:projectId", unfollow]
 ];

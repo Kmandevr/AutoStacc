@@ -1,13 +1,15 @@
 // Settings › Security: change your password (Better Auth's /api/auth/change-password, which signs out your other
 // devices) and see every device signed in to your account, sign one out or all the others (/api/account/devices).
 // Log out of this device is [data-signout], handled by js/account-nav.js. Draws into #settings-app when js/settings.js
-// opens this section. Needs js/util.js.
+// opens this section. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, api, loginPath, say } = window.GS;
+  const { $, escapeHTML, api, loginPath, say, skeleton: sk } = window.GS;
   const root = $('#settings-app[data-section="security"]');
   if (!root) return;
+  // A request button: GS.skeleton's spinner when it's loaded, otherwise just disabled while the request runs.
+  const busy = (btn, on) => (sk ? sk.busy(btn, on) : (btn.disabled = on));
   const toLogin = () => location.replace(loginPath(location.pathname));
   const when = (iso) => (iso ? new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "unknown");
 
@@ -26,6 +28,7 @@
     const res = await api("/api/account/devices");
     if (res.status === 401) return toLogin();
     const list = $(".devices", panel);
+    if (sk) sk.done(list);
     if (!res.ok) { list.innerHTML = ""; return say(panel, res.error.message, true); }
     const devices = res.data.devices;
     list.innerHTML = devices.map(device).join("");
@@ -47,6 +50,7 @@
         <ul class="devices"><li class="device"><span class="device-meta">Loading…</span></li></ul>
         <div class="actions"><button class="btn ghost" type="button" data-sign-out-others hidden>Sign out all other devices</button></div>
       </section>`;
+    if (sk) sk.show($(".devices", root), "row", 2); // placeholder device rows until the list comes
     drawDevices();
   }, { once: true });
 
@@ -57,9 +61,9 @@
     const btn = $("button[type=submit]", form);
     if (btn.disabled) return;
     if (!form.checkValidity()) return say(form, "Fill in both passwords; the new one needs 10 or more characters.", true);
-    btn.disabled = true;
+    busy(btn, true);
     const res = await api("/api/auth/change-password", { method: "POST", body: { currentPassword: $("#current", form).value, newPassword: $("#new", form).value, revokeOtherSessions: true } });
-    btn.disabled = false;
+    busy(btn, false);
     if (res.status === 401) return toLogin();
     if (!res.ok) return say(form, res.status === 429 ? "Too many tries. Wait a minute." : res.error.code === "INVALID_PASSWORD" ? "The current password is wrong." : res.error.message, true);
     form.reset();
@@ -71,11 +75,11 @@
     const btn = e.target.closest("[data-device], [data-sign-out-others]");
     if (!btn || btn.disabled) return;
     const panel = $("[data-devices]", root);
-    btn.disabled = true;
+    busy(btn, true);
     const res = btn.dataset.device
       ? await api(`/api/account/devices/${encodeURIComponent(btn.dataset.device)}/sign-out`, { method: "POST", body: {} })
       : await api("/api/account/devices/sign-out-others", { method: "POST", body: {} });
-    btn.disabled = false;
+    busy(btn, false);
     if (res.status === 401) return toLogin();
     if (!res.ok) return say(panel, res.error.message, true);
     // Redraw first, so the message is announced with the list already showing what changed.

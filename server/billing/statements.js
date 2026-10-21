@@ -5,16 +5,20 @@
 //      a cancelled plan back under the allowance ends here (nothing more is charged);
 //   2. issue: last month's statement for every creator measured in it, settled first from their earnings ready to pay
 //      out (owner, 2026-10-16: never money still on hold), the rest left for the card;
-//   3. past due: an open statement past its grace period withdraws the paid limit (uploads stop; nothing is deleted).
+//   3. charge: the rest is charged to the saved card on set days, retried after a decline (charges.js; #142);
+//   4. past due: an open statement past its grace period withdraws the paid limit (uploads stop; nothing is deleted).
 import { all, first, run, stmt, newId, now } from "../lib/db.js";
 import { storageByPart } from "../creators/storage.js";
 import { includedQuotaOf } from "../creators/policy.js";
 import { paidStorageStmt } from "../creators/creators.js";
-import { sendEmail } from "../email/index.js";
 import { BILLING, billableBytes, dayOf, periodOf, previousPeriod, daysInPeriod, usageCents, statementOf } from "./policy.js";
 import { billingSettings, plansToMeasure, logStmt, OVERDUE } from "./plans.js";
 import { earningsOf } from "../revenue/earnings.js";
 import { paymentProvider } from "../payments/index.js";
+import { chargeDue } from "./charges.js";
+import { mailOwner } from "./mail.js";
+
+export { mailOwner };
 
 const BATCH = 200;
 
@@ -40,21 +44,16 @@ export async function measure(app, nowMs) {
   return { measured, ended };
 }
 
-const ownerEmail = async (db, creatorId) => (await first(db,
-  `SELECT u.email FROM creator_members m JOIN "user" u ON u.id = m.user_id WHERE m.creator_id = ? AND m.role = 'owner'`, creatorId) || {}).email || null;
-
-export const mailOwner = async (app, creatorId, stage, s) => {
-  const to = await ownerEmail(app.db, creatorId);
-  if (to) await sendEmail(app, "storage-billing", to, { stage, period: s.period, amountCents: s.amount_cents, currency: s.currency, dueAt: s.due_at, studioUrl: `${app.config.siteUrl}/studio` },
-    { dedupeKey: `storage-billing:${stage}:${s.id}` });
-};
-
-/** Issues last month's statements (each once). */
+/**
+ * Issues last month's statements (each once); never to a first-party creator, who is never charged for storage (#177).
+ * An open one is due for its first charge at once: the charge step emails the owner (with the card, or the pay link).
+ */
 export async function issue(app, nowMs) {
   const { db } = app;
   const period = previousPeriod(periodOf(nowMs));
   const due = await all(db, `SELECT creator_id FROM storage_usage_days d WHERE day LIKE ? || '-%'
-    AND NOT EXISTS (SELECT 1 FROM storage_statements s WHERE s.creator_id = d.creator_id AND s.period = ?) GROUP BY creator_id LIMIT ?`, period, period, BATCH);
+    AND NOT EXISTS (SELECT 1 FROM storage_statements s WHERE s.creator_id = d.creator_id AND s.period = ?)
+    AND NOT EXISTS (SELECT 1 FROM creators c WHERE c.id = d.creator_id AND c.source = 'catalog') GROUP BY creator_id LIMIT ?`, period, period, BATCH);
   let issued = 0;
   const livemode = paymentProvider(app).livemode(app.config);
   for (const { creator_id: creatorId } of due) {
@@ -69,9 +68,9 @@ export async function issue(app, nowMs) {
     const id = newId("ss");
     const [ins] = await db.batch([
       stmt(db, `INSERT INTO storage_statements (id, creator_id, period, days_in_period, days_measured, billable_byte_days, usage_cents, carried_in_cents, earnings_cents,
-          amount_cents, currency, status, issued_at, due_at, paid_at, livemode, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(creator_id, period) DO NOTHING`,
+          amount_cents, currency, status, issued_at, due_at, paid_at, livemode, note, next_charge_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(creator_id, period) DO NOTHING`,
       id, creatorId, period, daysInPeriod(period), days.length, days.reduce((a, d) => a + d.billable_bytes, 0), usage, carriedIn, earnings, amount, BILLING.currency, status,
-      issuedAt, dueAt, status === "paid" ? issuedAt : null, livemode ? 1 : 0, status === "paid" ? "Paid from your earnings." : null),
+      issuedAt, dueAt, status === "paid" ? issuedAt : null, livemode ? 1 : 0, status === "paid" ? "Paid from your earnings." : null, status === "open" ? issuedAt : null),
       // Taken from earnings only with the statement that records it (a statement already there means this is a repeat).
       stmt(db, `INSERT INTO earnings_deductions (id, creator_id, amount_cents, livemode, reason, ref, created_at)
         SELECT ?, ?, ?, ?, 'storage', ?, ? WHERE ? > 0 AND EXISTS (SELECT 1 FROM storage_statements WHERE id = ?) ON CONFLICT(ref) DO NOTHING`,
@@ -83,7 +82,6 @@ export async function issue(app, nowMs) {
       logStmt(db, creatorId, "system", "statement.issued", { period, usageCents: usage, carriedInCents: carriedIn, totalCents: total, earningsCents: earnings, amountCents: amount, status }, id),
       ...(prior ? [stmt(db, "UPDATE storage_statements SET note = ? WHERE id = ?", `Carried into ${period}.`, prior.id)] : [])
     ]);
-    if (status === "open") await mailOwner(app, creatorId, "issued", { id, period, amount_cents: amount, currency: BILLING.currency, due_at: dueAt });
   }
   return issued;
 }
@@ -110,8 +108,9 @@ export async function markPastDue(app, nowMs) {
 export async function runStorageBilling(app, { nowMs = Date.now() } = {}) {
   const m = await measure(app, nowMs);
   const issued = await issue(app, nowMs);
+  const charges = await chargeDue(app, nowMs);
   const pastDue = await markPastDue(app, nowMs);
-  return { ...m, issued, pastDue };
+  return { ...m, issued, charges, pastDue };
 }
 
 export const statementsOf = (db, creatorId) => all(db, "SELECT * FROM storage_statements WHERE creator_id = ? ORDER BY period DESC LIMIT 36", creatorId);
@@ -129,4 +128,5 @@ export async function monthToDate(db, creatorId, nowMs = Date.now()) {
 
 export const publicStatement = (s) => ({ id: s.id, period: s.period, status: s.status, daysInPeriod: s.days_in_period, daysMeasured: s.days_measured,
   billableByteDays: s.billable_byte_days, usageCents: s.usage_cents, carriedInCents: s.carried_in_cents, earningsCents: s.earnings_cents, amountCents: s.amount_cents, currency: s.currency,
-  issuedAt: s.issued_at, dueAt: s.due_at, paidAt: s.paid_at, refundedCents: s.refunded_cents, note: s.note });
+  issuedAt: s.issued_at, dueAt: s.due_at, paidAt: s.paid_at, refundedCents: s.refunded_cents, note: s.note,
+  chargeStatus: s.charge_status || null, chargeAttempts: s.charge_attempts || 0, nextChargeAt: s.next_charge_at || null });

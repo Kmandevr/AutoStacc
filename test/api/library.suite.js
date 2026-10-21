@@ -2,7 +2,8 @@
 // nothing personal (products, projects, audio players); anyone's sites can use free pieces and show their files; a paid
 // piece is a store product of type "template" that must be bought first; deleting a piece keeps it working where it's
 // used and stops it counting against its creator; reports reach the Control Center, whose takedown hides a piece's
-// files everywhere and takes it off sale; restoring brings it back.
+// files everywhere and takes it off sale; restoring brings it back. Also Your Stacc's names (GET /api/library): the
+// Stacclets and Pacs of what the customer owns come from the store, only those (#176: none are defined in code).
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, sql } from "../support/client.js";
@@ -160,5 +161,21 @@ export default (ctx) => describe("community library", () => {
     assert.ok(!new RegExp(d.image.id).test((await victim.c.get(`/api/studio/projects/${victim.project.id}/preview`)).data));
     assert.equal((await admin.req("PATCH", `/api/admin/library/${did}`, { body: { status: "active" } })).status, 200);
     assert.equal(sql(ctx.mock.stateDir, `SELECT status FROM library_pieces WHERE id = '${did}'`)[0].status, "deleted", "a restore puts back what it was");
+  });
+  test("Your Stacc names the owned products' Stacclets and Pacs from the store, and only theirs", async () => {
+    assert.equal((await new Client(base()).get("/api/library")).status, 401, "no account, no library to name anything in");
+    const { c } = await newBuyer(base(), "lib-names");
+    assert.deepEqual([(await c.get("/api/library")).data.stacclets, (await c.get("/api/library")).data.pacs], [[], []]);
+    await mockBuy(c, [{ productId: "sample-pack-vol1" }]);
+    const lib = (await c.get("/api/library")).data;
+    const owned = lib.items.find((i) => i.productId === "sample-pack-vol1");
+    assert.deepEqual(lib.pacs.map((p) => p.id).sort(), [...owned.pacs].sort());
+    for (const pac of lib.pacs) {
+      const row = sql(ctx.mock.stateDir, `SELECT title, stacclet_id, project_id FROM pacs WHERE id = '${pac.id}'`)[0];
+      assert.deepEqual(pac, { id: pac.id, title: row.title, stacclet: row.stacclet_id, project: row.project_id });
+    }
+    assert.ok(!lib.pacs.some((p) => p.id === "frayed-signals-midi"), "a Pac of a product not owned stays out");
+    const st = sql(ctx.mock.stateDir, "SELECT id, title, project_id FROM stacclets WHERE id = 'frayed-signals'")[0];
+    assert.deepEqual(lib.stacclets, [{ id: st.id, title: st.title, project: st.project_id }]);
   });
 });

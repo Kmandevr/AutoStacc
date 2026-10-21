@@ -124,30 +124,6 @@ function album(SITE, r, url, project) {
   };
 }
 
-function product(SITE, p, url, release, project) {
-  return {
-    "@type": "Product",
-    "@id": url + "#product",
-    name: p.title,
-    description: p.description,
-    sku: p.id,
-    category: p.category,
-    url,
-    ...(p.image && { image: abs(SITE, p.image.src) }),
-    brand: { "@type": "Brand", name: project.name },
-    ...(release && { isRelatedTo: { "@type": "MusicAlbum", name: release.title, url: abs(SITE, projectPath(release.project, "music", release.id)) } }),
-    offers: {
-      "@type": "Offer",
-      url,
-      price: Number(p.price).toFixed(2),
-      priceCurrency: p.currency || SITE.currency || "USD",
-      // Sold through the site's own store; drafts never get this far (they publish no Product data).
-      availability: "https://schema.org/" + (p.draft ? "OutOfStock" : "InStock"),
-      seller: orgRef(SITE)
-    }
-  };
-}
-
 function article(SITE, n, url, image, project) {
   return {
     "@type": "BlogPosting",
@@ -204,5 +180,5 @@ function headBlock(SITE, page) {
 
 module.exports = {
   START, END, esc, isUrl, isoDuration,
-  organization, website, projectEntity, projectRef, webPage, breadcrumbs, itemList, album, product, article, headBlock
+  organization, website, projectEntity, projectRef, webPage, breadcrumbs, itemList, album, article, headBlock
 };

@@ -73,7 +73,7 @@ export default (ctx) => describe("studio", () => {
     const w = ws.data;
     assert.equal(w.product.id, p.id);
     assert.deepEqual(w.project, { id: s.project.id, name: "Beats", slug: "beats", path: `/${s.creator.slug}/beats` });
-    assert.deepEqual(w.creator, { id: s.creator.id, name: s.creator.name, slug: s.creator.slug, trusted: false, status: "active" });
+    assert.deepEqual(w.creator, { id: s.creator.id, name: s.creator.name, slug: s.creator.slug, trusted: false, status: "active", firstParty: false });
     assert.equal(w.role, "owner");
     assert.equal(w.readiness.ready, false);
     assert.deepEqual(w.readiness.blocking.map((b) => [b.code, b.section]), [["needs_file", "pacs"]]);

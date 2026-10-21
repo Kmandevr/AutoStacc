@@ -1,8 +1,8 @@
 ---
 title: Your Stacc
 summary: The customer library ("Your Stacc"): content-level views by project, Stacclet, Pac, content type and format, selected downloads, personal collections, tags and saved searches, follows and Auto-Stacc.
-covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, js/library-bundle.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, data/stacclets.js, data/pacs.js, data/content-types.js]
-updated: 2026-10-20
+covers: [library.html, js/library.js, js/library-view.js, js/library-personal.js, js/library-bundle.js, server/collections/, db/migrations/0019_collections.sql, js/stacc-model.js, js/stacc-client.js, js/stacc-worker.js, css/stacc.css, server/entitlements/, server/projects/, js/stacc-glance.js, data/content-types.js]
+updated: 2026-10-21
 ---
 
 # Your Stacc
@@ -11,9 +11,11 @@ updated: 2026-10-20
 
 ## Where the data comes from
 
-1. `GET /api/library` (server, from `entitlements`; it runs the Auto-Stacc grant first for a signed-in account): owned products, each with its `projectId`, `pacs`, `sources` and deliverable files, and each file's `pacId`, `kind`, size and name. Unchanged rules: only active entitlements, only active, published files ([store](store.md)), storage keys never sent. Free claims (`POST /api/library/free`) and the Auto-Stacc grant refuse or skip a creator space whose selling is paused by copyright strikes ([copyright](copyright.md)); what's already in Your Stacc stays.
-2. `data/projects.js`, `data/stacclets.js`, `data/pacs.js` (static) and `data/content-types.js` (generated from the vocabulary's `KINDS`, with `CONTENT_TYPE_ALIASES` for old kind names): names and structure.
+1. `GET /api/library` (server, from `entitlements`; it runs the Auto-Stacc grant first for a signed-in account): owned products, each with its `projectId`, `pacs`, `sources` and deliverable files, and each file's `pacId`, `kind`, size and name, plus the names and projects of the owned Pacs and their Stacclets (`stacclets`, `pacs`, from D1; data/stacclets.js and data/pacs.js were retired, #176). Unchanged rules: only active entitlements, only active, published files ([store](store.md)), storage keys never sent. Free claims (`POST /api/library/free`) and the Auto-Stacc grant refuse or skip a creator space whose selling is paused by copyright strikes ([copyright](copyright.md)); what's already in Your Stacc stays.
+2. `data/projects.js` (static) and `data/content-types.js` (generated from the vocabulary's `KINDS`, with `CONTENT_TYPE_ALIASES` for old kind names): names and structure.
 3. `js/stacc-model.js` joins them into one list of **assets**, one object per file, each knowing its project, Stacclet, Pac, product, kind and format. A file's kind is what the admin chose at upload (an old name such as `samples` counts as its new kind, `one-shots`; old `?kind=samples` links still work), else guessed from its extension (`content-types.js` `formats`).
+
+While Your Stacc loads (2026-10-21) it shows placeholder rows (`GS.skeleton`, [modules](modules.md#shared-helpers-every-feature-uses)), then placeholders in the files box while follows and discovery load; the dashboard's "Your Stacc at a glance" boxes do the same, and collection actions show a spinner on their button. `server/projects/` also holds the public creators directory (`GET /api/creators`, [browse](browse.md)), which reads nothing from Your Stacc.
 
 ## Views (same assets, no copies)
 
@@ -23,7 +25,7 @@ updated: 2026-10-20
 
 Search narrows files as you type (every word in the file's name, file name or product title); on `/library` the view, search and filters live in the address (`?q=&project=&kind=&format=&view=kinds`) ([browse](browse.md)).
 
-Owned products with no deliverable file yet are listed under **On the way**. Projects not in `data/projects.js` (Studio projects) take their name from the store (`projectName` on each `/api/library` item), and every item links to its product page (`path`: `/shop/<id>`, or `/product?p=<id>` for a Studio product). Markup is `js/library-view.js` (`GS.libraryView`); `js/library.js` also redeems a guest receipt key (`/library#key=...`).
+Owned products with no deliverable file yet are listed under **On the way**. Projects not in `data/projects.js` (Studio projects) take their name from the store (`projectName` on each `/api/library` item), and every item links to its product page (`path`: `/shop/<id>` for every product, #175). Markup is `js/library-view.js` (`GS.libraryView`); `js/library.js` also redeems a guest receipt key (`/library#key=...`).
 
 Both views are built from the same asset objects (`GS.stacc.tree`, `GS.stacc.byKind`); unit tests (`test/unit/stacc-model.test.js`) check that the same object is reached through both.
 

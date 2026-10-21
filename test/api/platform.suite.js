@@ -13,7 +13,10 @@ export default (ctx) => describe("platform", () => {
     assert.equal(list.status, 200);
     assert.equal(list.data.follows, null);
     assert.equal(list.data.signedIn, false);
-    assert.ok(list.data.projects.some((p) => p.id === "glitches-and-stitches" && p.features.includes("polls")));
+    const gs = list.data.projects.find((p) => p.id === "glitches-and-stitches");
+    assert.ok(gs && gs.features.includes("polls") && gs.features.includes("events"));
+    // News waits for the community (#174) and shows became events (#178).
+    assert.ok(!gs.features.includes("news") && !gs.features.includes("shows"));
     assert.equal((await anon.req("PUT", "/api/follows/glitches-and-stitches", { body: { autoStacc: true } })).status, 401);
     // Signed up but not confirmed: no session, no follow.
     const pending = new Client(ctx.mock.url);
@@ -21,10 +24,10 @@ export default (ctx) => describe("platform", () => {
     assert.ok([401, 403].includes((await pending.req("PUT", "/api/follows/glitches-and-stitches", { body: {} })).status));
   });
 
-  test("Stacclets and Pacs from data/ are in the database with their project; drafts unpublished", async () => {
+  test("the test Stacclet and Pacs (test fixtures; data/ holds none, #176) are in the database with their project, unpublished", async () => {
     const pacs = sql(ctx.mock.stateDir, "SELECT id, stacclet_id, project_id, source, published FROM pacs WHERE deleted_at IS NULL ORDER BY id");
     const midi = pacs.find((p) => p.id === "frayed-signals-midi");
-    assert.ok(midi, "a Pac from data/pacs.js is synced");
+    assert.ok(midi, "the dev seed's test Pac is there");
     assert.deepEqual([midi.stacclet_id, midi.project_id, midi.source, midi.published], ["frayed-signals", "glitches-and-stitches", "catalog", 0]);
     const st = sql(ctx.mock.stateDir, "SELECT project_id, source FROM stacclets WHERE id = 'frayed-signals'")[0];
     assert.deepEqual([st.project_id, st.source], ["glitches-and-stitches", "catalog"]);

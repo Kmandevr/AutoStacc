@@ -15,7 +15,7 @@ export const RESERVED = new Set([
   "api", "media", "css", "js", "data", "img", "images", "assets", "static", "fonts", "files", "downloads", "uploads",
   "previews", "functions", "server", "scripts", "dist", "test", "tests", "dev", "preview", "sitemap", "sitemap.xml",
   "engine", "workers", "packs", "pack-builder",
-  "robots.txt", "llms.txt", "favicon.ico", "404", "500", "_headers", "_redirects", "well-known", ".well-known",
+  "robots.txt", "llms.txt", "speculation-rules.json", "favicon.ico", "404", "500", "_headers", "_redirects", "well-known", ".well-known",
   // names people would mistake for the platform itself
   "autostacc", "auto-stacc", "staff", "official", "moderator", "root", "system", "www", "mail", "email", "billing",
   "payments", "payouts", "orders", "auth", "oauth", "callback", "connect", "integrations", "webhooks", "null", "undefined"

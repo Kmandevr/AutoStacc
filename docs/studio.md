@@ -2,7 +2,7 @@
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
 covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Product Studio and the workspace shell
@@ -13,7 +13,7 @@ updated: 2026-10-20
 
 | Place | What it is for |
 | --- | --- |
-| **Creator Dashboard** (`/studio`) | Everything that belongs to the creator as a whole: the creator name and public profile, all projects and their sites (block editor), each project's list of products, earnings across all products, the payout account, and payout requests. This page already exists as `/studio`. |
+| **Creator Dashboard** (`/studio`) | Everything that belongs to the creator as a whole: the creator name and public profile, all projects and their sites (block editor), each project's list of products, each project's **Music** and **Events** (`js/studio-content.js` with `js/studio-music.js` and `js/studio-events.js`, `#content=<projectId>&kind=music|events`, both with tags; [creators](creators.md#music-and-events)), earnings across all products, the payout account, and payout requests. This page already exists as `/studio`. There is no News editor: news waits for each creator's Community page (#174). A first-party creator (AutoStacc's own, hand-written pages) shows only its projects' products, music and events (owner, 2026-10-21). Its owner is the account the `FIRST_PARTY_OWNERS` secret names (#172), and it has no Studio limits and no paid storage (#177). The **storage** panel (`js/studio-storage.js`, `#storage=<creatorId>`) shows storage by part to every member; the owner also sees the paid storage plan, statements and, with a plan, an open statement or a saved card, the **card** panel (`js/studio-storage-card.js`, owner, 2026-10-21, #142): the saved card's brand and last 4 and the next charge date, with Save, Replace or Remove. Saving opens Stripe's page; coming back (`&card=1`) asks the server to look the card up. Removing it asks first and says statements will come by email with a pay link ([creators](creators.md#paid-storage-built-2026-10-16-off)). |
 | **Product Studio** (`/studio#product=<id>`, plus `&section=<key>`) | One product, opened from its project's product list. It has a persistent sidebar of sections and a compact header. Every section works on the same product record. |
 | **Control Center** (`/admin`) | The owner's admin, in the same workspace shell (sidebar, compact header, drawer on phones), split into sub-pages (Stats, Daily, Manage, Settings at `/admin/<page>`; `data/workspaces.js` `control.pages`), each with its own sections ([admin](admin.md)); a section tied to an optional feature (Pacs, Community reports) is left out while that feature is off. |
 
@@ -28,7 +28,7 @@ updated: 2026-10-20
 | Storefront Studio | **Store Page** | `store` | Built |
 | Pricing Studio | **Pricing** | `pricing` | Built |
 | Analytics Studio | **Insights** | `insights` | Built |
-| Publishing and Release Controls | **Release** | `release` | Built (shared by every section and the header) |
+| Publishing and Release Controls | **Release** | `release` | Built (shared by every section and the header). Not a music release: those are the project's **Music** editor on the Creator Dashboard |
 | Collaboration Studio | **Team** | `team` | Not in this pass (listed as planned, not shown in the sidebar) |
 | Creator Dashboard | **Creator Dashboard** | — | The existing `/studio` home |
 
@@ -43,6 +43,7 @@ updated: 2026-10-20
 - **Phones (below about 900px):** the sidebar becomes a drawer opened from a "Sections" button in the header. Sections are not squeezed into tabs.
 - **Addresses:** the open section is kept in the address, so a reload or a shared link lands on it. Product Studio uses `#product=<id>&section=<key>`; the Control Center keeps `/admin#<key>`.
 - **Accessibility:** the sidebar is a `<nav>` of buttons, with `aria-current` on the open one. The drawer traps focus while open and closes on Escape. Focus moves to the section heading after navigation.
+- **Loading (2026-10-21):** the overview, an opening product and each section show placeholder panels (`GS.skeleton.pending` in `js/skeleton.js`, [modules](modules.md#shared-helpers-every-feature-uses)) until the section's `draw` first writes there, so section modules need no clean-up; lists (products, content, team, storage, earnings) show placeholder rows on their first load only.
 - One shell, two versions: `GS.workspace.mount(root, { label, title, subtitle, status: {text, tone}, groups: [{label, items: [{key, label, badge}]}], current, actions, menu, onSelect, onAction })` draws it and returns `{ body, select, current, setTitle, setSubtitle, setStatus, setSave, setBadge, setActions, setMenu }`. Tones are `neutral`, `good`, `warn` and `danger`. Stable hooks for tests: `[data-ws-item=<key>]`, `[data-ws-open]` (the phone Sections button), `[data-ws-status]`, `[data-ws-save]`, `[data-ws-menu]`.
 - **Section modules** (`js/studio-section-<key>.js`) each register `GS.studioSections.<key> = { draw(el, ctx) }`. `ctx` is `{ product, workspace, reload(), go(key), setSave(state), note(text, error), release(act, btn) }`, where `product` is the latest `GET /api/studio/products/:id` payload. `draw` may return a function that runs when the section is left (Store Page saves pending edits that way). `[data-sw-go=<key>]` and `[data-sw-release=<act>]` work anywhere in the body. A missing or failing module shows "This section isn't available right now". Shared helpers: `js/studio-kit.js` (status words, history sentences, readiness lists, the checkout note) and `js/studio-preview.js` (the Studio record in the product page's shape, and the included-content summary).
 
@@ -74,7 +75,7 @@ Cover art, name, status and the project it belongs to. A readiness checklist: bl
 
 The product's files, in one of two ways:
 
-- **Pac (ZIP).** The creator Pack Builder from Phase 5 ([packs](packs.md)), shown inside the workspace (`js/studio-packs.js` through `js/studio-section-pacs.js`). It offers a resumable upload, an in-browser preview of the ZIP, the engine's findings and the automated review, review of values and folders, versions, publish and discard. The product gets its own Stacclet and Pac with its first upload. A clean version goes live at once. A flagged one waits in the Control Center's review queue, where an admin approves it or rejects it with a note the creator sees. Uploads count against the creator's one storage cap (550 MB free; more is [paid storage](creators.md#paid-storage-built-2026-10-16-off)).
+- **Pac (ZIP).** The creator Pack Builder from Phase 5 ([packs](packs.md)), shown inside the workspace (`js/studio-packs.js` through `js/studio-section-pacs.js`). It offers a resumable upload, an in-browser preview of the ZIP, the engine's findings and the automated review, review of values and folders, versions, publish and discard. The product gets its own Stacclet and Pac with its first upload. A clean version goes live at once. A flagged one waits in the Control Center's review queue, where an admin approves it or rejects it with a note the creator sees. Uploads count against the creator's one storage cap (550 MB free, none for first-party creators; more is [paid storage](creators.md#paid-storage-built-2026-10-16-off)).
 - **Pac editor** (switch `packs.editor`, [packs](packs.md#pac-editor-built-2026-10-15)): one drop zone (`js/pac-drop.js`) for a file, a folder or a whole ZIP, and a visual builder that works like a file manager (`js/pac-editor.js`: folders of file cards with waveforms and play buttons, drag and drop, new folders, rename, move and remove, a read me) plus up to three preview clips (`js/pac-previews.js`). Everything waits for Publish.
 - **Single files.** With the Pac editor on, through the drop zone into the Pac (checked by the engine, waiting for Publish). Without it, the existing per-file upload (held for approval unless the creator is trusted).
 

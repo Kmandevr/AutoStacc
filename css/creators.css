@@ -1,0 +1,31 @@
+/* Creators page (/creators, js/creators-browse.js): creator cards with an initial, name, short bio and project links. */
+
+.cgrid, .creators-static { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 18px; }
+/* Cards and their placeholders take the same slot, so nothing jumps when the creators arrive. */
+.ccard, .cgrid > .sk, .ccard-static { min-height: 9.5rem; padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.cgrid > .sk-row { align-items: flex-start; gap: 16px; }
+.cgrid > .sk-row .sk-avatar { width: 72px; height: 72px; }
+.ccard { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; align-items: start; transition: border-color .15s; }
+.ccard:hover, .ccard:focus-within { border-color: var(--accent); }
+.ccard-avatar { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; text-decoration: none;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 70%, #000), color-mix(in srgb, var(--accent-2, var(--accent)) 45%, #000)); }
+.ccard-avatar span { font-family: var(--display); font-size: 1.8rem; font-weight: 800; color: #fff; }
+.ccard-body { display: grid; gap: 6px; min-width: 0; align-content: start; }
+.ccard-name, .ccard-static h3 { margin: 0; font-size: 1.15rem; line-height: 1.25; overflow-wrap: anywhere; }
+.ccard-name a { color: inherit; display: inline-block; padding-block: 2px; }
+.ccard-by, .ccard-bio, .ccard-static p { margin: 0; font-size: .9rem; color: var(--muted); }
+.ccard-projects { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
+.ccard-projects a { display: inline-flex; align-items: center; min-height: 32px; padding: 2px 10px; font-size: .85rem; border: 1px solid var(--line); border-radius: 999px; }
+.ccard-actions { margin: 4px 0 0; }
+.ccard .btn.small { width: auto; min-height: 40px; padding: 6px 14px; font-size: .85rem; }
+.cgrid > .browse-empty { grid-column: 1 / -1; }
+.ccard-static { display: grid; gap: 6px; align-content: start; }
+
+@media (max-width: 600px) {
+  .ccard { grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 14px; }
+  .ccard-avatar, .cgrid > .sk-row .sk-avatar { width: 56px; height: 56px; }
+  .ccard .btn.small { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .ccard { transition: none; } }
+/* Links in the intro and the built list stay at least 24px tall (WCAG 2.2 target size). */
+.platform .page-hero p a, .ccard-static h3 a { display: inline-block; padding-block: 2px; }

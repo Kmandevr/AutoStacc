@@ -1,13 +1,15 @@
 // Settings › Privacy and data: download everything AutoStacc holds about you as a JSON file (POST /api/account/export)
 // and, in a separate danger zone, delete your account (POST /api/account/delete: your email and password to confirm;
 // orders stay as anonymous sales records, everything you own stops downloading). Draws into #settings-app when
-// js/settings.js opens this section. Needs js/util.js.
+// js/settings.js opens this section. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
   "use strict";
 
-  const { $, escapeHTML, api, loginPath, say } = window.GS;
+  const { $, escapeHTML, api, loginPath, say, skeleton: sk } = window.GS;
   const root = $('#settings-app[data-section="privacy"]');
   if (!root) return;
+  // A request button: GS.skeleton's spinner when it's loaded, otherwise just disabled while the request runs.
+  const busy = (btn, on) => (sk ? sk.busy(btn, on) : (btn.disabled = on));
   let email = "";
   const toLogin = () => location.replace(loginPath(location.pathname));
 
@@ -38,10 +40,10 @@
 
   async function exportData(btn) {
     const panel = $("[data-export]", root);
-    btn.disabled = true;
+    busy(btn, true);
     say(panel, "Preparing your file…");
     const res = await api("/api/account/export", { method: "POST", body: {} });
-    btn.disabled = false;
+    busy(btn, false);
     if (res.status === 401) return toLogin();
     if (!res.ok) return say(panel, res.status === 429 ? "You've downloaded it a few times already. Try again in an hour." : res.error.message, true);
     const url = URL.createObjectURL(new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" }));
@@ -91,11 +93,11 @@
     const btn = $("button[type=submit]", form);
     if (btn.disabled) return;
     const panel = $("[data-delete]", root);
-    btn.disabled = true;
+    busy(btn, true);
     const res = await api("/api/account/delete", { method: "POST", body: { confirm: $("#delete-email", form).value.trim(), password: $("#delete-password", form).value } });
     if (res.status === 401) return toLogin();
     if (!res.ok) {
-      btn.disabled = false;
+      busy(btn, false);
       return say(panel, REFUSED[res.error.code] || res.error.message, true);
     }
     root.innerHTML = `<section class="panel appear" aria-labelledby="gone-title"><h2 id="gone-title" tabindex="-1">Your account is deleted</h2>

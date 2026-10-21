@@ -4,7 +4,7 @@
 // owner's only); anyone else gets "nothing here". Figures come from server/studio/insights-data.js.
 import { json } from "../lib/http.js";
 import { requireUser } from "../auth/session.js";
-import { LIMITS, SELLING } from "../creators/policy.js";
+import { LIMITS, SELLING, isFirstParty } from "../creators/policy.js";
 import { requireOwnProduct, productViews } from "../creators/products.js";
 import { loadReadiness } from "../creators/readiness.js";
 import { listEvents } from "../creators/events.js";
@@ -25,14 +25,16 @@ async function workspace(app, { productId }) {
     periodTotals(app, product.id, since, until), creatorSalesState(app)
   ]);
   const owner = role === "owner";
+  // A first-party creator keeps all of a sale (no share is recorded: server/revenue/split.js) and has no limits.
+  const firstParty = isFirstParty(creator);
   return json({
     product: view[0],
     project: { id: project.id, name: project.name, slug: project.slug, path: `/${creator.slug}/${project.slug}` },
-    creator: { id: creator.id, name: creator.name, slug: creator.slug, trusted: Boolean(creator.trusted), status: creator.status },
+    creator: { id: creator.id, name: creator.name, slug: creator.slug, trusted: Boolean(creator.trusted), status: creator.status, firstParty },
     role, readiness, activity,
-    summary: { days: 30, orders: totals.orders, units: totals.units, netCents: totals.netCents, creatorShareCents: owner ? totals.creatorShareCents : null,
+    summary: { days: 30, orders: totals.orders, units: totals.units, netCents: totals.netCents, creatorShareCents: owner ? (firstParty ? totals.netCents - (totals.refundsCents || 0) : totals.creatorShareCents) : null,
       downloads: totals.downloads, views: totals.views },
-    limits: { ...SELLING, filesPerProduct: LIMITS.filesPerProduct },
+    limits: { ...SELLING, filesPerProduct: firstParty ? null : LIMITS.filesPerProduct, unlimited: firstParty },
     features: { packsStudio: isOn(app, "packs.builder") },
     // Whether buyers can check out creators' products right now (the owner's switch and the marketplace key).
     checkout: { open: sales.open, reason: sales.reason }

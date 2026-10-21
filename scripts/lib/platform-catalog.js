@@ -1,14 +1,15 @@
-// The platform part of db/catalog.sql: upserts first-party creators (data/creators.js), projects (data/projects.js),
-// Stacclets and Pacs (data/stacclets.js, data/pacs.js) and polls (data/polls.js) into the store database, so the API can
-// check ownership, follows, votes and Pac contents against them. Same
-// rules as the product sync (lib/catalog.js): deterministic, drafts unpublished, removed entries marked deleted and
-// never dropped (follows and votes point at them), and rows the Studio made (source 'studio') never touched.
+// Writes db/catalog.sql: upserts first-party creators (data/creators.js, trusted: their pages are indexed), projects
+// (data/projects.js, with their look for server-rendered pages) and polls (data/polls.js) into the store database, so
+// the API can check ownership, follows and votes against them. Deterministic, drafts unpublished, removed entries marked
+// deleted and never dropped (follows and votes point at them), and rows the Studio made (source 'studio') never
+// touched. Products, Stacclets and Pacs are Studio content, never synced from data/ (#176).
 const crypto = require("crypto");
 const { q, NOW } = require("./catalog");
 const V = require("../../server/discovery/vocabulary.js");
 
 // What the projects browser needs about a first-party project: its genres in the store vocabulary ("genre:edm", or
-// "style:glitch" for a word that is a style), and the dates of its releases, news posts and shows (newest first).
+// "style:glitch" for a word that is a style). The dates of its releases and events come from the store database
+// (server/content/), where the Studio keeps them; projects.activity is no longer written.
 function projectGenres(p) {
   const out = [];
   for (const g of p.genres || []) {
@@ -18,9 +19,11 @@ function projectGenres(p) {
   }
   return out;
 }
-function projectActivity(data, id) {
-  const dates = (list) => list.filter((x) => x.project === id && x.date).map((x) => x.date).sort().reverse().slice(0, 20);
-  return { releases: dates(data.releases || []), news: dates(data.news || []), shows: dates(data.shows || []) };
+// Its look on server-rendered pages (projects.look, server/content/render.js): skin, sounds and entity, or null for
+// the plain platform look.
+function projectLook(p) {
+  const look = { ...(p.skin && { skin: true }), ...(p.sounds && { sounds: true }), ...(p.entity && { entity: p.entity }) };
+  return Object.keys(look).length ? JSON.stringify(look) : null;
 }
 
 const hash = (values) => crypto.createHash("sha256").update(JSON.stringify(values)).digest("hex").slice(0, 16);
@@ -42,11 +45,12 @@ function upserts(table, cols, rows, sourced = false) {
 }
 
 function platformSql(data) {
-  const creators = (data.creators || []).map((c) => ({ id: c.id, slug: c.id, name: c.name, source: "catalog", published: c.draft ? 0 : 1 }));
+  // First-party creators are trusted (their product, release and event pages are indexed; docs/creators.md).
+  const creators = (data.creators || []).map((c) => ({ id: c.id, slug: c.id, name: c.name, source: "catalog", trusted: 1, published: c.draft ? 0 : 1 }));
   const projects = data.projects.map((p) => ({
     id: p.id, name: p.name, features: JSON.stringify(p.features || []), published: p.draft ? 0 : 1, creator_id: p.creator || null, slug: p.id, source: "catalog",
     tagline: p.summary || p.tagline || null, image: p.logo ? "/" + p.logo.replace(/^\/+/, "") : null,
-    genres: JSON.stringify(projectGenres(p)), activity: JSON.stringify(projectActivity(data, p.id))
+    genres: JSON.stringify(projectGenres(p)), look: projectLook(p)
   }));
   const polls = data.polls.map((p) => ({
     id: p.id, project_id: p.project, question: p.question,
@@ -55,17 +59,11 @@ function platformSql(data) {
     closes_at: p.closes ? `${p.closes}T23:59:59.999Z` : null,
     published: p.draft ? 0 : 1
   }));
-  const stacclets = (data.stacclets || []).map((s) => ({ id: s.id, project_id: s.project, title: s.title, description: s.description || null, source: "catalog", published: s.draft ? 0 : 1 }));
-  const projectOf = new Map(stacclets.map((s) => [s.id, s.project_id]));
-  const pacs = (data.pacs || []).map((p) => ({
-    id: p.id, stacclet_id: p.stacclet, project_id: projectOf.get(p.stacclet) || "", title: p.title, description: p.description || null, source: "catalog", published: p.draft ? 0 : 1
-  }));
   return [
-    "-- Platform sync: creators, projects, Stacclets, Pacs and polls (data/creators.js, projects.js, stacclets.js, pacs.js, polls.js).",
-    ...upserts("creators", ["id", "slug", "name", "source", "published"], creators, true),
-    ...upserts("projects", ["id", "name", "features", "published", "creator_id", "slug", "source", "tagline", "image", "genres", "activity"], projects, true),
-    ...upserts("stacclets", ["id", "project_id", "title", "description", "source", "published"], stacclets, true),
-    ...upserts("pacs", ["id", "stacclet_id", "project_id", "title", "description", "source", "published"], pacs, true),
+    "-- Platform sync: creators, projects and polls (data/creators.js, projects.js, polls.js). Generated by scripts/build.js;",
+    "-- don't edit. Applied by the deploy (and scripts/dev.js locally) after the migrations. Re-applying it is harmless.",
+    ...upserts("creators", ["id", "slug", "name", "source", "trusted", "published"], creators, true),
+    ...upserts("projects", ["id", "name", "features", "published", "creator_id", "slug", "source", "tagline", "image", "genres", "look"], projects, true),
     ...upserts("polls", ["id", "project_id", "question", "options", "opens_at", "closes_at", "published"], polls)
   ].join("\n") + "\n";
 }

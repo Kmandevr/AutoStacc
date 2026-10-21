@@ -10,6 +10,8 @@ AutoStacc is the site at https://autostacc.com: a store for music, samples, pres
 - [Store](https://autostacc.com/shop): digital downloads, delivered right after checkout (payments by Stripe)
 - [About](https://autostacc.com/about): how AutoStacc works and what its words mean
 - [Projects](https://autostacc.com/projects): every project on AutoStacc
+- [Creators](https://autostacc.com/creators): every creator on AutoStacc and the projects they make
+- [Events](https://autostacc.com/events): a calendar of what projects have coming up, where and when
 - [Guides](https://autostacc.com/guide): step-by-step help for buying, Your Stacc and refunds, and the creator manual for the Studio, selling, packs and payouts
 
 ## Words
@@ -27,13 +29,11 @@ AutoStacc is the site at https://autostacc.com: a store for music, samples, pres
 
 - [Home](https://autostacc.com/autostacc/glitches-and-stitches)
 - [Music](https://autostacc.com/autostacc/glitches-and-stitches/music)
-- [News](https://autostacc.com/autostacc/glitches-and-stitches/news)
+- [Events](https://autostacc.com/autostacc/glitches-and-stitches/events)
 - [Press](https://autostacc.com/autostacc/glitches-and-stitches/press)
-
-Releases:
-
-- [HAIL](https://autostacc.com/autostacc/glitches-and-stitches/music/hail) (single, 2025-10-15): HAIL is a single by Glitches & Stitches, released on 15 October 2025. One track, 2:27, streaming on Apple Music, YouTube Music and Deezer.
 
 ## Optional
 
 - [Sitemap](https://autostacc.com/sitemap.xml)
+- [Releases and events sitemap](https://autostacc.com/sitemap-content.xml): every release and event page projects publish
+- [Store sitemap](https://autostacc.com/sitemap-shop.xml): the product pages of trusted creators

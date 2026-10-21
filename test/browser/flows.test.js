@@ -23,8 +23,8 @@ describe("store in the browser", () => {
     await page.reload();
     await page.waitForSelector("text=Payment confirmed");
     assert.deepEqual(ordersFor(email).map((o) => o.status), ["paid"]);
-    await page.goto("/shop/stems-patchwork");
-    await page.waitForSelector("[data-buy] .owned-badge");
+    await page.goto("/product?p=stems-patchwork");
+    await page.waitForSelector("#product-app .owned-badge");
     await page.goto("/library");
     await page.waitForSelector(".stacc-asset");
     const [download] = await Promise.all([page.waitForEvent("download"), page.click("[data-download]")]);
@@ -36,8 +36,8 @@ describe("store in the browser", () => {
   test("hammering the checkout button opens one order", async () => {
     const { ctx, page } = await open(DESK);
     const email = unique("hammer");
-    await page.goto("/shop/vj-loops");
-    await page.click("[data-buy] [data-add-to-cart]");
+    await page.goto("/product?p=vj-loops");
+    await page.click("#product-app [data-buy]");
     await page.goto("/cart");
     await page.fill("#cart-email", email);
     // Slow network: the button must lock on the first click.
@@ -90,8 +90,8 @@ describe("store in the browser", () => {
   test("losing the connection at checkout fails gently and recovers", async () => {
     const { ctx, page } = await open(PHONE);
     const email = unique("offline");
-    await page.goto("/shop/serum-presets");
-    await page.click("[data-buy] [data-add-to-cart]");
+    await page.goto("/product?p=serum-presets");
+    await page.click("#product-app [data-buy]");
     await page.goto("/cart");
     await page.fill("#cart-email", email);
     await ctx.setOffline(true);
@@ -114,11 +114,12 @@ describe("store in the browser", () => {
     await page.unroute("**/api/cart/price");
     await page.click("[data-retry]");
     await page.waitForSelector(".cart-line");
-    // Store down entirely: product pages keep their static buttons, the cart says so.
+    // Store down entirely: the product page says it can't show the product (never a broken page or a buy button
+    // with no price behind it), the cart says the store is offline.
     await page.route("**/api/**", (r) => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: { code: "store_offline", message: "offline" } }) }));
-    await page.goto("/shop/wallpapers");
-    // The static fallback stays (this product is a draft in data/, so it reads "Coming soon").
-    await page.waitForSelector("[data-buy] .btn");
+    await page.goto("/product?p=wallpapers");
+    await page.waitForSelector("#product-app .msg.error a[href='/shop']");
+    assert.equal(await page.locator("#product-app [data-buy]").count(), 0);
     await page.goto("/cart");
     await page.waitForSelector("text=offline for maintenance");
     assert.deepEqual(page.errors, []);
@@ -138,8 +139,10 @@ describe("store in the browser", () => {
       await page.waitForFunction((n) => document.querySelectorAll(".cart-line.has-problem").length === n, 2 - i);
     }
     await page.waitForSelector("#checkout-btn:not([disabled])");
-    // An unpublished product has no page at all.
-    assert.equal((await page.goto("/shop/dev-unpublished")).status(), 404);
+    // An unpublished product has no page: the product page says so and offers nothing to buy.
+    await page.goto("/product?p=dev-unpublished");
+    await page.waitForSelector("#product-app .msg.error");
+    assert.equal(await page.locator("#product-app [data-buy], #product-app [data-claim]").count(), 0);
     await ctx.close();
   });
 
@@ -483,8 +486,8 @@ describe("store in the browser", () => {
     // Buying makes it Stacc'd wherever it shows.
     const email = unique("stacc");
     await signUp(page, email);
-    await page.goto("/shop/wallpapers");
-    await page.locator(".detail-buy [data-add-to-cart]").click();
+    await page.goto("/product?p=wallpapers");
+    await page.locator("#product-app [data-buy]").click();
     await page.goto("/cart");
     await page.click("#checkout-btn");
     await page.waitForURL(/\/checkout\?order=.*mock=/);
@@ -502,12 +505,31 @@ describe("store in the browser", () => {
 
   test("keyboard only: add to cart and reach checkout", async () => {
     const { ctx, page } = await open(DESK);
-    await page.goto("/shop/sample-pack-vol1");
-    await page.locator("[data-buy] [data-add-to-cart]").focus();
+    await page.goto("/product?p=sample-pack-vol1");
+    await page.locator("#product-app [data-buy]").focus();
     await page.keyboard.press("Enter");
-    await page.waitForSelector("[data-buy] .in-cart:focus");
+    // The page announces it (role=status) with a link to the cart, reached by Tab.
+    await page.waitForSelector("#product-app .msg[role=status] a[href='/cart']");
+    for (let i = 0; i < 5 && !(await page.evaluate(() => document.activeElement.matches(".msg[role=status] a[href='/cart']"))); i++) await page.keyboard.press("Tab");
     await page.keyboard.press("Enter");
     await page.waitForURL(/\/cart/);
+    await ctx.close();
+  });
+
+  test("pressing Add to cart on the server's first draw survives the script's redraw: focus and the message stay", async () => {
+    const { ctx, page } = await open(DESK);
+    let release;
+    const held = new Promise((r) => { release = r; });
+    await page.route(/\/api\/products\/sample-pack-vol1$/, async (route) => { await held; await route.continue(); });
+    await page.goto("/shop/sample-pack-vol1", { waitUntil: "domcontentloaded" });
+    await page.locator("#product-app [data-buy]").focus();
+    await page.keyboard.press("Enter");
+    await page.waitForSelector("#product-app .msg[role=status] a[href='/cart']");
+    release();
+    await page.waitForFunction(() => document.title.startsWith("Sample") || document.querySelector("#product-app .product-desc"));
+    await page.waitForTimeout(300);
+    assert.ok(await page.isVisible("#product-app .msg[role=status] a[href='/cart']"), "the message is still there after the redraw");
+    assert.ok(await page.evaluate(() => document.activeElement.matches("#product-app [data-buy]")), "focus is back on the button");
     await ctx.close();
   });
 
@@ -551,7 +573,9 @@ describe("store in the browser", () => {
     assert.ok(await page.locator(".topbar a[href='/login']").isVisible(), "Log in in the top bar");
     assert.equal(await page.locator(".topbar .account-button").isVisible(), false, "no account menu for a stranger");
     assert.equal(await page.locator(".side a[href='/dashboard']").isVisible(), false, "no app links for a stranger");
-    assert.ok(await page.locator("[data-shop] .card").count() > 0, "featured products from the catalog");
+    // Products from the store: its picks, or the featured grid while it has none (both from the store API; no products
+    // are defined in code, #176).
+    await page.waitForSelector("[data-store-sections] .card, [data-shop] .card");
     assert.deepEqual(privateCalls, [], "the cover asks nothing about the visitor's things");
     for (const p of ["/dashboard", "/settings", "/settings/security"]) {
       await page.goto(p);

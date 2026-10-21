@@ -2,7 +2,7 @@
 title: Creator pages
 summary: PLANNED / NOT IMPLEMENTED. Blueprint for customizable project pages: creator HTML/CSS (later JavaScript) isolated in a sandboxed iframe on sandbox.autostacc.com, seamless under /<creator>/<project>.
 covers: [server/sites/, functions/[[path]].js, functions/media/sites/, _headers, server/lib/http.js, server/auth/index.js, server/orders/guest.js, server/impersonation/sessions.js]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Creator pages (sandboxed customization)
@@ -39,7 +39,7 @@ Context: [architecture](architecture.md) (Project → Stacclet → Pac → asset
 - Projects are trusted code in git: hand-written pages under `<creator>/<project>`, `css/projects/<id>/skin.css` and `look.css`, all reviewed and deployed with the site. This works for projects AutoStacc runs, but not for creators AutoStacc doesn't know.
 - Copyright strikes reach creator sites too: at three, a site's scheduled publish made by that account is dropped instead of published, and the Studio refuses that account's site changes ([copyright](copyright.md)).
 - Creator accounts and self-service publishing now exist ([creators](creators.md)): creators and members in D1, Studio projects, and block-based site documents stored in the database and rendered at publish. Custom code would build on those.
-- Today's headers forbid framing: `X-Frame-Options: SAMEORIGIN` on every page, and `frame-ancestors 'none'` on store and account pages. Store and account pages keep that forever. Only a project page's shell would frame the sandbox.
+- Today's headers forbid framing: `X-Frame-Options: SAMEORIGIN` on every page, and `frame-ancestors 'none'` on store and account pages. Store and account pages keep that forever. Only a project page's shell would frame the sandbox. (Checked 2026-10-21: `_headers` now also sends `Speculation-Rules: "/speculation-rules.json"` on every page and types that file; no framing or script policy changed, [production](production.md#security).)
 - Cookies are already host-only. Better Auth's `gs.*` cookies (the session, and the two-step sign-in cookie when that switch is on), the guest order key (`Path=/api/`) and the impersonation cookie (`SameSite=Strict`) set no `Domain`, so `sandbox.autostacc.com` never receives them. State-changing API calls already require the exact origin (`assertSameOrigin` in `server/lib/http.js`). The design below depends on both staying true.
 
 ## 1. User experience
@@ -280,7 +280,7 @@ How these map to free and paid creators is a business decision the owner hasn't 
 
 ## Building it later (order)
 
-1. Creator accounts tied to projects, and page data in D1 (prerequisites, not designed here). **Done** (2026-10-08) as the Studio: `creators`, `creator_members`, `project_sites`, `site_pages` and `site_assets` (uploaded images) in D1, rendered at publish by `server/sites/` and served by `functions/[[path]].js` with edge caching. Its block document is a simpler cousin of Level 1 (preset, accent and font instead of design tokens; no platform modules such as polls or follow, no first-party projects).
+1. Creator accounts tied to projects, and page data in D1 (prerequisites, not designed here). **Done** (2026-10-08) as the Studio: `creators`, `creator_members`, `project_sites`, `site_pages` and `site_assets` (uploaded images) in D1, rendered at publish by `server/sites/` and served by `functions/[[path]].js` with edge caching (since 2026-10-21 that Function first tries the Studio's release and news pages, `server/content/public.js`, then the site pages; images a release uses as artwork count as in use, `stillUsed` in `server/sites/images.js`). Its block document is a simpler cousin of Level 1 (preset, accent and font instead of design tokens; no platform modules such as polls or follow, no first-party projects).
 2. Level 1: sections, design tokens, the shell route, edge caching.
 3. Cookie hardening (`__Host-` prefix), header changes for project shells only, tests for the rules in [trade-offs](#trade-offs-of-a-subdomain).
 4. The sandbox Worker, the runtime, the bridge (resize, navigate, ready, error) and fallbacks.

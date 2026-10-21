@@ -8,7 +8,7 @@ import { fail } from "../lib/http.js";
 import { paidStorageStmt } from "../creators/creators.js";
 import { getSetting } from "../settings/settings.js";
 import { BILLING, capBytesFor } from "./policy.js";
-import { includedQuotaOf } from "../creators/policy.js";
+import { includedQuotaOf, isFirstParty } from "../creators/policy.js";
 
 export const planOf = (db, creatorId) => first(db, "SELECT * FROM storage_plans WHERE creator_id = ?", creatorId);
 
@@ -35,6 +35,8 @@ const overdue = (db, creatorId) => first(db, `SELECT id FROM storage_statements 
 /** Starts paid storage or changes its monthly cap (both ways: a lower cap than what's stored only stops new uploads). */
 export async function setPlan(app, creator, userId, capCents) {
   const { db } = app;
+  // A first-party creator has no storage limit to raise and is never charged for storage (owner, 2026-10-21, #177).
+  if (isFirstParty(creator)) fail(409, "storage_unlimited", "This creator's storage has no limit, so there's nothing to buy.");
   const settings = await billingSettings(db);
   if (!settings.on) fail(409, "storage_billing_off", "Paid storage isn't available yet.");
   if (!Number.isInteger(capCents) || capCents < BILLING.minCapCents || capCents > BILLING.maxCapCents) {
@@ -56,11 +58,11 @@ export async function setPlan(app, creator, userId, capCents) {
   return planOf(db, creator.id);
 }
 
-/** A new rate: every plan's cap buys a different limit, worked out again (active plans' upload limits with it). */
+/** A new rate: every plan's cap buys a different limit, worked out again (active plans' upload limits with it). First-party creators' are skipped. */
 export async function rescalePlans(db, rate, actor) {
   if (!rate) return 0;
   const plans = await all(db, `SELECT p.creator_id, p.status, p.cap_cents, c.storage_quota_bytes, c.files_quota_bytes FROM storage_plans p JOIN creators c ON c.id = p.creator_id
-    WHERE p.status <> 'ended'`);
+    WHERE p.status <> 'ended' AND c.source <> 'catalog'`);
   for (const p of plans) {
     const cap = capBytesFor(p.cap_cents, includedQuotaOf(p), rate);
     await db.batch([
@@ -95,8 +97,8 @@ export async function restoreIfSettled(db, creatorId, actor) {
   return true;
 }
 
-/** Plans whose creators still need today's measurement (anything not ended), a bounded batch. */
+/** Plans whose creators still need today's measurement (anything not ended), a bounded batch; never a first-party creator's (never charged). */
 export const plansToMeasure = (db, day, max) => all(db,
   `SELECT p.*, c.storage_quota_bytes, c.files_quota_bytes FROM storage_plans p JOIN creators c ON c.id = p.creator_id
-   WHERE p.status <> 'ended' AND NOT EXISTS (SELECT 1 FROM storage_usage_days d WHERE d.creator_id = p.creator_id AND d.day = ?)
+   WHERE p.status <> 'ended' AND c.source <> 'catalog' AND NOT EXISTS (SELECT 1 FROM storage_usage_days d WHERE d.creator_id = p.creator_id AND d.day = ?)
    ORDER BY p.creator_id LIMIT ?`, day, max);

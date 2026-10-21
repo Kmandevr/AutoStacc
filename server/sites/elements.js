@@ -1,6 +1,6 @@
 // The elements a creator can place on a site (docs/builder.md) and each one's own fields, cleaned; unknown fields are
 // dropped. How they look is js/site-elements.js. refs collects what an element shows that must be the creator's own:
-// images (assets), products and projects.
+// images (assets), products and projects (a follow button's, and the project whose releases or events an element shows).
 import { NETWORKS } from "./networks.js";
 import { embedFor } from "./embeds.js";
 import { bad, text, url, list } from "./fields.js";
@@ -50,8 +50,10 @@ export const ELEMENTS = {
     if (!embedFor(raw)) bad(`${w}.url`, "paste a share link from YouTube, Spotify, SoundCloud or Apple Music");
     return { url: raw };
   },
-  events: (b, w) => ({
+  // Its dates typed in by hand, or (with project) that project's published upcoming events from the Studio.
+  events: (b, w, refs) => ({
     title: text(b.title, `${w}.title`, 120),
+    project: b.project ? project(b.project, `${w}.project`, refs) : "",
     items: list(b.items, `${w}.items`, 50).map((x, i) => {
       const at = `${w}.items[${i}]`;
       if (!x || typeof x !== "object") bad(at, "must be an event");
@@ -77,6 +79,8 @@ export const ELEMENTS = {
   },
   tabs: (b, w) => ({ items: panels(b.items, `${w}.items`) }),
   accordion: (b, w) => ({ items: panels(b.items, `${w}.items`) }),
+  releases: (b, w, refs) => ({ title: text(b.title, `${w}.title`, 120), project: project(b.project, `${w}.project`, refs),
+    count: Number.isInteger(b.count) ? Math.min(12, Math.max(1, b.count)) : 4 }),
   projects: (b, w) => ({ title: text(b.title, `${w}.title`, 120) }),
   follow: (b, w, refs) => ({ project: project(b.project, `${w}.project`, refs), label: text(b.label, `${w}.label`, 60) }),
   cart: (b, w) => ({ label: text(b.label, `${w}.label`, 60) }),

@@ -1,6 +1,6 @@
 // Layout and CSP sweeps in real Chromium against its own local store: every public and store page at 320, 390, 768 and
 // 1280px, with no sideways scroll, no tiny buttons and no console errors; the signed-in pages on a phone; the trust
-// pages and their links; reduced motion. Usage: npm run test:browser.
+// pages and their links; the sidebar's links; reduced motion. Usage: npm run test:browser.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { unique } from "../support/client.js";
@@ -16,7 +16,7 @@ describe("layout in the browser", { concurrency: true }, () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/shop/stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/autostacc/glitches-and-stitches",
+      for (const p of ["/shop", "/product?p=stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/autostacc/glitches-and-stitches",
         "/privacy", "/terms", "/refunds", "/license", "/help", "/contact", "/security", "/no-such-page"]) {
         await page.goto(p);
         await settle(page);
@@ -34,6 +34,20 @@ describe("layout in the browser", { concurrency: true }, () => {
       await ctx.close();
     });
   }
+
+  test("sidebar: AutoStacc has Home, Store, Explore, Community and About; Projects has Projects and Creators; the footer links Creators", async () => {
+    const { ctx, page } = await open(DESK);
+    await page.goto("/projects");
+    const names = (sel) => page.locator(`${sel} a`).evaluateAll((els) => els.map((el) => [el.getAttribute("href"), el.textContent.trim()]));
+    assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/explore", "Explore"], ["/community", "Community"], ["/about", "About"]]);
+    assert.deepEqual(await names("[aria-labelledby=side-projects]"), [["/projects", "Projects"], ["/creators", "Creators"]]);
+    assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Projects");
+    assert.ok(await page.locator("#site-footer a[href='/creators']").count(), "the footer links Creators");
+    await page.goto("/community");
+    assert.equal(await page.locator(".side-nav a[aria-current]").getAttribute("href"), "/community", "community pages light up Community");
+    assert.deepEqual(page.errors, []);
+    await ctx.close();
+  });
 
   test("the signed-in pages fit a phone: no sideways scroll, no tiny buttons, no CSP errors", async () => {
     const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });
@@ -80,10 +94,10 @@ describe("layout in the browser", { concurrency: true }, () => {
     const first = await page.locator(".prose-toc a").nth(2).getAttribute("href");
     await page.click(`.prose-toc a[href='${first}']`);
     assert.ok(await page.locator(first).isVisible());
-    // The product page names its licence and links to the full terms.
-    await page.goto("/shop/sample-pack-vol1");
-    assert.ok(await page.locator(".license-box strong", { hasText: "Sound licence" }).isVisible());
-    assert.ok(await page.locator(".license-box a[href='/license#sounds']").isVisible());
+    // The product page links to the licence and the terms the buyer accepts.
+    await page.goto("/product?p=sample-pack-vol1");
+    await page.waitForSelector("#product-app .product-info");
+    for (const href of ["/license", "/terms", "/refunds"]) assert.ok(await page.locator(`#product-app a[href='${href}']`).isVisible(), `product page links ${href}`);
     await page.goto("/license#sounds");
     assert.ok(await page.locator("#sounds >> text=You can't").isVisible());
     await page.goto("/login#signup");

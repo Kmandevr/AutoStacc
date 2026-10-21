@@ -11,6 +11,7 @@ SKIP='(^|/)\.|^(CLAUDE|README|SECURITY)\.md$|^LICENSE$|package-lock\.json$'
 
 purpose() {
   case "$1" in
+    *speculation-rules.json) echo "Page preloading rules (Speculation Rules, sent by _headers): same-origin pages prefetch on hover or press, never /api, admin, cart, checkout or links with a query" ;;
     *package.json) sed -n 's|^ *"description": *"\(.*\)",*$|\1|p' "$1" | head -1 ;;
     *.js|*.cjs|*.mjs|*.ts|*.json|*.jsonc|*.rs) sed -n '1s|^//!* *||p' "$1" ;;
     *.sql)  sed -n '1s|^-- *||p' "$1" ;;

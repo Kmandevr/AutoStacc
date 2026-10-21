@@ -2,12 +2,12 @@
 title: Payouts setup
 summary: How creators get paid (Stripe Connect on a second Stripe account), what the owner sets up in Stripe and GitHub to switch it on, and how the code behaves until then.
 covers: [server/payments/connect.js, server/payments/accounts.js, server/payments/stripe.js, server/payments/routes.js, server/revenue/, server/studio/earnings.js, server/studio/payout-account.js, server/admin/payouts.js, server/admin/creator-sales.js, server/payments/creator-sales.js, server/checkout/routes.js, server/lib/config.js, server/creators/policy.js, db/migrations/0011_marketplace_payouts.sql, js/admin-payouts.js, js/studio-earnings.js, scripts/cloudflare.js]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Payouts setup
 
-Creators' products are sold on a **second Stripe account** (the "marketplace" account), and creators are paid from it through **Stripe Connect**. AutoStacc's own products stay on the first account with Managed Payments, which Stripe doesn't allow for marketplaces ([eligibility](https://docs.stripe.com/payments/managed-payments/eligibility)). Owner decisions behind this: [decisions](decisions.md).
+Creators' products are sold on a **second Stripe account** (the "marketplace" account), and creators are paid from it through **Stripe Connect**. AutoStacc's own products stay on the first account with Managed Payments (also the ones its first-party creator makes in the Studio: `server/payments/accounts.js` sends only a Studio product of a Studio creator to the marketplace, `creatorSaleIds`), which Stripe doesn't allow for marketplaces ([eligibility](https://docs.stripe.com/payments/managed-payments/eligibility)). Owner decisions behind this: [decisions](decisions.md).
 
 ## How it works
 
@@ -16,9 +16,11 @@ Creators' products are sold on a **second Stripe account** (the "marketplace" ac
 3. Each sale line records its split: AutoStacc keeps **20%** (the platform default, `DEFAULT_PLATFORM_FEE_BPS` in `server/creators/policy.js`, or a per-creator fee set in the Control Center; site templates sold from the community library are split and paid out the same way) and the creator's share is the rest, fixed when the order is written.
 4. A sale is held 14 days (the refund window). Copyright strikes pause a creator space's sales, never its payouts of earnings already made: even at three strikes, requesting a payout and setting up the payout account stay open ([copyright](copyright.md)). After that the creator presses **Request a payout** (minimum $10, one open request at a time; refused while the owner has paused payout requests in Control Center › Settings › Switches); with the marketplace account on, their payout account must be ready first. The admins get an email about it.
 5. In the Control Center → **Payouts** the owner presses **Send via Stripe**: one Stripe transfer keyed by the request, so a retry never pays twice. If Stripe refuses (for example not enough balance) nothing is marked paid, the reason is shown (a 503, so Cloudflare doesn't hide it) and the audit log records `payout.failed`. If a transfer goes out while someone declines the same request at that moment, it's recorded as `payout.transfer_orphaned` with the transfer id: check it in Stripe. Opening a creator's payout account answers a fixed message when Stripe refuses (Stripe's words stay in the log). The creator is emailed when a request is paid or declined.
-6. A sale refunded after it was paid out leaves a negative balance, taken from the creator's next sales before anything more is available. Paid storage statements are settled from what has cleared first (`server/revenue/deductions.js`, shown in the Studio apart from payouts; [creators](creators.md#paid-storage-built-2026-10-16-off)), so that money is no longer available to pay out.
+6. A sale refunded after it was paid out leaves a negative balance, taken from the creator's next sales before anything more is available. Paid storage statements are settled from what has cleared first, and only the rest is charged to the creator space's saved card (`server/revenue/deductions.js`, shown in the Studio apart from payouts; [creators](creators.md#paid-storage-built-2026-10-16-off)), so that money is no longer available to pay out.
 
 Until the keys below are set, creator products can be listed and added to carts but not checked out (the cart says creator checkout isn't open yet; checkout answers 503 `creator_sales_closed`) and payouts stay manual (the creator types how they want to be paid, you pay and mark it paid).
+
+The Studio's Earnings section (`js/studio-earnings.js`) shows placeholders only on its first draw, so a redraw after a payout request doesn't flicker (2026-10-21).
 
 ## What the owner does
 

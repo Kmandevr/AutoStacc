@@ -1,8 +1,8 @@
 ---
 title: Search Console
 summary: Step-by-step for the owner: set up Google Search Console for autostacc.com, submit the sitemap, request indexing, and point every official profile back to the site.
-covers: [data/projects.js, data/music.js, robots.txt, _redirects, sitemap.xml]
-updated: 2026-10-20
+covers: [data/projects.js, robots.txt, _redirects, sitemap.xml, server/content/sitemap.js]
+updated: 2026-10-21
 ---
 
 # Google Search Console and profile checklist
@@ -16,7 +16,7 @@ Open each of these in a browser. They should all work:
 - https://autostacc.com/ shows AutoStacc's public home page (not a redirect to /home or to login)
 - https://autostacc.com/autostacc/glitches-and-stitches/music/hail shows the HAIL page, and the old https://autostacc.com/music/hail redirects there
 - https://autostacc.com/sitemap.xml shows a list of addresses
-- https://autostacc.com/robots.txt ends with `Sitemap: https://autostacc.com/sitemap.xml`
+- https://autostacc.com/robots.txt names both `Sitemap: https://autostacc.com/sitemap.xml` and `Sitemap: https://autostacc.com/sitemap-content.xml` (releases and news posts made in the Studio)
 - https://autostacc.com/this-does-not-exist shows the "Not found" page
 - http://autostacc.com (no s) and https://www.autostacc.com both end up on https://autostacc.com/. If `www` doesn't work: Cloudflare dashboard → autostacc.com → DNS, add a proxied `CNAME` record `www` → `autostacc.com`, then Rules → Redirect Rules → "Redirect from WWW to root" template. "Always Use HTTPS" is under SSL/TLS → Edge Certificates; turn it on if it isn't.
 
@@ -34,8 +34,8 @@ Open each of these in a browser. They should all work:
 ## 3. Submit the sitemap
 
 1. In the left menu: **Sitemaps**.
-2. Under "Add a new sitemap" type `sitemap.xml` and click **Submit**.
-3. Status should become **Success** within a day, with the number of discovered pages. The sitemap updates itself when releases, products or news are added; you never need to resubmit it.
+2. Under "Add a new sitemap" type `sitemap.xml` and click **Submit**, then do the same for `sitemap-content.xml` (the release and news pages made in the Studio).
+3. Status should become **Success** within a day, with the number of discovered pages. The sitemaps update themselves when releases, products or news are added; you never need to resubmit it. `sitemap.xml` also lists the platform pages the build makes, `/creators` among them since 2026-10-21; check it shows in the discovered count.
 
 ## 4. Inspect the home page and request indexing
 
@@ -87,13 +87,13 @@ Search engines connect an artist to their official site when the site links to t
 | --- | --- | --- |
 | Deezer artist page | Linked from the site | Deezer for Creators (via DistroKid's artist tools): add the website if offered |
 | Apple Music artist page | Linked from the site | The artist name is spelled "Glitches & Stiches" there. Ask DistroKid support to correct it to "Glitches & Stitches" (issue #10). Apple Music for Artists: claim the profile; it has no website field |
-| Spotify | Not found yet | Find the artist page (or ask DistroKid), claim it in Spotify for Artists, add autostacc.com in the bio. Then add the URL to the project's `socials` in `data/projects.js` and HAIL's Spotify link in `data/music.js` |
+| Spotify | Not found yet | Find the artist page (or ask DistroKid), claim it in Spotify for Artists, add autostacc.com in the bio. Then add the URL to the project's `socials` in `data/projects.js` and HAIL's Spotify link in the Studio's Music editor |
 | YouTube | HAIL is on the auto-generated "Release - Topic" channel | If there's an own channel: add autostacc.com under Customization → Links, then add the channel URL to the project's `socials` in `data/projects.js` |
 | SoundCloud | Not set | Profile → Edit → Your links: add autostacc.com |
 | Bandcamp | Not set | Profile → Edit profile → Website |
 | Instagram, TikTok | Not set | Put autostacc.com as the bio link |
 | Beatport | Not set | If releases go there, claim the artist page |
-| DistroKid HyperFollow | Not set | Optional pre-save/link page; add it to `data/music.js` if used |
+| DistroKid HyperFollow | Not set | Optional pre-save/link page; add it to the release's links in the Studio's Music editor if used |
 | Press kit | Not set | Mention autostacc.com in the bio and one-sheet; set the project's `pressKitUrl` in `data/projects.js` |
 
 Always write the name exactly **Glitches & Stitches** on every profile. Missing profiles and the booking email are tracked in issue #7.

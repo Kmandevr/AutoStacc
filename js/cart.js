@@ -2,11 +2,11 @@
 // sale prices and a promo code's discount (the code is kept for this tab only and checked by the store), takes a guest
 // email when nobody is signed in, and starts checkout (one request per click, safe to retry). While creator sales are
 // closed, creators' products stay in the cart marked as held and checkout sends only the rest.
-// Needs js/util.js.
+// Placeholder lines while pricing and spinners on busy buttons come from js/skeleton.js when loaded. Needs js/util.js.
 (function () {
   "use strict";
 
-  const { $, escapeHTML, cents, api, cart, track } = window.GS;
+  const { $, escapeHTML, cents, api, cart, track } = window.GS, sk = window.GS.skeleton;
   const root = $("#cart-app");
   if (!root) return;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
@@ -144,6 +144,8 @@
   async function load(hint) {
     const items = cart.items();
     if (!items.length) { empty(); return refocus(hint); }
+    // First pricing: placeholder lines in the cart's own list (js/skeleton.js, when loaded) instead of a bare message.
+    if (!priced && sk) { root.innerHTML = `<ul class="cart-lines"></ul>`; sk.show(root.firstElementChild, "row", Math.min(items.length, 6)); }
     const [res, acct] = await Promise.all([api("/api/cart/price", { method: "POST", body: { items, promoCode: promo.get() } }), api("/api/account")]);
     account = acct.ok ? acct.data : null;
     if (!res.ok) {
@@ -190,6 +192,7 @@
     btn.disabled = true;
     btn.classList.add("busy");
     btn.textContent = "Opening checkout";
+    if (sk) sk.busy(btn, true); // its spinner, after the label changes
     // One account per payment: a key per account, so the second step isn't mistaken for the first.
     const key = checkoutKey(items) && (account ? `${checkoutKey(items)}-${account}` : checkoutKey(items));
     const body = { items, promoCode: promo.get(), ...(account && { account }), ...(emailInput && { email: emailInput.value.trim() }) };
@@ -231,6 +234,7 @@
     if (!e.target.matches("[data-promo]")) return;
     e.preventDefault();
     promo.set($("#promo-code", root).value.trim().toUpperCase());
+    if (sk) sk.busy(e.target.querySelector("button[type=submit]"), true); // until the re-priced cart redraws
     load();
   });
   root.addEventListener("change", (e) => {

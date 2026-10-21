@@ -63,8 +63,8 @@ export function browserStore({ name, port, vars = {} }) {
   const setCart = (page, items) => page.evaluate((i) => localStorage.setItem("gs:cart", JSON.stringify(i)), items);
 
   async function toMockPay(page, email, productId = "wallpapers") {
-    await page.goto(`/shop/${productId}`);
-    await page.locator("[data-buy] [data-add-to-cart]").click();
+    await page.goto(`/product?p=${productId}`);
+    await page.locator("#product-app [data-buy]").click();
     await page.goto("/cart");
     await page.fill("#cart-email", email);
     await page.click("#checkout-btn");
