@@ -1,5 +1,6 @@
 // Writes llms.txt: a plain-text guide to the site for AI assistants and crawlers that don't run JavaScript (the
-// llmstxt.org format). Built from data/ like the sitemap, so it lists only what is published: no drafts.
+// llmstxt.org format). Built from data/ like the sitemap, so it lists only what is published: no drafts. Releases and
+// news posts are Studio content in the store database, so it points at /sitemap-content.xml for them.
 const { abs, projectPath } = require("./data");
 
 function llmsTxt(data) {
@@ -12,14 +13,11 @@ function llmsTxt(data) {
   const projectBlock = (x) => {
     const pages = (x.pages || []).filter((pg) => !pg.path.startsWith("#"))
       .map((pg) => `- [${pg.label}](${url(projectPath(x.id, ...(pg.path ? [pg.path] : [])))})`);
-    const releases = data.releases.filter((r) => r.project === x.id)
-      .map((r) => `- [${r.title}](${url(projectPath(x.id, "music", r.id))}) (${r.type.toLowerCase()}, ${r.date}): ${r.description}`);
     const sold = products.filter((p) => p.project === x.id)
       .map((p) => `- [${p.title}](${url("/shop/" + p.id)}) (${p.category}, ${money(p.price, p.currency)}): ${p.description}`);
     return [
       `### ${x.name}`, "", `> ${x.summary}`, "",
       ...pages, "",
-      ...(releases.length ? ["Releases:", "", ...releases, ""] : []),
       ...(sold.length ? ["For sale on AutoStacc:", "", ...sold, ""] : [])
     ].filter((l, i, a) => !(l === "" && a[i - 1] === ""));
   };
@@ -52,6 +50,7 @@ function llmsTxt(data) {
     "## Optional",
     "",
     `- [Sitemap](${url("/sitemap.xml")})`,
+    `- [Releases and news sitemap](${url("/sitemap-content.xml")}): every release and news page projects publish`,
     ""
   ].join("\n");
 }

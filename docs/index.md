@@ -1,7 +1,7 @@
 ---
 title: AutoStacc vault
 summary: Vault home: links to every note.
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # AutoStacc vault
@@ -15,12 +15,12 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Architecture](architecture.md): AutoStacc as a platform: projects, Stacclets, Pacs, assets, Your Stacc, Auto-Stacc, polls, relationships
 - [AutoStacc](autostacc.md): the platform's identity, Stacc vocabulary, site structure and look (themes, colour tokens, type)
 - [Projects](projects.md): the project data contract and how to add a project
-- [Creators and the Studio](creators.md): creators own projects, `/<creator>/<project>` addresses, free no-code creator sites and how they stay safe and cheap, seller and fee per order line, file lifecycle, quotas, connected accounts
+- [Creators and the Studio](creators.md): creators own projects, `/<creator>/<project>` addresses, free no-code creator sites, every creator's music, news and shows (first-party included) and how they stay safe and cheap, seller and fee per order line, file lifecycle, quotas, connected accounts
 - [Your Stacc](library.md): the content-level library, selected downloads, personal collections, tags and saved searches, follows and Auto-Stacc
 - [Identity](identity.md): the Glitches & Stitches project's concept, the loop, sound, visuals and personality (owner-written; follow it for anything creative)
 - [Artist](artist.md): confirmed facts and what is still unknown
 - [Brand](brand.md): the Glitches & Stitches skin: logo, colours, fonts, motion, sound, easter eggs and tone
-- [Shop](shop.md): the first-party catalogue (products, types, prices, facets) and what is still placeholder
+- [Shop](shop.md): product kinds, where AutoStacc's own products are made (the Studio, since 2026-10-21) and the deleted placeholder catalogue
 - [Browsing projects and content](browse.md): the projects browser, /explore, the home hub, dashboard sections, Your Stacc search
 - [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
 - [Processing engine](engine.md): the Rust engine (engine/): safe ZIP reading, hashes, formats, header facts, suggestions and native audio analysis (tempo, key, waveform), in a Cloudflare Container behind the engine Worker and as WebAssembly in the Pack Builder; CI and benchmarks

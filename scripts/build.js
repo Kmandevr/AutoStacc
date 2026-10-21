@@ -1,6 +1,8 @@
 // Generates everything search engines read from data/: each page's <head> metadata, the trust pages (/privacy, /terms,
-// /refunds, /security, /contact, /help, /license), one page per product (shop/) and
-// per project release and news post (<project address>/music/, <project address>/news/), sitemap.xml, llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the catalog).
+// /refunds, /security, /contact, /help, /license), one page per product in data/products.js (shop/), sitemap.xml,
+// llms.txt (the site for AI assistants), the list of public URLs, and db/catalog.sql (the store database's copy of the
+// catalog). Release and news pages are Studio content the server renders (server/content/), listed in its own
+// /sitemap-content.xml; generated copies left in a creator's folder are removed as stale.
 // Usage: node scripts/build.js [--check]
 // --check writes nothing and exits 1 if any generated file is out of date (CI and the deploy run it before building).
 const fs = require("fs");
@@ -74,11 +76,9 @@ for (const file of handPages) {
     const crumbs = project
       ? [["Home", "/"], ...P.ownerCrumb(data, project), ...(projectHome ? [] : [[project.name, projectPath(project.id)]]), [projectHome ? project.name : name, p]]
       : [["Home", "/"], [name, p]];
-    const ofProject = (x) => !project || x.project === project.id;
+    // An ItemList of what a list page shows, when data/ holds it (a project's releases and news are in the store database).
     const lists = {
-      music: data.releases.filter(ofProject).map((r) => [r.title, projectPath(r.project, "music", r.id)]),
       shop: data.products.filter((x) => !x.draft).map((x) => [x.title, "/shop/" + x.id]),
-      news: [...data.news].filter(ofProject).sort((a, b) => b.date.localeCompare(a.date)).map((n) => [n.title, projectPath(n.project, "news", n.id)]),
       projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)])
     }[key];
     const extra = { breadcrumb: H.breadcrumbs(SITE, crumbs) };
@@ -100,9 +100,7 @@ for (const file of handPages) {
 
 // ---------- generated pages ----------
 const generated = [
-  ...data.releases.map((r) => P.releasePage(SITE, data, r)),
   ...data.products.map((x) => P.productPage(SITE, data, x)),
-  ...data.news.map((n) => P.newsPage(SITE, data, n)),
   ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c)),
   ...trustPages(SITE, data),
   communityPage(SITE)
@@ -116,10 +114,6 @@ for (const g of generated) {
   seen.add(g.file);
   outputs.set(g.file, g.html);
   pages.push({ ...g.page, file: g.file });
-}
-for (const r of data.releases) {
-  if (!r.artwork) errors.push(`release ${r.id}: add artwork (it is the page's preview image)`);
-  for (const t of r.tracks || []) if (!/^\d+:\d\d$/.test(t.duration || "")) errors.push(`release ${r.id}: track "${t.title}" needs a duration like "2:27"`);
 }
 
 // ---------- store catalog: db/catalog.sql (the deploy applies it to the store database) ----------
@@ -159,7 +153,8 @@ window.CONTENT_TYPES = ${JSON.stringify(kindsForBrowser.types, null, 1)};
 window.CONTENT_TYPE_ALIASES = ${JSON.stringify(kindsForBrowser.aliases, null, 1)};
 `);
 
-// Generated files that no longer match any data entry (an id was removed or made a draft) are deleted.
+// Generated files that no longer match any data entry (an id was removed or made a draft) are deleted. That includes
+// the release and news pages once generated into <creator>/<project>/music/ and news/ (now served from the database).
 const stale = [];
 // (music/ and news/ at the root, then projects/, held the pages before they moved to their creator's space.)
 const rootHtml = fs.readdirSync(ROOT).filter((f) => f.endsWith(".html"));
@@ -181,8 +176,8 @@ ${urls.map((u) => `  <url><loc>${H.esc(u)}</loc></url>`).join("\n")}
 outputs.set("llms.txt", llmsTxt(data));
 
 // ---------- public URL record: new URLs are added, none is ever removed here ----------
-// scripts/seo-test.js fails if a recorded URL is neither in the sitemap nor redirected in _redirects,
-// so a page can't silently disappear from search. Remove a line by hand only when the removal is deliberate.
+// scripts/seo-test.js fails if a recorded URL is neither in the sitemap, redirected in _redirects, nor a release or
+// news address the content Function serves (lib/data.js contentAddress), so a page can't silently disappear from search. Remove a line by hand only when the removal is deliberate.
 const RECORD = "scripts/public-urls.txt";
 const recorded = fs.existsSync(path.join(ROOT, RECORD)) ? read(RECORD).split("\n").filter((l) => l && !l.startsWith("#")) : [];
 const header = "# Public URLs ever published. scripts/build.js adds new ones; seo-test.js fails if one disappears without a redirect.\n";

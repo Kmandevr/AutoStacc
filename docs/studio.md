@@ -2,7 +2,7 @@
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
 covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Product Studio and the workspace shell
@@ -13,7 +13,7 @@ updated: 2026-10-20
 
 | Place | What it is for |
 | --- | --- |
-| **Creator Dashboard** (`/studio`) | Everything that belongs to the creator as a whole: the creator name and public profile, all projects and their sites (block editor), each project's list of products, earnings across all products, the payout account, and payout requests. This page already exists as `/studio`. |
+| **Creator Dashboard** (`/studio`) | Everything that belongs to the creator as a whole: the creator name and public profile, all projects and their sites (block editor), each project's list of products, each project's **Music**, **News** and **Shows** (`js/studio-content.js`, `#content=<projectId>&kind=music|news|shows`; [creators](creators.md#music-news-and-shows-built-2026-10-21)), earnings across all products, the payout account, and payout requests. This page already exists as `/studio`. A first-party creator (AutoStacc's own, hand-written pages) shows only its projects' products, music, news and shows (owner, 2026-10-21). |
 | **Product Studio** (`/studio#product=<id>`, plus `&section=<key>`) | One product, opened from its project's product list. It has a persistent sidebar of sections and a compact header. Every section works on the same product record. |
 | **Control Center** (`/admin`) | The owner's admin, in the same workspace shell (sidebar, compact header, drawer on phones), split into sub-pages (Stats, Daily, Manage, Settings at `/admin/<page>`; `data/workspaces.js` `control.pages`), each with its own sections ([admin](admin.md)); a section tied to an optional feature (Pacs, Community reports) is left out while that feature is off. |
 
@@ -28,7 +28,7 @@ updated: 2026-10-20
 | Storefront Studio | **Store Page** | `store` | Built |
 | Pricing Studio | **Pricing** | `pricing` | Built |
 | Analytics Studio | **Insights** | `insights` | Built |
-| Publishing and Release Controls | **Release** | `release` | Built (shared by every section and the header) |
+| Publishing and Release Controls | **Release** | `release` | Built (shared by every section and the header). Not a music release: those are the project's **Music** editor on the Creator Dashboard |
 | Collaboration Studio | **Team** | `team` | Not in this pass (listed as planned, not shown in the sidebar) |
 | Creator Dashboard | **Creator Dashboard** | — | The existing `/studio` home |
 

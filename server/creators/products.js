@@ -1,5 +1,5 @@
 // Products a creator makes in the Studio (D1 products with source 'studio', one per row, under one of the creator's
-// projects): checking what they type, creating, changing and removing them, and the access check for an account that may
+// projects, first-party creators' included): checking what they type, creating, changing and removing them, and the access check for an account that may
 // manage one. Price, availability and ownership stay the store's (server/catalog, server/cart): this only writes the rows.
 // A product goes on sale (published) only when it passes the readiness check (server/creators/readiness.js), and every
 // change is written to its release history (server/creators/product-history.js).
@@ -73,13 +73,13 @@ export function cleanProductInput(body, { requireAll = false } = {}) {
   return out;
 }
 
-// A product of a Studio project that this account may change (by default, a member who may run products: roles.js).
-// Anything else looks like nothing there.
+// A Studio product this account may change (by default, a member who may run products: roles.js), under a Studio
+// project or a first-party one (their products are made in the Studio too). Anything else looks like nothing there.
 export async function requireOwnProduct(db, productId, user, roles = rolesFor("products")) {
   const product = typeof productId === "string" ? await first(db, "SELECT * FROM products WHERE id = ? AND source = 'studio'", productId) : null;
   const project = product && product.project_id ? await getProject(db, product.project_id) : null;
   if (!project) fail(404, "not_found", "Nothing here.");
-  const { creator, role } = await requireProject(db, project.id, user, roles);
+  const { creator, role } = await requireProject(db, project.id, user, roles, { allowCatalog: true });
   return { product, project, creator, role };
 }
 

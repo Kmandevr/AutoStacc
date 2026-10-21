@@ -1,9 +1,11 @@
 // Where signing in sends a visitor: the server gate's login redirect (server/pages/guard.js) and the login page's
-// return path (GS.safeNext in js/util.js). Both keep visitors on this site, and login never returns to itself.
+// return path (GS.safeNext in js/util.js). Both keep visitors on this site, and login never returns to itself. Also the
+// old release and news addresses in _redirects: they land on content addresses the content Function serves.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { createRequire } from "node:module";
 import { loginRedirect, GATED, SETTINGS_SECTIONS, ADMIN_PAGES } from "../../server/pages/guard.js";
 
 // js/util.js is a browser script: run it in a bare context and take its GS.
@@ -55,4 +57,22 @@ test("the Control Center's sub-pages are the same in the gate, the page data and
   assert.deepEqual([...box.window.WORKSPACES.control.pages.map((p) => p.id)], ADMIN_PAGES, "the gate serves every sub-page the Control Center has");
   const rewrites = readFileSync(new URL("../../_redirects", import.meta.url), "utf8").split("\n").map((l) => l.trim().split(/\s+/)).filter(([from, to, code]) => from.startsWith("/admin/") && to === "/admin" && code === "200");
   assert.deepEqual(rewrites.map(([from]) => from), ADMIN_PAGES.map((x) => `/admin/${x}`), "the store-off rewrites cover exactly the sub-pages");
+});
+
+test("old release and news addresses redirect to the content Function's addresses, kept for search engines", () => {
+  const { contentAddress } = createRequire(import.meta.url)("../../scripts/lib/data.js");
+  const rules = readFileSync(new URL("../../_redirects", import.meta.url), "utf8").split("\n").map((l) => l.trim().split(/\s+/))
+    .filter(([from, to, code]) => from && !from.startsWith("#") && /\/(music|news)\/(\*|:splat)$/.test(`${from} ${to}`) && code === "301");
+  assert.ok(rules.some(([from]) => from === "/music/*") && rules.some(([from]) => from === "/news/*"), "the old /music/* and /news/* still redirect");
+  for (const [from, to] of rules) {
+    if (!to.endsWith(":splat")) continue;
+    const found = contentAddress(to.replace(":splat", "hail"));
+    if (/\/(music|news)\/:splat$/.test(to)) assert.ok(found && found.slug === "hail", `${from} -> ${to} is a content address`);
+  }
+  // What it recognizes: exactly /<creator>/<published first-party project>/music|news/<slug>.
+  assert.deepEqual({ ...contentAddress("/autostacc/glitches-and-stitches/music/hail") }, { project: "glitches-and-stitches", kind: "music", slug: "hail" });
+  assert.deepEqual({ ...contentAddress("/autostacc/glitches-and-stitches/news/hail-out-now?x=1") }, { project: "glitches-and-stitches", kind: "news", slug: "hail-out-now" });
+  for (const no of ["/autostacc/glitches-and-stitches/music", "/autostacc/glitches-and-stitches/press/hail", "/autostacc/nope/music/hail",
+    "/autostacc/glitches-and-stitches/music/Hail", "/autostacc/glitches-and-stitches/music/hail/x", "/x/glitches-and-stitches/music/hail", "music/hail"])
+    assert.equal(contentAddress(no), null, no);
 });

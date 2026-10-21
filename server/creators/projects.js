@@ -1,16 +1,17 @@
 // Studio projects (D1 projects with source 'studio', and their project_sites row): create, rename, delete, publish
-// state, and the access check for an account that may change one. Catalog projects (data/projects.js) are read-only here.
+// state, and the access check for an account that may change one. Catalog projects (data/projects.js) are never
+// renamed, deleted or built here; only routes for their products and content opt in to them ({ allowCatalog: true }).
 import { stmt, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { LIMITS } from "./policy.js";
 import { getProject, requireCreator } from "./creators.js";
 import { projectSlugFree, holdStmt, taken, isUnique, holdsOf, MAX_HOLDS } from "./holds.js";
 
-// A Studio project and its creator, for an account that may change it.
-export async function requireProject(db, projectId, user, roles) {
+// A Studio project (or, with allowCatalog, a first-party one) and its creator, for an account that may change it.
+export async function requireProject(db, projectId, user, roles, { allowCatalog = false } = {}) {
   const project = typeof projectId === "string" ? await getProject(db, projectId) : null;
-  if (!project || project.source !== "studio") fail(404, "not_found", "Nothing here.");
-  const { creator, role } = await requireCreator(db, project.creator_id, user, roles);
+  if (!project || !(project.source === "studio" || (allowCatalog && project.source === "catalog"))) fail(404, "not_found", "Nothing here.");
+  const { creator, role } = await requireCreator(db, project.creator_id, user, roles, { allowCatalog });
   return { project, creator, role };
 }
 

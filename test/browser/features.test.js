@@ -30,8 +30,10 @@ describe("features in the browser", () => {
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
     await page.waitForURL((u) => u.pathname === "/dashboard");
-    for (const path of ["/dashboard", "/library", "/shop/wallpapers", "/autostacc/glitches-and-stitches"]) {
+    for (const path of ["/dashboard", "/library", "/product?p=wallpapers", "/autostacc/glitches-and-stitches"]) {
       await page.goto(path);
+      // A product page sets its title once the product arrives; the marker must survive that.
+      if (path.startsWith("/product")) await page.waitForSelector("#product-app .product-info");
       const bar = page.locator("#impersonation-bar.imp-active");
       await bar.waitFor();
       assert.match(await bar.innerText(), new RegExp(customer.replace(/[.]/g, "\\.")), path);
@@ -68,10 +70,10 @@ describe("features in the browser", () => {
       VALUES ('promo_browsercode', 'code', 'Browser code', 'BROWSER10', 10, 'all', ${T}, ${T}, ${T});`);
     try {
       const { ctx, page } = await open(PHONE);
-      await page.goto("/shop/vj-loops");
-      await page.waitForSelector("[data-price] .price-was");
-      assert.match(await page.locator("[data-price]").first().innerText(), /\$14\.99.*\$7\.50.*Browser sale/s);
-      await page.locator("[data-buy] [data-add-to-cart]").click();
+      await page.goto("/product?p=vj-loops");
+      await page.waitForSelector("#product-app .product-price s");
+      assert.match(await page.locator("#product-app .product-price").innerText(), /\$7\.50.*\$14\.99/s);
+      await page.locator("#product-app [data-buy]").click();
       await page.goto("/cart");
       await page.waitForSelector(".cart-line .price-sale");
       await page.fill("#promo-code", "browser10");

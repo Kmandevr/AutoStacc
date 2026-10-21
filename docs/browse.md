@@ -1,8 +1,8 @@
 ---
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects browser and its API, /explore for releases, news and shows, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
-covers: [projects.html, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql]
-updated: 2026-10-15
+covers: [projects.html, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js]
+updated: 2026-10-21
 ---
 
 # Browsing projects and content
@@ -22,7 +22,7 @@ Every visible project: AutoStacc's own and published Studio projects of active c
 - **What a project says about itself** is only derived from records:
   - genres and styles come from AutoStacc's data (`projects.genres`, synced from `data/projects.js`) and from the facets of its published products;
   - "what it makes" is its published product kinds, plus "Releases" when it has releases;
-  - activity is the newest release, news post or published product, and the next show (`projects.activity`, synced from `data/music.js`, `news.js` and `shows.js`; drafts never count);
+  - activity is the newest release, news post or published product, and the next show (read at request time from the Studio's `project_releases`, `project_news` and `project_shows` tables by `contentDates` in `server/content/content.js`; drafts and deleted items never count. The old `projects.activity` column is no longer written or read);
   - "recently active" means active in the last 30 days or a show within 60.
   - A project shows how many store items it has and links to `/shop?creator=<id>`, never a price or a buy button.
 - **Page:** `js/projects-browse.js` keeps its state in the address (`/projects?genre=edm&active=1`) and has a phone drawer, chips and pages, the same as the store. Offline, it keeps the built list of AutoStacc's projects.
@@ -37,7 +37,7 @@ Every visible project: AutoStacc's own and published Studio projects of active c
 - **News**, filtered by project, topic and year;
 - **Shows**, upcoming only, filtered by project and city.
 
-Each view also has a search box. It reads `data/music.js`, `news.js` and `shows.js`; drafts and past shows never appear. The rules are in `js/explore-items.js` (`GS.exploreItems`, unit-tested) and the page is `js/explore-browse.js`. The address holds the state (`/explore?view=news&q=&project=...`). Only first-party projects have this data today. Studio projects' events blocks live in their site documents and aren't listed.
+Each view also has a search box. It reads the newest published releases, news posts and upcoming shows from `GET /api/content/latest` (up to 50 of each, through `js/project-content.js`); drafts and past shows never appear. The rules are in `js/explore-items.js` (`GS.exploreItems`, unit-tested) and the page is `js/explore-browse.js`. The address holds the state (`/explore?view=news&q=&project=...`). Every creator's Studio-made releases, news and shows are listed (since 2026-10-21, [decisions](decisions.md)); a Studio site's own events blocks live in its site document and aren't.
 
 ## Home page hub (`/`)
 

@@ -6,7 +6,7 @@
 //   data-mixed               store-style card sizes (js/product-card.js): a featured-only grid opens with one banner
 // Each card opens the product's own page. The store itself (/shop: search, filters, sections) is js/store-browse.js.
 // Creators' (Studio) products come from the store API and join the grid once it answers, each marked "Unverified
-// creator" until AutoStacc trusts its creator; with the store offline the grid simply shows AutoStacc's own catalog.
+// creator" until AutoStacc trusts its creator; with the store offline the grid shows data/products.js (empty now: first-party products are made in the Studio) or its empty state.
 // Needs data/projects.js, data/product-types.js, data/products.js, js/util.js and js/product-card.js. Buttons, live
 // prices and STACC'D come from js/store.js (it listens for gs:cards).
 (function () {

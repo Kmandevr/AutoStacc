@@ -2,7 +2,7 @@
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
 covers: [data/site.js, data/creators.js, data/projects.js, data/stacclets.js, data/pacs.js, data/content-types.js, data/product-types.js, data/polls.js, data/relationships.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/relations.js, db/migrations/0003_platform.sql, server/projects/, server/polls/, server/entitlements/autostacc.js, server/app.js, js/stacc-model.js, js/projects.js, js/polls.js]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Architecture
@@ -26,9 +26,10 @@ The platform layer is built **on top** of that store. Authentication, checkout, 
 AutoStacc (platform: data/site.js → SITE)
 └── Creator            data/creators.js / D1   owns projects; seller of record; address /<creator> (creators.md)
     └── Project        data/projects.js        creative entity; owns identity and features; /<creator>/<project>
-    ├── Release        data/music.js           project: <id>
-    ├── News post      data/news.js            project: <id>
-    ├── Product        data/products.js        project: <id>, pacs: [<pac id>]  ← what is sold
+    ├── Release        Studio → D1 project_releases   project_id, slug   (creators.md)
+    ├── News post      Studio → D1 project_news       project_id, slug
+    ├── Show           Studio → D1 project_shows      project_id
+    ├── Product        Studio → D1 products (or data/products.js, empty)  project, pacs  ← what is sold
     ├── Stacclet       data/stacclets.js       project: <id>                    ← groups related Pacs
     │   └── Pac        data/pacs.js            stacclet: <id>                   ← a folder of content
     │       └── Asset  D1 product_files        pac_id, kind                     ← one file
@@ -45,7 +46,8 @@ Every link is stored once, on the child, as an id. Everything else is derived: a
 | Stacclet | a collection of related Pacs | `data/stacclets.js` | not a folder; never holds files directly |
 | Pac | a container of content | `data/pacs.js` | sold through products; its files are assets |
 | Asset | one file (MIDI, WAV, preset, …) | D1 `product_files` (uploaded in `/admin` or the Studio); from the Pack Builder also D1 `assets` (its identity across versions) with its place in each version in `pac_entries` | `pac_id`, `kind` (One-shots, Loops, MIDI, … from `server/discovery/vocabulary.js` `KINDS`, shown via the generated `data/content-types.js`), format from the filename |
-| Product | what a customer buys | `data/products.js` → D1 `products` | `project`, `pacs`; price and availability as before |
+| Release, news post, show | a project's music, announcements and dates | the Studio → D1 `project_releases`, `project_news`, `project_shows` (every creator, first-party included, since 2026-10-21) | release and news pages rendered by the server at `/<creator>/<project>/music|news/<slug>` ([creators](creators.md#music-news-and-shows-built-2026-10-21)) |
+| Product | what a customer buys | the Studio → D1 `products` (`data/products.js` is empty since 2026-10-21 but still synced) | `project`, `pacs`; price and availability as before |
 | Entitlement | who owns which product | D1 `entitlements` | unchanged; owning a product unlocks the assets uploaded to it |
 
 ### Products, Pacs and assets
@@ -56,7 +58,7 @@ The build (`scripts/lib/platform.js`) refuses: unknown projects, Stacclets or Pa
 
 ### Sync to the database
 
-`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`), first-party creators, projects, Stacclets, Pacs and polls (`scripts/lib/platform-catalog.js`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). First-party Stacclets and Pacs are written in `data/` and synced to the `stacclets` and `pacs` tables (with each Pac's project) for the Pack Builder; a Studio product gets its own Stacclet and Pac in D1 with its first Pack Builder upload (`ensureStudioPac`, `server/packs/access.js`). The library still joins them in the browser. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql`, Pacs, versions, stored originals, folders, assets and their values in `0014_packs.sql` ([packs](packs.md); forward-only).
+`scripts/build.js` writes `db/catalog.sql` from `data/`: products (now with `project_id` and `pacs`; none since 2026-10-21), first-party creators (trusted), projects (with their look, `projects.look`), Stacclets, Pacs and polls (`scripts/lib/platform-catalog.js`). Releases, news and shows are not in `data/` any more. They live only in D1, first-party ones included, and the sync never touches them. The real ones were moved there by a migration (`0040_project_content.sql`). The sync owns only rows with `source = 'catalog'`; creators, projects and products made in the Studio (`source = 'studio'`) live only in D1 and are never touched ([creators](creators.md)). First-party Stacclets and Pacs are written in `data/` and synced to the `stacclets` and `pacs` tables (with each Pac's project) for the Pack Builder; a Studio product gets its own Stacclet and Pac in D1 with its first Pack Builder upload (`ensureStudioPac`, `server/packs/access.js`). The library still joins them in the browser. Schema: `db/migrations/0003_platform.sql`, creators in `0006_creators.sql`, Pacs, versions, stored originals, folders, assets and their values in `0014_packs.sql` ([packs](packs.md); forward-only).
 
 ## Your Stacc
 
@@ -74,7 +76,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 ## Reusable interactive infrastructure
 
 - **Polls** (`data/polls.js` → D1 `polls`, votes in `poll_votes`; `server/polls/`): any project with `"polls"` in its features can publish one. One vote per verified account, changeable while open. `js/polls.js` renders polls on a page that lists them. Glitches & Stitches uses it; other projects can ignore it.
-- **Relationships** (`data/relationships.js`, `scripts/lib/relations.js`): typed links between content (`built-from`, `remix-of`, `samples`, `evolved-from`) between releases, products, Stacclets, Pacs and polls. Release pages show "Built from" and the reverse ("Featured in") when links exist. Glitches & Stitches' stitch genealogy uses it; nothing in it is project-specific.
+- **Relationships** (`data/relationships.js`, `scripts/lib/relations.js`): typed links between content (`built-from`, `remix-of`, `samples`, `evolved-from`) between products, Stacclets, Pacs and polls. Releases moved to the Studio (2026-10-21), so `data/` can't check a link to one, and the build refuses `release:` links in relationships and polls. None existed. Linking to Studio releases again is not built. Glitches & Stitches' stitch genealogy uses it; nothing in it is project-specific.
 
 ## Extension points
 
@@ -84,6 +86,7 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 | a Stacclet / Pac | entries in `data/stacclets.js` / `data/pacs.js`; list the Pac on a product |
 | a kind of content, or a file format | one entry in `KINDS` or `FORMATS` in `server/discovery/vocabulary.js` (then `node scripts/build.js`; `data/content-types.js` is generated) |
 | a kind of product | one entry in `data/product-types.js` (plus its tax code, store schema and licence; `template`, the community library's site templates, was added this way) |
+| a release, news post or show | the project's Music, News or Shows in the Studio ([creators](creators.md#music-news-and-shows-built-2026-10-21)) |
 | a poll | one entry in `data/polls.js` |
 | a relationship type | one entry in `RELATIONSHIP_TYPES` (`data/relationships.js`) |
 | a community feature | a folder in `server/community/features/` with a manifest, one line in `features/index.js` ([community](community.md#built-as-independent-features-owner-2026-10-20)) |

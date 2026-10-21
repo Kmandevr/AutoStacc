@@ -1,7 +1,8 @@
 // Projects: the creative work on AutoStacc, each owned by a creator (data/creators.js). Everything a project publishes
-// names it with `project: "<id>"` (products, releases, news posts, Stacclets, polls), so adding a project is data, not
-// code. A project lives at /<creator>/<id> (hand-written pages <creator>/<id>.html and <creator>/<id>/); it is synced
-// into the store database by db/catalog.sql (`node scripts/build.js`). Projects made in the Studio are database-only.
+// in data/ names it with `project: "<id>"` (products, Stacclets, polls), so adding a project is data, not code. Its
+// releases, news posts and shows are made in the Studio like every creator's (store database, docs/creators.md). A
+// project lives at /<creator>/<id> (hand-written pages <creator>/<id>.html and <creator>/<id>/); it is synced into the
+// store database by db/catalog.sql (`node scripts/build.js`). Projects made in the Studio are database-only.
 // Model: docs/architecture.md; contract: docs/projects.md.
 // Fields:
 //   id: lowercase-hyphenated, permanent, unique (store-wide for these first-party projects; within its creator, ignoring
@@ -15,7 +16,8 @@
 //     ("" = its home, "music", "#shows"). wordmark: optional lettering for its header logo (else its name).
 //     Its pages wear its own header and footer (js/project-frame.js) under a thin AutoStacc strip.
 //   skin: true = its pages, header and footer load css/projects/<id>/skin.css (its own look). sounds: true = its pages load the UI sounds
-//     and easter eggs (js/sound.js, eggs.js, terminal.js). Platform pages never play sounds.
+//     and easter eggs (js/sound.js, eggs.js, terminal.js). Platform pages never play sounds. The sync copies skin, sounds
+//     and entity into the store database (projects.look) for its server-rendered release and news pages.
 //   entity: schema.org type for structured data ("MusicGroup", "Person", "Organization").
 //   bio, tagline, genres, alternateNames (search only, never shown), image { src, width, height, alt }, logo,
 //   email (booking/press; empty hides it, never a made-up address), pressKitUrl, newsletterAction (form endpoint;

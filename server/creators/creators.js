@@ -2,8 +2,9 @@
 // creator_roles: roles.js), plus the read side of projects.
 // Studio projects are changed in projects.js; renames' slug holds live in holds.js. Slugs are lowercase and unique
 // (creators site-wide, projects within their creator). Catalog creators and projects (data/creators.js,
-// data/projects.js) are read here too, but only the deploy's sync writes them.
-import { all, first, stmt, newId, now } from "../lib/db.js";
+// data/projects.js) are read here too, but only the deploy's sync writes their rows; their members may manage their
+// products and content in the Studio (owner, 2026-10-21) when a route opts in with { allowCatalog: true }.
+import { all, first, run, stmt, newId, now } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { slugProblem } from "../lib/slugs.js";
 import { LIMITS } from "./policy.js";
@@ -30,12 +31,16 @@ export const creatorsOfUser = (db, userId) => all(db,
 export const roleOf = async (db, creatorId, userId) =>
   ((await first(db, `SELECT ${ROLE_SQL} AS role FROM ${WITH_ROLE} WHERE m.creator_id = ? AND m.user_id = ?`, creatorId, userId)) || {}).role || null;
 
-// A Studio creator this account may act on with one of these roles (by default, any member; routes pass
-// rolesFor(capability) from roles.js). Anything else looks like nothing there.
-export async function requireCreator(db, creatorId, user, roles = ROLES) {
+// Which creators a route may act on: Studio creators always; first-party (catalog) creators only when the route opts in
+// (products and project content: their pages are hand-written, so the builder, profile site, renames and deletes never do).
+const managed = (creator, allowCatalog) => Boolean(creator && (creator.source === "studio" || (allowCatalog && creator.source === "catalog")));
+
+// A creator this account may act on with one of these roles (by default, any member; routes pass rolesFor(capability)
+// from roles.js). Anything else looks like nothing there.
+export async function requireCreator(db, creatorId, user, roles = ROLES, { allowCatalog = false } = {}) {
   // The creator and this account's role in it are read together; nothing is returned until both checks below pass.
   const [creator, memberRole] = typeof creatorId === "string" ? await Promise.all([getCreator(db, creatorId), roleOf(db, creatorId, user.id)]) : [null, null];
-  const role = creator && creator.source === "studio" ? memberRole : null;
+  const role = managed(creator, allowCatalog) ? memberRole : null;
   if (!role || !roles.includes(role)) fail(404, "not_found", "Nothing here.");
   if (creator.status !== "active") fail(403, "creator_suspended", "This creator is suspended. Contact AutoStacc support.");
   return { creator, role };
@@ -115,6 +120,31 @@ export const sellersOfProducts = (db, productIds) => productIds.length
       FROM products p LEFT JOIN projects pr ON pr.id = p.project_id LEFT JOIN creators c ON c.id = pr.creator_id
       WHERE p.id IN (${productIds.map(() => "?").join(",")})`, ...productIds)
   : Promise.resolve([]);
+
+// A creator's sale (paid on the marketplace account, held while creator sales are closed): a product made in the Studio
+// by a Studio creator. A first-party creator's Studio products keep AutoStacc's own money path (owner, 2026-10-21):
+// decided by the creator's source, never by a project id. SQL for a products alias, and the ids among some products.
+export const creatorSaleSql = (p) => `(${p}.source = 'studio' AND EXISTS (SELECT 1 FROM projects cs_j JOIN creators cs_c ON cs_c.id = cs_j.creator_id
+  WHERE cs_j.id = ${p}.project_id AND cs_c.source = 'studio'))`;
+export const creatorSaleIds = async (db, productIds) => {
+  const ids = [...new Set(productIds)];
+  if (!ids.length) return new Set();
+  const rows = await all(db, `SELECT p.id FROM products p WHERE p.id IN (${ids.map(() => "?").join(",")}) AND ${creatorSaleSql("p")}`, ...ids);
+  return new Set(rows.map((r) => r.id));
+};
+
+// First-party creators, for the Studio overview: an AutoStacc admin sees them and may take one that has no owner yet.
+export const catalogCreators = (db) => all(db, `SELECT c.*, (SELECT COUNT(*) FROM creator_members m WHERE m.creator_id = c.id AND m.role = 'owner') AS owners
+  FROM creators c WHERE c.source = 'catalog' AND c.${LIVE} ORDER BY c.name`);
+
+// The first owner of a first-party creator (an AutoStacc admin, checked by the caller). Only while it has none, so a
+// second request or another admin can't add a second owner.
+export async function claimCatalogCreator(db, creatorId, userId) {
+  const res = await run(db, `INSERT INTO creator_members (creator_id, user_id, role, created_at) SELECT ?, ?, 'owner', ?
+    WHERE EXISTS (SELECT 1 FROM creators WHERE id = ? AND source = 'catalog' AND ${LIVE})
+      AND NOT EXISTS (SELECT 1 FROM creator_members WHERE creator_id = ? AND (role = 'owner' OR user_id = ?))`, creatorId, userId, now(), creatorId, creatorId, userId);
+  return res.meta.changes === 1;
+}
 
 // The upload limit paid storage gives a creator (server/billing/ is the only caller; null takes it away). A statement for
 // a batch, so the plan and the limit change together; whilePlan: only if the plan (storage_plans) is then in that

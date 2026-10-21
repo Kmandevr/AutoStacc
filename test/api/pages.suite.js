@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
 import { adminClient } from "../support/flows.js";
 
-const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/about"];
+const PUBLIC = ["/", "/shop", "/product?p=wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music",
+  "/autostacc/glitches-and-stitches/music/hail", "/autostacc/glitches-and-stitches/news/hail-out-now", "/about"];
 const GATED = ["/dashboard", "/settings", "/settings/profile", "/settings/security", "/settings/orders", "/settings/email", "/settings/privacy", "/studio"];
 const goesToLogin = (r, next) => {
   assert.equal(r.status, 302);

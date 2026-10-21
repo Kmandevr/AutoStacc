@@ -1,4 +1,5 @@
-// The API router and the catalog generator (data/products.js -> db/catalog.sql).
+// The API router and the catalog generator (data/products.js -> db/catalog.sql), including the empty catalog first-party
+// projects now have (their products are made in the Studio).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -34,4 +35,20 @@ test("catalog validation catches bad types, prices and previews", () => {
   assert.equal(validate([{ ...product, price: 9.999 }], types).length, 1);
   assert.equal(validate([{ ...product, price: -1 }], types).length, 1);
   assert.equal(validate([{ ...product, preview: { file: "../x.mp3" } }], types).length, 1);
+});
+
+test("an empty catalog (first-party products are made in the Studio) unpublishes and deletes only catalog rows", () => {
+  const sql = catalogSql([], types);
+  assert.doesNotMatch(sql, /INSERT INTO products/);
+  assert.doesNotMatch(sql, /NOT IN \(\)/, "never invalid SQL for an empty list");
+  assert.match(sql, /UPDATE products SET published = 0, deleted_at = strftime\([^)]*\), updated_at = strftime\([^)]*\) WHERE source = 'catalog' AND deleted_at IS NULL;/);
+  // Studio products (source 'studio', first-party creators' included) are never touched by the sync.
+  for (const line of sql.split("\n").filter((l) => /^(UPDATE|DELETE)/.test(l))) assert.match(line, /source = 'catalog'/, line);
+});
+
+test("the real data/products.js sells nothing of its own and still validates", () => {
+  const { loadData } = require("../../scripts/lib/data.js");
+  const data = loadData();
+  assert.equal(data.products.length, 0, "first-party products are made in the Studio (owner, 2026-10-21)");
+  assert.deepEqual(validate(data.products, data.productTypes, data.projects), []);
 });

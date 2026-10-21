@@ -1,5 +1,6 @@
 // The platform layer's data (docs/architecture.md): Project → Stacclet → Pac links, products selling Pacs, polls and
 // relationships, the real data/ files, a hypothetical second project added with data only, and the database sync.
+// Releases, news and shows are Studio content in the store database (server/content/), so data/ can't refer to them.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -32,10 +33,8 @@ function fixture() {
       { id: "fs-pack", project: "glitches-and-stitches", pacs: ["fs-midi", "fs-samples"] },
       { id: "second-pack", project: "second-project", pacs: ["second-presets"] }
     ],
-    allReleases: [{ id: "frayed", project: "glitches-and-stitches", title: "Frayed" }, { id: "fragment-03", project: "glitches-and-stitches", title: "Fragment 03" }],
-    allNews: [],
     polls: [{ id: "next", project: "glitches-and-stitches", question: "What next?", options: [{ id: "finish-it", label: "Finish it" }, { id: "scrap-it", label: "Scrap it" }] }],
-    relationships: [{ from: "release:frayed", to: "release:fragment-03", type: "built-from" }],
+    relationships: [{ from: "product:fs-pack", to: "pac:fs-midi", type: "built-from" }],
     relationshipTypes: { "built-from": { label: "Built from", reverse: "Featured in" } }
   };
 }
@@ -45,7 +44,8 @@ test("the real data/ files form a valid hierarchy", () => {
   assert.deepEqual(validate(data), []);
   assert.ok(data.projects.some((p) => p.id === "glitches-and-stitches"));
   for (const p of data.products) assert.ok(p.project, `${p.id} names its project`);
-  for (const r of data.allReleases) assert.ok(r.project, `${r.id} names its project`);
+  // Content lives in the store database now: the loader no longer reads release, news or show files.
+  for (const gone of ["releases", "allReleases", "news", "allNews", "shows"]) assert.equal(data[gone], undefined, gone);
 });
 
 test("Project → Stacclet → Pac links resolve through stored ids only", () => {
@@ -66,7 +66,14 @@ test("a second project is data only: it validates, syncs and keeps its own featu
   assert.equal(pacProject(data, data.products[1].pacs[0]), data.products[1].project);
   const sql = platformSql(data);
   assert.match(sql, /'second-project', 'Second Project', '\["store"\]', 1, 'autostacc', 'second-project', 'catalog'/);
-  assert.match(sql, /INSERT INTO creators .*'autostacc', 'autostacc', 'AutoStacc', 'catalog', 1/);
+  assert.match(sql, /INSERT INTO creators \(id, slug, name, source, trusted, published, catalog_hash.*'autostacc', 'autostacc', 'AutoStacc', 'catalog', 1, 1/,
+    "first-party creators are trusted (their release and news pages are indexed)");
+  // Each project's look for server-rendered pages comes from its data; no activity column is written any more.
+  const looks = fixture();
+  looks.projects[0].skin = true;
+  looks.projects[0].sounds = true;
+  assert.match(platformSql(looks), /'glitches-and-stitches', 'Glitches & Stitches', .*'\{"skin":true,"sounds":true\}'/);
+  assert.doesNotMatch(sql, /activity/);
   // The sync owns only first-party rows: Studio creators and projects are never overwritten or removed by it.
   assert.match(sql, /UPDATE creators SET .* WHERE source = 'catalog' AND deleted_at IS NULL/);
   assert.match(sql, /UPDATE projects SET .* WHERE source = 'catalog' AND deleted_at IS NULL/);
@@ -77,7 +84,7 @@ test("a second project is data only: it validates, syncs and keeps its own featu
   withPoll.polls.push({ id: "theirs", project: "second-project", question: "?", options: [{ id: "a", label: "A" }, { id: "b", label: "B" }] });
   assert.match(validate(withPoll).join("\n"), /poll theirs: project "second-project" doesn't use polls/);
   const withRel = fixture();
-  withRel.relationships.push({ from: "product:second-pack", to: "release:frayed", type: "built-from" });
+  withRel.relationships.push({ from: "product:second-pack", to: "pac:fs-midi", type: "built-from" });
   assert.match(validate(withRel).join("\n"), /project of "product:second-pack" doesn't use relationships/);
 });
 
@@ -91,7 +98,10 @@ test("broken links fail the build", () => {
     [(d) => delete d.products[0].project, /product fs-pack: add project/],
     [(d) => d.pacs.push({ id: "fs-midi", stacclet: "frayed-signals" }), /pac "fs-midi": duplicate id/],
     [(d) => (d.polls[0].options = [{ id: "only", label: "Only" }]), /needs at least two options/],
-    [(d) => (d.relationships[0].to = "release:ghost"), /"release:ghost" doesn't exist/],
+    [(d) => (d.relationships[0].to = "pac:ghost"), /"pac:ghost" doesn't exist/],
+    // Releases are made in the Studio: data/ can't point at one, and says why.
+    [(d) => (d.relationships[0].to = "release:frayed"), /"release:frayed" doesn't exist \(releases are made in the Studio/],
+    [(d) => (d.polls[0].about = "release:frayed"), /poll next: about "release:frayed" doesn't exist \(releases are made in the Studio/],
     [(d) => (d.relationships[0].type = "invented"), /type is not in RELATIONSHIP_TYPES/],
     [(d) => (d.projects[1].features = ["telepathy"]), /unknown feature "telepathy"/],
     [(d) => delete d.projects[1].creator, /project second-project: add creator/],
@@ -116,8 +126,8 @@ test("broken links fail the build", () => {
 
 test("relationships read both ways", () => {
   const data = fixture();
-  assert.deepEqual(relationsOf(data, "release:frayed"), { outgoing: [{ label: "Built from", refs: ["release:fragment-03"] }], incoming: [] });
-  assert.deepEqual(relationsOf(data, "release:fragment-03"), { outgoing: [], incoming: [{ label: "Featured in", refs: ["release:frayed"] }] });
+  assert.deepEqual(relationsOf(data, "product:fs-pack"), { outgoing: [{ label: "Built from", refs: ["pac:fs-midi"] }], incoming: [] });
+  assert.deepEqual(relationsOf(data, "pac:fs-midi"), { outgoing: [], incoming: [{ label: "Featured in", refs: ["product:fs-pack"] }] });
 });
 
 test("the catalog sync carries each product's project and Pacs, deterministically", () => {

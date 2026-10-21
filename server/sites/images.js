@@ -77,7 +77,8 @@ export async function stillUsed(db, creatorId, id) {
     OR EXISTS (SELECT 1 FROM site_versions WHERE kind = 'profile' AND site_id = ?1 AND doc LIKE ?2)
     OR EXISTS (SELECT 1 FROM project_sites s JOIN projects p ON p.id = s.project_id WHERE p.creator_id = ?1 AND p.deleted_at IS NULL AND (s.published LIKE ?2 OR s.scheduled_draft LIKE ?2))
     OR EXISTS (SELECT 1 FROM creator_sites WHERE creator_id = ?1 AND (published LIKE ?2 OR scheduled_draft LIKE ?2))
-    OR EXISTS (SELECT 1 FROM library_pieces WHERE creator_id = ?1 AND status = 'active' AND assets LIKE ?2) AS used`, creatorId, like);
+    OR EXISTS (SELECT 1 FROM library_pieces WHERE creator_id = ?1 AND status = 'active' AND assets LIKE ?2)
+    OR EXISTS (SELECT 1 FROM project_releases r JOIN projects p ON p.id = r.project_id WHERE p.creator_id = ?1 AND r.deleted_at IS NULL AND r.artwork LIKE ?2) AS used`, creatorId, like);
   return Boolean(row && row.used);
 }
 

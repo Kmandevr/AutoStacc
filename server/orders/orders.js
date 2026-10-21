@@ -2,6 +2,7 @@
 // allowed-from), so two events racing for the same order can't both win and a refunded order can't become paid again.
 import { all, first, run, stmt, newId, now } from "../lib/db.js";
 import { productPath } from "../catalog/products.js";
+import { creatorSaleSql } from "../creators/creators.js";
 
 // Allowed moves. A verified payment wins over an earlier failure or expiry: the money was taken, so the order is paid.
 export const TRANSITIONS = {
@@ -46,10 +47,11 @@ export const orderItems = (db, orderId) =>
   all(db, `SELECT i.product_id, i.title, i.unit_price_cents, i.quantity, i.line_total_cents, p.source FROM order_items i
     LEFT JOIN products p ON p.id = i.product_id WHERE i.order_id = ? ORDER BY i.title`, orderId);
 
-// Open payment pages that include a Studio creator's product (closed when the owner pauses creator purchases).
+// Open payment pages that include a Studio creator's product (closed when the owner pauses creator purchases; a
+// first-party creator's products are AutoStacc's own and don't count: server/creators/creators.js creatorSaleSql).
 export const pendingWithCreatorProducts = (db, limit = 500) => all(db,
   `SELECT * FROM orders o WHERE o.status = 'pending' AND o.provider_session_id IS NOT NULL AND EXISTS (SELECT 1 FROM order_items i
-    JOIN products p ON p.id = i.product_id WHERE i.order_id = o.id AND p.source = 'studio') ORDER BY o.created_at LIMIT ?`, limit);
+    JOIN products p ON p.id = i.product_id WHERE i.order_id = o.id AND ${creatorSaleSql("p")}) ORDER BY o.created_at LIMIT ?`, limit);
 
 export const attachCheckout = (db, id, sessionId, url) =>
   run(db, "UPDATE orders SET provider_session_id = ?, checkout_url = ?, updated_at = ? WHERE id = ? AND status = 'pending'", sessionId, url, now(), id);

@@ -1,7 +1,7 @@
 // The projects browser (GET /api/projects/browse): every visible project with what it is about and what it makes,
-// derived from real records only. First-party projects bring their genres, tagline, image and the dates of their
-// releases, news and shows (synced from data/); every project adds what its published products say (kinds, genre and
-// style facets, when they were added). Filters (OR within a group, AND between), counts per group without itself,
+// derived from real records only. First-party projects bring their genres, tagline and image (synced from data/);
+// every project adds the dates of its published releases, news and shows (server/content/) and what its published
+// products say (kinds, genre and style facets, when they were added). Filters (OR within a group, AND between), counts per group without itself,
 // search, sort and pages are worked out here, on the server. Nothing here is for sale: a project only says how many
 // store items it has.
 import { all, parseJson } from "../lib/db.js";
@@ -9,6 +9,7 @@ import { fail } from "../lib/http.js";
 import { canonical, label } from "../discovery/vocabulary.js";
 import { listVisibleProjects, publicProject } from "./projects.js";
 import { listFollows } from "./follows.js";
+import { contentDates } from "../content/content.js";
 
 export const SORTS = ["active", "name", "newest", "items"];
 export const ACTIVE_DAYS = 30;
@@ -45,18 +46,19 @@ const daysBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / 86400000;
 
 // Every visible project as the browser shows it, plus whether `userId` follows it.
 export async function projectEntries(db, { userId = null, at = new Date().toISOString() } = {}) {
-  const [rows, kinds, facets, follows] = await Promise.all([
+  const [rows, kinds, facets, follows, content] = await Promise.all([
     listVisibleProjects(db),
     all(db, `SELECT project_id, type, COUNT(*) AS n, MAX(CASE WHEN COALESCE(released_at, created_at) <= ? THEN COALESCE(released_at, created_at) END) AS last
       FROM products WHERE published = 1 AND deleted_at IS NULL AND project_id IS NOT NULL GROUP BY project_id, type`, at), // a future release isn't activity yet
     all(db, `SELECT p.project_id, pf.facet, pf.value, COUNT(*) AS n FROM product_facets pf JOIN products p ON p.id = pf.product_id
       WHERE p.published = 1 AND p.deleted_at IS NULL AND pf.facet IN ('genre', 'style') GROUP BY p.project_id, pf.facet, pf.value`),
-    userId ? listFollows(db, userId) : []
+    userId ? listFollows(db, userId) : [],
+    contentDates(db)
   ]);
   const followed = new Map(follows.map((f) => [f.project_id, f]));
   const today = at.slice(0, 10);
   return rows.map((r) => {
-    const activity = parseJson(r.activity, {});
+    const activity = content[r.id] || {};
     const own = kinds.filter((k) => k.project_id === r.id);
     const tags = new Set(parseJson(r.genres, []));
     for (const x of facets.filter((x) => x.project_id === r.id)) tags.add(`${x.facet}:${x.value}`);

@@ -1,8 +1,8 @@
 // The /explore browser ([data-explore]): releases, news and upcoming shows from every project on AutoStacc, with search,
-// filters (project, type, topic, year, city), removable chips and pages. Real data only (data/music.js, news.js,
-// shows.js; drafts never show). The address holds the state (/explore?view=news&q=&project=&type=&tag=&year=&city=
-// &page=). Searches and filters feed the on-device history (gs:taste) like the store's. Needs js/util.js,
-// js/explore-items.js and data/projects.js, music.js, news.js, shows.js.
+// filters (project, type, topic, year, city), removable chips and pages. Real data only (published content from the
+// content API through js/project-content.js). The address holds the state (/explore?view=news&q=&project=&type=&tag=
+// &year=&city=&page=). Searches and filters feed the on-device history (gs:taste) like the store's. Needs js/util.js,
+// js/project-content.js, js/explore-items.js and data/projects.js.
 (function () {
   "use strict";
 
@@ -14,7 +14,8 @@
   const VIEWS = [["releases", "Releases"], ["news", "News"], ["shows", "Shows"]];
   const NOUN = { releases: ["release", "releases"], news: ["news post", "news posts"], shows: ["show", "shows"] };
   const PER = 12;
-  const items = X.all();
+  let items = null; // filled once the content API answers; until then the list says it is loading
+  const count = (v) => (items ? String(items[v].length) : "");
   const taste = (detail) => document.dispatchEvent(new CustomEvent("gs:taste", { detail }));
   let params;
   const read = () => {
@@ -27,7 +28,7 @@
   const slug = (v) => String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
   root.innerHTML = `
-    <div class="explore-views" role="tablist" aria-label="What to explore">${VIEWS.map(([v, t]) => `<button type="button" role="tab" id="ex-tab-${v}" data-view="${v}" aria-controls="ex-results">${t} <span>${items[v].length}</span></button>`).join("")}</div>
+    <div class="explore-views" role="tablist" aria-label="What to explore">${VIEWS.map(([v, t]) => `<button type="button" role="tab" id="ex-tab-${v}" data-view="${v}" aria-controls="ex-results">${t} <span data-count="${v}">${count(v)}</span></button>`).join("")}</div>
     <form class="browse-search" role="search" data-search-form>
       <label for="ex-q" class="sr-only">Search</label>
       <input id="ex-q" name="q" type="search" autocomplete="off" enterkeyhint="search" maxlength="80">
@@ -46,13 +47,16 @@
         </div>
         <div class="browse-chips" data-chips></div>
         <h2 class="browse-results-head" id="ex-head" tabindex="-1"></h2>
-        <div class="explore-list" data-list></div>
+        <div class="explore-list" data-list aria-busy="true"><p class="small-print">Loading…</p></div>
         <nav class="browse-pages" aria-label="Result pages"></nav>
       </div>
     </div>`;
   const input = $("#ex-q", root);
 
-  const art = (x) => (x.artwork ? `<img src="/${e(x.artwork.src)}" alt="" width="120" height="120" loading="lazy">` : `<span aria-hidden="true">${e(x.title.charAt(0))}</span>`);
+  const art = (x) => {
+    const src = x.artwork && GS.content ? GS.content.art(x.artwork.src) : "";
+    return src ? `<img src="${e(src)}" alt="" width="120" height="120" loading="lazy">` : `<span aria-hidden="true">${e(x.title.charAt(0))}</span>`;
+  };
   const row = {
     releases: (x) => `<article class="ex-item ${look(x.project)}"><a class="ex-art" href="${e(x.href)}" tabindex="-1" aria-hidden="true">${art(x)}</a>
       <div><h3><a href="${e(x.href)}">${e(x.title)}</a></h3><p class="ex-meta"><span class="tag">${e(x.type)}</span> ${e(x.projectName)} · <time datetime="${e(x.date)}">${e(fmtDate(x.date))}</time>${x.tracks ? ` · ${x.tracks} track${x.tracks === 1 ? "" : "s"}` : ""}</p>
@@ -67,6 +71,7 @@
   const EMPTY = { releases: "No releases yet.", news: "No news yet.", shows: "No shows announced right now. Follow a project to hear when dates are confirmed." };
 
   function render(focusId) {
+    if (!items) return;
     const v = view();
     const f = { q: params.get("q") || "" };
     for (const [key] of X.FILTERS[v]) f[key] = listOf(key);
@@ -156,5 +161,10 @@
   root.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && root.classList.contains("filters-open")) drawer(false); });
   addEventListener("popstate", () => { read(); render(); });
   read();
-  render();
+  X.load().then((got) => {
+    items = got;
+    root.querySelectorAll("[data-count]").forEach((c) => { c.textContent = count(c.dataset.count); });
+    $("[data-list]", root).removeAttribute("aria-busy");
+    render();
+  });
 })();

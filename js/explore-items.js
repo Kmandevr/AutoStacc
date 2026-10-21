@@ -1,14 +1,16 @@
 // Releases, news and shows across projects (GS.exploreItems), the model behind /explore (js/explore-browse.js) and the
-// [data-latest] lists (js/latest.js): every published release, news post and upcoming show of a published project
-// from data/music.js, news.js and shows.js, in one shape ({ view, id, project, date, title, href, ... }), plus the
-// filter, facet-count and search rules (OR within a filter, AND between filters, each filter's counts without itself).
-// No DOM. Needs js/util.js and data/projects.js.
+// [data-latest] lists (js/latest.js): every published release, news post and upcoming show of a visible project, from
+// the content API (js/project-content.js, which load() reads), in one shape ({ view, id, project, date, title, href,
+// ... }) made by from(), plus the filter, facet-count and search rules (OR within a filter, AND between filters, each
+// filter's counts without itself). No DOM. Needs js/util.js, data/projects.js and (for load) js/project-content.js.
 (function () {
   "use strict";
 
   const GS = window.GS;
   const { projectPath } = GS;
   const projectName = (id) => ((window.PROJECTS || []).find((p) => p.id === id) || {}).name || id;
+  const nameOf = (x) => x.projectName || projectName(x.project);
+  const hrefOf = (x, folder) => x.path || projectPath(x.project, ...(folder ? [folder, x.id] : []));
   const today = () => new Date().toISOString().slice(0, 10);
 
   // Filters each view offers: [key, title, value of an item].
@@ -18,24 +20,30 @@
     shows: [["project", "Project", (x) => x.project], ["city", "City", (x) => x.city]]
   };
 
-  // Only what is published: the item and its project (a draft project's items never show).
-  const live = (x) => !x.draft && (window.PROJECTS || []).some((p) => p.id === x.project && !p.draft);
+  // The API sends only published items of visible projects; a draft flag or a project this page knows as a draft is
+  // still left out, so nothing unpublished ever shows.
+  const live = (x) => x && x.project && x.date && !x.draft && !((window.PROJECTS || []).find((p) => p.id === x.project) || {}).draft;
+  const list = (v) => (Array.isArray(v) ? v : []);
 
-  function all() {
-    const releases = ((window.MUSIC || {}).releases || []).filter(live).map((r) => ({
-      view: "releases", id: r.id, project: r.project, projectName: projectName(r.project), date: r.date, title: r.title, type: r.type || "Release",
-      artwork: r.artwork || null, text: (r.description || "").slice(0, 200), tracks: (r.tracks || []).length, href: projectPath(r.project, "music", r.id)
+  // content: { releases, news, shows } as the content API returns them.
+  function from(content) {
+    const c = content || {};
+    const releases = list(c.releases).filter(live).map((r) => ({
+      view: "releases", id: r.id, project: r.project, projectName: nameOf(r), date: r.date, title: r.title, type: r.type || "Release",
+      artwork: r.artwork || null, text: (r.description || "").slice(0, 200), tracks: list(r.tracks).length, href: hrefOf(r, "music")
     }));
-    const news = (window.NEWS || []).filter(live).map((n) => ({
-      view: "news", id: n.id, project: n.project, projectName: projectName(n.project), date: n.date, title: n.title, tag: n.tag || "News",
-      text: n.summary || "", href: projectPath(n.project, "news", n.id)
+    const news = list(c.news).filter(live).map((n) => ({
+      view: "news", id: n.id, project: n.project, projectName: nameOf(n), date: n.date, title: n.title, tag: n.tag || "News",
+      text: n.summary || "", href: hrefOf(n, "news")
     }));
-    const shows = (window.SHOWS || []).filter((s) => live(s) && s.date >= today()).map((s, i) => ({
-      view: "shows", id: `${s.project}-${s.date}-${i}`, project: s.project, projectName: projectName(s.project), date: s.date,
-      title: s.venue || s.city, city: s.city || "", venue: s.venue || "", ticketUrl: s.ticketUrl || "", href: projectPath(s.project)
+    const shows = list(c.shows).filter((s) => live(s) && s.date >= today()).map((s, i) => ({
+      view: "shows", id: `${s.project}-${s.date}-${i}`, project: s.project, projectName: nameOf(s), date: s.date,
+      title: s.venue || s.city, city: s.city || "", venue: s.venue || "", ticketUrl: s.ticketUrl || "", href: s.projectPath || projectPath(s.project)
     }));
     return { releases, news, shows };
   }
+  // Every project's newest, from the content API. Never rejects: offline, the lists are empty.
+  const load = () => (GS.content ? GS.content.latest() : Promise.resolve({})).then(from);
 
   // items: one view's items; f: { q, <filter key>: [values] }. Newest first, shows soonest first.
   function query(view, items, f) {
@@ -56,5 +64,5 @@
     return { hits, facets };
   }
 
-  GS.exploreItems = { all, query, FILTERS, projectName };
+  GS.exploreItems = { from, load, query, FILTERS, projectName };
 })();

@@ -1,6 +1,7 @@
 // Runs the whole site locally like production: static pages from dist/ plus the store API (Pages Functions), with a
 // local D1 database and R2 buckets (Wrangler, installed by `npm install`). Test mode only: mock payments, emails kept
-// in the database (see /api/dev/outbox), every product for sale, sample files to download. Nothing touches Cloudflare.
+// in the database (see /api/dev/outbox), test products (test/support/catalog-fixtures.js) for sale, sample files to
+// download, and test project content. Nothing touches Cloudflare.
 // Usage: npm run dev  (or node scripts/dev.js [--port 8788] [--fresh])   then open http://localhost:8788/
 // Tests start it with startDevServer() and their own port, state folder and variables; several can start at once in one
 // process (setup doesn't block), as long as the site is built beforehand and each passes build: false.
@@ -42,12 +43,28 @@ function ensureDevVars() {
   console.log("dev: wrote .dev.vars with fresh local secrets");
 }
 
-// Local-only test data: everything for sale, three extra test products, one small file per product (the sample pack's
-// tagged with a Pac and kind), a second project without polls, and test polls (open, closed, and one for that project).
+// Local-only test data. data/ sells nothing of its own (first-party products are made in the Studio), so the six
+// former placeholder products come from test/support/catalog-fixtures.js, synced like a catalog product (lib/catalog.js),
+// all for sale, plus three extra test products and one small file per product (the sample pack's tagged with a Pac and
+// kind), a second project without polls, test polls (open, closed, and one for that project), the real release and news
+// post the content migration seeds where the project exists (replayed here: locally the catalog adds the project after
+// the migrations) and a test show.
 const fileIdFor = (productId) => "pf_" + [...crypto.createHash("sha256").update(productId).digest("hex").slice(0, 16)].map((c) => "abcdefghijklmnop"[parseInt(c, 16)]).join("");
+const sqlText = (v) => (v === null || v === undefined ? "NULL" : `'${String(v).replace(/'/g, "''")}'`);
+// The seed statements of the migrations that fill project content (each skips itself when its row is already there).
+function contentSeedSql() {
+  const dir = path.join(ROOT, "db", "migrations");
+  return fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort().flatMap((f) =>
+    fs.readFileSync(path.join(dir, f), "utf8").replace(/^--.*$/gm, "").split(/;\s*\n/).map((x) => x.trim())
+      .filter((x) => /^(INSERT INTO project_(releases|news|shows)|UPDATE projects SET look)\b/.test(x)).map((x) => x + ";"));
+}
 function devSeed(stateDir) {
   const { loadData } = require("./lib/data");
-  const products = loadData().products.map((p) => p.id);
+  const { catalogSql } = require("./lib/catalog");
+  const fixtures = require("../test/support/catalog-fixtures.js");
+  const data = loadData();
+  const fixtureProducts = fixtures.PRODUCTS.map((p) => ({ ...p, category: (data.productTypes[p.type] || {}).label || p.type, currency: p.currency || data.SITE.currency || "USD" }));
+  const products = fixtureProducts.map((p) => p.id);
   const extra = [
     ["dev-unpublished", "Unpublished test item", 500, 0, 0],
     ["dev-paused", "Paused test item", 500, 1, 1],
@@ -57,11 +74,15 @@ function devSeed(stateDir) {
   const poll = (id, project, opens, closes) => `INSERT OR REPLACE INTO polls (id, project_id, question, options, opens_at, closes_at, published, created_at, updated_at)
        VALUES ('${id}', '${project}', 'Test poll', '[{"id":"finish-it","label":"Finish it"},{"id":"scrap-it","label":"Scrap it"}]', ${opens}, ${closes}, 1, ${T}, ${T});`;
   const sql = [
-    "UPDATE products SET published = 1 WHERE id NOT LIKE 'dev-%';",
+    catalogSql(fixtureProducts, data.productTypes, data.projects),
+    "UPDATE products SET published = 1 WHERE id NOT LIKE 'dev-%' AND source = 'catalog';",
     `INSERT OR REPLACE INTO projects (id, name, features, published, created_at, updated_at) VALUES ('dev-other', 'Other test project', '["store"]', 1, ${T}, ${T});`,
     poll("dev-poll", "glitches-and-stitches", "NULL", "NULL"),
     poll("dev-closed-poll", "glitches-and-stitches", "NULL", "'2000-01-01T00:00:00.000Z'"),
     poll("dev-other-poll", "dev-other", "NULL", "NULL"),
+    ...contentSeedSql(),
+    ...fixtures.SHOWS.map((s) => `INSERT OR IGNORE INTO project_shows (id, project_id, show_date, city, venue, ticket_url, published, created_at, updated_at)
+       SELECT ${[s.id, s.project, s.date, s.city, s.venue, s.ticketUrl].map(sqlText).join(", ")}, 1, ${T}, ${T} WHERE EXISTS (SELECT 1 FROM projects WHERE id = ${sqlText(s.project)});`),
     ...extra.map(([id, title, cents, published, paused]) =>
       `INSERT OR REPLACE INTO products (id, title, description, type, price_cents, currency, tags, metadata, featured, published, sales_paused, max_quantity, created_at, updated_at)
        VALUES ('${id}', '${title}', 'Local test product.', 'other', ${cents}, 'USD', '[]', '{}', 0, ${published}, ${paused}, 1, strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now'));`),

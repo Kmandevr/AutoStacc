@@ -1,22 +1,18 @@
 ---
 name: add-news
-description: Add, edit or remove a news post (or tour date) in AutoStacc. Use for announcements, releases and updates shown on the home and news pages. Touches data/news.js, or data/shows.js for tour dates, then regenerates pages.
+description: Add, edit or remove a news post (or tour date) in AutoStacc. Use for announcements, releases and updates shown on the home and news pages. News posts and shows are made in the Studio's News and Shows editors (store database), not in data/; this skill gathers the facts and walks the owner through it.
 ---
 
-# Add or change news
+# Add or change news or shows
 
-**Only `data/news.js` changes** (tour dates: `data/shows.js`), plus generated files. Each post names its `project`; that project's news list and its home page's latest three are rendered from it by `js/news.js`, newest first; each post's page `/<creator>/<project>/news/<id>` by `scripts/build.js`. Don't edit HTML, CSS or scripts.
+**No file in the repo changes.** Since 2026-10-21 every project's news posts and show dates, Glitches & Stitches' included, are Studio content in the store database (`project_news`, `project_shows`; owner decision in `docs/decisions.md`, how it works in `docs/creators.md` "Music, news and shows"). The project's news list, its home page's latest posts, the shows list and each post's page (`/<creator>/<project>/news/<slug>`, in `/sitemap-content.xml`) all come from there. Never re-create data/news.js or data/shows.js, and don't edit HTML, CSS or scripts. How news relates to the planned community Updates is still open (#174).
 
-1. Read the top of `data/news.js` (the comment and one entry). That file defines the fields; don't copy them elsewhere.
-2. Get the content from the user: date, title, tag, summary, body. **Never invent** releases, dates or details. If something is missing, ask, or open a GitHub issue for it.
-3. Edit:
-   - `id`: lowercase-hyphenated, never changed once published. `release`: the release id if the post is about one.
-   - `date`: `YYYY-MM-DD`. Order in the file doesn't matter, the script sorts.
-   - Links in `body` are root-relative clean addresses (`/autostacc/glitches-and-stitches/music/hail`, `/shop`), never `*.html`.
-   - `summary` is plain text, shown on the home page. `body` may contain simple HTML, shown on the news page; keep it to `<p>`, `<a>`, `<strong>`, `<em>`, and escape quotes.
-   - Reuse an existing `tag` unless the user wants a new one.
-   - Shows: `date`, `city`, `venue`, `ticketUrl` (`""` shows "Tickets soon"). Past dates hide automatically.
-4. Run `node scripts/build.js`, then the `seo-check` skill.
-5. Add a line to `docs/log.md`.
-
-Don't touch `data/products.js`, `data/site.js` or any JS/CSS.
+1. Get the content from the owner: date, title, tag, summary, body. For a show: date, city, venue, ticket link. **Never invent** releases, dates, venues or details. If something is missing, ask, or open a GitHub issue for it.
+2. Prepare it in the editor's format:
+   - The slug is lowercase-hyphenated and never changed once published.
+   - The summary is plain text, shown on cards and as the page's search description.
+   - The body is the Studio's safe text markup (`js/site-text.js`), never HTML: paragraphs separated by blank lines, `**bold**`, `*italic*`, and `[label](url)` links. Links to AutoStacc pages are root-relative clean addresses (`/autostacc/glitches-and-stitches/music/hail`, `/shop`); others are https.
+   - Reuse an existing tag unless the owner wants a new one. Set the release (a release slug of the same project) if the post is about one.
+   - Shows: a ticket link is https or empty. Past dates hide by themselves.
+3. The owner (or a team member with `site.edit`; publishing, unpublishing and deleting need `site.publish`) enters it in **`/studio` → the project → News** (or **Shows**), checks the preview, then publishes. You can't sign in as the owner, so give them the text ready to paste. To test, run it locally under `npm run dev`.
+4. Add a line to `docs/log.md` if the owner asked you to record it. No build is needed.

@@ -2,7 +2,7 @@
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
 covers: [package.json, scripts/dev.js, scripts/dist.js, scripts/serve.js, wrangler.toml, server/lib/config.js, db/migrations/, test/, .github/workflows/store.yml, server/payments/index.js, server/email/, server/app.js, server/dev/, scripts/docs-test.js, .github/workflows/clear-status-on-close.yml, .github/workflows/codeql.yml, .github/dependabot.yml, SECURITY.md, LICENSE]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Development
@@ -21,7 +21,7 @@ Test mode (local only):
 
 - **Payments:** the mock provider. Checkout opens `/checkout?...&mock=...` with buttons: pay, decline, abandon. They go through the same pipeline as Stripe events.
 - **Email:** kept in the database. Read verification and reset links at `http://localhost:8788/api/dev/outbox?to=<email>`.
-- **Catalog:** every product is for sale (drafts included), plus `dev-free`, `dev-paused` and `dev-unpublished`, and each product has a small test file to download. A second project (`dev-other`) and test polls (open, closed, and one on that project) are seeded too.
+- **Catalog:** `data/products.js` is empty, so the six test products (`sample-pack-vol1`, `serum-presets`, ...) come from `test/support/catalog-fixtures.js` and are appended after `db/catalog.sql` by the same generator; every product is for sale (drafts included), plus `dev-free`, `dev-paused` and `dev-unpublished`, and each product has a small test file to download. The first-party release and news post (`hail`, `hail-out-now`) are re-seeded from migration 0040 after the catalog (locally the migrations run before the project exists), plus one fixture show (2099-06-01). A second project (`dev-other`) and test polls (open, closed, and one on that project) are seeded too.
 - **Admin:** sign up as `admin@autostacc.test` (in `.dev.vars` `ADMIN_EMAILS`), confirm via the outbox, open `/admin`.
 
 ## Environment variables

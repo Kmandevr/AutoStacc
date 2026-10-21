@@ -1,14 +1,13 @@
-// Tour dates, a drop-in for any [data-shows] element: a project's upcoming shows (data/shows.js, soonest first), plus
-// event structured data for shows with tickets. data-project picks the project (default: the open project's). Outside
-// the project's pages it wears the project's look. Needs data/site.js, data/projects.js, data/shows.js and js/util.js.
+// Tour dates, a drop-in for any [data-shows] element: a project's upcoming shows (from the content API through
+// js/project-content.js, soonest first), plus event structured data for shows with tickets. data-project picks the
+// project (default: the open project's). Outside the project's pages it wears the project's look. Needs data/site.js,
+// data/projects.js, js/util.js and js/project-content.js.
 (function () {
   "use strict";
 
-  const { escapeHTML, parseDate, fmtDate, isSet, jsonLd, moduleProject, wear } = window.GS;
+  const { escapeHTML, parseDate, fmtDate, isSet, jsonLd, moduleProject, wear, content } = window.GS;
   const boxes = [...document.querySelectorAll("[data-shows]")];
-  if (!boxes.length) return;
-  // Drafts are placeholders, never shown or announced.
-  const SHOWS = (window.SHOWS || []).filter((s) => !s.draft);
+  if (!boxes.length || !content) return;
   const PROJECTS = window.PROJECTS || [];
   const SITE = window.SITE || {};
   const announced = new Set(); // each project's events go into the page's structured data once
@@ -16,10 +15,11 @@
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  boxes.forEach((el) => {
+  boxes.forEach(async (el) => {
     const id = moduleProject(el);
     const PROJECT = PROJECTS.find((p) => p.id === id) || {};
-    const upcoming = SHOWS.filter((s) => s.project === id && parseDate(s.date) >= today).sort(
+    // Only published shows come from the API; past ones are dropped here too, in case a page stays open overnight.
+    const upcoming = (await content.project(id)).shows.filter((s) => s.project === id && parseDate(s.date) >= today).sort(
       (a, b) => parseDate(a.date) - parseDate(b.date)
     );
     wear(el, id);
@@ -43,7 +43,7 @@
     // Search engines can list shows under the artist. Only shows with a ticket link are announced,
     // so unconfirmed dates never reach Google.
     const ticketed = upcoming.filter((s) => isSet(s.ticketUrl));
-    if (!ticketed.length || announced.has(id)) return;
+    if (!ticketed.length || announced.has(id) || !PROJECT.name) return;
     announced.add(id);
     jsonLd(
       ticketed.map((s) => ({

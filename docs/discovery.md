@@ -2,7 +2,7 @@
 title: Store discovery
 summary: How the store is searched, filtered and personalized - the metadata vocabulary, the search API and its query semantics, the recommendation score and its weights, the on-device history and its privacy rules, wishlists, and the limits.
 covers: [server/discovery/, server/wishlist/, data/vocabulary.js, js/product-contents.js, db/migrations/0020_product_contents.sql, js/store-browse.js, js/store-filters.js, js/store-suggest.js, js/store-sections.js, js/taste.js, js/wishlist.js, js/similar.js, js/studio-details.js, css/store.css, db/migrations/0012_discovery.sql]
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Store discovery
@@ -63,7 +63,7 @@ The current search and filters always win: while the store is narrowed, the sect
 
 ## Pages
 
-- `/shop`: `js/store-browse.js` (state in the address, results, chips, pages, the filter drawer on phones; offline it shows `data/products.js`), `js/store-filters.js` (panel and chip templates), `js/store-suggest.js` (combobox), results and rows draw store-style card sizes (`GS.productCard` with `mixed`: featured banners, artwork capsules; [modules](modules.md)), `js/store-sections.js` (rows, tune picks, not interested, your wishlist, coming soon; on the home page `data-sections="2" data-brief` keeps two rows and the same controls, [browse](browse.md)), `js/wishlist.js` (hearts), `css/store.css` (on phones the filter drawer is frosted glass over a blurred page).
+- `/shop`: `js/store-browse.js` (state in the address, results, chips, pages, the filter drawer on phones; offline it shows `data/products.js`, empty since first-party products moved to the Studio, so an empty state with the offline note), `js/store-filters.js` (panel and chip templates), `js/store-suggest.js` (combobox), results and rows draw store-style card sizes (`GS.productCard` with `mixed`: featured banners, artwork capsules; [modules](modules.md)), `js/store-sections.js` (rows, tune picks, not interested, your wishlist, coming soon; on the home page `data-sections="2" data-brief` keeps two rows and the same controls, [browse](browse.md)), `js/wishlist.js` (hearts), `css/store.css` (on phones the filter drawer is frosted glass over a blurred page).
 - Product pages: every stated detail in "Details", a wishlist button, and "You might also like" (`js/similar.js`).
 - Other pages' grids (`js/shop.js`) stay simple: featured or a project's products, each opening its own page.
 

@@ -1,10 +1,12 @@
 // SEO regression tests, no browser and no dependencies: page metadata, canonicals, JSON-LD, sitemap, robots.txt,
-// redirects, recorded public URLs, placeholder identity data and brand spelling. Prints PASS/WARN/FAIL lines.
+// redirects, recorded public URLs, placeholder identity data and brand spelling. Prints PASS/WARN/FAIL lines. Release and
+// news addresses (/<creator>/<project>/music|news/<slug>) are served by the content Function from the store database and
+// listed in /sitemap-content.xml, so they count as served without a static file (lib/data.js contentAddress).
 // Usage: node scripts/seo-test.js   (exit 1 on any FAIL). The rendered-head and crawl checks are in verify-site.
 const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
-const { ROOT, loadData, origin, projectPath } = require("./lib/data");
+const { ROOT, loadData, origin, projectPath, contentAddress } = require("./lib/data");
 
 const out = [];
 const add = (level, check, detail, file) => out.push(`${level} ${check} - ${detail}${file ? ` (${file})` : ""}`);
@@ -117,7 +119,7 @@ for (const [f, p] of Object.entries(pages)) {
     if (/\.(css|png|jpg|webp|ico|svg|js)$/.test(clean)) { if (!exists(clean.slice(1))) add("FAIL", "broken-asset", href, f); continue; }
     if (!href.startsWith("/")) add("WARN", "relative-link", `${href}: use a root-relative clean address`, f);
     else if (clean.endsWith(".html")) add("WARN", "link-redirect", `${href} redirects; link to ${clean.replace(/(index)?\.html$/, "")}`, f);
-    else if (!servedPaths.has(clean)) add("FAIL", "broken-link", href, f);
+    else if (!servedPaths.has(clean) && !contentAddress(clean)) add("FAIL", "broken-link", href, f);
   }
 }
 
@@ -172,8 +174,6 @@ const needs = (f, type, why) => pages[f] && !jsonTypes[f].has(type) && add("FAIL
 needs("index.html", "WebSite", "home page");
 needs("index.html", "Organization", "home page");
 for (const x of data.projects.filter((p) => !p.draft)) needs(`${projectPath(x.id).slice(1)}.html`, x.entity || "Organization", "project home page");
-for (const r of data.releases) needs(`${projectPath(r.project, "music", r.id).slice(1)}.html`, "MusicAlbum", "release page");
-for (const n of data.news) needs(`${projectPath(n.project, "news", n.id).slice(1)}.html`, "BlogPosting", "news post");
 for (const pr of data.products) {
   const f = `shop/${pr.id}.html`;
   if (pr.draft && jsonTypes[f] && jsonTypes[f].has("Product")) add("FAIL", "jsonld-draft", "draft product must not publish Product data", f);
@@ -222,6 +222,8 @@ for (const p of ["/privacy", "/terms", "/refunds", "/license", "/help", "/guide"
 const robots = exists("robots.txt") ? read("robots.txt") : "";
 if (!robots) add("FAIL", "robots", "robots.txt missing");
 if (!new RegExp(`^Sitemap: ${ORIGIN.replace(/\./g, "\\.")}/sitemap\\.xml$`, "m").test(robots)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/sitemap.xml" line`);
+// The release and news pages are only listed in the sitemap the content Function serves.
+if (!new RegExp(`^Sitemap: ${ORIGIN.replace(/\./g, "\\.")}/sitemap-content\\.xml$`, "m").test(robots)) add("FAIL", "robots", `no "Sitemap: ${ORIGIN}/sitemap-content.xml" line (release and news pages)`);
 // Rules for "*" (Google's matching: the longest matching rule wins; Allow wins a tie).
 const rules = [];
 let star = false;
@@ -251,19 +253,29 @@ for (const [from, to, code] of redirects) {
   if (locs.includes(ORIGIN + from)) add("FAIL", "redirect-public", `${from} is in the sitemap but redirects to ${to}`);
   if (code === "200") { if (!servedPaths.has(to)) add("FAIL", "rewrite-target", `${from} serves ${to}, which isn't a page`); continue; }
   if (!["301", "308"].includes(code)) add("WARN", "redirect-code", `${from} -> ${to} uses ${code || "302"}; permanent moves should be 301`);
-  // A "/old/*  /new/:splat" rule must point into a folder that has pages.
+  // A "/old/*  /new/:splat" rule must point into a folder that has pages (static, or a project's music/ or news/,
+  // whose pages the content Function serves).
   const target = to.endsWith("/:splat") ? to.slice(0, -"/:splat".length) : to;
-  const lands = to.endsWith("/:splat") ? [...servedPaths].some((s) => s.startsWith(target + "/")) : servedPaths.has(to);
+  const lands = to.endsWith("/:splat") ? [...servedPaths].some((s) => s.startsWith(target + "/")) || Boolean(contentAddress(target + "/x"))
+    : servedPaths.has(to) || Boolean(contentAddress(to));
   if (to !== "/" && !to.startsWith("http") && !lands) add("FAIL", "redirect-target", `${from} -> ${to} goes nowhere`);
 }
+// The migrations that move a release or news post into the store database (INSERT INTO project_releases / project_news).
+const migrations = exists("db/migrations") ? fs.readdirSync(path.join(ROOT, "db/migrations")).filter((f) => f.endsWith(".sql")).map((f) => read(`db/migrations/${f}`)) : [];
+const seeded = ({ project, kind, slug }) => migrations.some((sql) => sql.includes(`INSERT INTO ${kind === "music" ? "project_releases" : "project_news"} `) && sql.includes(`'${project}', '${slug}'`));
 const recorded = exists("scripts/public-urls.txt") ? read("scripts/public-urls.txt").split("\n").filter((l) => l && !l.startsWith("#")) : [];
 for (const u of recorded) {
   const p = u.slice(ORIGIN.length);
   const redirected = redirects.find(([from]) => from === p || (from.endsWith("/*") && p.startsWith(from.slice(0, -1))));
-  // A wildcard redirect only covers an old address if the page it points to exists.
+  // A wildcard redirect only covers an old address if the page it points to exists (or is a release or news address).
   const landing = redirected && (redirected[0].endsWith("/*") ? redirected[1].replace(":splat", p.slice(redirected[0].length - 1)) : redirected[1]);
-  if (redirected && landing !== "/" && !servedPaths.has(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
-  if (!locs.includes(u) && !redirected) {
+  if (redirected && landing !== "/" && !servedPaths.has(landing) && !contentAddress(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
+  else if (redirected && contentAddress(landing) && !seeded(contentAddress(landing))) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which no migration in db/migrations/ moved into the store database`);
+  // A release or news address stays public through the content Function and /sitemap-content.xml, as long as a
+  // migration moved it into the store database (the build only records static pages, so these are the old ones).
+  const content = !locs.includes(u) && !redirected && contentAddress(p);
+  if (content && !seeded(content)) add("FAIL", "url-disappeared", `${u} was a static page and no migration in db/migrations/ seeds its ${content.kind === "music" ? "release" : "news post"} "${content.slug}"`);
+  if (!locs.includes(u) && !redirected && !content) {
     add("FAIL", "url-disappeared", `${u} was public and is gone: add a 301 in _redirects, or remove it from scripts/public-urls.txt if that's deliberate`);
   }
 }
@@ -280,7 +292,6 @@ for (const x of data.projects) for (const s of x.socials || []) {
   if (s.url && !isProfile(s.url)) add("FAIL", "placeholder-profile", `${x.id} ${s.name}: "${s.url}" isn't a profile page (leave it "" until it exists)`, "data/projects.js");
   if (s.url && BAD_HOST.test(s.url)) add("FAIL", "placeholder-profile", `${x.id} ${s.name}: ${s.url}`, "data/projects.js");
 }
-for (const r of data.releases) for (const l of r.links || []) if (l.url && !isProfile(l.url)) add("FAIL", "placeholder-link", `${r.id} ${l.name}: "${l.url}"`, "data/music.js");
 const fakeEmail = (m) => m && (BAD_HOST.test(m) || !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(m));
 if (fakeEmail(SITE.email)) add("FAIL", "placeholder-email", `"${SITE.email}" isn't a real address`, "data/site.js");
 for (const x of data.projects) {

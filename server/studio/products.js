@@ -21,7 +21,7 @@ async function publishGate(db, user, input) {
 
 async function list(app, { projectId }) {
   const user = await requireUser(app);
-  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"));
+  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"), { allowCatalog: true });
   const [rows, images, used] = await Promise.all([listProjectProductRows(app.db, project.id), listImages(app.db, creator.id), countProducts(app.db, creator.id)]);
   return json({
     products: await productViews(app.db, rows),
@@ -34,7 +34,7 @@ async function list(app, { projectId }) {
 async function create(app, { projectId }) {
   const user = await requireUser(app);
   await limit(app, "studio-product", 30, 3600);
-  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"));
+  const { project, creator } = await requireProject(app.db, projectId, user, rolesFor("products"), { allowCatalog: true });
   const input = cleanProductInput(await readJson(app.request, 8 * 1024), { requireAll: true });
   if (input.published || input.deleted || input.salesPaused) fail(400, "invalid_field", "A new product starts as a draft.");
   await publishGate(app.db, user, input);

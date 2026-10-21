@@ -2,7 +2,8 @@
 # Public: the home page, the store and its product pages, /projects and every project's pages, /about. Private: the
 # signed-in app (dashboard, account, settings, Your Stacc), login, cart, checkout, admin and the store API; they are
 # also noindex and the account pages are gated on the server (this file is a crawl hint, never a security boundary).
-# AI crawlers are welcome on the public pages; /llms.txt summarizes the site for them.
+# AI crawlers are welcome on the public pages; /llms.txt summarizes the site for them. sitemap.xml lists the pages built
+# from data/; sitemap-content.xml (served by the store API) lists the release and news pages creators publish.
 User-agent: *
 Allow: /
 Disallow: /dashboard
@@ -19,3 +20,4 @@ Disallow: /api/
 Disallow: /private/
 
 Sitemap: https://autostacc.com/sitemap.xml
+Sitemap: https://autostacc.com/sitemap-content.xml

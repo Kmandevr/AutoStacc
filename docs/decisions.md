@@ -1,10 +1,36 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Decisions
+
+## 2026-10-21: Glitches & Stitches runs through the Studio like every creator (owner, #154)
+
+The owner's answers to #154 ("manage Glitches & Stitches in the creator hub while keeping its custom code"):
+1. **Everything at once.** Products, releases, news and shows all move out of `data/` into the Studio and D1. The Studio gets **Music** (releases), **News** and **Shows** editors for **every** creator, not just first-party ones. "Music" avoids a clash with the Product Studio's existing **Release** section (publishing a product).
+2. **The 6 placeholder products are deleted** (`sample-pack-vol1`, `serum-presets`, `stems-patchwork`, `ep-corrupted-thread`, `wallpapers`, `vj-loops`; all drafts). The owner makes the real ones in the Studio. `data/products.js` stays, empty: the catalog pipeline is dormant until #176 is answered. The deploy's sync unpublishes and soft-deletes the 6 rows. The tests keep them as dev-only fixtures (`test/support/catalog-fixtures.js`), never as data.
+3. **The only first-party exception is the page code.** The project's hand-written pages (`autostacc/glitches-and-stitches*`, its CSS, JS and sounds) may keep running their own scripts and skin. Everything else goes through the same paths as any creator. Nothing names the project in platform code; its look on server-rendered pages is data (`projects.look`, synced from `skin`/`sounds`/`entity` in `data/projects.js`).
+
+How it was built (Claude, following the architect's plan):
+- **Real facts were migrated, never invented or dropped.** Release `hail` and post `hail-out-now` are seeded into `project_releases` and `project_news` by `db/migrations/0040_project_content.sql`, published, with the same slugs. The post's HTML body became site-text markup. The release keeps its root-relative `/img/releases/` artwork while it is untouched (#179).
+- **Not migrated:** the draft posts `fall-tour-dates` and `frayed-signals-sample-pack` and the 5 draft shows, which were placeholders and never facts. They are still in git history if the owner wants them back (#173).
+- **Addresses kept.** Release and news pages stay at `/<creator>/<project>/music/<slug>` and `/news/<slug>`. They are now rendered on the server for every creator (`server/content/`, through `functions/[[path]].js`), with the same title format, canonical, Open Graph and JSON-LD. They are indexable only for **trusted** creators; the catalog sync marks first-party creators trusted. They are listed in `/sitemap-content.xml`, named in `robots.txt`. `scripts/dist.js` now excludes a first-party creator's hand-written files one by one, not its whole folder, so these addresses reach the Function. `seo-test.js` accepts a recorded release or news URL only if a migration seeds it.
+- **Access.** Catalog creators and projects stay strict by default. Only product and content routes opt in (`{ allowCatalog: true }`). The builder, profile site, renames, deletes, new projects, team and money stay closed for first-party creators, whose pages are hand-written. `autostacc` had no members, so an AutoStacc admin can **become the first owner** of a first-party creator that has none, once (Studio overview, audited). This is interim until the owner answers #172 (the alternative is "admins count as owner"). Content editing reuses the existing capabilities: `site.edit` for drafts, `site.publish` to publish, change live items or delete. No new roles were made (vision open question "Final project and creator permission roles").
+- **Money unchanged.** A first-party creator's Studio products are AutoStacc's own sales: the main Stripe account, never held while creator purchases are closed (#154: "no creator split and no payouts"; #171 confirms). The test is the creator's source (`creatorSaleSql` / `creatorSaleIds` in `server/creators/creators.js`), never a project id.
+- **News and community Updates.** The community plan (2026-10-16 below) still says all news, first-party included, moves to Updates. The Studio News editor doesn't settle that: whether it replaces Updates for news, or Updates later takes it over with the same addresses, is #174.
+- **Known gaps against the old static pages (verification, not decisions; follow-ups):** the music and news hand pages lost their ItemList JSON-LD; release pages have no "From the shop" or connections section yet (`scripts/lib/relations.js` is kept but unused by the build); news pages say NewsArticle where the static ones said BlogPosting; release views aren't counted (the server-rendered player doesn't load `js/music.js`); HAIL's Deezer widget fallback player is dropped. The pages are indexable only once the deploy's catalog sync has marked first-party creators trusted, which runs after migration 0040. `server/content/render.js` (about 375 lines) copies the page shell from `scripts/lib/pages.js` and the share image and logo from `data/site.js`; splitting it and sharing those is a follow-up. `server/revenue/split.js` still records a creator share for first-party Studio sales; it is never shown (first-party earnings stay closed) and whether it should be recorded is undecided.
+- **Fixed in verification:** first-party product listing and creation (`server/studio/products.js`) and artwork upload and delete (`server/studio/site-files.js`) opt in with `{ allowCatalog: true }`; an image a release uses as artwork is kept when deleted (`stillUsed` in `server/sites/images.js`). Tested in `test/api/content.suite.js`.
+- **Still open for the owner:**
+  - #172: who manages first-party creators.
+  - #173: the dropped drafts.
+  - #174: News vs Updates.
+  - #175: indexable pages for Studio products. First-party products lose `/shop/<id>` pages; nothing indexable was lost now, since all 6 were drafts.
+  - #176: retire the catalog pipeline.
+  - #177: whether free-plan limits (25 products, 550 MB) apply to `autostacc`. Until answered, they do, as for any creator (vision open question "Free-tier limits").
+  - #178: Releases, News and Shows elements in the visual builder.
+  - #179: HAIL's artwork.
 
 ## 2026-10-20: Community legal gates deferred (owner)
 

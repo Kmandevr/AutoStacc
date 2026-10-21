@@ -30,10 +30,7 @@ AutoStacc is the site at https://autostacc.com: a store for music, samples, pres
 - [News](https://autostacc.com/autostacc/glitches-and-stitches/news)
 - [Press](https://autostacc.com/autostacc/glitches-and-stitches/press)
 
-Releases:
-
-- [HAIL](https://autostacc.com/autostacc/glitches-and-stitches/music/hail) (single, 2025-10-15): HAIL is a single by Glitches & Stitches, released on 15 October 2025. One track, 2:27, streaming on Apple Music, YouTube Music and Deezer.
-
 ## Optional
 
 - [Sitemap](https://autostacc.com/sitemap.xml)
+- [Releases and news sitemap](https://autostacc.com/sitemap-content.xml): every release and news page projects publish
