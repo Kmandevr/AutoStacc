@@ -6,6 +6,10 @@ updated: 2026-10-21
 
 # Decisions
 
+## 2026-10-21: Paid creator storage is on (owner)
+
+The owner allowed saved cards and added `payment_intent.succeeded` and `payment_intent.payment_failed` to the Stripe webhook, made a test payment that worked, and switched **Paid storage** on in the live Control Center (#142). Still to do later: confirm the storage tax code with a tax adviser.
+
 ## 2026-10-21: Paid storage: saved cards, automatic charges and a cap that grows (owner, #142)
 
 The owner answered #142's open questions one by one in chat. Built the same day (Claude), **still off**: the owner switches it on in the Control Center after one real test-mode payment ([store-setup](store-setup.md#paid-storage-saved-cards)). This replaces "monthly statements paid on a Stripe page" (2026-10-16) as the normal path; the page stays the fallback.
