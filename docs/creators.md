@@ -14,7 +14,7 @@ updated: 2026-10-22
 | Address | What |
 | --- | --- |
 | `/<creator>` | the creator's profile: the one they designed, else a list of their published projects |
-| `/creators` | the directory of creators (owner, 2026-10-21): every first-party creator and every active, published Studio creator with a published project, never a suspended or unpublished one, each with its projects and a link to its profile; it shows nothing the profile doesn't ([browse](browse.md#creators-creators)) |
+| `/discover?tab=creators` (was `/creators`, which redirects) | the directory of creators (owner, 2026-10-21): every first-party creator and every active, published Studio creator with a published project, never a suspended or unpublished one, each with its projects and a link to its profile; it shows nothing the profile doesn't ([browse](browse.md#creators-creators)) |
 | `/<creator>/<name>` | a project's home, else a page of the creator's profile (one address space per creator: a profile page can't take a project's name, nor a project a page's; `server/sites/addresses.js`) |
 | `/<creator>/<project>` | the project's home page |
 | `/<creator>/<project>/<page>` | another page of the project (`/events`, `/about`, ...); `/home` redirects to the project's home |
@@ -76,7 +76,7 @@ Every creator, first-party included, keeps each project's releases and events in
   - The public events calendar `/events` (`server/content/calendar.js`, linked from Explore). It shows a month or a list of event cards, filtered by dates, city, country and host. Signed in, a Following filter appears (`js/events-calendar.js`). Phones get the list, and the month table works by keyboard.
   - The old `/<creator>/<project>/news` and `/news/<slug>` answer a 301 to the project's home.
   - Each page gets a title, canonical, Open Graph and JSON-LD. It is `noindex` unless the creator is trusted (`/events` is always indexable). A project's look comes from `projects.look` (never creator code). Pages are cached at the edge for a minute. Published pages of trusted creators and `/events` are listed in `/sitemap-content.xml` (`server/content/sitemap.js`; [seo](seo.md)).
-- **Directory activity** (`/projects`) reads the dates of published releases and the next event from here, for every project.
+- **Directory activity** (Discover's Projects tab) reads the dates of published releases and the next event from here, for every project.
 - **On creator pages:** the visual builder's **Releases** and **Events** elements show a creator's own project's releases or upcoming events ([builder](builder.md)).
 
 A project can have a community space, switched on by its owner or admins in the Studio (`js/studio-community.js`) and served at `/<creator>/<project>/community` ([community](community.md)).

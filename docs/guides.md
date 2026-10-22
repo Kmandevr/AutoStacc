@@ -2,7 +2,7 @@
 title: Guides and creator manual
 summary: BUILT (2026-10-16, issue #134): long-form support articles at /guide beside the quick answers in /help, with a creator manual for the Studio; static pages generated from data/guides.js, one search across guides and help.
 covers: [data/guides.js, data/guide-index.js, scripts/lib/guide-pages.js, js/guide-search.js, css/guide.css]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Guides and creator manual

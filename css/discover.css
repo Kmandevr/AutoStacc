@@ -31,3 +31,10 @@
 .dinvite h2 { margin: 0; }
 .dinvite p { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .dcard { transition: none; } }
+/* The built A-Z list under All: every creator and project as plain links. */
+.discover-az { margin-top: 28px; }
+.discover-az h2 { font-size: 1.1rem; }
+.discover-az-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.discover-az-list li { margin: 0; }
+.discover-az-list :is(h3, p) { margin: 0; font-size: 1rem; }
+.discover-az-list img { display: none; }

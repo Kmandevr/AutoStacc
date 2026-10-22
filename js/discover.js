@@ -2,7 +2,7 @@
 // (?tab=all|creators|projects|communities); this script runs before the projects and creators browsers and removes the
 // panels that aren't open, so only the open tab's browser loads. All: a spotlight (the admins' picks, then a fair
 // daily rotation) and rows (active this month, new on AutoStacc, one per genre, communities), each card saying what it
-// is. Communities: every space's card. Needs js/util.js, js/browse-shelves.js and js/project-card.js.
+// is, above the built A-Z list of every creator and project (links that work without the store or JavaScript). Communities: every space's card. Needs js/util.js, js/browse-shelves.js and js/project-card.js.
 (function () {
   "use strict";
   const GS = window.GS;
@@ -50,7 +50,8 @@
     const projects = pr.ok ? pr.data.projects : [];
     const creators = cr.ok ? cr.data.creators : [];
     const spaces = sp.ok ? sp.data.spaces : [];
-    if (!projects.length && !creators.length) { box.innerHTML = `<p class="msg">Discover can't reach the store right now. <a href="/discover?tab=projects">Try the projects list</a>.</p>`; return; }
+    // Offline: the A-Z list below (built into the page) stays the way in.
+    if (!projects.length && !creators.length) { box.innerHTML = `<p class="msg">Discover can't reach the store right now; everyone on AutoStacc is listed below.</p>`; return; }
     const pool = [...projects.map((p) => ({ ...p, kind: "project" })), ...creators.map((c) => ({ ...c, kind: "creator", id: c.slug })), ...spaces.map((s) => ({ ...s, kind: "community" }))];
     const spot = S.rotate(pool, picks, 5, (x) => `${x.kind}:${x.id}`);
     const DAY = 86400000;

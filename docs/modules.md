@@ -2,7 +2,7 @@
 title: Modules
 summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
 covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/project-events.js, js/events-calendar.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, js/project-content.js, js/skeleton.js, css/skeleton.css, js/prefetch.js, js/creators-browse.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Modules
@@ -29,7 +29,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Buy buttons, live prices, status (`js/store.js`) | `[data-buy]`, `[data-price]`, `[data-status]` | the product id |
 | Projects rack (`js/projects.js`) | `[data-project-list]` | `data-creator` (only that creator's projects, on its profile) |
 | Project cards and follow controls (`js/project-card.js`, `js/follow.js`) | `[data-follow-slot]` | the project id, `data-name` |
-| Projects to follow (`js/project-picks.js`) | `[data-project-picks]` | `data-limit`, `data-picks="following"` (the projects you follow instead) |
+| Projects to follow (`js/project-picks.js`) | `[data-project-picks]` | `data-limit`, `data-picks="following"` (the projects you follow instead), `data-compact` (poster cards, the home page) |
 | Latest releases, news and shows (`js/latest.js`) | `[data-latest]` | `data-limit` (per list) |
 | Projects browser, creators browser, explore (`js/projects-browse.js`, `js/creators-browse.js`, `js/explore-browse.js`) | `[data-projects-browse]`, `[data-creators-browse]`, `[data-explore]` | none: one per page, state in the address ([browse](browse.md)) |
 | DAW backdrop (`js/daw-stage.js`, `css/daw-stage.css`) | `[data-daw-stage]` | `[data-daw-hero]` on the element it sits behind (it stops moving when that is out of view) |
@@ -45,7 +45,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 | Press contact (`js/press.js`) | `[data-press-contact]` | `data-project`; also wires `[data-copy="<id>"]` copy buttons |
 | Your Stacc at a glance (`js/stacc-glance.js`) | `[data-stacc-glance]` | `data-project`, `data-limit` (latest additions, default 4); signed-out visitors get a log-in link; Auto-Stacc grants say "added by Auto-Stacc" |
 | Your Stacc (`js/library.js`) | `[data-stacc]` | `data-project` (starts filtered to it), `data-stacc-view="kinds"` (starts by content type); a receipt's guest key is redeemed once per page. Its inner file area is `[data-stacc-files]`. Signed in, it also shows the person's collections, tags and saved searches (`js/library-personal.js`). |
-| Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` (link columns: Explore with Community, Help with Guides, Legal with Copyright and Community rules) | the page's `data-project` |
+| Frames (`js/layout.js`, `js/project-frame.js`) | `#site-header`, `#site-footer` (link columns: Explore with Discover, Community and About, Help with Guides, Legal with Copyright and Community rules; the theme switch at the foot) | the page's `data-project` |
 
 Store items wear their project's look in the store, the new releases feed (home page, dashboard) and on their product page; clicking one opens the store filtered to its project with it selected at the top.
 

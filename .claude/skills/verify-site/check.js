@@ -152,7 +152,8 @@ async function checkPage(browser, base, page, width) {
 // Product pages (/shop/<id>), release and event pages (scripts/lib/data.js contentAddress) and the /events calendar are
 // rendered by the store API from the database, which is offline here, so a link to one can't load: a note, not a broken
 // link. Their own tests are in test/api/ (store-check); seo-test.js checks each recorded address still has a home.
-const SERVED = /^\/(shop\/[^/?#]+|events)\/?(?:[?#]|$)/;
+// A project's community space (/<creator>/<project>/community) is the community's own page, from the store too.
+const SERVED = /^\/(shop\/[^/?#]+|events|[a-z0-9-]+\/[a-z0-9-]+\/community)\/?(?:[?#]|$)/;
 const offlineContent = (p) => {
   const m = p[1] === "broken-link" && /^(\S+) returned 404$/.exec(p[2]);
   return m && (SERVED.test(m[1]) || contentAddress(m[1])) ? ["WARN", "content-offline", `${m[1]} is served by the store API (offline here)`, p[3]] : p;
