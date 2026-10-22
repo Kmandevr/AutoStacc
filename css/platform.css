@@ -194,6 +194,10 @@ body:has(> .site-frame)::before {
   backdrop-filter: var(--blur);
   border-color: var(--glass-edge);
 }
+/* Lighter effects (html.fx-lite, js/theme.js): no blur, and surfaces nearly solid in the same colours. */
+.fx-lite { --blur: none; --blur-bar: none; }
+.fx-lite .platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]),
+.fx-lite .platform .alt { background-color: color-mix(in srgb, var(--panel) 95%, transparent); }
 .platform :is(.browse-search input, .stacc-search input, .browse-sort select, .stacc-filter select, .f-seg label) { background-color: color-mix(in srgb, var(--panel) 88%, transparent); }
 
 /* ---------- feedback: quiet, quick, the same everywhere ---------- */

@@ -361,3 +361,5 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
   .side-nav a:active, .tabbar a:active, .tabbar button:active, .tool-link:active, .theme-switch:active, .brand:active, .topbar-brand:active, .account-panel a:active, .account-signout:active { transform: scale(.96); }
 }
 .side-nav a:active, .tabbar a:active, .tabbar button:active, .account-panel a:active, .account-signout:active { background: var(--panel-2); }
+/* Lighter effects (html.fx-lite): the frame's bars are nearly solid instead of frosted. */
+.fx-lite :is(.topbar, .side, .tabbar) { background: color-mix(in srgb, var(--panel) 96%, transparent); }
