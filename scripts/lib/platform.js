@@ -50,7 +50,7 @@ function validate(data) {
     if (!c.firstParty) errors.push(`creator ${c.id}: creators in data/creators.js are first-party (firstParty: true); others sign up in the Studio`);
   }
 
-  const FEATURES = ["releases", "events", "store", "polls", "relationships"];
+  const FEATURES = ["releases", "events", "store", "polls", "relationships", "community"];
   for (const p of data.projects) {
     if (!p.name) errors.push(`project ${p.id}: add a name`);
     if (!p.creator) errors.push(`project ${p.id}: add creator (an id in data/creators.js)`);

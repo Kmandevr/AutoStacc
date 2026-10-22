@@ -6,6 +6,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, verifiedUser, sqlAll, unique } from "../support/client.js";
+import { freshAdmin } from "../support/flows.js";
 
 export default (ctx) => describe("community project spaces (switched on)", () => {
   const db = (s) => sqlAll(ctx.mock.stateDir, s);
@@ -42,6 +43,19 @@ export default (ctx) => describe("community project spaces (switched on)", () =>
     assert.equal((await owner.c.req("PUT", "/api/community/projects/prj_autostacc_nope/space", { body: { on: true } })).status, 404);
     const firstParty = one("SELECT id FROM projects WHERE source = 'catalog' LIMIT 1").id;
     assert.equal((await owner.c.req("PUT", `/api/community/projects/${firstParty}/space`, { body: { on: true } })).status, 404, "not the owner's");
+  });
+
+  test("a first-party project with the community feature has a space whose team is AutoStacc's admins, not members", async () => {
+    const page = await new Client(ctx.mock.url).get("/autostacc/glitches-and-stitches/community");
+    assert.equal(page.status, 200);
+    const space = one("SELECT s.id FROM community_spaces s JOIN projects p ON p.id = s.project_id WHERE p.source = 'catalog' AND p.id LIKE '%glitches%'");
+    assert.ok(space, "the first visit made the space");
+    const admin = await freshAdmin(ctx.mock.url);
+    const mine = await admin.get(`/api/community/spaces/${space.id}/mine`);
+    assert.equal(mine.data.team, true);
+    assert.equal(mine.data.mayUpdate, true);
+    const member = await person();
+    assert.equal((await member.c.get(`/api/community/spaces/${space.id}/mine`)).data.team, false);
   });
 
   test("the page lives at the project's address; /community/<space> redirects there; the sitemap lists the one address", async () => {

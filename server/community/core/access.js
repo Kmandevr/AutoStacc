@@ -1,6 +1,6 @@
 // Who may do what in a space (docs/community.md, "Rules" and "Who enforces what"), checked on the server for every
 // write. A space's team: for AutoStacc's own space, AutoStacc's admins; for a project space, the creator's members whose
-// role has community.moderate; for a community, its founder and moderators. Posting needs a confirmed email (requireUser),
+// role has community.moderate (and AutoStacc's admins for first-party projects); for a community, its founder and moderators. Posting needs a confirmed email (requireUser),
 // a community name with the 16+ confirmation, no community suspension, no ban from the space, and an open space.
 import { first } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
@@ -9,11 +9,17 @@ import { roleOf } from "../../creators/creators.js";
 import { can } from "../../creators/roles.js";
 import { getMember } from "./members.js";
 
+// The project behind a project space, with its creator's source: AutoStacc's admins are the team of first-party
+// (catalog) projects' spaces as well as AutoStacc's own space (owner, 2026-10-22).
+const projectOf = (app, space) => first(app.db, `SELECT p.creator_id, c.source FROM projects p JOIN creators c ON c.id = p.creator_id
+  WHERE p.id = ?`, space.project_id || space.projectId);
+
 export async function isTeam(app, user, space) {
   if (!user) return false;
   if (space.kind === "platform") return isAdmin(app, user);
   if (space.kind === "project") {
-    const project = await first(app.db, "SELECT creator_id FROM projects WHERE id = ?", space.project_id || space.projectId);
+    const project = await projectOf(app, space);
+    if (project && project.source === "catalog" && await isAdmin(app, user)) return true;
     const role = project && await roleOf(app.db, project.creator_id, user.id);
     return Boolean(role && can(role, "community.moderate"));
   }
@@ -26,7 +32,8 @@ export async function isTeam(app, user, space) {
 export async function mayPublishUpdate(app, user, space) {
   if (!user) return false;
   if (space.kind === "project") {
-    const project = await first(app.db, "SELECT creator_id FROM projects WHERE id = ?", space.project_id || space.projectId);
+    const project = await projectOf(app, space);
+    if (project && project.source === "catalog" && await isAdmin(app, user)) return true;
     const role = project && await roleOf(app.db, project.creator_id, user.id);
     return Boolean(role && can(role, "community.update"));
   }

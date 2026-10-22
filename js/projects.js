@@ -9,7 +9,7 @@
   const lists = [...document.querySelectorAll("[data-project-list]")];
   if (!lists.length) return;
   const projects = (window.PROJECTS || []).filter((p) => !p.draft);
-  const FEATURES = { releases: "Releases", events: "Events", store: "Store", polls: "Polls", relationships: "Song connections" };
+  const FEATURES = { releases: "Releases", events: "Events", store: "Store", polls: "Polls", relationships: "Song connections", community: "Community" };
 
   // Each card wears its project's look; a project with a full logo shows it as the card's heading.
   const name = (p) => (p.logoFull
