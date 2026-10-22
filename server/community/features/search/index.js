@@ -7,6 +7,7 @@ import { all } from "../../../lib/db.js";
 import { limit } from "../../../lib/ratelimit.js";
 import { terms, likeTerm } from "../../core/terms.js";
 import { threadPath } from "../../core/render-parts.js";
+import { SHOWN } from "../../core/spaces.js";
 
 const PAGE = 20;
 const TYPES = ["discussion", "question", "update", "poll", "challenge"];
@@ -17,7 +18,7 @@ async function search(app) {
   // Words of three letters or more: a two-letter term would scan every post for little value.
   const words = terms(url.searchParams.get("q"), 3);
   if (!words.length) fail(400, "invalid_field", "Type a word or two to look for.", { field: "q" });
-  const where = ["t.state = 'visible'", "s.state <> 'archived'"];
+  const where = ["t.state = 'visible'", "s.state <> 'archived'", SHOWN("t.space_id")];
   const args = [];
   for (const w of words) {
     where.push(`(t.title LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM community_posts p WHERE p.thread_id = t.id AND p.state = 'visible' AND p.body LIKE ? ESCAPE '\\'))`);

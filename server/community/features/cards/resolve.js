@@ -6,6 +6,7 @@ import { getThread } from "../../core/threads.js";
 import { threadPath } from "../../core/render-parts.js";
 import { getCreatorBySlug, getProjectBySlug } from "../../../creators/creators.js";
 import { getProduct, isVisible } from "../../../catalog/products.js";
+import { spaceShown } from "../../core/spaces.js";
 
 const PATH = /^\/[A-Za-z0-9/_.-]{1,200}$/;
 export const cardPath = (raw) => (typeof raw === "string" && PATH.test(raw) && !raw.includes("..") && !raw.includes("//") ? raw.replace(/\/+$/, "") || "/" : null);
@@ -19,7 +20,7 @@ export async function resolveCard(db, path) {
   let m = p.match(/^\/community\/t\/([A-Za-z0-9_]{3,80})(?:-[a-z0-9-]*)?$/);
   if (m) {
     const t = await getThread(db, m[1]);
-    if (!t || t.state !== "visible") return null;
+    if (!t || t.state !== "visible" || !(await spaceShown(db, t.spaceId))) return null;
     const space = await first(db, "SELECT name FROM community_spaces WHERE id = ?", t.spaceId);
     return { kind: "take", title: t.title, detail: `${t.replyCount} ${t.replyCount === 1 ? "reply" : "replies"}${space ? ` in ${space.name}` : ""}`, path: threadPath(t) };
   }

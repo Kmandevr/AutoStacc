@@ -9,7 +9,9 @@ import { requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
 import { requireProject } from "../../../creators/projects.js";
 import { rolesFor } from "../../../creators/roles.js";
-import { ensureProjectSpace, closeProjectSpace } from "../../core/project-space.js";
+import { openProjectSpace, closeProjectSpace } from "../../core/project-space.js";
+import { getSpace } from "../../core/posting.js";
+import { purge } from "../../core/purge.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 const featuresOf = (project) => { try { return JSON.parse(project.features || "[]"); } catch { return []; } };
@@ -32,9 +34,15 @@ async function change(app, params) {
   if (typeof body.on !== "boolean") fail(400, "invalid_field", "Say whether the community is on.", { field: "on" });
   if (project.source === "catalog") fail(409, "first_party", "A first-party project's community is switched on in its data file.");
   const features = featuresOf(project).filter((f) => f !== "community");
-  if (body.on) features.push("community");
+  if (body.on) {
+    // The space first: if it can't be made nothing has changed.
+    if (!await openProjectSpace(app.db, project.id)) fail(409, "name_taken", "A community space couldn't be made for this project right now. Try renaming the project.");
+    features.push("community");
+  }
   await run(app.db, "UPDATE projects SET features = ?, updated_at = ? WHERE id = ?", JSON.stringify(features), now(), project.id);
-  if (body.on) await ensureProjectSpace(app.db, project.id); else await closeProjectSpace(app.db, project.id);
+  if (!body.on) await closeProjectSpace(app.db, project.id);
+  const space = await first(app.db, "SELECT id FROM community_spaces WHERE project_id = ?", project.id);
+  if (space) purge(app, { space: await getSpace(app.db, space.id) });
   return json({ on: body.on });
 }
 

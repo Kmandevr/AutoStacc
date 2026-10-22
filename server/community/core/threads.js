@@ -3,6 +3,7 @@
 // community_members; a deleted account (author NULL) or one without a name shows as "deleted user".
 // Sorting: new (latest activity), top (upvotes) and hot (upvotes weighed by age), the default. Hot ranks the most
 // recently active threads in code, since D1 has no power function to rank in SQL.
+import { SHOWN } from "./spaces.js";
 import { first, all } from "../../lib/db.js";
 
 export const PAGE_SIZE = 25;
@@ -18,7 +19,7 @@ const THREAD_COLS = `t.id, t.space_id AS spaceId, t.channel_id AS channelId, t.t
 export const hotness = (t, nowMs = Date.now()) => (t.score + 1) / Math.pow((nowMs - Date.parse(t.lastPostAt)) / 3600000 + 2, 1.5);
 
 export async function listThreads(db, { spaceId = null, channelId = null, sort = "hot", page = 1 } = {}) {
-  const where = ["t.state = 'visible'"];
+  const where = ["t.state = 'visible'", SHOWN("t.space_id")];
   const params = [];
   if (spaceId) { where.push("t.space_id = ?"); params.push(spaceId); }
   if (channelId) { where.push("t.channel_id = ?"); params.push(channelId); }
@@ -45,9 +46,9 @@ export const listPosts = (db, threadId) => all(db, `SELECT p.id, p.parent_post_i
 
 // Every visible thread for the sitemap, newest activity first (the sitemap protocol allows 50,000 per file).
 export const sitemapThreads = (db) => all(db, `SELECT t.id, t.slug, t.last_post_at AS lastPostAt FROM community_threads t
-  WHERE t.state = 'visible' ORDER BY t.last_post_at DESC LIMIT 50000`);
+  WHERE t.state = 'visible' AND ${SHOWN("t.space_id")} ORDER BY t.last_post_at DESC LIMIT 50000`);
 
 // Questions nobody has answered yet, newest first, for the front page's box for newcomers.
 export const unanswered = (db, limit = 5) => all(db, `SELECT ${THREAD_COLS} FROM community_threads t LEFT JOIN community_members m ON m.user_id = t.author_user_id
-  WHERE t.state = 'visible' AND t.type = 'question' AND t.reply_count = 0 ORDER BY t.created_at DESC LIMIT ?`, limit);
+  WHERE t.state = 'visible' AND ${SHOWN("t.space_id")} AND t.type = 'question' AND t.reply_count = 0 ORDER BY t.created_at DESC LIMIT ?`, limit);
 

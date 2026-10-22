@@ -6,6 +6,7 @@ import { first, all, run, stmt, now } from "../../../lib/db.js";
 import { requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
 import { threadPath } from "../../core/render-parts.js";
+import { SHOWN } from "../../core/spaces.js";
 
 const MAX_SAVED = 500;
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -26,7 +27,7 @@ async function save(app, { threadId }, on) {
 async function list(app) {
   const user = await requireUser(app);
   const rows = await all(app.db, `SELECT t.id, t.slug, t.title, s.name AS space FROM community_saved v JOIN community_threads t ON t.id = v.thread_id
-    JOIN community_spaces s ON s.id = t.space_id WHERE v.user_id = ? AND t.state = 'visible' ORDER BY v.created_at DESC LIMIT 100`, user.id);
+    JOIN community_spaces s ON s.id = t.space_id WHERE v.user_id = ? AND t.state = 'visible' AND ${SHOWN("t.space_id")} ORDER BY v.created_at DESC LIMIT 100`, user.id);
   return json({ saved: rows.map((r) => ({ id: r.id, title: r.title, space: r.space, path: threadPath(r) })) }, 200, NO_STORE);
 }
 

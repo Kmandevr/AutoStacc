@@ -99,4 +99,57 @@ export default (ctx) => describe("community project spaces (switched on)", () =>
     assert.equal(one(`SELECT state FROM community_spaces WHERE project_id = '${p.proj.id}'`).state, "open");
     assert.equal(one(`SELECT COUNT(*) AS n FROM community_spaces WHERE project_id = '${p.proj.id}'`).n, 1, "never deleted or duplicated");
   });
+
+  test("security review: a project space shows only while its project is live; a trailing slash has one address; the cap and names hold", async () => {
+    const owner = await person();
+    const p = await project(owner);
+    await owner.c.req("PUT", p.switchPath, { body: { on: true } });
+    const anon = new Client(ctx.mock.url);
+    const space = db(`SELECT id, slug, name FROM community_spaces WHERE project_id = '${p.proj.id}'`)[0][0];
+    const gen = db(`SELECT id FROM community_channels WHERE space_id = '${space.id}' AND slug = 'general'`)[0][0].id;
+    clearPace();
+    const t = (await owner.c.post("/api/community/threads", { channelId: gen, type: "discussion", title: `Visible only while live ${n}`, body: "first words" })).data.thread;
+    const word = "hiddenspacequartz";
+    clearPace();
+    await owner.c.post("/api/community/threads", { channelId: gen, type: "discussion", title: `Searchable ${word}`, body: "second words" });
+    const find = async () => (await anon.get(`/api/community/search?q=${word}`)).data.results.length;
+    assert.equal(await find(), 1);
+    assert.equal((await anon.get(`${p.base}/`)).status, 301, "a trailing slash goes to the one address");
+    assert.equal((await anon.get("/community")).data.includes(space.name), true);
+    // The project goes back to draft: everywhere the space and its takes vanish.
+    db(`UPDATE projects SET published = 0 WHERE id = '${p.proj.id}'`);
+    assert.equal((await anon.get(p.base)).status, 404);
+    assert.equal((await anon.get(`/community/${space.slug}`)).status, 404);
+    assert.equal((await anon.get(`/community/t/${t.id}`)).status, 404);
+    assert.equal((await anon.get("/community")).data.includes(space.name), false);
+    assert.equal((await anon.get("/community/sitemap.xml")).data.includes(p.base), false);
+    assert.equal(await find(), 0);
+    assert.equal((await anon.get(`/api/community/cards?path=${encodeURIComponent(`/community/t/${t.id}`)}`)).status, 404);
+    db(`UPDATE projects SET published = 1 WHERE id = '${p.proj.id}'`);
+    assert.equal((await anon.get(p.base)).status, 200);
+    // Looking at the page never reopens a space the creator closed.
+    await owner.c.req("PUT", p.switchPath, { body: { on: false } });
+    db(`UPDATE projects SET features = '["community"]' WHERE id = '${p.proj.id}'`);
+    await anon.get(p.base);
+    assert.equal(one(`SELECT state FROM community_spaces WHERE project_id = '${p.proj.id}'`).state, "read_only");
+  });
+
+  test("a creator's project can't name its space after AutoStacc, and a taken name gets the creator's name added", async () => {
+    const owner = await person();
+    const slug = `cn${Date.now().toString(36)}${++n}`;
+    const creator = (await owner.c.post("/api/studio/creators", { name: `Namer ${slug}`, slug })).data.creator;
+    const mk = async (name, s) => { const pr = (await owner.c.post(`/api/studio/creators/${creator.id}/projects`, { name, slug: s })).data.project; db(`UPDATE projects SET published = 1 WHERE id = '${pr.id}'`); return pr; };
+    const a = await mk("AutoStacc Official Help", "official");
+    assert.equal((await owner.c.req("PUT", `/api/community/projects/${a.id}/space`, { body: { on: true } })).status, 200);
+    assert.equal(one(`SELECT name FROM community_spaces WHERE project_id = '${a.id}'`).name, `AutoStacc Official Help (Namer ${slug})`);
+    const b = await mk("Same Name Project", "same-a");
+    await owner.c.req("PUT", `/api/community/projects/${b.id}/space`, { body: { on: true } });
+    const other = await person();
+    const slug2 = `cm${Date.now().toString(36)}${++n}`;
+    const c2 = (await other.c.post("/api/studio/creators", { name: `Second ${slug2}`, slug: slug2 })).data.creator;
+    const b2 = (await other.c.post(`/api/studio/creators/${c2.id}/projects`, { name: "Same Name Project", slug: "same-b" })).data.project;
+    db(`UPDATE projects SET published = 1 WHERE id = '${b2.id}'`);
+    assert.equal((await other.c.req("PUT", `/api/community/projects/${b2.id}/space`, { body: { on: true } })).status, 200);
+    assert.equal(one(`SELECT name FROM community_spaces WHERE project_id = '${b2.id}'`).name, `Same Name Project (Second ${slug2})`);
+  });
 });

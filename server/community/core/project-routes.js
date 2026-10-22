@@ -6,7 +6,7 @@
 // space redirects here (public.js), so each page has one address.
 import { isOn } from "../../lib/features.js";
 import { first } from "../../lib/db.js";
-import { communityPage } from "./public.js";
+import { communityPage, cacheKeyFor } from "./public.js";
 import { ensureProjectSpace } from "./project-space.js";
 
 const PATH = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)\/community(?:\/([a-z0-9]+(?:-[a-z0-9]+)*))?\/?$/;
@@ -18,6 +18,12 @@ export async function projectCommunityPage(app) {
   const url = new URL(request.url);
   const m = url.pathname.match(PATH);
   if (!m) return null;
+  // One address: a trailing slash goes to the slashless page.
+  if (url.pathname.endsWith("/")) return new Response(null, { status: 301, headers: { Location: app.config.siteUrl + url.pathname.replace(/\/+$/, "") + url.search, "Cache-Control": "public, max-age=300" } });
+  // A page already in the edge cache costs no database reads (the purge after a switch or a post clears it).
+  const cache = app.config.appEnv === "production" && typeof caches !== "undefined" ? caches.default : null;
+  const hit = cache ? await cache.match(cacheKeyFor(url, url.pathname)) : null;
+  if (hit) return request.method === "HEAD" ? new Response(null, { status: hit.status, headers: hit.headers }) : hit;
   const project = await first(app.db, `SELECT p.id, p.features FROM projects p JOIN creators c ON c.id = p.creator_id
     WHERE c.slug = ? AND (p.slug = ? OR (p.slug IS NULL AND p.id = ?)) AND p.published = 1 AND p.deleted_at IS NULL
       AND (p.source = 'catalog' OR (c.status = 'active' AND c.deleted_at IS NULL))`, m[1], m[2], m[2]);

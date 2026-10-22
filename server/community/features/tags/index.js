@@ -13,6 +13,7 @@ import { threadPath } from "../../core/render-parts.js";
 import { teamSpace } from "../../core/team-space.js";
 import { EDIT_WINDOW_MS } from "../../core/edits.js";
 import { STARTER, STARTER_KEYS, key } from "./starter.js";
+import { SHOWN } from "../../core/spaces.js";
 
 const MAX_PER_THREAD = 3;
 const MAX_PER_SPACE = 20;
@@ -35,7 +36,7 @@ async function forThreads(app) {
   const ids = (new URL(app.request.url).searchParams.get("threads") || "").split(",").filter(Boolean).slice(0, 25).map((x) => id(x, "threads"));
   if (!ids.length) return json({ tags: {} }, 200, NO_STORE);
   const rows = await all(app.db, `SELECT g.thread_id, g.tag, sp.label AS label FROM community_thread_tags g
-    JOIN community_threads t ON t.id = g.thread_id AND t.state = 'visible' JOIN community_spaces s ON s.id = t.space_id AND s.state <> 'archived'
+    JOIN community_threads t ON t.id = g.thread_id AND t.state = 'visible' JOIN community_spaces s ON s.id = t.space_id AND s.state <> 'archived' AND ${SHOWN("t.space_id")}
     LEFT JOIN community_space_tags sp ON sp.space_id = t.space_id AND sp.key = g.tag
     WHERE g.thread_id IN (SELECT value FROM json_each(?))`, JSON.stringify(ids));
   const labels = new Map(STARTER.map((t) => [t.key, t.label]));
@@ -75,7 +76,7 @@ async function tagged(app) {
   if (!STARTER_KEYS.has(tag) && !space) fail(400, "invalid_field", "Say which space that tag belongs to.", { field: "space" });
   const rows = await all(app.db, `SELECT t.id, t.slug, t.title, t.type, t.reply_count AS replies, s.name AS space FROM community_thread_tags g
     JOIN community_threads t ON t.id = g.thread_id JOIN community_spaces s ON s.id = t.space_id
-    WHERE g.tag = ? AND t.state = 'visible' AND s.state <> 'archived' ${space ? "AND t.space_id = ?" : ""} ORDER BY t.last_post_at DESC LIMIT 30`, tag, ...(space ? [id(space, "space")] : []));
+    WHERE g.tag = ? AND t.state = 'visible' AND s.state <> 'archived' AND ${SHOWN("t.space_id")} ${space ? "AND t.space_id = ?" : ""} ORDER BY t.last_post_at DESC LIMIT 30`, tag, ...(space ? [id(space, "space")] : []));
   return json({ results: rows.map((r) => ({ id: r.id, title: r.title, type: r.type, replies: r.replies, space: r.space, path: threadPath(r) })) }, 200, NO_STORE);
 }
 
