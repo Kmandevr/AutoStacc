@@ -68,7 +68,7 @@
             ${may(c, "products") ? `<button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>` : ""}
             ${may(c, "site.edit") ? ["music", "events"].map((k) => `<button class="btn ghost small" type="button" data-content="${e(p.id)}" data-kind="${k}">${k[0].toUpperCase() + k.slice(1)}<span class="sr-only"> of ${e(p.name)}</span></button>`).join("") : ""}
           </div>
-          ${own(c) && may(c, "projects") ? `<div class="studio-community" data-community="${e(p.id)}"></div>` : ""}
+          ${own(c) && may(c, "projects") ? `<div class="studio-community" data-community="${e(p.id)}"></div><div class="studio-personality-slot" data-personality="${e(p.id)}"></div>` : ""}
           ${own(c) && may(c, "projects") ? `<details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
               <button class="btn ghost small" type="submit">Save</button></form>
@@ -88,6 +88,7 @@
     root.querySelectorAll("[data-storage]").forEach((el) => window.GS.studioStorage.draw(el, el.dataset.storage));
     root.querySelectorAll("[data-team]").forEach((el) => window.GS.studioTeam.draw(el, el.dataset.team));
     root.querySelectorAll("[data-community]").forEach((el) => window.GS.studioCommunity && window.GS.studioCommunity.draw(el, el.dataset.community));
+    root.querySelectorAll("[data-personality]").forEach((el) => window.GS.studioPersonality && window.GS.studioPersonality.draw(el, el.dataset.personality));
   }
 
   async function load() {

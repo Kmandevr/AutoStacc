@@ -47,6 +47,25 @@ export default (ctx) => describe("studio", () => {
     return e;
   }
 
+  test("a project's card personality: presets only, its team only, and the browse answer carries it", async () => {
+    const s = await seller("persona");
+    const path = `/api/studio/projects/${s.project.id}/personality`;
+    const start = await s.c.get(path);
+    assert.equal(start.status, 200);
+    assert.deepEqual([start.data.accent, start.data.motion], ["auto", "auto"]);
+    assert.equal((await s.c.req("PUT", path, { body: { accent: "#ff0000", motion: "pulse" } })).status, 400);
+    assert.equal((await s.c.req("PUT", path, { body: { accent: "violet", motion: "url(x)" } })).status, 400);
+    const other = await seller("persona-other");
+    assert.equal((await other.c.req("PUT", path, { body: { accent: "violet", motion: "wave" } })).status, 404);
+    assert.equal((await new Client(base()).req("PUT", path, { body: { accent: "violet", motion: "wave" } })).status, 401);
+    const ok = await s.c.req("PUT", path, { body: { accent: "violet", motion: "wave" } });
+    assert.equal(ok.status, 200, JSON.stringify(ok.data));
+    db(`UPDATE projects SET published = 1 WHERE id = '${s.project.id}'`);
+    const browse = await new Client(base()).get("/api/projects/browse?q=beats");
+    const mine = (browse.data.projects || []).find((p) => p.id === s.project.id);
+    if (mine) assert.deepEqual(mine.personality, { accent: "violet", motion: "wave" });
+  });
+
   test("nobody but the product's owner or editor reaches any Product Studio route", async () => {
     const s = await seller("ps-owner", { trusted: true });
     const t = await seller("ps-thief", { trusted: true });

@@ -1,4 +1,5 @@
-// Projects and follows: the project directory and its browser, the creators browser, and following a project with optional Auto-Stacc (free products of
+// Projects and follows: the project directory and its browser, the creators browser, each project's card personality
+// (personality.js), and following a project with optional Auto-Stacc (free products of
 // that project are added to the account's library automatically, now and whenever the library opens).
 import { json, fail, readJson, id } from "../lib/http.js";
 import { currentUser, requireUser } from "../auth/session.js";
@@ -9,6 +10,7 @@ import { autoStacc } from "../entitlements/autostacc.js";
 import { SELLING } from "../creators/policy.js";
 import { parseProjectFilters, projectEntries, browse } from "./browse.js";
 import { parseCreatorFilters, creatorEntries, browseCreators } from "./creators.js";
+import { routes as personalityRoutes } from "./personality.js";
 
 // Published projects, plus this account's follows when signed in with a verified email (null otherwise, with
 // signedIn telling a signed-in but unconfirmed account apart from a visitor).
@@ -64,5 +66,6 @@ export const routes = [
   ["GET", "/api/projects/browse", browsePage],
   ["GET", "/api/creators", creatorsPage],
   ["PUT", "/api/follows/:projectId", follow],
-  ["DELETE", "/api/follows/:projectId", unfollow]
+  ["DELETE", "/api/follows/:projectId", unfollow],
+  ...personalityRoutes
 ];

@@ -57,3 +57,36 @@
 .pcard .project-follow .auto-stacc { font-size: .85rem; }
 .pcard-why { margin: 0; font-size: .82rem; font-weight: 600; color: var(--accent); }
 @media (max-width: 600px) { .pcard .project-follow .btn { min-height: 44px; } }
+
+/* ---------- personality (owner, 2026-10-22): AutoStacc's glass card, the project's accent and signature animation ---------- */
+.pcard { --pc: var(--teal); }
+.pcard[data-accent="amber"] { --pc: var(--amber); }
+.pcard[data-accent="coral"] { --pc: var(--coral); }
+.pcard[data-accent="lime"] { --pc: var(--lime); }
+.pcard[data-accent="violet"] { --pc: var(--violet); }
+.platform .pcard:hover, .platform .pcard:focus-within { border-color: var(--pc); }
+.platform .pcard.is-recent .pcard-activity::before, .platform .pcard-why { color: var(--pc); }
+.platform .pcard .card-type { color: var(--pc); }
+.platform .pcard-art { box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc) 40%, transparent); }
+/* The animation plays once as the card arrives, and again on hover or focus; never for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .pcard[data-motion="pulse"] .pcard-art { animation: pc-pulse .9s var(--snap) .2s 1 both; }
+  .pcard[data-motion="pulse"]:is(:hover, :focus-within) .pcard-art { animation: pc-pulse-again .9s var(--snap) 1 both; }
+  .pcard[data-motion="glitch"] .pcard-art { animation: pc-glitch .5s steps(2, jump-none) .2s 1 both; }
+  .pcard[data-motion="glitch"]:is(:hover, :focus-within) .pcard-art { animation: pc-glitch-again .5s steps(2, jump-none) 1 both; }
+  .pcard[data-motion="wave"] .pcard-art { animation: pc-wave 1.1s ease-in-out .2s 1 both; }
+  .pcard[data-motion="wave"]:is(:hover, :focus-within) .pcard-art { animation: pc-wave-again 1.1s ease-in-out 1 both; }
+}
+@keyframes pc-pulse { 40% { transform: scale(1.06); box-shadow: 0 0 0 6px color-mix(in srgb, var(--pc) 25%, transparent); } }
+@keyframes pc-pulse-again { 40% { transform: scale(1.06); box-shadow: 0 0 0 6px color-mix(in srgb, var(--pc) 25%, transparent); } }
+@keyframes pc-glitch { 20% { transform: translate(-2px, 1px); filter: hue-rotate(40deg); } 40% { transform: translate(2px, -1px); } 60% { transform: translate(-1px, 0); filter: none; } }
+@keyframes pc-glitch-again { 20% { transform: translate(-2px, 1px); filter: hue-rotate(40deg); } 40% { transform: translate(2px, -1px); } 60% { transform: translate(-1px, 0); filter: none; } }
+@keyframes pc-wave { 30% { transform: rotate(-3deg); } 60% { transform: rotate(2deg); } }
+@keyframes pc-wave-again { 30% { transform: rotate(-3deg); } 60% { transform: rotate(2deg); } }
+
+/* ---------- the poster card for rows (compact): art on top, the name, who, one link ---------- */
+.pcard.pcard-poster { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px; }
+.pcard-poster .pcard-art { width: 100%; height: auto; aspect-ratio: 1; }
+.pcard-poster .pcard-art span { font-size: 2.6rem; }
+.pcard-poster .pcard-actions .btn { width: 100%; justify-content: center; }
+@media (max-width: 600px) { .pcard.pcard-poster { grid-template-columns: minmax(0, 1fr); } .pcard-poster .pcard-art { width: 100%; height: auto; } }

@@ -10,6 +10,7 @@ import { canonical, label } from "../discovery/vocabulary.js";
 import { listVisibleProjects, publicProject } from "./projects.js";
 import { listFollows } from "./follows.js";
 import { contentDates } from "../content/content.js";
+import { personalities } from "./personality.js";
 
 export const SORTS = ["active", "name", "newest", "items"];
 export const ACTIVE_DAYS = 30;
@@ -46,14 +47,15 @@ const daysBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / 86400000;
 
 // Every visible project as the browser shows it, plus whether `userId` follows it.
 export async function projectEntries(db, { userId = null, at = new Date().toISOString() } = {}) {
-  const [rows, kinds, facets, follows, content] = await Promise.all([
+  const [rows, kinds, facets, follows, content, looks] = await Promise.all([
     listVisibleProjects(db),
     all(db, `SELECT project_id, type, COUNT(*) AS n, MAX(CASE WHEN COALESCE(released_at, created_at) <= ? THEN COALESCE(released_at, created_at) END) AS last
       FROM products WHERE published = 1 AND deleted_at IS NULL AND project_id IS NOT NULL GROUP BY project_id, type`, at), // a future release isn't activity yet
     all(db, `SELECT p.project_id, pf.facet, pf.value, COUNT(*) AS n FROM product_facets pf JOIN products p ON p.id = pf.product_id
       WHERE p.published = 1 AND p.deleted_at IS NULL AND pf.facet IN ('genre', 'style') GROUP BY p.project_id, pf.facet, pf.value`),
     userId ? listFollows(db, userId) : [],
-    contentDates(db)
+    contentDates(db),
+    personalities(db)
   ]);
   const followed = new Map(follows.map((f) => [f.project_id, f]));
   const today = at.slice(0, 10);
@@ -76,7 +78,8 @@ export async function projectEntries(db, { userId = null, at = new Date().toISOS
       makes, items: own.reduce((s, k) => s + k.n, 0), releases: (activity.releases || []).length,
       lastActive, nextEvent, createdAt: r.created_at,
       recent: Boolean((lastActive && daysBetween(lastActive, at) <= ACTIVE_DAYS) || (nextEvent && daysBetween(at, `${nextEvent}T00:00:00.000Z`) <= EVENT_DAYS)),
-      following: f ? { autoStacc: Boolean(f.auto_stacc) } : null
+      following: f ? { autoStacc: Boolean(f.auto_stacc) } : null,
+      personality: looks.get(r.id) || null
     };
   });
 }

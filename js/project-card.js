@@ -1,8 +1,11 @@
 // Project card template (GS.projectCard) for the projects browser (js/projects-browse.js) and the home page's rows: a
 // project as GET /api/projects/browse describes it: image or a generated tile, name, who runs it, "Unverified creator"
 // until AutoStacc trusts them, tagline, genres, what it makes, how recently it was active, its next event, and a link to
-// its items in the store (never a price or a buy button); `why` says why it was suggested. js/follow.js fills the follow slot. Needs js/util.js and
-// data/product-types.js.
+// its items in the store (never a price or a buy button); `why` says why it was suggested. js/follow.js fills the follow slot.
+// The card is AutoStacc's glass with the project's personality (owner, 2026-10-22): its art tile wears the project's own
+// look, and an accent and a small signature animation come from the Studio's presets (p.personality), else the
+// project's data (data/projects.js `personality`), else the defaults (css/projects.css). `compact` is the poster
+// card for rows (art on top, name, one link). Every card says it's a project. Needs js/util.js and data/product-types.js.
 (function () {
   "use strict";
 
@@ -25,14 +28,26 @@
   }
   const eventDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
+  // The accent and animation: the Studio's choice, else the project's data, else automatic ("" lets the CSS decide).
+  const ACCENTS = ["teal", "amber", "coral", "lime", "violet"];
+  const MOTIONS = ["pulse", "glitch", "wave", "none"];
+  function personality(p) {
+    const own = p.personality || {};
+    const data = ((window.PROJECTS || []).find((x) => x.id === p.id) || {}).personality || {};
+    const pick = (key, list) => [own[key], data[key]].find((v) => list.includes(v)) || "";
+    return { accent: pick("accent", ACCENTS), motion: pick("motion", MOTIONS) || "pulse" };
+  }
+
   function projectCard(p, { level = 3, compact = false, why = "" } = {}) {
+    const look = personality(p);
     const initials = p.name.split(/\s+/).filter((w) => /\w/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
     const facts = [p.releases ? plural(p.releases, "release") : "", p.items ? plural(p.items, "store item") : ""].filter(Boolean);
-    return `<article class="pcard${p.recent ? " is-recent" : ""} ${GS.look(p.id)}" data-project="${e(p.id)}">
-      <a class="pcard-art" href="${e(p.path)}" tabindex="-1" aria-hidden="true">
+    return `<article class="pcard${compact ? " pcard-poster" : ""}${p.recent ? " is-recent" : ""}" data-project="${e(p.id)}"${look.accent ? ` data-accent="${look.accent}"` : ""} data-motion="${look.motion}">
+      <a class="pcard-art ${GS.look(p.id)}" href="${e(p.path)}" tabindex="-1" aria-hidden="true">
         ${p.image ? `<img src="${e(p.image)}" alt="" width="96" height="96" loading="lazy">` : `<span>${e(initials || "?")}</span>`}
       </a>
       <div class="pcard-body">
+        <p class="card-type">Project</p>
         <h${level} class="pcard-name"><a href="${e(p.path)}">${e(p.name)}</a></h${level}>
         <p class="pcard-by">${p.creator && p.creator !== p.name ? `by ${e(p.creator)}` : ""}${p.verified ? "" : `${p.creator && p.creator !== p.name ? " · " : ""}<span class="tag unverified" title="AutoStacc hasn't verified this creator">Unverified creator</span>`}</p>
         ${p.tagline && !compact ? `<p class="pcard-tagline">${e(p.tagline)}</p>` : ""}
@@ -42,7 +57,7 @@
         <p class="pcard-activity">${p.nextEvent ? `<strong>Event ${e(eventDate(p.nextEvent))}</strong> · ` : ""}${p.lastActive ? `Active ${e(ago(p.lastActive))}` : "New on AutoStacc"}${facts.length ? ` · ${e(facts.join(" · "))}` : ""}</p>
         <div class="pcard-actions">
           <a class="btn small" href="${e(p.path)}">Visit<span class="sr-only"> ${e(p.name)}</span></a>
-          ${p.items ? `<a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.id)}">Store items<span class="sr-only"> from ${e(p.name)}</span></a>` : ""}
+          ${p.items && !compact ? `<a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.id)}">Store items<span class="sr-only"> from ${e(p.name)}</span></a>` : ""}
         </div>
         ${compact ? "" : `<div class="project-follow" data-follow-slot="${e(p.id)}" data-name="${e(p.name)}"></div>`}
       </div>

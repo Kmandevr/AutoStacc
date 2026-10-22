@@ -151,7 +151,7 @@ body:has(> .site-frame)::before {
 .platform .owned-badge { transform: none; letter-spacing: .1em; font-family: var(--mono); font-weight: 600; box-shadow: none; color: var(--teal); border-color: var(--teal); }
 
 /* panels: one soft shadow, no offset copies; hovering a card lifts it a little and tints its edge */
-.platform .panel, .platform .card, .platform .tile, .platform .project-card, .platform .stacc-stacclet, .platform .vault-item {
+.platform .panel, .platform .card, .platform .tile, .platform .project-card, .platform .pcard, .platform .stacc-stacclet, .platform .vault-item {
   border-radius: calc(var(--radius) + 4px);
   box-shadow: var(--shadow);
   transition: border-color .18s, box-shadow .2s var(--snap), transform .2s var(--snap);
@@ -194,6 +194,9 @@ body:has(> .site-frame)::before {
   backdrop-filter: var(--blur);
   border-color: var(--glass-edge);
 }
+/* Every browse card says what it is (owner, 2026-10-22): Project, Creator, Community, Product, Release. */
+.platform .card-type { margin: 0; font-family: var(--mono); font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
 /* Lighter effects (html.fx-lite, js/theme.js): no blur, and surfaces nearly solid in the same colours. */
 .fx-lite { --blur: none; --blur-bar: none; }
 .fx-lite .platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]),
