@@ -68,7 +68,12 @@ export const FEATURES = {
   "community.inbox": { on: true, label: "Community: on-site inbox (the bell)" },
   "community.search": { on: true, label: "Community: search" },
   "community.tags": { on: true, label: "Community: tags" },
-  "community.similar": { on: true, label: "Community: similar questions while typing a title" }
+  "community.similar": { on: true, label: "Community: similar questions while typing a title" },
+  "community.selfPromo": { on: true, label: "Community: the self-promotion rule" },
+  "community.welcome": { on: true, label: "Community: a space's welcome message" },
+  "community.look": { on: true, label: "Community: a space's accent colour and banner" },
+  "community.teamTools": { on: true, label: "Community: team editing of a space's rules and channels" },
+  "community.profileCard": { on: true, label: "Community: the mini profile card on names" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

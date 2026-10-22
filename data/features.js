@@ -38,5 +38,10 @@ window.FEATURES = {
  "community.inbox": true,
  "community.search": true,
  "community.tags": true,
- "community.similar": true
+ "community.similar": true,
+ "community.selfPromo": true,
+ "community.welcome": true,
+ "community.look": true,
+ "community.teamTools": true,
+ "community.profileCard": true
 };

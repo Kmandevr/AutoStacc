@@ -10,5 +10,6 @@ import rich from "./community-rich.suite.js";
 import automod from "./community-automod.suite.js";
 import keepup from "./community-keepup.suite.js";
 import find from "./community-find.suite.js";
+import team from "./community-team.suite.js";
 
-runGroup({ name: "community", ports: { mock: 8840 }, stripe: false, vars: { FEATURES_ON: "community.forum", SWEEP_TOKEN } }, [community, posting, moderation, upkeep, legal, rich, automod, keepup, find]);
+runGroup({ name: "community", ports: { mock: 8840 }, stripe: false, vars: { FEATURES_ON: "community.forum", SWEEP_TOKEN } }, [community, posting, moderation, upkeep, legal, rich, automod, keepup, find, team]);

@@ -30,5 +30,10 @@ import inbox from "./inbox/index.js";
 import search from "./search/index.js";
 import tags from "./tags/index.js";
 import similar from "./similar/index.js";
+import selfpromo from "./selfpromo/index.js";
+import welcome from "./welcome/index.js";
+import look from "./look/index.js";
+import teamtools from "./teamtools/index.js";
+import profilecard from "./profilecard/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns, follows, joined, saved, mentions, inbox, search, tags, similar]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns, follows, joined, saved, mentions, inbox, search, tags, similar, selfpromo, welcome, look, teamtools, profilecard]) register(f);

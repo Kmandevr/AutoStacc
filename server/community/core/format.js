@@ -55,6 +55,16 @@ export function hasLink(raw) {
   return false;
 }
 
+// The addresses a text links to, as URL objects, without repeats: for rules that look at where a link goes (self-promotion).
+export function linkUrls(raw) {
+  const out = [];
+  for (const m of String(clean(raw)).matchAll(TOKEN)) {
+    const u = m[2] !== undefined ? safeUrl(m[3]) : m[4] !== undefined ? safeUrl(m[4].replace(/[.,;:!?)\]]+$/, "")) : null;
+    if (u && !out.some((o) => o.href === u.href)) out.push(u);
+  }
+  return out;
+}
+
 // The sites a text links to (lowercase, no leading www.), in order and without repeats: the same tokens and URL rule
 // the formatter uses, for the link rules (allowed sites, the ban list).
 export function linkHosts(raw) {
