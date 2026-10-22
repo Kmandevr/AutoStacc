@@ -35,6 +35,9 @@ export default (ctx) => describe("community team tools (switched on)", () => {
     assert.equal(made.status, 201, JSON.stringify(made.data));
     const own = `https://autostacc.com/${slug}`;
     assert.equal((await take(a.c, { body: `my page ${own}` })).status, 201, "an ordinary take");
+    for (const sneaky of [`https://AutoStacc.com./${slug}`, `https://autostacc.com/${slug}/music/anything`, `https://www.autostacc.com/${slug.toUpperCase()}`]) {
+      assert.equal((await take(a.c, { type: "question", title: "A question about drums?", body: `see ${sneaky}` })).data.error.code, "self_promo_answer", sneaky);
+    }
     const ask = await take(a.c, { type: "question", title: "Where can I find drums?", body: `maybe at ${own}` });
     assert.equal(ask.data.error.code, "self_promo_answer");
     const b = await person();
@@ -80,6 +83,7 @@ export default (ctx) => describe("community team tools (switched on)", () => {
     assert.deepEqual([added.whoMayStart, added.archived], ["team", false]);
     assert.equal((await team.req("PATCH", ch, { body: { id: added.id, archived: true } })).status, 200);
     assert.equal((await team.req("PATCH", ch, { body: { id: "chn_other_space" } })).status, 404);
+    assert.equal((await team.req("PATCH", ch, { body: { id: added.id, archived: "yes" } })).status, 400, "only true or false");
     assert.equal((await a.c.get(`/api/community/spaces/${SPACE}/settings`)).status, 404);
     for (const c of settings.channels.filter((x) => !x.archived && x.id !== added.id)) await team.req("PATCH", ch, { body: { id: c.id, archived: true } }).catch(() => {});
     const left = (await team.get(`/api/community/spaces/${SPACE}/settings`)).data.channels.filter((c) => !c.archived);

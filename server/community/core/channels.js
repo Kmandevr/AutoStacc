@@ -39,11 +39,18 @@ export async function addChannel(db, space, { name, whoMayStart, postTypes }) {
 export async function updateChannel(db, space, channelId, patch) {
   const c = await first(db, "SELECT * FROM community_channels WHERE id = ? AND space_id = ?", channelId, space.id);
   if (!c) fail(404, "not_found", "That channel isn't in this space.");
-  if (patch.archived === true) {
-    const left = (await first(db, "SELECT COUNT(*) AS n FROM community_channels WHERE space_id = ? AND archived_at IS NULL AND id <> ?", space.id, c.id)).n;
-    if (!left) fail(409, "last_channel", "A space keeps at least one channel.");
-  }
-  await run(db, "UPDATE community_channels SET name = ?, post_types = ?, who_may_start = ?, archived_at = ? WHERE id = ?",
+  if (patch.archived !== undefined && typeof patch.archived !== "boolean") fail(400, "invalid_field", "Archive or bring back.", { field: "archived" });
+  await run(db, "UPDATE community_channels SET name = ?, post_types = ?, who_may_start = ? WHERE id = ?",
     patch.name === undefined ? c.name : nameOf(patch.name), patch.postTypes === undefined ? c.post_types : types(patch.postTypes),
-    patch.whoMayStart === undefined ? c.who_may_start : who(patch.whoMayStart), patch.archived === undefined ? c.archived_at : (patch.archived ? now() : null), c.id);
+    patch.whoMayStart === undefined ? c.who_may_start : who(patch.whoMayStart), c.id);
+  if (patch.archived === true && !c.archived_at) {
+    // The last live channel stays: the check is part of the write, so two archives at once can't empty the space.
+    const r = await run(db, `UPDATE community_channels SET archived_at = ? WHERE id = ? AND EXISTS
+      (SELECT 1 FROM community_channels o WHERE o.space_id = ? AND o.archived_at IS NULL AND o.id <> ?)`, now(), c.id, space.id, c.id);
+    if (!r.meta.changes) fail(409, "last_channel", "A space keeps at least one channel.");
+  } else if (patch.archived === false && c.archived_at) {
+    const live = (await first(db, "SELECT COUNT(*) AS n FROM community_channels WHERE space_id = ? AND archived_at IS NULL", space.id)).n;
+    if (live >= MAX_CHANNELS) fail(409, "too_many", `A space can have up to ${MAX_CHANNELS} channels.`);
+    await run(db, "UPDATE community_channels SET archived_at = NULL WHERE id = ?", c.id);
+  }
 }

@@ -7,28 +7,30 @@ import { json, readJson, fail, id } from "../../../lib/http.js";
 import { first, all, run, now } from "../../../lib/db.js";
 import { teamSpace } from "../../core/team-space.js";
 import { linkUrls } from "../../core/format.js";
-import { getCreatorBySlug, getProjectBySlug, roleOf, sellersOfProducts } from "../../../creators/creators.js";
+import { getCreatorBySlug, roleOf, sellersOfProducts } from "../../../creators/creators.js";
 
 const HOSTS = new Set(["autostacc.com", "www.autostacc.com"]);
+const onSite = (u) => HOSTS.has(u.hostname.replace(/\.+$/, ""));
 
-// Whether this person is on the creator space behind an AutoStacc address: /shop/<product>, /<creator> or /<creator>/<project>.
+// Whether this person is on the creator space behind an AutoStacc address: a product page (/shop/<id>, /product?p=<id>,
+// with or without .html or capitals, as the shop itself answers them), or any page of a creator or one of its projects
+// (/<creator>, /<creator>/<project>, and deeper). Anything else isn't a creator's.
 async function isOwn(db, userId, url) {
-  const parts = url.pathname.split("/").filter(Boolean);
-  if (parts[0] === "shop" && parts.length === 2) {
-    const [seller] = await sellersOfProducts(db, [parts[1]]);
+  const parts = url.pathname.toLowerCase().replace(/\.html$/, "").split("/").filter(Boolean);
+  let productId = null;
+  if (parts[0] === "shop" && parts.length === 2) productId = parts[1];
+  else if (parts[0] === "product" && parts.length === 1) productId = (url.searchParams.get("p") || "").toLowerCase();
+  if (productId !== null) {
+    const [seller] = productId ? await sellersOfProducts(db, [productId]) : [];
     return Boolean(seller && seller.creator_id && await roleOf(db, seller.creator_id, userId));
   }
-  if (parts.length === 1 || parts.length === 2) {
-    const creator = await getCreatorBySlug(db, parts[0]);
-    if (!creator) return false;
-    if (parts.length === 2 && !(await getProjectBySlug(db, creator.id, parts[1]))) return false;
-    return Boolean(await roleOf(db, creator.id, userId));
-  }
-  return false;
+  if (!parts.length || !/^[a-z0-9-]{2,40}$/.test(parts[0])) return false;
+  const creator = await getCreatorBySlug(db, parts[0]);
+  return Boolean(creator && await roleOf(db, creator.id, userId));
 }
 
 async function postCheck(app, { user, space, channel, thread, kind, type, body }) {
-  const urls = linkUrls(body || "").filter((u) => HOSTS.has(u.hostname));
+  const urls = linkUrls(body || "").filter(onSite);
   if (!urls.length) return null;
   let own = false;
   for (const u of urls) if (await isOwn(app.db, user.id, u)) { own = true; break; }
