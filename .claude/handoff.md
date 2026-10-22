@@ -22,5 +22,9 @@ https://claude.ai/artifact/7XKCsCFBi35Lm3zcuJbHUJ. Decisions: docs/decisions.md 
   G&S hero shorter on phones; html.fx-lite adaptive effects (theme.js heuristics + motion.js frame check); account
   menu exit fade.
 
+- #207 (blocks), all pushed: project-card personality (migration 0065, server/projects/personality.js, studio UI),
+  .card-type label, poster (compact) card; server/spotlight/ (0066) + admin tab; GS.shelves (js/browse-shelves.js,
+  css/shelves.css: rotate/picks/spotlight/row/tabs); creator bio (0067). Avatar/banner -> #211.
+
 ## Next
-#207 building blocks, then #208, #209, #210. Open a PR only if the owner asks (CLAUDE.md).
+#208 pages (Discover /discover, New & upcoming, store creator spots, home cuts, signed-in /, nav), then #209, #210. Open a PR only if the owner asks (CLAUDE.md).
