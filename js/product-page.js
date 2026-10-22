@@ -48,12 +48,16 @@
       if (!res.ok) { if (sk) sk.busy(claim, false); else claim.disabled = false; } else claim.remove();
       return;
     }
+    // Buy now: into the cart (once) and straight to it. Add to cart (the cart keeps one of each), then the button becomes
+    // the way to the cart.
+    if (ev.target.closest("[data-buy-now]")) { cart.add(id, 1); location.href = "/cart"; return; }
     const btn = ev.target.closest("[data-buy]");
     if (!btn) return;
     cart.add(id, 1);
+    btn.outerHTML = '<a class="btn" href="/cart">In your cart · Checkout</a>';
     const msg = $(".msg[role=status]", root);
     msg.hidden = false;
-    msg.innerHTML = 'Added. <a href="/cart">Go to your cart</a>';
+    msg.textContent = "Added to your cart.";
   });
 
   load();
