@@ -2,7 +2,7 @@
 title: Creator pages
 summary: PLANNED / NOT IMPLEMENTED. Blueprint for customizable project pages: creator HTML/CSS (later JavaScript) isolated in a sandboxed iframe on sandbox.autostacc.com, seamless under /<creator>/<project>.
 covers: [server/sites/, functions/[[path]].js, functions/media/sites/, _headers, server/lib/http.js, server/auth/index.js, server/orders/guest.js, server/impersonation/sessions.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Creator pages (sandboxed customization)

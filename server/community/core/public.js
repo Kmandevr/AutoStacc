@@ -7,7 +7,7 @@
 //   /community/sitemap.xml          every visible thread
 // Answers null for anything else (the static 404). Hidden and removed threads are 404 to the public. Pages are kept
 // in the edge cache for a minute in production, keyed by address; the HTML is the same for every visitor.
-import { getSpaceBySlug, listSpaces, listChannels, getChannel, weeklyActivity } from "./spaces.js";
+import { getSpaceBySlug, listSpaces, listChannels, getChannel, weeklyActivity, spaceShown } from "./spaces.js";
 import { listThreads, getThread, listPosts, unanswered, SORTS } from "./threads.js";
 import { hero, threadList, mixer, questionBox, spaceAside, sortNav, threadPath, spacePath, channelPath, esc, composeHook, spaceHook, noticesHook } from "./render.js";
 import { threadMain, threadHook } from "./render-thread.js";
@@ -49,6 +49,8 @@ async function home(app, url) {
 async function space(app, url, spaceSlug, channelSlug) {
   const s = await getSpaceBySlug(app.db, spaceSlug);
   if (!s) return null;
+  // A project space has one address, its project's; /community/<space> sends everyone there.
+  if (s.canonical && !app.canonicalServe) return { redirect: `${s.canonical}${channelSlug ? `/${channelSlug}` : ""}${url.search}` };
   const channels = await listChannels(app.db, s.id);
   const channel = channelSlug ? await getChannel(app.db, s.id, channelSlug) : null;
   if (channelSlug && !channel) return null;
@@ -71,7 +73,7 @@ async function space(app, url, spaceSlug, channelSlug) {
 
 async function thread(app, id, slug) {
   const t = await getThread(app.db, id);
-  if (!t || t.state !== "visible") return null;
+  if (!t || t.state !== "visible" || !(await spaceShown(app.db, t.spaceId))) return null;
   if ((slug || "") !== t.slug) return { redirect: threadPath(t) };
   const [posts, spaces] = await Promise.all([listPosts(app.db, t.id), listSpaces(app.db)]);
   const s = spaces.find((x) => x.id === t.spaceId);
@@ -110,6 +112,14 @@ async function resolve(app, url) {
 }
 
 // template: the /community page's HTML (a Response body string). Returns a Response or null.
+// The edge-cache key for a page: its address (cachePath, for a project space served at its own address) and only the
+// parameters that change it, normalised, so junk parameters can't skip the cache.
+export function cacheKeyFor(url, cachePath = null) {
+  const { sort, page } = listParams(url);
+  const keyQuery = /^\/community\/(t\/|sitemap\.xml$)/.test(cachePath || url.pathname) ? "" : `?sort=${sort}&page=${page}`;
+  return new Request(url.origin + (cachePath || url.pathname) + keyQuery, { method: "GET" });
+}
+
 export async function communityPage(app, template) {
   const { request } = app;
   if (request.method !== "GET" && request.method !== "HEAD") return null;
@@ -120,9 +130,7 @@ export async function communityPage(app, template) {
   // The cache key is the path plus only the parameters that change the page (sort and page, normalised), so junk
   // parameters can't skip the cache and reach the database; HEAD answers from the cache too.
   const cache = app.config.appEnv === "production" && typeof caches !== "undefined" ? caches.default : null;
-  const { sort, page: n } = listParams(url);
-  const keyQuery = /^\/community\/(t\/|sitemap\.xml$)/.test(url.pathname) ? "" : `?sort=${sort}&page=${n}`;
-  const key = new Request(url.origin + url.pathname + keyQuery, { method: "GET" });
+  const key = cacheKeyFor(url, app.cachePath);
   const hit = cache ? await cache.match(key) : null;
   if (hit) return request.method === "HEAD" ? new Response(null, { status: hit.status, headers: hit.headers }) : hit;
   const page = await resolve(app, url);

@@ -20,6 +20,19 @@ export async function isTeam(app, user, space) {
   return Boolean(await first(app.db, "SELECT 1 AS n FROM community_space_roles WHERE space_id = ? AND user_id = ?", space.id, user.id));
 }
 
+// Whether this person may post an Update (an official announcement) in a space: the platform's admins for AutoStacc's own
+// space, a community's founder and moderators, and for a project space those whose role on the creator's team has the
+// "community.update" capability (owner, admins and publishers).
+export async function mayPublishUpdate(app, user, space) {
+  if (!user) return false;
+  if (space.kind === "project") {
+    const project = await first(app.db, "SELECT creator_id FROM projects WHERE id = ?", space.project_id || space.projectId);
+    const role = project && await roleOf(app.db, project.creator_id, user.id);
+    return Boolean(role && can(role, "community.update"));
+  }
+  return isTeam(app, user, space);
+}
+
 const active = (until) => !until || Date.parse(until) > Date.now();
 
 // The member, or a refusal saying what's missing. space: a community_spaces row.
