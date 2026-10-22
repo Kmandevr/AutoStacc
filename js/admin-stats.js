@@ -1,7 +1,7 @@
 // Control Center overview: draws GET /api/admin/stats into the Overview tab without knowing any metric in advance
 // (server/stats/metric.js is the shape). Every number carries its source, so payment records, store records,
-// approximate browser counts and estimates are never mistaken for each other. Period and live/test switch at the top;
-// per-day series are small bar charts (one hue, hover titles) with a table view. Starts on "gs:admin". Needs js/util.js.
+// approximate browser counts and estimates are never mistaken for each other. Period and live/test switch at the top,
+// then the figures in tabs (Sales, Customers, Catalog, Creators, Traffic); per-day series are small bar charts (one hue, hover titles) with a table view. Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
 
@@ -67,8 +67,27 @@
     state.mode = d.mode;
     $("[data-stats-mode]", el).value = d.mode;
     out.innerHTML = `<p class="admin-mode ${d.mode}"><strong>${d.mode === "live" ? "LIVE" : "TEST"} figures</strong> ${e(d.since)} to ${e(d.until)}${d.mode === "live" ? "" : " · test orders only, never revenue"}</p>
-      <nav class="stats-jump" aria-label="Jump to">${d.sections.map((x) => `<button type="button" data-jump="stats-${e(x.id)}">${e(x.title)}</button>`).join("")}</nav>
-      ${d.sections.map(section).join("")}<p class="small-print">Generated ${e(d.generatedAt.slice(0, 16).replace("T", " "))} UTC.</p>`;
+      ${tabsHTML(d.sections)}<p class="small-print">Generated ${e(d.generatedAt.slice(0, 16).replace("T", " "))} UTC.</p>`;
+  }
+
+  // The figures in tabs on the same page (owner, 2026-10-22): Sales, Customers, Catalog, Creators, Traffic; a section
+  // the list doesn't name gets a tab of its own. The open tab is kept while the period or mode changes.
+  const TABS = [["sales", "Sales", ["sales", "promotions"]], ["customers", "Customers", ["customers"]], ["catalog", "Catalog", ["products", "downloads"]],
+    ["creators", "Creators", ["creators"]], ["traffic", "Traffic", ["activity"]]];
+  let openTab = "sales";
+  function tabsHTML(sections) {
+    const named = new Set(TABS.flatMap((t) => t[2]));
+    const tabs = [...TABS, ...sections.filter((x) => !named.has(x.id)).map((x) => [x.id, x.title, [x.id]])]
+      .map(([id, label, ids]) => [id, label, sections.filter((x) => ids.includes(x.id))]).filter((t) => t[2].length);
+    if (!tabs.some((t) => t[0] === openTab)) openTab = tabs.length ? tabs[0][0] : "sales";
+    return `<div class="stats-tabs" role="tablist" aria-label="Figures">${tabs.map(([id, label]) =>
+      `<button type="button" role="tab" id="stats-tab-${e(id)}" aria-controls="stats-panel-${e(id)}" aria-selected="${id === openTab}" tabindex="${id === openTab ? 0 : -1}" data-stats-tab="${e(id)}">${e(label)}</button>`).join("")}</div>
+      ${tabs.map(([id, , list]) => `<div class="stats-panel" role="tabpanel" id="stats-panel-${e(id)}" aria-labelledby="stats-tab-${e(id)}"${id === openTab ? "" : " hidden"}>${list.map(section).join("")}</div>`).join("")}`;
+  }
+  function pick(el, id, focus) {
+    openTab = id;
+    el.querySelectorAll("[data-stats-tab]").forEach((b) => { const on = b.dataset.statsTab === id; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+    el.querySelectorAll(".stats-panel").forEach((p) => { p.hidden = p.id !== `stats-panel-${id}`; });
   }
 
   addEventListener("gs:admin", () => {
@@ -79,11 +98,18 @@
         <button class="btn ghost" type="submit">Refresh</button></form>
       <p class="stats-legend">${Object.entries(SOURCES).map(([k, l]) => `<span class="stats-source" data-source="${k}">${e(l)}</span>`).join("")}</p>
       <div data-stats-out></div>`;
-    // The overview is long: the jump bar scrolls to a section without touching the address (it holds the open tab).
+    // Tabs switch in place, without touching the address (it holds the open section of the Control Center).
     el.addEventListener("click", (ev) => {
-      const jump = ev.target.closest("[data-jump]");
-      const to = jump && document.getElementById(jump.dataset.jump);
-      if (to) to.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      const tab = ev.target.closest("[data-stats-tab]");
+      if (tab) pick(el, tab.dataset.statsTab, false);
+    });
+    el.addEventListener("keydown", (ev) => {
+      const tab = ev.target.closest("[data-stats-tab]");
+      const step = { ArrowRight: 1, ArrowLeft: -1 }[ev.key];
+      if (!tab || !step) return;
+      ev.preventDefault();
+      const all = [...el.querySelectorAll("[data-stats-tab]")];
+      pick(el, all[(all.indexOf(tab) + step + all.length) % all.length].dataset.statsTab, true);
     });
     el.addEventListener("submit", (ev) => {
       ev.preventDefault();

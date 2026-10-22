@@ -124,15 +124,17 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 .admin-kpis li { display: grid; gap: 2px; padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .admin-kpis span { color: var(--muted); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }
 .admin-kpis strong { font-size: 1.15rem; color: var(--heading); overflow-wrap: anywhere; }
-.stats-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 22px; }
-.stats-jump button { min-height: 36px; padding: 4px 12px; font: inherit; font-size: .85rem; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
-.stats-jump button:hover { border-color: var(--accent); }
+/* The figures' tabs (js/admin-stats.js): pills; the open one filled. */
+.stats-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 22px; }
+.stats-tabs [role="tab"] { min-height: 44px; padding: 4px 14px; font: inherit; font-size: .88rem; font-weight: 600; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.stats-tabs [role="tab"]:hover { border-color: var(--accent); }
+.stats-tabs [role="tab"][aria-selected="true"] { background: var(--teal); border-color: var(--teal); color: var(--on-accent); }
+.stats-tabs [role="tab"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .stats-section { scroll-margin-top: 130px; }
 .admin .btn.ghost.danger { background: transparent; color: var(--coral); border-color: var(--coral); }
 .admin .btn.ghost.danger:hover { background: var(--coral); color: var(--on-accent); }
 .admin .link-btn.danger { color: var(--coral); text-shadow: none; }
 .admin-row-error { margin: 10px 0 0; }
-@media (max-width: 600px) { .stats-jump button { min-height: 44px; } }
 /* audit log: the action's area as a coloured edge (the text says it too), impersonated rows tinted */
 .audit-action { display: inline-block; padding: 1px 8px; border-left: 3px solid var(--line); font-family: var(--mono); font-size: .8rem; background: color-mix(in srgb, var(--panel) 60%, transparent); }
 .audit-action[data-area="admin"] { border-color: var(--teal); }
