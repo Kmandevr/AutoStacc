@@ -45,7 +45,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   view-transition-name: side;
 }
 .side-close { display: none; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; color: var(--text); font-size: 1.2rem; letter-spacing: -.02em; }
+.brand { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px; border-radius: 10px; color: var(--text); font-size: 1.2rem; letter-spacing: -.02em; }
 .brand:hover { color: var(--text); background: var(--panel-2); }
 .brand b { color: var(--teal); font-weight: 750; }
 .brand-name { font-weight: 650; }
@@ -256,8 +256,8 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
     position: absolute;
     top: 12px;
     right: 10px;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: 0;
     border-radius: 10px;
     background: transparent;
