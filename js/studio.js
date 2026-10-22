@@ -76,8 +76,11 @@
               <button class="btn ghost small danger" type="submit">Delete project</button></form>
           </details>` : ""}</li>`).join("") || `<li class="studio-empty">No projects yet. Name your first one below: it opens in the editor straight away.</li>`}</ul>
         ${own(c) && may(c, "projects") && c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
-        ${own(c) && c.role === "owner" ? `<details><summary>Rename ${e(c.name)}</summary><form data-form="creator-edit" data-id="${e(c.id)}">
-          ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}<button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
+        ${own(c) && c.role === "owner" ? `<details><summary>Name, address and bio</summary><form data-form="creator-edit" data-id="${e(c.id)}">
+          ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}
+          <div class="field"><label for="ce-bio-${e(c.id)}">Short bio</label><textarea id="ce-bio-${e(c.id)}" name="bio" rows="2" maxlength="160">${e(c.bio || "")}</textarea>
+            <p class="small-print">One or two lines on your card in the creators directory. Plain text, up to 160 characters.</p></div>
+          <button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
         ${own(c) ? `<div class="studio-team-panel" data-team="${e(c.id)}"></div>
 ` : ""}
         <div class="studio-earnings" data-storage="${e(c.id)}"></div>
@@ -114,9 +117,9 @@
 
   const SEND = {
     creator: (f) => api("/api/studio/creators", { method: "POST", body: { name: f.name.value, slug: f.slug.value } }),
-    "creator-edit": (f) => api(`/api/studio/creators/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value } }),
+    "creator-edit": (f) => api(`/api/studio/creators/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value, bio: f.bio ? f.bio.value : undefined } }),
     project: (f) => api(`/api/studio/creators/${encodeURIComponent(f.dataset.creator)}/projects`, { method: "POST", body: { name: f.name.value, slug: f.slug.value } }),
-    "project-edit": (f) => api(`/api/studio/projects/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value } }),
+    "project-edit": (f) => api(`/api/studio/projects/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value, bio: f.bio ? f.bio.value : undefined } }),
     "project-delete": (f) => api(`/api/studio/projects/${encodeURIComponent(f.dataset.id)}`, { method: "DELETE", body: { confirm: f.confirm.value } })
   };
 

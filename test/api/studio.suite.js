@@ -66,6 +66,37 @@ export default (ctx) => describe("studio", () => {
     if (mine) assert.deepEqual(mine.personality, { accent: "violet", motion: "wave" });
   });
 
+  test("the spotlight: only admins pick, kinds belong to their page, picks are capped and audited, and pages read ids only", async () => {
+    const admin = await freshAdmin(base());
+    const s = await seller("spot");
+    assert.equal((await s.c.post("/api/admin/spotlight", { page: "discover", kind: "project", refId: s.project.id })).status, 404);
+    assert.equal((await admin.post("/api/admin/spotlight", { page: "discover", kind: "product", refId: "x" })).status, 400, "products belong to the store");
+    assert.equal((await admin.post("/api/admin/spotlight", { page: "nowhere", kind: "project", refId: "x" })).status, 400);
+    assert.equal((await admin.post("/api/admin/spotlight", { page: "discover", kind: "project", refId: "<b>x" })).status, 400);
+    const add = await admin.post("/api/admin/spotlight", { page: "discover", kind: "project", refId: s.project.id });
+    assert.equal(add.status, 201, JSON.stringify(add.data));
+    assert.equal((await admin.post("/api/admin/spotlight", { page: "discover", kind: "project", refId: s.project.id })).status, 409);
+    const pub = await new Client(base()).get("/api/spotlight?page=discover");
+    assert.ok(pub.data.picks.some((p) => p.kind === "project" && p.id === s.project.id));
+    assert.equal(db(`SELECT COUNT(*) AS n FROM admin_audit WHERE action = 'spotlight.add' AND target_id = '${s.project.id}'`)[0].n, 1);
+    assert.equal((await s.c.req("DELETE", `/api/admin/spotlight/${add.data.id}`)).status, 404);
+    assert.equal((await admin.req("DELETE", `/api/admin/spotlight/${add.data.id}`)).status, 200);
+  });
+
+  test("a creator's short bio: plain text, trimmed to 160 characters, owner only", async () => {
+    const s = await seller("bio");
+    const path = `/api/studio/creators/${s.creator.id}`;
+    const r = await s.c.req("PATCH", path, { body: { bio: `  Makes   dusty drums ${"x".repeat(300)}` } });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    const bio = db(`SELECT bio FROM creators WHERE id = '${s.creator.id}'`)[0].bio;
+    assert.ok(bio.startsWith("Makes dusty drums"));
+    assert.equal(bio.length, 160);
+    const other = await seller("bio-other");
+    assert.equal((await other.c.req("PATCH", path, { body: { bio: "mine now" } })).status, 404);
+    assert.equal((await s.c.req("PATCH", path, { body: { bio: "" } })).status, 200);
+    assert.equal(db(`SELECT bio FROM creators WHERE id = '${s.creator.id}'`)[0].bio, null);
+  });
+
   test("nobody but the product's owner or editor reaches any Product Studio route", async () => {
     const s = await seller("ps-owner", { trusted: true });
     const t = await seller("ps-thief", { trusted: true });

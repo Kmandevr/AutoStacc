@@ -151,7 +151,7 @@ body:has(> .site-frame)::before {
 .platform .owned-badge { transform: none; letter-spacing: .1em; font-family: var(--mono); font-weight: 600; box-shadow: none; color: var(--teal); border-color: var(--teal); }
 
 /* panels: one soft shadow, no offset copies; hovering a card lifts it a little and tints its edge */
-.platform .panel, .platform .card, .platform .tile, .platform .project-card, .platform .pcard, .platform .stacc-stacclet, .platform .vault-item {
+.platform .panel, .platform .card, .platform .tile, .platform .project-card, .platform .pcard, .platform .ccard, .platform .stacc-stacclet, .platform .vault-item {
   border-radius: calc(var(--radius) + 4px);
   box-shadow: var(--shadow);
   transition: border-color .18s, box-shadow .2s var(--snap), transform .2s var(--snap);
@@ -188,7 +188,7 @@ body:has(> .site-frame)::before {
 
 /* ---------- glass surfaces: AutoStacc's own panels and cards let the ambient light through (a project's look keeps
    its own solid surfaces, so it stays itself) ---------- */
-.platform :is(.panel, .card, .tile, .project-card, .pcard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]) {
+.platform :is(.panel, .card, .tile, .project-card, .pcard, .ccard, .mix-panel, .ex-item, .store-tune, .home-doors a, .stacc-stacclet, .vault-item):not([class*="look-"]) {
   background-color: color-mix(in srgb, var(--panel) 76%, transparent);
   -webkit-backdrop-filter: var(--blur);
   backdrop-filter: var(--blur);
