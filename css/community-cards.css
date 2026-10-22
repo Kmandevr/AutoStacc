@@ -1,0 +1,7 @@
+/* AutoStacc preview cards under posts (js/community-cards.js). */
+.cm-card { display: flex; gap: .75rem; align-items: center; margin: .5rem 0; padding: .6rem .8rem; max-width: 28rem; border: 1px solid var(--line, rgba(128,128,128,.35)); border-radius: 10px; color: inherit; text-decoration: none; }
+.cm-card:hover, .cm-card:focus-visible { border-color: var(--accent, currentColor); }
+.cm-card img { width: 3rem; height: 3rem; object-fit: cover; border-radius: 6px; flex: none; }
+.cm-card span { display: flex; flex-direction: column; min-width: 0; }
+.cm-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-card span span { font-size: .85em; opacity: .75; }

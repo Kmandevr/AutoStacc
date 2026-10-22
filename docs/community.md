@@ -2,7 +2,7 @@
 title: Community
 summary: PLANNED, foundations built (#135: switch off, tables, formatter, rules pages) (owner, 2026-10-16): spaces for AutoStacc, each project and user-made communities, with channels; discussions, questions and answers, updates, polls and challenges; upvotes; AutoStacc base rules everywhere plus stricter local rules; moderation, age, notifications, build order.
 covers: [server/community/, functions/community.js, functions/community/, scripts/lib/community-page.js, css/community*.css, js/community*.js, db/migrations/0031_community.sql, db/migrations/0032_community_platform_space.sql, db/migrations/0033_community_nested_replies.sql, db/migrations/0034_community_pace.sql, db/migrations/0035_community_moderation.sql, db/migrations/0036_community_upkeep.sql, test/unit/community-format.test.js, test/unit/community-names.test.js, test/unit/community-hooks.test.js, test/unit/community-moderation.test.js, test/api/community.suite.js, test/api/community-posting.suite.js, test/api/community-moderation.suite.js, test/api/community-upkeep.suite.js, test/api/community-legal.suite.js, test/api/community.test.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Community
@@ -130,6 +130,8 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 - **Email notifications**, each switchable in Settings: answers to your questions, replies to you (grouped, at most every few hours), updates from projects you follow, friend and collab requests, challenge results. All of them configurable (owner).
 
 ## Design (architect review 2026-10-16)
+
+**Rich posts (#157, built):** three formatter features, each its own folder, switch and tests, none needing the others. **embeds** (`community.embeds`): a SoundCloud, YouTube, Spotify or Apple Music share link becomes that service's player, the frame address rebuilt from the parsed link by `js/site-embeds.js` (the module creator pages use), sandboxed, and the community page's policy allows frames from those four hosts only (`core/page.js`). **codeblocks** (`community.codeblocks`): text between two lines of three backticks is kept exactly (escaped, never read as formatting or links), with an optional language word. **cards** (`community.cards`): a link to an AutoStacc page (a take, creator, project or product) is marked in the post, and `js/community-cards.js` asks `GET /api/community/cards` for what the store itself says (`features/cards/resolve.js`: visible takes, active creators, published projects and products only) and draws a card from that, never from the post's words. Off, the links stay plain links. Tests: `test/unit/community-rich.test.js`, `test/api/community-rich.suite.js`.
 
 **Three copyright strikes (feature `textonly`, `community.textOnly`):** a take, reply or edit with a link from an account at three strikes is refused ([copyright](copyright.md)). Tests in `test/api/community-legal.suite.js`.
 

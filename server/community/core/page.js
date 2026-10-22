@@ -5,11 +5,12 @@
 // only, no framing, plus the page-preloading rules (speculation-rules.json; _headers doesn't reach Functions).
 // Cached for a minute at the edge and in browsers (public.js).
 import { esc } from "./render.js";
+import { EMBED_HOSTS } from "../../sites/embeds.js";
 
 const SEO = /<!-- seo:start[^\n]*-->[\s\S]*?<!-- seo:end -->/;
 const area = (name) => new RegExp(`(<!-- community:${name}:start -->)[\\s\\S]*?(<!-- community:${name}:end -->)`);
 
-export const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'";
+export const CSP = `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src ${EMBED_HOSTS.join(" ")}; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'`;
 
 export const headers = (status = 200) => ({
   "Content-Type": "text/html; charset=utf-8",
