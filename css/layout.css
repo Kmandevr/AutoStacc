@@ -233,7 +233,12 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .footer-project > span { font-weight: 650; color: var(--text); }
 .socials { display: flex; gap: 6px 16px; flex-wrap: wrap; }
 .site-footer a { display: inline-block; padding-block: 4px; color: var(--muted); text-shadow: none; }
-@media (max-width: 900px) { .site-footer a, .theme-foot { display: inline-flex; align-items: center; min-height: 44px; } }
+@media (max-width: 900px) {
+  .site-footer a, .theme-foot { display: inline-flex; align-items: center; min-height: 44px; }
+  /* phones: each column's links flow side by side, so 44px targets don't make the footer endless */
+  .footer-grid { grid-template-columns: minmax(0, 1fr); }
+  .footer-col ul { display: flex; flex-wrap: wrap; gap: 0 18px; }
+}
 .site-footer a:hover { color: var(--teal); }
 
 /* ---------- phones and small tablets: the sidebar becomes a drawer ---------- */

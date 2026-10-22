@@ -1,29 +1,18 @@
 /* The home page (/): AutoStacc's public cover. The hero (copy and actions over the DAW backdrop), the artists and new
    releases side by side, and the closing call to action. Used by index.html
-   with css/panels.css (projects rack, releases feed), css/shop.css (featured products) and css/about.css (.flow).
+   with css/panels.css (releases feed), css/shop.css (featured products) and css/projects.css (poster cards).
    Also the logo intro: on every visit the mark's bars drop and stack into place. */
 
 /* The hero: most of the first screen, over the DAW backdrop (css/daw-stage.css), which follows the theme, so its
    words use the theme's tokens. A scroll cue at its foot; the sections below slide over the backdrop (css/home.css). */
-.cover-hero { position: relative; z-index: 1; display: grid; align-content: center; min-height: calc(85svh - var(--topbar));
+.cover-hero { position: relative; z-index: 1; display: grid; align-content: center; min-height: min(56svh, 520px);
   padding: clamp(40px, 8vw, 88px) 0 clamp(64px, 9vw, 96px); color: var(--text); }
 .cover-hero-grid { display: grid; grid-template-columns: minmax(0, 720px); }
 .cover-kicker { margin: 0 0 10px; font-family: var(--mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
 .cover-copy h1 { font-size: clamp(2.2rem, 5.2vw, 4.2rem); line-height: 1.05; margin: 0 0 20px; text-wrap: balance; color: var(--text); }
-.cover-lead { font-size: clamp(1.05rem, 1.7vw, 1.25rem); max-width: 54ch; color: var(--muted); margin: 0 0 26px; }
 .cover-actions { margin-bottom: 14px; }
 .cover-hero .btn.ghost { color: var(--text); background: color-mix(in srgb, var(--panel) 40%, transparent); border-color: color-mix(in srgb, var(--text) 35%, transparent); }
 .cover-hero .btn.ghost:hover { color: var(--text); background: color-mix(in srgb, var(--panel) 70%, transparent); border-color: var(--teal); }
-.cover-note { margin: 0; color: var(--muted); }
-.cover-note a { display: inline-block; padding-block: 3px; color: var(--link, var(--teal)); }
-.cover-scroll { position: absolute; left: 50%; bottom: 18px; display: grid; justify-items: center; gap: 6px; min-height: 44px; padding: 4px 10px;
-  transform: translateX(-50%); color: var(--muted); font-family: var(--mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
-.cover-scroll i { width: 12px; height: 12px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
-.cover-scroll:hover, .cover-scroll:focus-visible { color: var(--text); }
-@media (prefers-reduced-motion: no-preference) {
-  .cover-scroll i { animation: cover-nudge 1.6s ease-in-out infinite; }
-}
-@keyframes cover-nudge { 50% { transform: translateY(5px) rotate(45deg); } }
 
 /* The logo intro: the mark in the sidebar rail (computers) and top bar (phones) stacks itself, bottom row first, in
    about a second, then rests. Only movement, never hidden: with animations off or reduced motion it is the normal mark. */
@@ -57,5 +46,7 @@
   .cover-actions .btn { flex: 1 1 auto; }
   /* on a phone the copy can run to the foot of the hero, so the scroll cue follows it instead of sitting on top of it */
   .cover-hero { padding-bottom: 20px; }
-  .cover-scroll { position: static; justify-self: center; margin-top: 28px; transform: none; }
 }
+
+/* the hero's store search (owner, 2026-10-22: one line, the search box and two buttons) */
+.cover-copy .home-search-form { max-width: 640px; margin: 18px 0 14px; }

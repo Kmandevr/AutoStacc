@@ -58,7 +58,9 @@
     }
     if (!list.length) return restore();
     const chosen = following ? list.slice(0, limit).map((p) => ({ p, why: "" })) : pick(list, limit);
-    root.innerHTML = `<div class="pgrid">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3, why })).join("")}</div>`;
+    // data-compact (the home page): poster cards in a row of four; otherwise the full cards.
+    const compact = root.hasAttribute("data-compact");
+    root.innerHTML = `<div class="pgrid${compact ? " pgrid-posters" : ""}">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3, why, compact })).join("")}</div>`;
     dispatchEvent(new CustomEvent("gs:projects"));
   }
   roots.forEach(load);

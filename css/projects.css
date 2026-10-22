@@ -90,3 +90,4 @@
 .pcard-poster .pcard-art span { font-size: 2.6rem; }
 .pcard-poster .pcard-actions .btn { width: 100%; justify-content: center; }
 @media (max-width: 600px) { .pcard.pcard-poster { grid-template-columns: minmax(0, 1fr); } .pcard-poster .pcard-art { width: 100%; height: auto; } }
+.pgrid-posters { grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }

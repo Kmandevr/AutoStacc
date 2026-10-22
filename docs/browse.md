@@ -66,6 +66,8 @@ Built 2026-10-21 (owner, #178). The site's public calendar of what is happening 
 
 ## Home page hub (`/`)
 
+**Shorter since 2026-10-22 (owner, #208):** the banner is the headline, the store search and two buttons (no lead, note or scroll cue, and no separate search and "ways in" block); store picks and the latest releases and events share one **New on AutoStacc** section; **Discover** shows four poster cards (`js/project-picks.js` `data-compact`) instead of "Projects to follow"; "How it works" is gone (it lives in /guide and /about); the closing sign-up box shows only signed out. About 2,500px on a phone, from about 4,400. The list below predates this and is kept for the parts that didn't change.
+
 The home page has, in order:
 
 - the banner: the cover's headline and buttons over a DAW arrange view drawn in code (`js/daw-stage.js`, `css/daw-stage.css`; lanes of clips in the track colours, a playhead the arrangement scrolls past, mixer meters). It takes about 85% of the first screen and is fixed behind the page: every section after it is frosted and slides over it like a curtain, so the studio stays faintly visible to the bottom. It is decorative (`aria-hidden`), follows the light or dark theme (owner decision 2026-10-16; it was always dark before), stops moving once the hero is scrolled away, and never moves for visitors who ask for less motion (owner decision 2026-10-09);
