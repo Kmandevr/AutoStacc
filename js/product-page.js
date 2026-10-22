@@ -17,7 +17,9 @@
   async function load() {
     if (!/^[a-z0-9_-]{3,60}$/i.test(id)) return missing();
     const [res, live] = await Promise.all([api(`/api/products/${encodeURIComponent(id)}`), api(`/api/products/state?ids=${encodeURIComponent(id)}`)]);
-    if (!res.ok) return missing();
+    // Only a product the store says doesn't exist is "not available"; any other failure keeps the page the server drew.
+    if (res.status === 404) return missing();
+    if (!res.ok) { const m = $(".msg[role=status]", root); if (m) { m.hidden = false; m.textContent = "Couldn't refresh this page just now; what you see may be a minute old."; } return; }
     const p = res.data.product;
     const owned = live.ok && live.data.products[id] && live.data.products[id].owned;
     document.title = `${p.title} · AutoStacc`;

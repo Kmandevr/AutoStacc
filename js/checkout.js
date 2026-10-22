@@ -38,19 +38,30 @@
       const rest = left ? `<p class="msg" role="status">${left === 1 ? "1 item is" : `${left} items are`} still in your cart and need${left === 1 ? "s" : ""} their own checkout. <a href="/cart">Go to your cart</a></p>` : "";
       root.innerHTML = state("Payment confirmed", false, `<p>Stacc'd. Order <strong>${escapeHTML(o.id)}</strong> is yours, and a receipt is on its way to ${escapeHTML(o.email)}.</p>
         ${lines(o)}${rest}<div class="actions"><a class="btn" href="/library">Open Your Stacc</a><a class="btn ghost" href="/shop">Back to the store</a></div>
-        <div data-refund-slot></div>`);
+        <div data-guest-slot></div><div data-refund-slot></div>`);
       refundOption(o);
+      guestNote(o);
     } else if (o.status === "failed") {
       root.innerHTML = state("Payment didn't go through", true, `<p>The payment didn't go through, so nothing is owed. Your cart is still here.</p>
         <div class="actions"><a class="btn" href="/cart">Back to cart</a></div>`);
     } else if (o.status === "cancelled") {
       root.innerHTML = state("Checkout cancelled", true, `<p>That checkout expired or was cancelled. Nothing was charged.</p><div class="actions"><a class="btn" href="/cart">Back to cart</a></div>`);
     } else if (o.status === "refunded") {
-      root.innerHTML = state("Refunded", true, `<p>This order was refunded, so its files were removed from Your Stacc.</p>${lines(o)}`);
+      root.innerHTML = state("Refunded", true, `<p>This order was refunded, so its files were removed from Your Stacc.</p>${lines(o)}
+        <div class="actions"><a class="btn" href="/shop">Back to the store</a><a class="btn ghost" href="/library">Your Stacc</a></div>`);
     }
     // Move focus to the outcome so screen readers announce it.
     const big = $(".big", root);
     if (big) { big.tabIndex = -1; big.focus(); }
+  }
+
+  // Bought without an account: say how the files stay reachable, and offer an account with the order's email.
+  async function guestNote(o) {
+    const me = await api("/api/account");
+    const slot = root.querySelector("[data-guest-slot]");
+    if (!slot || !me.ok || me.data.user) return;
+    slot.innerHTML = `<p class="small-print">Bought as a guest: your files open on this device, and the link in your receipt email opens them anywhere.
+      <a href="/login#signup">Create an account with ${escapeHTML(o.email)}</a> to keep them in Your Stacc for good.</p>`;
   }
 
   // Why a paid order can't be refunded here, by the store's reason code (server/orders/refunds.js).

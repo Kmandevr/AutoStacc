@@ -27,7 +27,7 @@
     const action = preview ? `<button class="btn" type="button"${off}>${p.priceCents ? "Add to cart" : "Get it free"} · Preview</button>`
       : owned ? `<p><span class="owned-badge">STACC'D</span> <a class="btn ghost" href="/library">Open Your Stacc</a></p>`
       : p.available === false ? '<p class="msg">Not on sale right now.</p>'
-      : p.free ? '<button class="btn" type="button" data-claim>Get it free</button>'
+      : p.free ? '<button class="btn" type="button" data-claim>Get it free</button><p class="small-print">Free with an AutoStacc account; you\'ll log in or sign up first if needed.</p>'
       : '<div class="actions"><button class="btn" type="button" data-buy>Add to cart</button><button class="btn ghost" type="button" data-buy-now>Buy now</button></div>';
     const type = (types[p.type] || {}).label || p.type || "";
     const includes = (p.metadata && p.metadata.includes) || [];

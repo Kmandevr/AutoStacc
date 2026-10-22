@@ -143,8 +143,8 @@
 
   // Offline (or the store API failing): the empty state; every product lives in the store.
   function offline() {
-    grid.innerHTML = `<p class="empty">Nothing here yet.</p>`;
-    $(".browse-count", root).textContent = "The store is offline right now; please try again soon.";
+    grid.innerHTML = `<p class="empty">The store is offline right now. <button type="button" class="btn ghost small" data-retry>Try again</button></p>`;
+    $(".browse-count", root).textContent = "The store is offline right now.";
     $("[data-panel]", root).innerHTML = "";
     dispatchEvent(new CustomEvent("gs:cards"));
     dispatchEvent(new CustomEvent("gs:store-view", { detail: { narrowed: false, offline: true } }));
@@ -205,6 +205,7 @@
 
   root.addEventListener("click", (ev) => {
     const t = ev.target;
+    if (t.closest("button[data-retry]")) return go(false);
     const maker = t.closest("button[data-maker]");
     if (maker) { params = new URLSearchParams({ creator: maker.dataset.maker }); return go(); }
     const cat = t.closest("button[data-cat]");
