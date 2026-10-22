@@ -86,6 +86,10 @@ Owners create, rename, order and archive channels. Each channel sets who may sta
 
 A space's team (AutoStacc's admins in its own space and in first-party project spaces; a creator's team in theirs) chooses per take and reply between their own community name and the space's name, with **Post as** on the forms. Team posts show the space's name with a Team badge, and the name shown is kept on the post (`as_team`, migration `0064_community_as_team.sql`); the server refuses it for anyone else (`team_only`). Brand names stay reserved as community names. The name step before a first post says it's done once. The new-take form offers only the channels and kinds the visitor may start (`GET /api/community/spaces/:id/mine` gives `team`, `mayUpdate` and the space's name).
 
+## Team desk (owner, 2026-10-22, #205)
+
+Each space's team tools live in the Studio at `/studio?desk=<space id>` (`js/studio-desk.js` swaps the Studio's app for the desk), as tabs from `js/community-desk.js`: **To do** (read-only notice, reports, posts waiting for approval, appeals; the tab counts what's waiting and says "All clear" otherwise), **Members** (bans), **Space** (settings and channels, tags, look, welcome message), **Rules** (slow mode, new members, filtered words, allowed sites, pattern rules, self-promotion, each with a one-line explanation) and **Log**. Each feature's script hands its part over with a key that fixes its place, so nothing moves while parts load. On the space's own page the team sees only a slim link to the desk; the Studio's community switch links it too. Slow mode got its desk control (`js/community-pace.js`, `GET`/`PUT /api/community/spaces/:id/slow-mode`). Not yet: a waiting count on the space page's link and in the top bar (the one bell, #209).
+
 ## Post types
 
 - **Discussion**: anyone allowed in the channel.
