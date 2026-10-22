@@ -11,7 +11,8 @@ function link(u, labelHtml) {
   const e = embedFor(u.href);
   if (!e) return null;
   const frame = `<span class="cm-embed cm-embed-${esc(e.provider)}"><iframe src="${esc(e.src)}" title="${esc(e.title)} player" height="${e.height}"${e.ratio ? ` style="aspect-ratio:${e.ratio};height:auto"` : ""} loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe></span>`;
-  return `<a href="${esc(u.href)}" rel="ugc nofollow noopener"><bdi>${labelHtml}</bdi></a>${frame}`;
+  // The address shows beside the label like any other link, so a label can't pose as another site.
+  return `<a href="${esc(u.href)}" rel="ugc nofollow noopener"><bdi>${labelHtml}</bdi></a> <span class="link-host">(${esc(u.hostname.replace(/^www\./, ""))})</span>${frame}`;
 }
 
 export default { name: "embeds", switch: "community.embeds", format: { links: [link] } };

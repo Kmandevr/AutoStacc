@@ -19,7 +19,7 @@ function link(u, labelHtml) {
 }
 
 async function card(app) {
-  await limit(app, "community-cards", 300, 600);
+  await limit(app, "community-cards", 600, 600);
   const path = cardPath(new URL(app.request.url).searchParams.get("path"));
   if (!path) fail(400, "invalid_field", "That isn't an address on AutoStacc.", { field: "path" });
   const c = await resolveCard(app.db, path);

@@ -27,6 +27,10 @@ export async function resolveCard(db, path) {
   if (m) {
     const pr = await getProduct(db, m[1]);
     if (!isVisible(pr)) return null;
+    // Only while its project and creator are live too, as the shop's own listing requires (security review).
+    const live = await first(db, `SELECT 1 AS ok FROM projects j JOIN creators c ON c.id = j.creator_id WHERE j.id = ? AND j.published = 1
+      AND j.deleted_at IS NULL AND c.status = 'active' AND c.deleted_at IS NULL`, pr.project_id);
+    if (!live) return null;
     return { kind: "product", title: pr.title, detail: `${pr.type} · ${money(pr)}`, image: image(pr.artwork), path: `/shop/${pr.id}`, promotion: true };
   }
   m = p.match(/^\/([a-z0-9-]{2,40})$/);

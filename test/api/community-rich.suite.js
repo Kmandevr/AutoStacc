@@ -56,6 +56,11 @@ export default (ctx) => describe("community rich posts (switched on)", () => {
       assert.equal(p.data.card.kind, "product");
       assert.match(p.data.card.path, /^\/shop\//);
     }
+    if (shop) {
+      const pj = db(`SELECT project_id FROM products WHERE id = '${shop.id}'`)[0][0].project_id;
+      db(`UPDATE projects SET published = 0 WHERE id = '${pj}'`);
+      assert.equal((await q(`/shop/${shop.id}`)).status, 404, "a product in an unpublished project has no card");
+    }
     db(`UPDATE products SET published = 0 WHERE id = '${(shop || {}).id}'`);
     if (shop) assert.equal((await q(`/shop/${shop.id}`)).status, 404, "unpublished products have no card");
   });
