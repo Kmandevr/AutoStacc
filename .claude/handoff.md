@@ -26,5 +26,11 @@ https://claude.ai/artifact/7XKCsCFBi35Lm3zcuJbHUJ. Decisions: docs/decisions.md 
   .card-type label, poster (compact) card; server/spotlight/ (0066) + admin tab; GS.shelves (js/browse-shelves.js,
   css/shelves.css: rotate/picks/spotlight/row/tabs); creator bio (0067). Avatar/banner -> #211.
 
+- #208 (pages), partly: discover.html + js/discover.js + css/discover.css (tabs as links, removes closed panels),
+  /projects and /creators 301 (seo-test allows ?query targets), nav + rename, home cut, Made by + Buy now,
+  store project matches / Shop by project. Open items listed in the #208 comment (signed-in /, rows on explore/store,
+  community/guides headers, G&S show more).
+
 ## Next
-#208 pages (Discover /discover, New & upcoming, store creator spots, home cuts, signed-in /, nav), then #209, #210. Open a PR only if the owner asks (CLAUDE.md).
+#209 dashboards (admin switches grouped + stats tabs), #210 (store dead ends, About draft for sign-off), then the
+#208 leftovers. Open a PR only if the owner asks (CLAUDE.md).
