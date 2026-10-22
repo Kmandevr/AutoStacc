@@ -19,6 +19,13 @@
     ["reviews", "Reviews", "Owners can write and edit reviews.", "Writing reviews is paused; existing reviews stay up.", "open", "paused"]
   ];
 
+  // The switches in groups (owner, 2026-10-22), each switch in one place only.
+  const GROUPS = [
+    ["Selling", "Whether people can buy, and what they can write about it.", ["store_sales", "creator_sales", "reviews"]],
+    ["Accounts and creators", "Who can join, and creators' money going out.", ["signups", "creator_signups", "payout_requests"]],
+    ["Costs and billing", "What creators are charged, and what AutoStacc may spend. Rates and caps are in Paid storage and Usage.", ["storage_billing", "usage"]]
+  ];
+
   const row = (id, title, on, text, label, danger) => `<li class="admin-switch-row" data-switch-row="${id}">
     <div><h3>${e(title)} <span class="admin-pill ${on ? "is-on" : "is-off"}">${on ? "On" : "Off"}</span></h3><p>${e(text)}</p></div>
     <button class="btn small ghost${danger ? " danger" : ""}" type="button" data-switch="${id}">${e(label)}</button></li>`;
@@ -27,26 +34,31 @@
     const [sw, cs, sb, us] = await Promise.all(["/api/admin/switches", "/api/admin/creator-sales", "/api/admin/storage-billing", "/api/admin/usage"].map((p) => api(p)));
     if (!sw.ok) { panel.innerHTML = `<p class="msg error">${e(sw.error.message)}</p>`; return; }
     const v = sw.data.switches;
-    const rows = SIMPLE.map(([k, title, onText, offText, onV]) => {
+    const rows = {};
+    SIMPLE.forEach(([k, title, onText, offText, onV]) => {
       const on = v[k] === onV;
-      return row(k, title, on, on ? onText : offText, on ? "Turn off" : "Turn on", on);
+      rows[k] = row(k, title, on, on ? onText : offText, on ? "Turn off" : "Turn on", on);
     });
     if (cs.ok) {
       const c = cs.data.creatorSales;
-      rows.push(row("creator_sales", "Creator purchases", !c.paused, c.paused ? "Creators' products can't be bought."
+      rows.creator_sales = (row("creator_sales", "Creator purchases", !c.paused, c.paused ? "Creators' products can't be bought."
         : c.keyReady ? "Creators' products can be bought." : "Allowed, but closed until the marketplace Stripe key is set.", c.paused ? "Turn on" : "Turn off", !c.paused));
     }
     if (sb.ok) {
       const on = sb.data.settings.state === "on";
-      rows.push(row("storage_billing", "Paid storage charges", on, on ? "Creators can take paid storage and are charged for it." : "Off: no creator is offered or charged for paid storage.", on ? "Turn off" : "Turn on", on));
+      rows.storage_billing = (row("storage_billing", "Paid storage charges", on, on ? "Creators can take paid storage and are charged for it." : "Off: no creator is offered or charged for paid storage.", on ? "Turn off" : "Turn on", on));
     }
     if (us.ok) {
-      rows.push(row("usage", "Spending past the free allowance", us.data.allowed, us.data.allowed ? "Allowed this month (paid at Cloudflare's rates)." : "Processing stops at 95% of the free allowance.",
+      rows.usage = (row("usage", "Spending past the free allowance", us.data.allowed, us.data.allowed ? "Allowed this month (paid at Cloudflare's rates)." : "Processing stops at 95% of the free allowance.",
         us.data.allowed ? "Turn off" : "Allow this month", false));
     }
     panel.innerHTML = `${message ? `<p class="msg" role="status">${e(message)}</p>` : ""}
       <p class="small-print">Each switch takes effect at once, is enforced by the store itself (not just this page) and is logged in the audit log.</p>
-      <ul class="admin-switches">${rows.join("")}</ul>
+      ${v.store_sales !== "open" ? '<p class="msg error admin-paused" role="alert"><strong>Store sales are paused.</strong> Checkout and free claims are refused until you turn them back on.</p>' : ""}
+      ${GROUPS.map(([title, hint, keys]) => {
+        const list = keys.map((k) => rows[k]).filter(Boolean);
+        return list.length ? `<section class="admin-switch-group"><h3 class="admin-switch-title">${e(title)}</h3><p class="small-print">${e(hint)}</p><ul class="admin-switches">${list.join("")}</ul></section>` : "";
+      }).join("")}
       <form class="admin-switch-row admin-notice" data-notice-form>
         <div><h3><label for="site-notice">Notice on every page</label></h3>
           <p>A short line at the top of every page (maintenance, a sale ending). Leave it empty for none. Pages pick it up within a minute.</p>

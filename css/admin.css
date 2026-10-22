@@ -163,3 +163,8 @@ h3 .admin-mode { display: inline-flex; margin: 0 0 0 8px; padding: 0; border: 0;
 .admin-card { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 12px; background: var(--panel); overflow-wrap: anywhere; }
 .admin-card blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid var(--line); white-space: pre-wrap; max-height: 16em; overflow: auto; }
 .admin-card ul { margin: 6px 0; padding-left: 18px; }
+/* Settings › Switches in groups (js/admin-switches.js), with a banner while store sales are paused. */
+.admin-switch-group { margin: 0 0 20px; }
+.admin-switch-title { margin: 0 0 2px; font-size: 1.02rem; }
+.admin-switch-group > .small-print { margin: 0 0 10px; }
+.admin-paused { margin: 0 0 16px; }

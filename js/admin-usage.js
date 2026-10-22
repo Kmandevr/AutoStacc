@@ -1,6 +1,6 @@
 // Control Center: Usage and storage, the budget guard (server/usage/, docs/packs.md). This month's Container time,
 // storage writes and storage against Cloudflare's free allowance, the level (from 80% processing skips listening to
-// audio; from 95% new processing waits for next month), the switch that allows spending past it this month, and how
+// audio; from 95% new processing waits for next month), whether spending past it is allowed this month (switched in Settings › Switches), and how
 // much storage creators' uploads may fill: the base the owner sets, plus what paid plans add (shown, not edited). Talks to /api/admin/usage (server/admin/usage.js). Starts on "gs:admin".
 // Needs js/util.js.
 (function () {
@@ -28,7 +28,7 @@
       <p class="small-print">Storage is measured from what AutoStacc stores; Container time and writes are estimated from each job (with its start-up). Cloudflare's own billing is the record: set a billing notification there too.</p>
       <div class="panel admin-switch"><h3>Spending this month</h3>
         <p>${u.allowed ? "Processing may go past the free allowance until the month ends (paid at Cloudflare's rates)." : "Processing stops at 95% of the free allowance."}</p>
-        <button class="btn small${u.allowed ? " ghost" : " ghost danger"}" type="button" data-allow="${!u.allowed}">${u.allowed ? "Stop at the allowance again" : "Allow spending this month"}</button></div>
+        <p class="small-print"><a href="/admin/settings#switches">Change it in Settings › Switches</a></p></div>
       <form class="panel admin-switch" data-cap><h3>Storage for creators</h3>
         <p>Creators' uploads are refused once AutoStacc stores this much (the free allowance is 10 GB; more costs about $0.015 per GB a month).</p>
         <p>Base ${e(gb(u.baseCapBytes))} + paid storage ${e(gb(u.paidCapBytes))} = cap ${e(gb(u.capBytes))}. The paid part is what creators' active plans hold above their free storage; it grows and shrinks with the plans on its own.</p>
@@ -53,10 +53,6 @@
     const panel = $("#admin-usage");
     if (!panel) return;
     load(panel);
-    panel.addEventListener("click", (ev) => {
-      const b = ev.target.closest("[data-allow]");
-      if (b) save(panel, { allowThisMonth: b.dataset.allow === "true" }, b);
-    });
     panel.addEventListener("submit", (ev) => {
       const form = ev.target.closest("[data-cap]");
       if (!form) return;
