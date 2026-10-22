@@ -54,6 +54,7 @@
         </div>
         <div class="browse-chips" data-chips></div>
         <div data-sections-slot></div>
+        <div class="browse-makers-wrap" data-makers></div>
         <h2 class="browse-results-head" id="browse-results-head" tabindex="-1">All products</h2>
         <div class="grid browse-grid" aria-labelledby="browse-results-head" aria-busy="false"></div>
         <nav class="browse-pages" aria-label="Result pages"></nav>
@@ -83,6 +84,17 @@
     if (again && again !== document.activeElement) again.focus({ preventScroll: true });
   }
 
+  // Projects in the store (owner, 2026-10-22): a search that matches a project's name shows it above the results, and
+  // the unfiltered store offers "Shop by project"; each opens that project's products (the creator filter).
+  function makers(d) {
+    const list = d.creators || [];
+    const q = (params.get("q") || "").trim().toLowerCase();
+    const hits = q ? list.filter((c) => String(c.label).toLowerCase().includes(q)) : narrowed() ? [] : list;
+    if (!hits.length) return "";
+    return `<p class="card-type">${q ? "Projects" : "Shop by project"}</p><div class="browse-makers">${hits.slice(0, 8).map((c) =>
+      `<button type="button" class="chip" data-maker="${e(c.value)}">${e(c.label)} <span>${c.count}</span></button>`).join("")}</div>`;
+  }
+
   function render(d) {
     last = d;
     const chips = F.chips(d, params);
@@ -99,6 +111,7 @@
     const from = (d.page - 1) * d.per;
     $(".browse-count", root).textContent = d.total ? `${d.total} product${d.total === 1 ? "" : "s"}${d.pages > 1 ? ` · ${from + 1}–${from + d.products.length}` : ""}` : "No products match";
     $(".browse-results-head", root).textContent = narrowed() ? "Results" : "All products";
+    $("[data-makers]", root).innerHTML = makers(d);
     grid.innerHTML = d.products.length ? d.products.map((p) => card(p, { level: 3, wish: true, mixed: true })).join("") : empty(chips);
     $(".browse-pages", root).innerHTML = pages(d);
     if (d.ignored && d.ignored.length) $(".browse-count", root).textContent += ` (some filters from this link no longer exist and were left out)`;
@@ -192,6 +205,8 @@
 
   root.addEventListener("click", (ev) => {
     const t = ev.target;
+    const maker = t.closest("button[data-maker]");
+    if (maker) { params = new URLSearchParams({ creator: maker.dataset.maker }); return go(); }
     const cat = t.closest("button[data-cat]");
     if (cat) {
       cat.dataset.cat ? params.set("category", cat.dataset.cat) : params.delete("category");

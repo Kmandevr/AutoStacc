@@ -187,3 +187,8 @@
 .review-form { display: grid; gap: 10px; max-width: 560px; margin-top: 18px; }
 .review-rating { display: flex; flex-wrap: wrap; gap: 10px; border: 0; padding: 0; margin: 0; }
 .review-form textarea { width: 100%; }
+/* Projects in the store (js/store-browse.js): name matches above the results, and "Shop by project". */
+.browse-makers-wrap:empty { display: none; }
+.browse-makers-wrap { margin: 0 0 14px; }
+.browse-makers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.browse-makers .chip { min-height: 44px; }
