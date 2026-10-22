@@ -42,11 +42,18 @@ window.GUIDES = {
       ]
     },
     {
-      id: "your-stacc", section: "using", updated: "2026-10-16",
+      id: "your-stacc", section: "using", updated: "2026-10-22",
       title: "Getting around Your Stacc",
-      summary: "Your Stacc's two views, search and filters, downloading files, folders and whole Pacs, preview clips, read me files and updates.",
+      summary: "The words Your Stacc uses, its two views, search and filters, downloading files, folders and whole Pacs, preview clips, read me files and updates.",
       body: [
         "[Your Stacc](/library) is everything you own on AutoStacc, from every project, organised by what it is rather than by order.",
+        { heading: "The words you'll see", id: "words" },
+        { list: [
+          "**Your Stacc**: your library, everything you've Stacc'd (bought or got free), from every project.",
+          "**Stacclet**: a collection of related Pacs from one project.",
+          "**Pac**: a folder of content: MIDI, samples, loops, presets and more. Download one file, a selection or the whole Pac.",
+          "**Auto-Stacc**: adds a followed project's free releases to Your Stacc automatically. Paid releases are shown as new, never added for you."
+        ] },
         { heading: "Two views of the same files", id: "views" },
         { list: [
           "**By project**: each project, then its Stacclets and Pacs, then the files in them.",

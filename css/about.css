@@ -1,36 +1,12 @@
-/* About page: "how it works" as four tracks in an arrange view, and the Stacc words as a small legend. */
-
-.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; max-width: 860px; }
-.flow li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 16px;
-  align-items: baseline;
-  padding: 16px 18px 16px 22px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--panel);
-  box-shadow: var(--shadow);
-  position: relative;
-  overflow: hidden;
-}
-/* each step is a coloured clip that grows in like a recorded region */
-.flow li::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--track); }
-.flow-step { grid-row: span 2; font-family: var(--mono); font-weight: 700; color: var(--track); font-size: 1.1rem; }
-.flow strong { font-size: 1.05rem; }
-.flow li > span:last-child { color: var(--muted); }
-@media (prefers-reduced-motion: no-preference) {
-  .motion .flow li.reveal.in::before { animation: record .7s var(--snap) both; transform-origin: top; }
-}
-@keyframes record { from { scale: 1 0; } to { scale: 1 1; } }
-
-.terms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; margin: 0 0 24px; }
-.terms > div { padding: 14px 16px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--track); }
-.terms dt { font-weight: 700; margin-bottom: 4px; }
-.terms dd { margin: 0; color: var(--muted); }
-.platform .actions { display: flex; flex-wrap: wrap; gap: 10px; }
-
-@media (max-width: 600px) {
-  .flow li { grid-template-columns: 1fr; padding-left: 20px; }
-  .flow-step { grid-row: auto; }
-}
+/* About page (about.html): who AutoStacc is for, in two columns tagged with track colours, and the trust pages. */
+.about-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 18px; }
+.about-col { padding: 18px 20px; border: 1px solid var(--glass-edge, var(--line)); border-top: 4px solid var(--track); border-radius: calc(var(--radius) + 4px);
+  background: color-mix(in srgb, var(--panel) 76%, transparent); }
+.about-col h2 { margin-top: 0; font-size: 1.2rem; }
+.about-col ul { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 6px; }
+.about-col .actions { margin: 0; }
+.about-trust { list-style: none; margin: 0 0 18px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 10px; }
+.about-trust li { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.about-trust a { font-weight: 650; min-height: 32px; display: inline-flex; align-items: center; }
+.about-trust span { color: var(--muted); font-size: .9rem; }
+.fx-lite .about-col { background: var(--panel); }
