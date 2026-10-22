@@ -1,13 +1,19 @@
 ---
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects and creators browsers and their APIs, /explore for releases and events, the /events calendar, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
-covers: [projects.html, creators.html, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css]
-updated: 2026-10-21
+covers: [projects.html, creators.html, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
+updated: 2026-10-22
 ---
 
 # Browsing projects and content
 
 Owner decision 2026-10-09 ([decisions](decisions.md)): projects get their own browser, separate from the store; nothing is bought there. The other pages follow the store's lead with search, filters and sections. Real data only: nothing is invented to fill a page.
+
+## Building blocks (owner, 2026-10-22, #207)
+
+- **Project cards** (`js/project-card.js`) are AutoStacc's glass with the project's **personality**: the art tile wears the project's own look, and an accent (a track colour) and a small signature animation (pulse, glitch, wave or none; once as the card arrives, again on hover or focus, never for reduced motion) come from the Studio's presets (`project_personality`, `GET`/`PUT /api/studio/projects/:id/personality`, `js/studio-personality.js`), else `data/projects.js` `personality`, else the defaults. Every card has a type label (`.card-type`: Project, Creator, Community...). `compact` is a poster card for rows.
+- **Browse layout** (`js/browse-shelves.js`, `css/shelves.css`, `GS.shelves`): a spotlight banner, sideways rows that snap (arrows with a mouse, a See all end card) shown only from 4 items, and tabs.
+- **Spotlight:** the admins' picks first (Control Center › Manage › Spotlight, `server/spotlight/`, `spotlight_picks`, audited; public `GET /api/spotlight?page=discover|store|explore`, ids only), then a fair rotation the page computes from what it already lists: a new order each day (a stable hash of the date and id), so every creator gets equal turns and nothing is ranked by popularity (ranking stays an open question in [vision](vision.md)).
 
 ## Projects (`/projects`)
 

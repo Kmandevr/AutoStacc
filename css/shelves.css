@@ -1,0 +1,28 @@
+/* The browse layout (js/browse-shelves.js): the spotlight banner, sideways rows that snap, and tabs. Used by Discover,
+   the Store and New & upcoming. */
+.spot { position: relative; margin: 0 0 28px; }
+.spot-slide { border-radius: calc(var(--radius) + 6px); overflow: hidden; }
+.spot-dots { display: flex; justify-content: center; gap: 4px; margin-top: 8px; }
+.spot-dots button { width: 44px; height: 44px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.spot-dots button::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--line); transition: transform .15s var(--snap), background-color .15s; }
+.spot-dots button[aria-current]::before { background: var(--teal); transform: scale(1.3); }
+
+.shelf { margin: 0 0 28px; }
+.shelf-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.shelf-head h2 { margin: 0; font-size: 1.2rem; }
+.shelf-arrows { display: none; gap: 6px; }
+.shelf-arrows button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--text); font-size: 1.3rem; cursor: pointer; }
+.shelf-arrows button:hover { border-color: var(--teal); }
+@media (hover: hover) and (pointer: fine) { .shelf-arrows { display: inline-flex; } }
+.shelf-row { list-style: none; margin: 0; padding: 4px 2px 12px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 23%);
+  gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.shelf-row > li { scroll-snap-align: start; min-width: 0; }
+@media (max-width: 600px) { .shelf-row { grid-auto-columns: 72%; } }
+.shelf-all a { display: grid; place-items: center; height: 100%; min-height: 120px; border: 1px dashed var(--line); border-radius: calc(var(--radius) + 4px); color: var(--muted); font-weight: 600; }
+.shelf-all a:hover { border-color: var(--teal); color: var(--text); }
+
+.shelf-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; border-bottom: 1px solid var(--line); }
+.shelf-tabs [role="tab"] { min-height: 44px; padding: 0 16px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-weight: 650; cursor: pointer; }
+.shelf-tabs [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--teal); }
+.shelf-tabs [role="tab"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .spot-dots button::before { transition: none; } }

@@ -42,6 +42,7 @@ window.WORKSPACES = {
           { key: "products", label: "Products" },
           { key: "packs", label: "Pacs" },
           { key: "promotions", label: "Promotions" },
+          { key: "spotlight", label: "Spotlight" },
           { key: "news", label: "News" }
         ] },
         { label: "People", items: [
