@@ -35,5 +35,8 @@ window.FEATURES = {
  "community.joined": true,
  "community.saved": true,
  "community.mentions": true,
- "community.inbox": true
+ "community.inbox": true,
+ "community.search": true,
+ "community.tags": true,
+ "community.similar": true
 };
