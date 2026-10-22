@@ -9,7 +9,7 @@ import { currentUser, requireUser } from "../../auth/session.js";
 import { limit } from "../../lib/ratelimit.js";
 import { getMember, join } from "./members.js";
 import { startThread, reply, getSpace } from "./posting.js";
-import { isTeam } from "./access.js";
+import { isTeam, mayPublishUpdate } from "./access.js";
 import { editPost, deletePost } from "./edits.js";
 import { mine } from "./mine.js";
 import { purge } from "./purge.js";
@@ -48,7 +48,7 @@ async function newThread(app) {
   const user = await writer(app);
   const body = await readJson(app.request, 24 * 1024);
   const r = await startThread(app, user, { channelId: id(body.channelId, "channelId"), type: str(body.type, "type", { max: 20 }),
-    title: str(body.title, "title", { max: 400 }), body: str(body.body, "body", { max: 20000 }) });
+    title: str(body.title, "title", { max: 400 }), body: str(body.body, "body", { max: 20000 }), asTeam: body.asTeam === true });
   purge(app, r);
   return json({ thread: { id: r.thread.id, path: threadPath(r.thread) }, ...(r.held && { held: true }) }, 201);
 }
@@ -57,7 +57,7 @@ async function newReply(app, { threadId }) {
   const user = await writer(app);
   const body = await readJson(app.request, 24 * 1024);
   const parentId = body.parentId === undefined || body.parentId === null ? null : id(body.parentId, "parentId");
-  const r = await reply(app, user, id(threadId, "threadId"), { body: str(body.body, "body", { max: 20000 }), parentId });
+  const r = await reply(app, user, id(threadId, "threadId"), { body: str(body.body, "body", { max: 20000 }), parentId, asTeam: body.asTeam === true });
   purge(app, r);
   return json({ post: { id: r.id, path: `${threadPath(r.thread)}#${r.id}` }, ...(r.held && { held: true }) }, 201);
 }
@@ -85,13 +85,16 @@ async function threadMine(app, { threadId }) {
   return json({ ...core, features: user ? await state(app, user, core.thread) : {}, thread: undefined }, 200, NO_STORE);
 }
 
-// Whether the visitor is on a space's team, for its page's team desk (features add the desk's parts).
+// Whether the visitor is on a space's team and may post Updates, for its page's new-take form and team desk (features add
+// the desk's parts), with the space's name for "Post as".
 async function spaceMine(app, { spaceId }) {
   requireFeature(app, "community.forum");
   const space = await getSpace(app.db, id(spaceId, "spaceId"));
   if (!space) fail(404, "not_found", "Not found.");
   const user = await currentUser(app);
-  return json({ signedIn: Boolean(user), team: user ? await isTeam(app, user, space) : false, state: space.state, stateReason: space.state_reason || null }, 200, NO_STORE);
+  const team = user ? await isTeam(app, user, space) : false;
+  const mayUpdate = user ? await mayPublishUpdate(app, user, space) : false;
+  return json({ signedIn: Boolean(user), team, mayUpdate, name: space.name, state: space.state, stateReason: space.state_reason || null }, 200, NO_STORE);
 }
 
 export const routes = [

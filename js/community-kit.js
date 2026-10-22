@@ -98,13 +98,21 @@
       who.member = r.data.member;
       then();
     } } },
-      el("h2", { text: "Join the community" }),
-      el("p", { class: "cm-small", text: "Pick the name people will see on your posts. It's chosen once, and it's never your email." }),
+      el("h2", { text: "One step before your first post" }),
+      el("p", { class: "cm-small", text: "Pick the name people will see on your posts. You do this once, and it's never your email. AutoStacc and creators' names are kept: a space's team posts under those with \"Post as\" once joined." }),
       el("label", {}, "Community name", name),
       el("label", { class: "cm-check" }, age, " I'm 16 or older, and I'll follow the ", el("a", { href: "/community-rules", text: "community rules" }), "."),
-      el("button", { class: "btn", type: "submit", text: "Join" }), msg);
+      el("button", { class: "btn", type: "submit", text: "Join and continue" }), msg);
     box.append(form);
   }
 
-  GS.communityKit = { el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
+  // "Post as": for a space's team, a choice between their own community name and the space's (the server checks it).
+  // Returns null for everyone else; asTeam() is what the form sends.
+  const asPicker = (who, teamName) => {
+    if (!teamName) return null;
+    const sel = el("select", { name: "as" }, el("option", { value: "me", text: who.member ? who.member.displayName : "Me" }), el("option", { value: "team", text: `${teamName} (Team)` }));
+    return { wrap: el("label", {}, "Post as", sel), asTeam: () => sel.value === "team" };
+  };
+
+  GS.communityKit = { asPicker, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
 })();
