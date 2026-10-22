@@ -15,5 +15,8 @@ import crisis from "./crisis/index.js";
 import upkeep from "./upkeep/index.js";
 import legal from "./legal/index.js";
 import textonly from "./textonly/index.js";
+import embeds from "./embeds/index.js";
+import cards from "./cards/index.js";
+import codeblocks from "./codeblocks/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks]) register(f);

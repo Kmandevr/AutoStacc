@@ -6,5 +6,6 @@ import posting from "./community-posting.suite.js";
 import moderation from "./community-moderation.suite.js";
 import upkeep, { SWEEP_TOKEN } from "./community-upkeep.suite.js";
 import legal from "./community-legal.suite.js";
+import rich from "./community-rich.suite.js";
 
-runGroup({ name: "community", ports: { mock: 8840 }, stripe: false, vars: { FEATURES_ON: "community.forum", SWEEP_TOKEN } }, [community, posting, moderation, upkeep, legal]);
+runGroup({ name: "community", ports: { mock: 8840 }, stripe: false, vars: { FEATURES_ON: "community.forum", SWEEP_TOKEN } }, [community, posting, moderation, upkeep, legal, rich]);

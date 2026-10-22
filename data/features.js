@@ -23,5 +23,8 @@ window.FEATURES = {
  "community.crisis": true,
  "community.upkeep": true,
  "community.legal": true,
- "community.textOnly": true
+ "community.textOnly": true,
+ "community.embeds": true,
+ "community.cards": true,
+ "community.codeblocks": true
 };

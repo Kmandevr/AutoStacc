@@ -1,0 +1,4 @@
+/* Code and settings blocks in posts (the codeblocks feature). */
+.cm-code { position: relative; margin: .5rem 0; }
+.cm-code pre { margin: 0; padding: .75rem 1rem; overflow-x: auto; border: 1px solid var(--line, rgba(128,128,128,.35)); border-radius: 8px; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .9em; white-space: pre; tab-size: 2; }
+.cm-code-lang { position: absolute; top: .25rem; right: .6rem; font-size: .7em; opacity: .6; text-transform: uppercase; letter-spacing: .06em; }
