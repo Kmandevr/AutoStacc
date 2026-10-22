@@ -176,6 +176,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 [data-theme-cycle][data-mode="light"] .theme-icon { background: transparent; }
 [data-theme-cycle][data-mode="dark"] .theme-icon { background: currentColor; }
 .account-theme, .theme-foot { gap: 8px; }
+@keyframes menu-out { to { opacity: 0; transform: scale(.96); } }
 .theme-foot { display: inline-flex; align-items: center; margin-left: 12px; vertical-align: middle; }
 
 /* ---------- account menu: your initial in the top bar, opening a short list of account destinations ---------- */
@@ -206,12 +207,13 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .account-who strong { color: var(--text); font-weight: 650; }
 .account-who span { color: var(--muted); font-size: .82rem; overflow-wrap: anywhere; }
 .account-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.account-panel a, .account-signout { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
-.account-panel a:hover, .account-signout:hover { background: var(--panel-2); color: var(--text); }
+.account-panel a, .account-signout, .account-theme { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
+.account-panel a:hover, .account-signout:hover, .account-theme:hover { background: var(--panel-2); color: var(--text); }
 .account-panel [aria-current] { background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
 .account-signout { margin-top: 6px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) {
   .account-panel:not([hidden]) { transform-origin: top right; animation: menu-in .18s var(--snap); }
+  .account-panel.closing { animation: menu-out .14s ease-in forwards; }
 }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
 

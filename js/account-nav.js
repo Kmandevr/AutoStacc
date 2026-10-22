@@ -45,7 +45,7 @@
             ${link("/dashboard", "Dashboard")}${link("/library", "Your Stacc")}${link("/studio", "Studio")}${link("/settings", "Settings")}
             ${user && user.admin ? link("/admin", "Control Center") : ""}
           </ul>
-          <button class="account-signout account-theme" type="button" data-theme-cycle></button>
+          <button class="account-theme" type="button" data-theme-cycle></button>
           <button class="account-signout" type="button" data-signout>Log out</button>
         </div>`;
       dispatchEvent(new Event("gs:theme-draw"));
@@ -56,7 +56,11 @@
     const btn = slot.querySelector(".account-button"), panel = slot.querySelector(".account-panel");
     if (!btn || !panel) return;
     btn.setAttribute("aria-expanded", String(open));
-    panel.hidden = !open;
+    // Closing plays a short fade (css/layout.css .closing) before the panel is hidden; reduced motion hides it at once.
+    if (!open && !panel.hidden && matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+      panel.classList.add("closing");
+      setTimeout(() => { panel.classList.remove("closing"); if (btn.getAttribute("aria-expanded") === "false") panel.hidden = true; }, 140);
+    } else panel.hidden = !open;
     if (refocus) btn.focus();
   };
   const closeAll = (except) => document.querySelectorAll("[data-account-menu]").forEach((s) => s !== except && setOpen(s, false));
