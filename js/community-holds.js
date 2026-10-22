@@ -21,7 +21,7 @@
     const spaceId = kit.desk.dataset.cmSpace;
     const r = await api(`/api/community/spaces/${enc(spaceId)}/holds`);
     if (!r.ok || !r.data.held.length) return;
-    const part = kit.deskPart(`Waiting for approval (${r.data.held.length})`);
+    const part = kit.deskPart(`Waiting for approval (${r.data.held.length})`, null, "held");
     part.open = true;
     r.data.held.forEach((x) => {
       const decide = (outcome, ask) => el("button", { class: "btn ghost small", type: "button", text: outcome === "approve" ? "Approve" : "Reject", on: { click: async (ev) => {

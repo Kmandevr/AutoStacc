@@ -25,7 +25,7 @@ async function load(app, { projectId }, write) {
 async function read(app, params) {
   const { project } = await load(app, params, false);
   const space = await first(app.db, "SELECT id, slug, state FROM community_spaces WHERE project_id = ?", project.id);
-  return json({ on: featuresOf(project).includes("community"), space: space ? { slug: space.slug, state: space.state } : null }, 200, NO_STORE);
+  return json({ on: featuresOf(project).includes("community"), space: space ? { id: space.id, slug: space.slug, state: space.state } : null }, 200, NO_STORE);
 }
 
 async function change(app, params) {

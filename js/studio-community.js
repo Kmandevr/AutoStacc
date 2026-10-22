@@ -1,5 +1,5 @@
 // A project's community switch in the Studio (GS.studioCommunity, drawn by js/studio.js; the projectspaces feature,
-// server/community/features/projectspaces/): "Community: on / off" for a project, with a link to its space. Asks the
+// server/community/features/projectspaces/): "Community: on / off" for a project, with links to its space and its Team desk. Asks the
 // API first and shows nothing when the community isn't open yet (404) or the person may not change it. Needs js/util.js.
 (function () {
   "use strict";
@@ -14,7 +14,7 @@
       const space = r.data.space;
       const paint = () => {
         el.innerHTML = `<p class="small-print"><strong>Community</strong> ${on ? "is on for this project." : "is off for this project."}
-          ${on && space ? `<a href="${e(el.dataset.address || "")}" data-cm-link>Open it</a>` : ""}
+          ${on && space ? `<a href="${e(el.dataset.address || "")}" data-cm-link>Open it</a> · <a href="/studio?desk=${encodeURIComponent(space.id)}">Team desk</a>` : ""}
           <button class="btn ghost small" type="button">${on ? "Switch off" : "Switch on"}</button></p>
           <p class="small-print">${on ? "Your team runs it: Updates, rules and moderation. Switching it off keeps everything and makes it read-only." : "A place for your followers to ask, answer and talk, run by your team."}</p>`;
         const b = el.querySelector("button");

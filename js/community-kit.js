@@ -1,7 +1,7 @@
 // Shared helpers for the community's browser scripts (GS.communityKit; loads before js/community.js and each
 // js/community-<feature>.js): building elements safely (text only through textContent), status lines, the visitor
 // (/api/community/me, asked once), their state in the open take or space (/mine, asked once), the space team's desk
-// (each feature adds its own part, with a loading placeholder until it's ready; GS.skeleton when loaded), request
+// (js/community-desk.js; each feature adds its own part, with a placeholder until it's ready), request
 // buttons with a spinner, and the "join" gate. No feature logic lives here, so each feature script stays independent.
 (function () {
   "use strict";
@@ -42,25 +42,12 @@
   const space = () => (spacePromise = spacePromise || (desk
     ? GS.api(`/api/community/spaces/${encodeURIComponent(desk.dataset.cmSpace)}/mine`).then((r) => (r.ok ? r.data : null))
     : Promise.resolve(null)));
-  const deskOpen = () => {
-    desk.hidden = false;
-    if (!desk.querySelector(".cm-desk-title")) desk.prepend(el("h2", { class: "cm-desk-title", text: "Team desk" }));
-  };
-  // A placeholder in the slot a desk part will take while its list loads (busy for screen readers); the feature
-  // hands it to deskPart() when the list is in, or removes it when the list can't load.
-  const deskWait = () => {
-    deskOpen();
-    const w = desk.appendChild(el("div", { class: "cm-desk-part" }));
-    if (sk()) sk().show(w, "line", 1);
-    return w;
-  };
-  // A titled part of the team desk, shown once a feature has something in it, in its placeholder's place if it had one.
-  const deskPart = (title, wait = null) => {
-    deskOpen();
-    const part = el("details", { class: "cm-desk-part" }, el("summary", { text: title }));
-    if (wait && wait.parentNode) wait.replaceWith(part); else desk.appendChild(part);
-    return part;
-  };
+  // The team desk (js/community-desk.js): tabs in the Studio, a slim link on the space's page. Features add their parts
+  // with a key that gives each its fixed place; without the desk module, parts are drawn nowhere.
+  const D = desk && GS.communityDesk ? GS.communityDesk.make(desk, el, sk) : null;
+  const deskWait = (key) => (D ? D.wait(key) : el("div"));
+  const deskPart = (title, wait = null, key = "") => (D ? D.part(title, wait, key) : el("section"));
+  const deskFull = Boolean(D && D.full);
   const notices = document.querySelector("[data-cm-notices]");
 
   // A button that calls the API, disables itself (with a spinner) until the answer, and runs done(data) on success.
@@ -114,5 +101,5 @@
     return { wrap: el("label", {}, "Post as", sel), asTeam: () => sel.value === "team" };
   };
 
-  GS.communityKit = { asPicker, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
+  GS.communityKit = { asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
 })();

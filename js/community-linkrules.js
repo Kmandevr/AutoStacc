@@ -17,7 +17,7 @@
     const path = `/api/community/spaces/${enc(kit.desk.dataset.cmSpace)}/allowed-links`;
     const r = await api(path);
     if (!r.ok) return;
-    const part = kit.deskPart(`Allowed sites (${r.data.allowed.length})`);
+    const part = kit.deskPart(`Allowed sites (${r.data.allowed.length})`, null, "links");
     part.append(el("p", { class: "cm-small", text: "Links to these sites pass at once. Other sites (not on AutoStacc's safe list) wait for the team." }));
     r.data.allowed.forEach((host) => part.append(el("p", { class: "cm-desk-row" }, `${host} `, el("button", { class: "btn ghost small", type: "button", text: "Remove", on: { click: async (ev) => {
       const b = ev.currentTarget;

@@ -54,10 +54,10 @@
 
   async function queue() {
     const spaceId = kit.desk.dataset.cmSpace;
-    const wait = kit.deskWait();
+    const wait = kit.deskWait("reports");
     const r = await api(`/api/community/spaces/${enc(spaceId)}/reports`);
     if (!r.ok) { wait.remove(); return; }
-    const part = kit.deskPart(`Reports (${r.data.reports.length})`, wait);
+    const part = kit.deskPart(`Reports (${r.data.reports.length})`, wait, "reports");
     if (r.data.reports.some((x) => x.danger)) part.open = true;
     if (!r.data.reports.length) part.append(el("p", { class: "cm-small", text: "No open reports. Nice and quiet." }));
     r.data.reports.forEach((x) => {

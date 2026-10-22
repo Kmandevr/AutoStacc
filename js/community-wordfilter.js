@@ -17,7 +17,7 @@
     const path = `/api/community/spaces/${enc(kit.desk.dataset.cmSpace)}/filter-words`;
     const r = await api(path);
     if (!r.ok) return;
-    const part = kit.deskPart(`Filtered words (${r.data.words.length})`);
+    const part = kit.deskPart(`Filtered words (${r.data.words.length})`, null, "words");
     r.data.words.forEach((w) => part.append(el("p", { class: "cm-desk-row" }, `${w.phrase}: ${w.action === "hold" ? "held for the team" : "refused"} `, el("button", { class: "btn ghost small", type: "button", text: "Remove", on: { click: async (ev) => {
       const b = ev.currentTarget;
       press(b, true);
