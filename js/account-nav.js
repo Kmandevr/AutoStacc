@@ -45,8 +45,10 @@
             ${link("/dashboard", "Dashboard")}${link("/library", "Your Stacc")}${link("/studio", "Studio")}${link("/settings", "Settings")}
             ${user && user.admin ? link("/admin", "Control Center") : ""}
           </ul>
+          <button class="account-signout account-theme" type="button" data-theme-cycle></button>
           <button class="account-signout" type="button" data-signout>Log out</button>
         </div>`;
+      dispatchEvent(new Event("gs:theme-draw"));
       if (wasOpen) setOpen(slot, true);
     });
   }

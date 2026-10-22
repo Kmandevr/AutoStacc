@@ -1,6 +1,7 @@
 // Light/dark theme for AutoStacc: follows the device until the visitor picks one, then remembers it. Loaded in <head>
-// (before the page paints, so there's no flash) on every page; draws its switch into the top bar once the page is
-// ready. css/platform.css reads <html data-theme>. It also applies the sidebar's remembered width before paint. It also settles aborted page-change animations (below), which must
+// (before the page paints, so there's no flash) on every page; its switch is any [data-theme-cycle] button (the
+// account menu's item and one at the foot of every page). css/platform.css reads <html data-theme>.
+// It also applies the sidebar's remembered width before paint, and settles aborted page-change animations (below), which must
 // be handled before the page first paints, so it lives in the one script that runs that early. Needs nothing.
 (function () {
   "use strict";
@@ -29,25 +30,33 @@
   // don't slide sideways when the frame appears.
   try { if (localStorage.getItem("gs:side") === "open") root.classList.add("side-open"); } catch { /* storage blocked: rail */ }
 
+  // The switch (owner, 2026-10-22): an item in the account menu (js/account-nav.js draws <button data-theme-cycle>)
+  // and a button at the foot of every page; any [data-theme-cycle] cycles Auto, Light and Dark.
+  const LABEL = { auto: "Auto", light: "Light", dark: "Dark" };
+  const draw = (btn) => {
+    btn.dataset.mode = mode;
+    btn.innerHTML = `<span class="theme-icon" aria-hidden="true"></span><span class="theme-label">Theme: ${LABEL[mode]}</span>`;
+    btn.setAttribute("aria-label", `Theme: ${LABEL[mode]}${mode === "auto" ? " (follows your device)" : ""}. Change theme`);
+  };
+  const drawAll = () => document.querySelectorAll("[data-theme-cycle]").forEach(draw);
+  addEventListener("click", (ev) => {
+    const btn = ev.target.closest && ev.target.closest("[data-theme-cycle]");
+    if (!btn) return;
+    mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+    try { localStorage.setItem(KEY, mode); } catch { /* not remembered */ }
+    apply();
+    drawAll();
+  });
+  addEventListener("gs:theme-draw", drawAll);
   addEventListener("DOMContentLoaded", () => {
-    const tools = document.querySelector(".topbar-tools");
-    if (!tools) return;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "theme-switch";
-    const LABEL = { auto: "Auto", light: "Light", dark: "Dark" };
-    const draw = () => {
-      btn.dataset.mode = mode;
-      btn.innerHTML = `<span class="theme-icon" aria-hidden="true"></span><span class="theme-label">${LABEL[mode]}</span>`;
-      btn.setAttribute("aria-label", `Theme: ${LABEL[mode]}${mode === "auto" ? " (follows your device)" : ""}. Change theme`);
-    };
-    draw();
-    btn.addEventListener("click", () => {
-      mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
-      try { localStorage.setItem(KEY, mode); } catch { /* not remembered */ }
-      apply();
-      draw();
-    });
-    tools.prepend(btn);
+    const foot = document.querySelector(".site-footer .footer-legal, .site-footer");
+    if (foot) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "theme-switch theme-foot";
+      btn.setAttribute("data-theme-cycle", "");
+      foot.append(btn);
+    }
+    drawAll();
   });
 })();

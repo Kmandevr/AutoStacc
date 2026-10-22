@@ -10,9 +10,11 @@ const read = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), "utf8")
 const rules = JSON.parse(read("speculation-rules.json"));
 const MUST_SKIP = ["/api/*", "/media/*", "/logout", "/admin", "/admin/*", "/cart", "/checkout", "/checkout/*"];
 
-test("the rules prefetch same-origin pages at moderate eagerness, nothing else", () => {
+test("the rules prefetch same-origin pages at moderate eagerness, and only the home page eagerly", () => {
   assert.deepEqual(Object.keys(rules), ["prefetch"]);
-  assert.equal(rules.prefetch.length, 1);
+  assert.equal(rules.prefetch.length, 2);
+  // The logo is Home on phones (owner, 2026-10-22): / is fetched ahead so it opens at once.
+  assert.deepEqual(rules.prefetch[1], { source: "list", urls: ["/"], eagerness: "eager" });
   const [rule] = rules.prefetch;
   assert.equal(rule.source, "document");
   assert.equal(rule.eagerness, "moderate");

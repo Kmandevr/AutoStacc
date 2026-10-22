@@ -71,7 +71,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 10px;
   border-radius: 8px;
   color: var(--text);
@@ -149,7 +149,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -173,8 +173,10 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .snd[aria-pressed="true"] { border-color: var(--teal); color: var(--teal); }
 /* theme switch: a half-filled dot (auto), sun-ish disc (light) or moon-ish disc (dark) */
 .theme-icon { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
-.theme-switch[data-mode="light"] .theme-icon { background: transparent; }
-.theme-switch[data-mode="dark"] .theme-icon { background: currentColor; }
+[data-theme-cycle][data-mode="light"] .theme-icon { background: transparent; }
+[data-theme-cycle][data-mode="dark"] .theme-icon { background: currentColor; }
+.account-theme, .theme-foot { gap: 8px; }
+.theme-foot { display: inline-flex; align-items: center; margin-left: 12px; vertical-align: middle; }
 
 /* ---------- account menu: your initial in the top bar, opening a short list of account destinations ---------- */
 .account-menu { position: relative; }
@@ -204,7 +206,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .account-who strong { color: var(--text); font-weight: 650; }
 .account-who span { color: var(--muted); font-size: .82rem; overflow-wrap: anywhere; }
 .account-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.account-panel a, .account-signout { display: flex; align-items: center; width: 100%; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
+.account-panel a, .account-signout { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
 .account-panel a:hover, .account-signout:hover { background: var(--panel-2); color: var(--text); }
 .account-panel [aria-current] { background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
 .account-signout { margin-top: 6px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--muted); }
@@ -229,6 +231,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .footer-project > span { font-weight: 650; color: var(--text); }
 .socials { display: flex; gap: 6px 16px; flex-wrap: wrap; }
 .site-footer a { display: inline-block; padding-block: 4px; color: var(--muted); text-shadow: none; }
+@media (max-width: 900px) { .site-footer a, .theme-foot { display: inline-flex; align-items: center; min-height: 44px; } }
 .site-footer a:hover { color: var(--teal); }
 
 /* ---------- phones and small tablets: the sidebar becomes a drawer ---------- */
@@ -281,8 +284,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
   .footer-brand { grid-column: 1 / -1; }
 }
 @media (max-width: 520px) {
-  .theme-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .tool-link, .theme-switch, .snd { padding: 6px 10px; min-height: 40px; }
+  .tool-link, .theme-switch, .snd { padding: 6px 10px; min-height: 44px; }
   .topbar-tools { gap: 4px; }
   .tool-cta { display: none; }
 }
@@ -352,3 +354,10 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 /* the store's notice (js/site-notice.js, set in Control Center › Settings › Switches): one calm line above the page */
 .site-notice { margin: 0; padding: 10px 20px; text-align: center; font-family: var(--font); font-size: .92rem; font-weight: 600;
   color: var(--text); background: color-mix(in srgb, var(--amber) 22%, var(--panel)); border-bottom: 1px solid var(--line); }
+
+/* ---------- press feedback (owner, 2026-10-22): touch gets a quick press on the frame's controls, like a button ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .side-nav a, .tabbar a, .tabbar button, .tool-link, .theme-switch, .brand, .topbar-brand, .account-panel a, .account-signout { transition: transform .08s ease-out, background-color .12s; }
+  .side-nav a:active, .tabbar a:active, .tabbar button:active, .tool-link:active, .theme-switch:active, .brand:active, .topbar-brand:active, .account-panel a:active, .account-signout:active { transform: scale(.96); }
+}
+.side-nav a:active, .tabbar a:active, .tabbar button:active, .account-panel a:active, .account-signout:active { background: var(--panel-2); }
