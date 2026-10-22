@@ -145,4 +145,32 @@ export default (ctx) => describe("community keeping up (switched on)", () => {
     const swept = await fetch(`${ctx.mock.url}/api/internal/sweep`, { method: "POST", headers: { Authorization: `Bearer ${process.env.SWEEP_TOKEN || ""}` } });
     if (swept.status === 200) assert.equal(one(`SELECT COUNT(*) AS n FROM community_notifications WHERE user_id = '${a.user.id}'`).n, 0);
   });
+
+  test("security review: an upgraded notice is unread again; a later-hidden post's notice goes; code and quotes mention no one; unfollowing a hidden take works", async () => {
+    const asker = await person();
+    const helper = await person();
+    const t = await take(asker.c, { type: "question" });
+    clearPace();
+    const answer = (await reply(helper.c, t, "an answer")).data.post.id;
+    await asker.c.post("/api/community/inbox/read", { all: true });
+    // The same post later becomes a best answer: the asker's... helper hears it, unread.
+    assert.equal((await asker.c.req("PUT", `/api/community/threads/${t.id}/accepted`, { body: { postId: answer } })).status, 200);
+    assert.equal((await inbox(helper)).unread, 1);
+    await helper.c.post("/api/community/inbox/read", { all: true });
+    db(`UPDATE community_notifications SET kind = 'reply' WHERE user_id = '${helper.user.id}'`);
+    assert.equal((await asker.c.req("PUT", `/api/community/threads/${t.id}/accepted`, { body: { postId: answer } })).status, 200);
+    assert.equal((await inbox(helper)).unread, 1, "upgraded from reply to answer: unread again");
+    db(`UPDATE community_posts SET state = 'hidden' WHERE id = '${answer}'`);
+    assert.equal((await inbox(helper)).items.length, 0, "the post was hidden afterwards");
+    const a = await person();
+    const b = await person("Quoted Person Test");
+    const t2 = await take(a.c);
+    clearPace();
+    await reply(a.c, t2, "```\n@Quoted Person Test in code\n```\n> @Quoted Person Test quoted\n`@Quoted Person Test` inline");
+    assert.equal((await inbox(b)).items.length, 0);
+    assert.equal((await b.c.req("PUT", `/api/community/threads/${t2.id}/follow`)).status, 200);
+    db(`UPDATE community_threads SET state = 'hidden' WHERE id = '${t2.id}'`);
+    assert.equal((await b.c.req("DELETE", `/api/community/threads/${t2.id}/follow`)).status, 200);
+    assert.equal(one(`SELECT COUNT(*) AS n FROM community_thread_follows WHERE user_id = '${b.user.id}' AND thread_id = '${t2.id}'`).n, 0);
+  });
 });

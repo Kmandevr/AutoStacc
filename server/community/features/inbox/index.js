@@ -2,8 +2,9 @@
 // mentions, best-answer picks and replies in takes you follow. This feature turns replies and picked answers into
 // notices (through core/notify.js; mentions and follows add their own) and lists them: GET /api/community/inbox, and
 // POST /api/community/inbox/read marks them seen. Only your own, only for takes that are still showing; read notices
-// older than 90 days and any older than a year go in the daily sweep. Its own switch (community.inbox): off, no bell;
-// notices keep gathering.
+// older than 90 days and any older than a year go in the daily sweep. Its own switch (community.inbox): off, no bell, and
+// the reply and best-answer notices (made here) stop; mentions and followed-take notices (made by their features) keep
+// gathering and wait.
 import { json, readJson, fail, str } from "../../../lib/http.js";
 import { all, first, run, stmt, now } from "../../../lib/db.js";
 import { requireUser } from "../../../auth/session.js";
@@ -18,9 +19,11 @@ async function list(app) {
   const user = await requireUser(app);
   const rows = await all(app.db, `SELECT n.id, n.kind, n.post_id AS postId, n.created_at AS at, n.read_at AS readAt, t.id AS threadId, t.slug, t.title, m.display_name AS actor
     FROM community_notifications n JOIN community_threads t ON t.id = n.thread_id LEFT JOIN community_members m ON m.user_id = n.actor_user_id
-    WHERE n.user_id = ? AND t.state = 'visible' ORDER BY n.created_at DESC LIMIT 50`, user.id);
+    LEFT JOIN community_posts p ON p.id = n.post_id
+    WHERE n.user_id = ? AND t.state = 'visible' AND (n.post_id IS NULL OR p.state = 'visible') ORDER BY n.created_at DESC LIMIT 50`, user.id);
   const unread = (await first(app.db, `SELECT COUNT(*) AS n FROM community_notifications n JOIN community_threads t ON t.id = n.thread_id
-    WHERE n.user_id = ? AND n.read_at IS NULL AND t.state = 'visible'`, user.id)).n;
+    LEFT JOIN community_posts p ON p.id = n.post_id
+    WHERE n.user_id = ? AND n.read_at IS NULL AND t.state = 'visible' AND (n.post_id IS NULL OR p.state = 'visible')`, user.id)).n;
   return json({ unread, items: rows.map((r) => ({ id: r.id, kind: r.kind, read: Boolean(r.readAt), at: r.at, actor: r.actor || null, title: r.title,
     path: `${threadPath({ id: r.threadId, slug: r.slug })}${r.postId ? `#${r.postId}` : ""}` })) }, 200, NO_STORE);
 }
@@ -56,5 +59,6 @@ export default {
     const old = await run(app.db, "DELETE FROM community_notifications WHERE created_at < ?", new Date(nowMs - 365 * DAY).toISOString());
     return { cleared: read.meta.changes + old.meta.changes };
   },
-  erase: (db, userId) => [stmt(db, "DELETE FROM community_notifications WHERE user_id = ?", userId)]
+  erase: (db, userId) => [stmt(db, "DELETE FROM community_notifications WHERE user_id = ?", userId)],
+  exportData: async (db, userId) => ({ notifications: await all(db, "SELECT kind, thread_id AS threadId, post_id AS postId, created_at AS createdAt, read_at AS readAt FROM community_notifications WHERE user_id = ? ORDER BY created_at", userId) })
 };

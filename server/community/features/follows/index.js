@@ -16,15 +16,18 @@ const add = (db, userId, threadId, auto) => run(db, "INSERT INTO community_threa
 async function follow(app, { threadId }, on) {
   const user = await requireUser(app);
   await limit(app, "community-follow", 120, 600, { by: user.id });
+  // Unfollowing needs nothing but being yourself (even of a take since hidden, or while banned); following needs a take
+  // that is showing and the right to post in its space.
+  if (!on) {
+    await run(app.db, "DELETE FROM community_thread_follows WHERE user_id = ? AND thread_id = ?", user.id, id(threadId, "threadId"));
+    return json({ following: false });
+  }
   const t = await first(app.db, "SELECT * FROM community_threads WHERE id = ? AND state = 'visible'", id(threadId, "threadId"));
   if (!t) fail(404, "not_found", "That take doesn't exist.");
   await requirePoster(app, user, await getSpace(app.db, t.space_id));
-  if (!on) await run(app.db, "DELETE FROM community_thread_follows WHERE user_id = ? AND thread_id = ?", user.id, t.id);
-  else {
-    if ((await first(app.db, "SELECT COUNT(*) AS n FROM community_thread_follows WHERE user_id = ?", user.id)).n >= MAX_FOLLOWS) fail(400, "too_many_follows", "That's the most takes you can follow.");
-    await add(app.db, user.id, t.id, 0);
-  }
-  return json({ following: on });
+  if ((await first(app.db, "SELECT COUNT(*) AS n FROM community_thread_follows WHERE user_id = ?", user.id)).n >= MAX_FOLLOWS) fail(400, "too_many_follows", "That's the most takes you can follow.");
+  await add(app.db, user.id, t.id, 0);
+  return json({ following: true });
 }
 
 export default {
@@ -36,7 +39,7 @@ export default {
     threadStarted: async (app, { user, thread }) => { await add(app.db, user.id, thread.id, 1); },
     replyPosted: async (app, { user, thread, post }) => {
       await add(app.db, user.id, thread.id, 1);
-      const followers = await all(app.db, "SELECT user_id FROM community_thread_follows WHERE thread_id = ? AND user_id <> ? LIMIT 500", thread.id, user.id);
+      const followers = await all(app.db, "SELECT user_id FROM community_thread_follows WHERE thread_id = ? AND user_id <> ? LIMIT 200", thread.id, user.id);
       for (const f of followers) await notify(app, { userId: f.user_id, kind: "followed", threadId: thread.id, postId: post.id, actorUserId: user.id });
     }
   },

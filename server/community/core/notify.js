@@ -15,7 +15,7 @@ export async function notify(app, { userId, kind, threadId, postId = null, actor
   if (actorUserId && await first(db, "SELECT 1 AS n FROM community_blocks WHERE (user_id = ?1 AND blocked_user_id = ?2) OR (user_id = ?2 AND blocked_user_id = ?1)", userId, actorUserId)) return false;
   if (!await first(db, "SELECT 1 AS n FROM community_members WHERE user_id = ?", userId)) return false;
   const r = await run(db, `INSERT INTO community_notifications (id, user_id, kind, ref, thread_id, post_id, actor_user_id, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (user_id, ref) DO UPDATE SET kind = excluded.kind
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (user_id, ref) DO UPDATE SET kind = excluded.kind, read_at = NULL, created_at = excluded.created_at, actor_user_id = excluded.actor_user_id
       WHERE ${RANK.replace("?", "excluded.kind")} > ${RANK.replace("?", "community_notifications.kind")}`, newId("ntf"), userId, kind, postId || threadId, threadId, postId, actorUserId, now());
   return Boolean(r.meta.changes);
 }

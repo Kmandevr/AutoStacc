@@ -15,9 +15,11 @@ const AT = /(?:^|[^A-Za-z0-9_])@([A-Za-z0-9][A-Za-z0-9._-]*(?: [A-Za-z0-9][A-Za-
 const NO_STORE = { "Cache-Control": "no-store" };
 
 // The name keys a text might mention: every prefix of each @-run, longest first.
-export function candidates(text) {
+export function candidates(raw) {
+  // Code (fenced or inline) and quoted lines don't mention anyone.
+  const text = String(raw).replace(/```[\s\S]*?```/g, " ").replace(/`[^`\n]*`/g, " ").split("\n").filter((l) => !/^\s*>/.test(l)).join("\n");
   const out = [];
-  for (const m of String(text).matchAll(AT)) {
+  for (const m of text.matchAll(AT)) {
     const words = m[1].split(" ");
     const keys = [];
     for (let n = words.length; n >= 1; n--) {
@@ -72,5 +74,6 @@ export default {
     threadStarted: (app, { user, thread, body }) => tell(app, { user, thread, post: null, body }),
     replyPosted: (app, { user, thread, post }) => tell(app, { user, thread, post, body: post.body })
   },
-  erase: (db, userId) => [stmt(db, "DELETE FROM community_mention_prefs WHERE user_id = ?", userId)]
+  erase: (db, userId) => [stmt(db, "DELETE FROM community_mention_prefs WHERE user_id = ?", userId)],
+  exportData: async (db, userId) => ({ alerts: !(await first(db, "SELECT 1 AS n FROM community_mention_prefs WHERE user_id = ? AND alerts = 0", userId)) })
 };
