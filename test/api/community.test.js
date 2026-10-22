@@ -8,5 +8,6 @@ import upkeep, { SWEEP_TOKEN } from "./community-upkeep.suite.js";
 import legal from "./community-legal.suite.js";
 import rich from "./community-rich.suite.js";
 import automod from "./community-automod.suite.js";
+import keepup from "./community-keepup.suite.js";
 
-runGroup({ name: "community", ports: { mock: 8840 }, stripe: false, vars: { FEATURES_ON: "community.forum", SWEEP_TOKEN } }, [community, posting, moderation, upkeep, legal, rich, automod]);
+runGroup({ name: "community", ports: { mock: 8840 }, stripe: false, vars: { FEATURES_ON: "community.forum", SWEEP_TOKEN } }, [community, posting, moderation, upkeep, legal, rich, automod, keepup]);

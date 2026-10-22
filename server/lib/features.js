@@ -60,7 +60,12 @@ export const FEATURES = {
   "community.linkRules": { on: true, label: "Community: link approval (safe list, ban list, team's allowed sites)" },
   "community.wordFilter": { on: true, label: "Community: word and phrase filters" },
   "community.newAccount": { on: true, label: "Community: rules for new accounts and new members" },
-  "community.patterns": { on: true, label: "Community: pattern rules built from a form" }
+  "community.patterns": { on: true, label: "Community: pattern rules built from a form" },
+  "community.follows": { on: true, label: "Community: follow a take" },
+  "community.joined": { on: true, label: "Community: join a space (its takes first)" },
+  "community.saved": { on: true, label: "Community: save for later" },
+  "community.mentions": { on: true, label: "Community: @mentions" },
+  "community.inbox": { on: true, label: "Community: on-site inbox (the bell)" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

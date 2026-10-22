@@ -30,5 +30,10 @@ window.FEATURES = {
  "community.linkRules": true,
  "community.wordFilter": true,
  "community.newAccount": true,
- "community.patterns": true
+ "community.patterns": true,
+ "community.follows": true,
+ "community.joined": true,
+ "community.saved": true,
+ "community.mentions": true,
+ "community.inbox": true
 };
