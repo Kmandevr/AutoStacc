@@ -64,7 +64,7 @@ window.LEGAL = [
           "**gs.dont_remember**: only if you untick \"Keep me logged in\", so you're signed out when you close the browser.",
           "**gs_guest**: lets a guest open their own orders (only after a guest checkout; 30 days).",
           "In your browser's storage, never sent anywhere: your cart, light or dark theme, whether the sidebar is open, whether sounds are on, a note that this browser was signed in (not who), and, until you close the tab, the email and promo code you typed at checkout.",
-          "**The store's history**, also only in your browser: which products you open, preview, add to your cart, save or mark \"not interested\", which filters you use and what you search for (in the store, on [Projects](/projects) and on [Explore](/explore)), which picks you were shown, plus the genres and kinds you choose, for at most 90 days. The home page also reads it, without sending it, to suggest projects whose genres match. Forget it or turn it off on the [store](/shop) or the [home page](/)."
+          "**The store's history**, also only in your browser: which products you open, preview, add to your cart, save or mark \"not interested\", which filters you use and what you search for (in the store, on [Discover](/discover?tab=projects) and on [Explore](/explore)), which picks you were shown, plus the genres and kinds you choose, for at most 90 days. The home page also reads it, without sending it, to suggest projects whose genres match. Forget it or turn it off on the [store](/shop) or the [home page](/)."
         ] },
         "No advertising, analytics or cross-site tracking cookies are used."
       ] },

@@ -1,7 +1,7 @@
 ---
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects and creators browsers and their APIs, /explore for releases and events, the /events calendar, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
-covers: [projects.html, creators.html, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
+covers: [discover.html, js/discover.js, css/discover.css, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
 updated: 2026-10-22
 ---
 
@@ -15,7 +15,11 @@ Owner decision 2026-10-09 ([decisions](decisions.md)): projects get their own br
 - **Browse layout** (`js/browse-shelves.js`, `css/shelves.css`, `GS.shelves`): a spotlight banner, sideways rows that snap (arrows with a mouse, a See all end card) shown only from 4 items, and tabs.
 - **Spotlight:** the admins' picks first (Control Center › Manage › Spotlight, `server/spotlight/`, `spotlight_picks`, audited; public `GET /api/spotlight?page=discover|store|explore`, ids only), then a fair rotation the page computes from what it already lists: a new order each day (a stable hash of the date and id), so every creator gets equal turns and nothing is ranked by popularity (ranking stays an open question in [vision](vision.md)).
 
-## Projects (`/projects`)
+## Discover (`/discover`; owner, 2026-10-22, #208)
+
+One page for creators, projects and communities, never products, with link tabs `?tab=all|creators|projects|communities` (`js/discover.js` removes the closed tabs' panels before the browsers below run, so only the open one loads; each browser keeps `tab` in the address). **All** is the spotlight (picks, then the fair rotation) and rows: Active this month, New on AutoStacc, Creators, one per genre, Communities (from `GET /api/community/spaces`); rows need 4 items, and while there are few the page leads with the spotlight and a "Become a creator" invitation. **Communities** lists every public space. `/projects` and `/creators` answer a 301 to the matching tab. The sections below describe the Projects and Creators tabs.
+
+## Projects (`/discover?tab=projects`)
 
 Every visible project: AutoStacc's own and published Studio projects of active creators. A Studio project is marked **Unverified creator** until AutoStacc trusts its creator. Anyone can follow it and switch on Auto-Stacc, verified or not. The follow control says what each does: following lists new releases (paid ones still need buying); Auto-Stacc, off until switched on, adds the project's free items to Your Stacc.
 
@@ -35,7 +39,7 @@ Every visible project: AutoStacc's own and published Studio projects of active c
 - **Cards:** `js/project-card.js` (`GS.projectCard`).
 - **Follow controls:** `js/follow.js`, a drop-in for any `[data-follow-slot]`. It tells other features who is followed (`gs:follows`).
 
-## Creators (`/creators`)
+## Creators (`/discover?tab=creators`)
 
 Built 2026-10-21 (owner: "all projects should be credited projects"). The people and teams behind the projects, browsable on their own; linked from the sidebar's Projects group and the footer.
 
@@ -43,7 +47,7 @@ Built 2026-10-21 (owner: "all projects should be credited projects"). The people
 - **API:** `GET /api/creators` (`server/projects/creators.js`, routed in `server/projects/routes.js`). Parameters: `q` (creator and project names, up to 80 characters), `sort=name|newest|projects`, `page` (24 a page). Malformed input is a 400 `invalid_filter`. The answer holds `total`, `page`, `pages`, `sort` and `creators`, each with only `name`, `slug`, `path`, `firstParty`, `verified` and its visible `projects` (name and address): what its `/<creator>` profile already shows. Nothing depends on who asks, so it is cached publicly for a minute; 120 requests a minute per client (`limit(app, "browse")`).
 - **Page:** `creators.html` (head, canonical and sitemap entry from the build; a plain built list of first-party creators between `<!-- creators:start -->` markers), enhanced by `js/creators-browse.js` (`css/creators.css`). Each card: name, its initial as avatar, a short bio only for first-party creators (their `summary`, read in the browser from `data/creators.js`), its projects and a link to `/<creator>`. The address holds the state (`/creators?q=&sort=&page=`). Offline, the page keeps its built list.
 
-## Releases and events (`/explore`)
+## New & upcoming: releases and events (`/explore`)
 
 `/music` and `/news` stay redirects to Glitches & Stitches' pages (`/news` now to its home, since news is hidden, #174), so the platform view is a page of its own. It has two views as tabs:
 

@@ -53,7 +53,7 @@
     if (!res.ok) return restore();
     const list = res.data.projects.filter((p) => Boolean(p.following) === following);
     if (following && !list.length) {
-      root.innerHTML = `<p class="small-print">${res.data.signedIn ? "You don't follow any projects yet." : "Log in to see the projects you follow."} <a href="/projects">Find projects to follow</a>.</p>`;
+      root.innerHTML = `<p class="small-print">${res.data.signedIn ? "You don't follow any projects yet." : "Log in to see the projects you follow."} <a href="/discover">Find projects to follow</a>.</p>`;
       return;
     }
     if (!list.length) return restore();

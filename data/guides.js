@@ -92,7 +92,7 @@ window.GUIDES = {
       title: "Following projects and Auto-Stacc",
       summary: "What following a project does, how Auto-Stacc adds free releases for you, and what it never does.",
       body: [
-        "Follow a project from [Projects](/projects) or any project card (you'll need an account). Its new products you don't own yet then show in Your Stacc under **New from projects you follow**.",
+        "Follow a project from [Discover](/discover?tab=projects) or any project card (you'll need an account). Its new products you don't own yet then show in Your Stacc under **New from projects you follow**.",
         { heading: "Auto-Stacc", id: "auto-stacc" },
         "Auto-Stacc is a switch on each project you follow, off until you turn it on. With it on, that project's **free** products are added to Your Stacc for you, when you follow and whenever Your Stacc opens. They show as added by Auto-Stacc.",
         { list: [

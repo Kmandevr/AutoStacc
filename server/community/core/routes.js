@@ -13,7 +13,8 @@ import { isTeam, mayPublishUpdate } from "./access.js";
 import { editPost, deletePost } from "./edits.js";
 import { mine } from "./mine.js";
 import { purge } from "./purge.js";
-import { threadPath } from "./render-parts.js";
+import { threadPath, spacePath } from "./render-parts.js";
+import { listSpaces } from "./spaces.js";
 import { featureRoutes, state, featuresOn } from "./hooks.js";
 import { holdRoutes } from "./holds-routes.js";
 
@@ -97,7 +98,17 @@ async function spaceMine(app, { spaceId }) {
   return json({ signedIn: Boolean(user), team, mayUpdate, name: space.name, state: space.state, stateReason: space.state_reason || null }, 200, NO_STORE);
 }
 
+// Every space the public sees, for Discover's Communities (owner, 2026-10-22): names, kinds and addresses only.
+async function spaces(app) {
+  requireFeature(app, "community.forum");
+  await limit(app, "browse", 120, 60);
+  const rows = await listSpaces(app.db);
+  return json({ spaces: rows.filter((s) => s.state !== "archived").map((s) => ({ id: s.id, name: s.name, kind: s.kind, official: Boolean(s.official),
+    description: s.description || "", path: spacePath(s), readOnly: s.state !== "open" })) }, 200, { "Cache-Control": "public, max-age=60" });
+}
+
 export const routes = [
+  ["GET", "/api/community/spaces", spaces],
   ["GET", "/api/community/me", me],
   ["PUT", "/api/community/me", setMe],
   ["POST", "/api/community/threads", newThread],

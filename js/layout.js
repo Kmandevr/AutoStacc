@@ -1,6 +1,6 @@
-// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Explore,
-// Community, About; Projects: Projects and Creators, the same for every creator; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
-// Create account, cart count, the slot js/theme.js fills, and the account menu's slot, [data-account-menu], which
+// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Discover,
+// New & upcoming, Community; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
+// Create account, cart count, and the account menu's slot, [data-account-menu], which
 // js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
 // carry data-auth="in" and start hidden; js/account-nav.js shows the set that matches the visitor. On a computer the
 // sidebar is an icon rail that expands (remembered); on phones it is a drawer. <body data-page> marks the current page
@@ -33,7 +33,9 @@
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
   // Studio, Settings and the rest of the account live in the top bar's account menu (js/account-nav.js).
   const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"]];
-  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/explore", "Explore", "explore", "explore"], ["/community", "Community", "community", "community"], ["/about", "About", "about", "about"]];
+  // Owner, 2026-10-22: Discover holds creators, projects and communities; New & upcoming (/explore) releases and
+  // events; About lives in the footer.
+  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/discover", "Discover", "discover", "creators"], ["/explore", "New & upcoming", "explore", "explore"], ["/community", "Community", "community", "community"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
@@ -54,11 +56,6 @@
           <ul aria-labelledby="side-platform">
             ${PLATFORM.map(([href, label, key, icon]) => item(href, label, ICONS[icon], current(key))).join("")}
           </ul>
-          <p class="side-label" id="side-projects">Projects</p>
-          <ul aria-labelledby="side-projects">
-            ${item("/projects", "Projects", ICONS.all, current("projects"))}
-            ${item("/creators", "Creators", ICONS.creators, current("creators"))}
-          </ul>
           <div data-auth="in" hidden>
             <p class="side-label" id="side-you">You</p>
             <ul aria-labelledby="side-you">
@@ -71,7 +68,7 @@
       <div class="side-scrim" aria-hidden="true"></div>
       <nav class="tabbar" aria-label="Quick links">
         <a href="/shop"${current("shop")}>${ICONS.store}<span>Store</span></a>
-        <a href="/projects"${current("projects")}>${ICONS.all}<span>Projects</span></a>
+        <a href="/discover"${current("discover")}>${ICONS.creators}<span>Discover</span></a>
         <a href="/community"${current("community")}>${ICONS.community}<span>Community</span></a>
         <a href="/library" data-auth="in" hidden${current("library")}>${ICONS.stacc}<span>Your Stacc</span></a>
         <a href="/login" data-auth="out"${current("login")}>${ICONS.account}<span>Log in</span></a>
@@ -151,7 +148,7 @@
           <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
           ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
-        ${col("Explore", [["/shop", "Store"], ["/projects", "Projects"], ["/creators", "Creators"], ["/explore", "Releases"], ["/events", "Events"], ["/about", "About"], ["/community", "Community"], ["/studio", "Studio"]])}
+        ${col("Explore", [["/shop", "Store"], ["/discover", "Discover"], ["/explore", "New & upcoming"], ["/events", "Events"], ["/community", "Community"], ["/studio", "Studio"], ["/about", "About"]])}
         ${col("Help", [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/security", "Security"]])}
         ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/copyright", "Copyright"], ["/community-rules", "Community rules"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>

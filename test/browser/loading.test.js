@@ -12,7 +12,7 @@ const { open } = t;
 async function withHelper(device = DESK, reducedMotion = "no-preference") {
   const { ctx, page } = await open(device);
   await page.emulateMedia({ reducedMotion });
-  await page.goto("/projects");
+  await page.goto("/discover?tab=projects");
   await settle(page);
   await page.addStyleTag({ url: "/css/skeleton.css" });
   await page.addScriptTag({ url: "/js/skeleton.js" });

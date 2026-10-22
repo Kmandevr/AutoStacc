@@ -22,8 +22,7 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | `index.html` (`/`) | Public home page: the artists, picks from the store, how it works, and following projects for their free releases |
 | `shop.html` (`/shop`) | All products, with search and filters (kind, genre, tempo, key and more; [docs/discovery.md](docs/discovery.md)) |
 | `explore.html` (`/explore`) | New releases, news and shows from every project, searchable and filterable |
-| `projects.html` (`/projects`) | Every project: follow it, or switch on Auto-Stacc for its free releases |
-| `creators.html` (`/creators`) | Every creator and their projects, searchable and sortable |
+| `discover.html` (`/discover`) | Discover: creators, projects and communities in tabs, with a spotlight and rows; follow projects or switch on Auto-Stacc (`/projects` and `/creators` redirect to its tabs) |
 | `about.html` (`/about`) | How buying, downloads and Auto-Stacc work |
 | `autostacc.html` (`/autostacc`) | AutoStacc's creator profile (generated from `data/creators.js`) |
 | `autostacc/glitches-and-stitches.html` and `autostacc/glitches-and-stitches/` | Glitches & Stitches' home, music, news and press pages, in its own skin |

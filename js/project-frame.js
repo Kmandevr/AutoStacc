@@ -32,7 +32,7 @@
     <div class="as-strip">
       <a class="as-home" href="/">${MARK}<span>${e(SITE.name || "Home")}</span></a>
       <nav class="as-links" aria-label="${e(SITE.name || "Site")}">
-        <a href="/shop">Store</a><a href="/projects">Projects</a>
+        <a href="/shop">Store</a><a href="/discover">Discover</a>
         <a href="/library" data-auth="in" hidden>Your Stacc</a>
       </nav>
       <div class="topbar-tools">

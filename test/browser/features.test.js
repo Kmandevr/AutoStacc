@@ -369,7 +369,7 @@ describe("features in the browser", () => {
   test("discovery pages: filter and follow on /projects, Your Stacc search, /explore views, the home hub and dashboard sections", async () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, unique("discover"));
-    await page.goto("/projects");
+    await page.goto("/discover?tab=projects");
     const gs = page.locator(".pcard[data-project='glitches-and-stitches']");
     await gs.waitFor();
     assert.equal(await gs.locator("text=Unverified creator").count(), 0, "AutoStacc's own project is verified");

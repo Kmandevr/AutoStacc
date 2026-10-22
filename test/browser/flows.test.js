@@ -151,7 +151,7 @@ describe("store in the browser", () => {
     await signUp(page, unique("stacc"));
     await page.goto("/library");
     await page.waitForSelector("text=Nothing Stacc'd yet.");
-    await page.goto("/projects");
+    await page.goto("/discover?tab=projects");
     await page.click("[data-follow='glitches-and-stitches']");
     await page.check("[data-auto='glitches-and-stitches']");
     await page.waitForSelector("text=Auto-Stacc on.");
@@ -172,7 +172,7 @@ describe("store in the browser", () => {
   // Signs up, follows Glitches & Stitches with Auto-Stacc (so a free item is owned), then opens Your Stacc.
   async function ownedStacc(page) {
     await signUp(page, unique("worker"));
-    await page.goto("/projects");
+    await page.goto("/discover?tab=projects");
     await page.click("[data-follow='glitches-and-stitches']");
     await page.check("[data-auto='glitches-and-stitches']");
     await page.waitForSelector("text=Auto-Stacc on.");
@@ -582,7 +582,7 @@ describe("store in the browser", () => {
       await page.waitForURL(new RegExp(`/login\\?next=${encodeURIComponent(p)}$`));
       await page.waitForSelector("[data-form=signin]");
     }
-    for (const p of ["/projects", "/shop", "/about"]) {
+    for (const p of ["/discover", "/shop", "/about"]) {
       await page.goto(p);
       assert.equal(new URL(page.url()).pathname, p, `${p} stays public`);
     }

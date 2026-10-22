@@ -131,7 +131,7 @@
   // Published products of followed projects that aren't in the Stacc yet. Never implies ownership.
   function following(follows, products, ctx) {
     if (!follows) return "";
-    if (!follows.length) return `<p class="small-print stacc-follow-hint">Follow <a href="/projects">projects</a> to see their new releases here, and switch on Auto-Stacc to add their free ones automatically.</p>`;
+    if (!follows.length) return `<p class="small-print stacc-follow-hint">Follow <a href="/discover">projects</a> to see their new releases here, and switch on Auto-Stacc to add their free ones automatically.</p>`;
     if (!products.length) return "";
     return `<section class="stacc-new"><h2>New from projects you follow</h2><ul class="tiles">${products.map((p) =>
       `<li><a class="tile" href="${e(p.path || `/shop/${p.id}`)}"><span class="tag">${e(p.projectName || ctx.names.project(p.projectId))}</span><strong>${e(p.title)}</strong><span class="price">${p.free ? "Free" : cents(p.priceCents, p.currency)}</span></a></li>`).join("")}</ul></section>`;

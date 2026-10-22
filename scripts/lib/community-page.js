@@ -30,7 +30,7 @@ function communityPage(SITE) {
         <div class="community-closed">
           <h2>Opening soon</h2>
           <p>The community isn't open yet. Its rules are already published: read the <a href="/community-rules">community rules</a>.</p>
-          <p>Until then: <a href="/guide">Guides</a>, <a href="/help">Help</a> and <a href="/projects">Projects</a>.</p>
+          <p>Until then: <a href="/guide">Guides</a>, <a href="/help">Help</a> and <a href="/discover">Discover</a>.</p>
         </div>
         ${me}
       </div>

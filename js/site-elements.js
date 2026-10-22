@@ -108,7 +108,7 @@
     },
     follow: (b, ctx) => {
       const p = ctx.projects.get(b.project);
-      return p ? `<p class="cs-button"><a class="cs-btn" href="/projects?q=${esc(encodeURIComponent(p.name))}">${esc(b.label || `Follow ${p.name} on AutoStacc`)}</a></p>` : "";
+      return p ? `<p class="cs-button"><a class="cs-btn" href="/discover?tab=projects&amp;q=${esc(encodeURIComponent(p.name))}">${esc(b.label || `Follow ${p.name} on AutoStacc`)}</a></p>` : "";
     },
     cart: (b) => `<p class="cs-button"><a class="cs-btn outline" href="/cart">${esc(b.label || "Your AutoStacc cart")}</a></p>`,
     divider: () => "<hr>",

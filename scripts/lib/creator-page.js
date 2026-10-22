@@ -1,5 +1,5 @@
 // The profile page of each first-party creator (data/creators.js): /<creator>, listing its published projects as
-// cards, with the same card markup as the /projects directory (js/projects.js upgrades it, js/follow.js adds the follow controls).
+// cards, with the same card markup as the Discover projects tab (js/projects.js upgrades it, js/follow.js adds the follow controls).
 // Creators made in the Studio get their profile from the store instead (`renderProfile` in server/sites/render.js), in the same layout.
 const { abs, projectPath } = require("./data");
 const H = require("./head");
@@ -7,7 +7,7 @@ const { shell, hero, clip } = require("./pages");
 
 const { esc } = H;
 
-// One project card (also used for the /projects directory list by scripts/build.js).
+// One project card (also used for the Discover projects tab list by scripts/build.js).
 const projectCard = (x) => `<li class="project-card${x.skin ? ` look-${esc(x.id)}` : ""}"><h3><a href="${esc(projectPath(x.id))}">${x.logoFull
   ? `<img class="project-logo-full" src="/${esc(x.logoFull.src)}" width="${esc(x.logoFull.width)}" height="${esc(x.logoFull.height)}" alt="${esc(x.name)}">`
   : `${x.logo ? `<img class="project-logo" src="/${esc(x.logo)}" width="56" height="56" alt="">` : ""}${esc(x.name)}`}</a></h3><p>${esc(x.summary || "")}</p></li>`;
@@ -29,7 +29,7 @@ function creatorPage(SITE, data, c) {
 
     <section>
       <div class="wrap">
-        <div class="section-head"><h2>Projects</h2><a href="/projects">All projects on ${esc(SITE.name)} &rarr;</a></div>
+        <div class="section-head"><h2>Projects</h2><a href="/discover?tab=projects">All projects on ${esc(SITE.name)} &rarr;</a></div>
         <ul class="projects" data-project-list data-creator="${esc(c.id)}">${projects.map(projectCard).join("")}</ul>
       </div>
     </section>`;

@@ -31,7 +31,7 @@ const outputs = new Map(); // file -> content
 // Each writes its own <title> and <meta name="description">, except the home page (from data/site.js) and each
 // project's home, <its folder>.html (from its entry in data/projects.js); everything else in the head block is
 // generated. A page opts out of search with its own <meta name="robots" content="noindex">.
-const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", projects: "CollectionPage", creators: "CollectionPage", explore: "CollectionPage", press: "AboutPage", about: "AboutPage" };
+const PAGE_TYPES = { music: "CollectionPage", shop: "CollectionPage", discover: "CollectionPage", explore: "CollectionPage", press: "AboutPage", about: "AboutPage" };
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const strip = (html) => html.replace(new RegExp(`${H.START.slice(0, 15)}[\\s\\S]*?${H.END}`), "");
 const decode = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
@@ -42,7 +42,7 @@ const creatorDirs = data.creators.map((c) => c.id);
 const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...creatorDirs.flatMap(htmlUnder)].filter((f) => !read(f).includes(P.GENERATED))
   .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
 const pages = []; // every page with its metadata, for the sitemap
-// First-party creators with a published project, for /creators' ItemList and its built list (js/creators-browse.js
+// First-party creators with a published project, for /discover's ItemList and its built list (js/creators-browse.js
 // replaces it with every visible creator, Studio ones included, from GET /api/creators).
 const listedCreators = data.creators.filter((c) => !c.draft && data.projects.some((x) => !x.draft && x.creator === c.id));
 const creatorLinks = listedCreators.map((c) => `<li class="ccard-static"><h3><a href="/${H.esc(c.id)}">${H.esc(c.name)}</a></h3>${c.summary ? `<p>${H.esc(c.summary)}</p>` : ""}</li>`).join("");
@@ -81,8 +81,7 @@ for (const file of handPages) {
       : [["Home", "/"], [name, p]];
     // An ItemList of what a list page shows, when data/ holds it (products, releases and events are in the store database).
     const lists = {
-      projects: data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)]),
-      creators: listedCreators.map((c) => [c.name, "/" + c.id])
+      discover: [...listedCreators.map((c) => [c.name, "/" + c.id]), ...data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)])]
     }[key];
     const extra = { breadcrumb: H.breadcrumbs(SITE, crumbs) };
     if (lists && lists.length) extra.mainEntity = H.itemList(SITE, lists);
