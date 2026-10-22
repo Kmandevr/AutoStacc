@@ -1,27 +1,20 @@
 # Handoff
-Commit: eabb7bc
-Branch: ccr-0cc8daba-j2q8kb
+Branch: ccr-5bddfabf-4r2cg1 (pushed after every step)
 
 ## Goal
-Pack Builder and Pac editor (plan: docs/packs.md). Phases 0–9 and the Pac editor are merged (#109, #110, #114, #115):
-one drop zone (file, folder or ZIP) that opens in the visual builder and waits for Publish; replace-or-add for a whole
-Pac; file cards, drag and drop, previews, read me. Owner's answers: docs/decisions.md (2026-10-15 entries).
+Owner's UX overhaul #204: work through batches #205 to #210 in order without asking unless blocked. Owner asked:
+token efficiency and quality over speed, don't run tests unless needed (node_modules/wrangler are not installed here,
+so API/browser suites can't run locally; CI runs them), commit and push often. Plan page:
+https://claude.ai/artifact/7XKCsCFBi35Lm3zcuJbHUJ. Decisions: docs/decisions.md 2026-10-22.
 
-## Done and verified
-- PR #115 merged with CI green (store, store-browser, browser, test, image, seo, docs).
-- After it: limits and warnings (4 GB per file in `server/packs/accept.js`, browser checks in `js/pac-drop.js`,
-  preview cutting up to 200 MB in `js/pac-previews.js`, builder note in `js/pac-editor.js`), previews GET makes no Pac
-  (`server/packs/previews.js`), repo-map rules in `.claude/tools/tree.sh`, CLAUDE.md at 1,100 words.
-- npm test 140/140; packs API group 43/43.
-
-## Open
-- Owner decisions and setup: #111. Phase 10 (optional previews, fingerprints): #112. Analysis calibration: #113.
-- Not done from review (judged not worth it now): `prompt()`/`confirm()` dialogs in the builder; the part-upload retry
-  loop is duplicated in `js/pac-add.js` and `js/packs-upload.js`; GET of an addition merges a finished job (as the
-  version poll does). `js/pac-editor.js` is about 195 lines.
+## Done
+- #205 (community), all pushed: browser feature switches follow production FEATURES_ON (build.js reads wrangler.toml);
+  Post as team (migration 0064, as_team), clearer name step, new-take form filters channels/kinds (spaceMine mayUpdate,
+  name); G&S community feature + admin team in first-party spaces + project nav link + breadcrumb; search ?q= and
+  "only this space"; Saved empty state; profile cards show staff/creator teams; Team desk in the Studio
+  (/studio?desk=<id>, js/community-desk.js tabs, js/studio-desk.js, slim link on space page); slow mode desk control.
+  New API tests added (community-posting, community-projects suites) but NOT run locally.
+- Not done in #205 (moved): waiting count + top-bar bell -> #209.
 
 ## Next
-Run the full suites, open a PR for the limits and hygiene work, merge on green. Then pick from #111–#113.
-
-## Read first
-docs/packs.md ("Pac editor"), docs/decisions.md (last entries), server/packs/editor-routes.js, js/pac-drop.js
+#206 smooth and alive, then #207, #208, #209, #210. Open a PR only if the owner asks (CLAUDE.md).
