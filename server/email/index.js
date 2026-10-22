@@ -5,13 +5,37 @@ import { render, senderOf } from "./templates.js";
 import { providers } from "./providers.js";
 import { all, first, run, stmt, newId, now } from "../lib/db.js";
 
+const CLAIM_MS = 5 * 60 * 1000;
+
 export async function sendEmail(app, kind, to, data, { dedupeKey } = {}) {
   const { config, db } = app;
   const key = dedupeKey || null;
+  let claimed = null;
   if (key) {
     const prior = await first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", key);
     if (prior && prior.status !== "failed") return { status: "duplicate" };
+    // Claim the key before sending: whoever's insert (or takeover of a stale claim) changes the row sends, the other stops.
+    // The claim carries a token, so a slow send that outlives its claim never releases the one that replaced it. A caller
+    // that gets "in_flight" (another request is sending this right now) should treat it as not yet done.
+    claimed = newId("clm");
+    const claim = await run(db, `INSERT INTO email_claims (dedupe_key, claimed_at, token) VALUES (?1, ?2, ?4)
+      ON CONFLICT(dedupe_key) DO UPDATE SET claimed_at = ?2, token = ?4 WHERE claimed_at < ?3`, key, now(), new Date(Date.now() - CLAIM_MS).toISOString(), claimed);
+    if (!claim.meta.changes) return { status: "in_flight" };
   }
+  try {
+    // Looked again under the claim: a send that finished between the first look and the claim must not go twice.
+    if (key) {
+      const again = await first(db, "SELECT status FROM email_events WHERE dedupe_key = ?", key);
+      if (again && again.status !== "failed") return { status: "duplicate" };
+    }
+    return await deliver(app, kind, to, data, key);
+  } finally {
+    if (claimed) await run(db, "DELETE FROM email_claims WHERE dedupe_key = ? AND token = ?", key, claimed).catch(() => {});
+  }
+}
+
+async function deliver(app, kind, to, data, key) {
+  const { config, db } = app;
   const msg = { from: senderOf(kind) === "store" ? config.emailFrom : config.emailFromNoreply, to, tags: [kind], ...render(kind, data) };
   let status = config.emailProvider === "log" ? "logged" : "sent";
   let providerId = "", error = null;
@@ -41,5 +65,8 @@ export const emailsTo = (db, email) =>
 // replayed webhook still can't mail twice.
 export const anonymiseEmailLogStmt = (db, email, anon) =>
   stmt(db, `UPDATE email_events SET to_email = ?, body_text = NULL,
-      dedupe_key = CASE WHEN instr(dedupe_key, ?) > 0 THEN 'erased:' || id ELSE dedupe_key END
+      dedupe_key = CASE WHEN instr(lower(dedupe_key), lower(?)) > 0 THEN 'erased:' || id ELSE dedupe_key END
     WHERE to_email = ?`, anon, email, email);
+
+// A claim left by a crashed send can hold a key that embeds the address; erased with the account.
+export const eraseEmailClaimsStmt = (db, email) => stmt(db, "DELETE FROM email_claims WHERE instr(lower(dedupe_key), lower(?)) > 0", email);

@@ -2,7 +2,7 @@
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
 covers: [package.json, scripts/dev.js, scripts/dist.js, scripts/serve.js, wrangler.toml, server/lib/config.js, db/migrations/, test/, .github/workflows/store.yml, server/payments/index.js, server/email/, server/app.js, server/dev/, scripts/docs-test.js, .github/workflows/clear-status-on-close.yml, .github/workflows/codeql.yml, .github/dependabot.yml, SECURITY.md, LICENSE]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Development
@@ -88,6 +88,6 @@ Each note in `docs/` names the code it describes in its `covers:` frontmatter. `
 
 - **New product type:** one entry in `data/product-types.js`.
 - **New payment provider:** a file in `server/payments/` with `name`, `livemode`, `createCheckout`, `retrieveCheckout`, `refund` (and webhook verification producing the normalized event), plus one line in `server/payments/index.js` and its webhook route. Orders already store `provider`.
-- **New email provider:** one function in `server/email/providers.js`. **New email:** one template in `server/email/templates.js`, sent with `sendEmail(app, kind, to, data, { dedupeKey })`.
+- **New email provider:** one function in `server/email/providers.js`. **New email:** one template in `server/email/templates.js`, sent with `sendEmail(app, kind, to, data, { dedupeKey })` (the key is claimed before sending, so it goes once even from two requests at once).
 - **New entitlement source** (bundle, subscription): grant with `grantStmt` and a new `source_type` (add it to the CHECK in a migration).
 - **New API route:** add it to the owning module's `routes` table; a new module adds one import and one entry in `server/app.js`.
