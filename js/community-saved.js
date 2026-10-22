@@ -28,9 +28,10 @@
 
   async function list() {
     const r = await api("/api/community/saved");
-    if (!r.ok || !r.data.saved.length) return;
+    if (!r.ok) return;
     kit.notices.hidden = false;
     const d = el("details", { class: "cm-saved" }, el("summary", { text: `Saved (${r.data.saved.length})` }));
+    if (!r.data.saved.length) d.append(el("p", { class: "cm-small", text: "Nothing saved yet. Press Save on any take to keep it here." }));
     r.data.saved.forEach((x) => d.append(el("p", { class: "cm-small" }, el("a", { href: x.path, text: x.title }), ` · ${x.space}`)));
     kit.notices.append(d);
   }
