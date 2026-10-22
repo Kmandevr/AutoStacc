@@ -11,10 +11,11 @@
     ["todo", "To do", ["upkeep", "reports", "held", "appeals"]],
     ["members", "Members", ["bans"]],
     ["space", "Space", ["settings", "tags", "look", "welcome"]],
-    ["rules", "Rules", ["newmembers", "words", "links", "patterns", "selfpromo"]],
+    ["rules", "Rules", ["slowmode", "newmembers", "words", "links", "patterns", "selfpromo"]],
     ["log", "Log", ["log"]]
   ];
   const HINT = {
+    slowmode: "A wait between one person's posts, for busy moments. The team isn't slowed.",
     newmembers: "What new accounts may do in their first days.",
     words: "Words and phrases that hold a post for the team or refuse it.",
     links: "Sites whose links pass without waiting for the team.",
