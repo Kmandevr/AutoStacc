@@ -16,5 +16,11 @@ https://claude.ai/artifact/7XKCsCFBi35Lm3zcuJbHUJ. Decisions: docs/decisions.md 
   New API tests added (community-posting, community-projects suites) but NOT run locally.
 - Not done in #205 (moved): waiting count + top-bar bell -> #209.
 
+- #206 (feel), all pushed: frame space kept before paint + main fills screen + [data-browse] min-height (CLS 0.000 at
+  390px, <=0.017 at 1440px, scratchpad/browser/cls.js); drawer scrim fades (.open); press states; 44px targets; theme
+  switch = [data-theme-cycle] in account menu + footer (js/theme.js); "/" prefetched eagerly (unit test updated, passes);
+  G&S hero shorter on phones; html.fx-lite adaptive effects (theme.js heuristics + motion.js frame check); account
+  menu exit fade.
+
 ## Next
-#206 smooth and alive, then #207, #208, #209, #210. Open a PR only if the owner asks (CLAUDE.md).
+#207 building blocks, then #208, #209, #210. Open a PR only if the owner asks (CLAUDE.md).
