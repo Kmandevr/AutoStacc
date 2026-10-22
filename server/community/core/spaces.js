@@ -2,13 +2,16 @@
 // archived spaces (archived ones are read-only and still readable); creating and changing them comes with posting.
 import { first, all } from "../../lib/db.js";
 
+// A project space's canonical address, /<creator>/<project>/community (docs/community.md, "Addresses"); null for others.
+export const CANONICAL = `(SELECT '/' || c.slug || '/' || COALESCE(p.slug, p.id) || '/community' FROM projects p JOIN creators c ON c.id = p.creator_id WHERE p.id = community_spaces.project_id) AS canonical`;
+
 const KIND_ORDER = "CASE kind WHEN 'platform' THEN 0 WHEN 'project' THEN 1 ELSE 2 END";
 
-export const listSpaces = (db) => all(db, `SELECT id, slug, name, kind, official, description, state FROM community_spaces
+export const listSpaces = (db) => all(db, `SELECT id, slug, name, kind, official, description, state, ${CANONICAL} FROM community_spaces
   ORDER BY ${KIND_ORDER}, name COLLATE NOCASE LIMIT 500`);
 
 // The whole row, so columns a feature adds in its own migration reach its slots without the core naming them.
-export const getSpaceBySlug = (db, slug) => first(db, "SELECT *, project_id AS projectId, created_at AS createdAt FROM community_spaces WHERE slug = ?", slug);
+export const getSpaceBySlug = (db, slug) => first(db, `SELECT *, project_id AS projectId, created_at AS createdAt, ${CANONICAL} FROM community_spaces WHERE slug = ?`, slug);
 
 export const listChannels = (db, spaceId) => all(db, `SELECT id, slug, name, position, post_types AS postTypes, who_may_start AS whoMayStart
   FROM community_channels WHERE space_id = ? AND archived_at IS NULL ORDER BY position, name`, spaceId);

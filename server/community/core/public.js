@@ -49,6 +49,8 @@ async function home(app, url) {
 async function space(app, url, spaceSlug, channelSlug) {
   const s = await getSpaceBySlug(app.db, spaceSlug);
   if (!s) return null;
+  // A project space has one address, its project's; /community/<space> sends everyone there.
+  if (s.canonical && !app.canonicalServe) return { redirect: `${s.canonical}${channelSlug ? `/${channelSlug}` : ""}${url.search}` };
   const channels = await listChannels(app.db, s.id);
   const channel = channelSlug ? await getChannel(app.db, s.id, channelSlug) : null;
   if (channelSlug && !channel) return null;
@@ -122,7 +124,8 @@ export async function communityPage(app, template) {
   const cache = app.config.appEnv === "production" && typeof caches !== "undefined" ? caches.default : null;
   const { sort, page: n } = listParams(url);
   const keyQuery = /^\/community\/(t\/|sitemap\.xml$)/.test(url.pathname) ? "" : `?sort=${sort}&page=${n}`;
-  const key = new Request(url.origin + url.pathname + keyQuery, { method: "GET" });
+  // A project space served at its own address is cached under that address (where the purge after a write looks).
+  const key = new Request(url.origin + (app.cachePath || url.pathname) + keyQuery, { method: "GET" });
   const hit = cache ? await cache.match(key) : null;
   if (hit) return request.method === "HEAD" ? new Response(null, { status: hit.status, headers: hit.headers }) : hit;
   const page = await resolve(app, url);

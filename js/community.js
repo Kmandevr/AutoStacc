@@ -57,7 +57,7 @@
     return { wrap, box, clear: () => { box.value = ""; if (draftKey) draft.set(draftKey, ""); } };
   }
 
-  const TYPE = { discussion: "Discussion", question: "Question" };
+  const TYPE = { discussion: "Discussion", question: "Question", update: "Update" };
 
   function newTakeForm(box, channels, who) {
     const msg = status();

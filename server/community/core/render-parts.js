@@ -2,8 +2,9 @@
 // dates, a person's name with the features' mark beside it, plurals, and the empty kit.
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-export const spacePath = (space) => `/community/${space.slug}`;
-export const channelPath = (space, channel) => `/community/${space.slug}/${channel.slug}`;
+// A project space lives at its project's address (space.canonical, /<creator>/<project>/community); others under /community.
+export const spacePath = (space) => space.canonical || `/community/${space.slug}`;
+export const channelPath = (space, channel) => `${spacePath(space)}/${channel.slug}`;
 export const threadPath = (t) => `/community/t/${t.id}${t.slug ? "-" + t.slug : ""}`;
 
 // A kit with no features (tests, or every feature switched off): slots render nothing, replies keep their order.

@@ -6,7 +6,7 @@ import { fail } from "../../lib/http.js";
 import { slugify } from "./posting.js";
 
 export const MAX_CHANNELS = 15;
-const KINDS = ["discussion", "question"];
+const KINDS = ["discussion", "question", "update"];
 
 export async function setSpaceText(db, space, { description, rules }) {
   if (typeof description !== "string" || description.length > 500) fail(400, "invalid_field", "A description of up to 500 characters.", { field: "description" });
@@ -16,7 +16,7 @@ export async function setSpaceText(db, space, { description, rules }) {
 
 const types = (v) => {
   const list = Array.isArray(v) ? [...new Set(v)] : [];
-  if (!list.length || list.some((t) => !KINDS.includes(t))) fail(400, "invalid_field", "Pick discussions, questions or both.", { field: "postTypes" });
+  if (!list.length || list.some((t) => !KINDS.includes(t))) fail(400, "invalid_field", "Pick from discussions, questions and updates.", { field: "postTypes" });
   return list.join(",");
 };
 const who = (v) => (v === "everyone" || v === "team" ? v : fail(400, "invalid_field", "Everyone or the team.", { field: "whoMayStart" }));

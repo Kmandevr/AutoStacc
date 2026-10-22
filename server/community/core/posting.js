@@ -7,13 +7,14 @@
 import { first, stmt, newId, now } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { MAX_BODY } from "./format.js";
-import { isTeam, requirePoster } from "./access.js";
+import { isTeam, requirePoster, mayPublishUpdate } from "./access.js";
 import { check, emit } from "./hooks.js";
 import { holdStmts, requireRoom, batchPost } from "./holds.js";
+import { CANONICAL } from "./spaces.js";
 
 const BIDI = /[‎‏‪-‮⁦-⁩]/g;
 export const TITLE = { min: 5, max: 150 };
-export const STARTABLE = ["discussion", "question"];
+export const STARTABLE = ["discussion", "question", "update"];
 
 export const slugify = (title) => String(title).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
   .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60).replace(/-+$/, "") || "thread";
@@ -31,7 +32,7 @@ export function cleanBody(raw) {
   return b;
 }
 
-export const getSpace = (db, id) => first(db, "SELECT * FROM community_spaces WHERE id = ?", id);
+export const getSpace = (db, id) => first(db, `SELECT *, ${CANONICAL} FROM community_spaces WHERE id = ?`, id);
 const touchTeam = (db, space, at) => stmt(db, "UPDATE community_spaces SET last_team_activity_at = ? WHERE id = ?", at, space.id);
 
 export async function startThread(app, user, { channelId, type, title, body }) {
@@ -40,8 +41,10 @@ export async function startThread(app, user, { channelId, type, title, body }) {
   const space = await getSpace(app.db, channel.space_id);
   await requirePoster(app, user, space);
   const team = await isTeam(app, user, space);
-  if (channel.who_may_start === "team" && !team) fail(403, "team_only", "Only this space's team starts threads here.");
+  const publisher = type === "update" && await mayPublishUpdate(app, user, space);
+  if (channel.who_may_start === "team" && !team && !publisher) fail(403, "team_only", "Only this space's team starts threads here.");
   if (!STARTABLE.includes(type) || !channel.post_types.split(",").includes(type)) fail(400, "invalid_field", "This channel doesn't take that kind of post.", { field: "type" });
+  if (type === "update" && !publisher) fail(403, "team_only", "Only this space's team posts Updates.");
   const t = cleanTitle(title);
   const text = cleanBody(body);
   const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread: null, kind: "thread", type, title: t, body: text, team }));

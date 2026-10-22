@@ -94,7 +94,7 @@ export const noticesHook = () => '<div class="cm-notices" data-cm-notices hidden
 // Where the browser script (js/community.js) puts the "New take" form: the channels a visitor may post in, as JSON in
 // an attribute (escaped like any value). The script asks the API who the visitor is before showing anything.
 export function composeHook(space, channels, current = null) {
-  const list = (current ? [current] : channels).map((c) => ({ id: c.id, name: c.name, types: c.postTypes.split(",").filter((t) => t === "discussion" || t === "question"), team: c.whoMayStart === "team" }))
+  const list = (current ? [current] : channels).map((c) => ({ id: c.id, name: c.name, types: c.postTypes.split(",").filter((t) => t === "discussion" || t === "question" || t === "update"), team: c.whoMayStart === "team" }))
     .filter((c) => c.types.length);
   if (!list.length || space.state !== "open") return "";
   return `<div class="cm-compose" data-cm-compose="${esc(JSON.stringify(list))}" hidden></div>`;

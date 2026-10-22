@@ -35,5 +35,6 @@ import welcome from "./welcome/index.js";
 import look from "./look/index.js";
 import teamtools from "./teamtools/index.js";
 import profilecard from "./profilecard/index.js";
+import projectspaces from "./projectspaces/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns, follows, joined, saved, mentions, inbox, search, tags, similar, selfpromo, welcome, look, teamtools, profilecard]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns, follows, joined, saved, mentions, inbox, search, tags, similar, selfpromo, welcome, look, teamtools, profilecard, projectspaces]) register(f);
