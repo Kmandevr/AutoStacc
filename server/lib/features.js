@@ -65,7 +65,10 @@ export const FEATURES = {
   "community.joined": { on: true, label: "Community: join a space (its takes first)" },
   "community.saved": { on: true, label: "Community: save for later" },
   "community.mentions": { on: true, label: "Community: @mentions" },
-  "community.inbox": { on: true, label: "Community: on-site inbox (the bell)" }
+  "community.inbox": { on: true, label: "Community: on-site inbox (the bell)" },
+  "community.search": { on: true, label: "Community: search" },
+  "community.tags": { on: true, label: "Community: tags" },
+  "community.similar": { on: true, label: "Community: similar questions while typing a title" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));
