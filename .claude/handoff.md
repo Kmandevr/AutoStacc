@@ -31,6 +31,16 @@ https://claude.ai/artifact/7XKCsCFBi35Lm3zcuJbHUJ. Decisions: docs/decisions.md 
   store project matches / Shop by project. Open items listed in the #208 comment (signed-in /, rows on explore/store,
   community/guides headers, G&S show more).
 
-## Next
-#209 dashboards (admin switches grouped + stats tabs), #210 (store dead ends, About draft for sign-off), then the
-#208 leftovers. Open a PR only if the owner asks (CLAUDE.md).
+- #209, partly: switches grouped + single home + paused banner; stats tabs; top-bar bell (js/account-nav.js).
+- #210, partly: store dead ends fixed; About draft posted on #210 for the owner's sign-off (not on the site yet).
+- Checks run at the end: build clean, seo-test PASS, docs-test PASS, unit tests 228/228. API and browser suites
+  not run here (no node_modules/wrangler); CI will run them.
+
+## Next (open items, also listed in the #208, #209 and #210 comments)
+- #210: put the approved About wording in about.html (+ css/about.css), cut how-to copy where /guide covers it,
+  plain-word pairing for brand terms.
+- #208: signed-in / as personal home (+ /dashboard redirect, gate and browser tests), spotlight/rows on explore and
+  store, community/guides list-first headers, G&S "show more".
+- #209: one shared tabs component; personal home tabs; desk waiting counts in the bell.
+- #211: creator avatar and banner.
+- No PR opened (owner hasn't asked). Open a PR only if the owner asks (CLAUDE.md).
