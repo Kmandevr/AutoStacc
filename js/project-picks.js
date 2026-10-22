@@ -53,12 +53,14 @@
     if (!res.ok) return restore();
     const list = res.data.projects.filter((p) => Boolean(p.following) === following);
     if (following && !list.length) {
-      root.innerHTML = `<p class="small-print">${res.data.signedIn ? "You don't follow any projects yet." : "Log in to see the projects you follow."} <a href="/projects">Find projects to follow</a>.</p>`;
+      root.innerHTML = `<p class="small-print">${res.data.signedIn ? "You don't follow any projects yet." : "Log in to see the projects you follow."} <a href="/discover">Find projects to follow</a>.</p>`;
       return;
     }
     if (!list.length) return restore();
     const chosen = following ? list.slice(0, limit).map((p) => ({ p, why: "" })) : pick(list, limit);
-    root.innerHTML = `<div class="pgrid">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3, why })).join("")}</div>`;
+    // data-compact (the home page): poster cards in a row of four; otherwise the full cards.
+    const compact = root.hasAttribute("data-compact");
+    root.innerHTML = `<div class="pgrid${compact ? " pgrid-posters" : ""}">${chosen.map(({ p, why }) => GS.projectCard(p, { level: 3, why, compact })).join("")}</div>`;
     dispatchEvent(new CustomEvent("gs:projects"));
   }
   roots.forEach(load);

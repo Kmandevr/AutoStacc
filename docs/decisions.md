@@ -1,10 +1,27 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Decisions
+
+## 2026-10-22: UX overhaul, the owner's 18-point review (owner, #204)
+
+The owner reviewed the site as a user (18 points, plus making the community owner's dashboard easier). Claude investigated it in the code and a headless browser and asked the open questions one at a time. The work is planned as six batches, #205 to #210, under #204. Nothing below is built yet.
+- **Theme:** Auto (follows the device) stays the default. The theme switch moves into the account menu, with a footer link when signed out.
+- **Community:** already on in production. Posting gets a clearly one-time name step and, for admins and team members, a "Post as: Me / AutoStacc" choice per post, with a Team badge on AutoStacc posts. Glitches & Stitches gets its own space at `/autostacc/glitches-and-stitches/community`, so first-party projects may opt into `community`, and admins count as team there.
+- **Team desk:** every space's owner tools move into the Studio, AutoStacc's main space included (under the AutoStacc creator), with tabs: To do, Members, Space, Rules, Log. The space page keeps only a slim "Team desk · N waiting" link.
+- **Discover:** a new `/discover` for creators, projects and communities, never products, with tabs All · Creators · Projects · Communities and every card labelled with its type. `/projects` and `/creators` redirect to it. Project addresses stay `/<creator>/<project>`, which keeps same-named projects apart and shows the owner.
+- **Explore** stays separate for releases and events, renamed "New & upcoming".
+- **Store:** creators and projects appear where they make sense: "Made by" and "More from this project" on product pages, store rows, search results and a creator / project filter.
+- **Browse layout:** a spotlight with sideways rows on Discover, the Store and New & upcoming (at most about 4–5 rows); Community and Guides stay list-first. A row appears only with at least 4 items; until then pages lead with the spotlight and a "Become a creator" card. Spotlight: the owner's picks first, then a fair rotation in which new and small creators get equal turns. No popularity ranking (it stays an open question in [vision](vision.md)).
+- **Project cards:** the platform's glass look, with each project's personality (colours, art, a small signature animation that plays once in view and on hover or focus). Set automatically from the project's theme and art; creators can override it with Studio presets; no creator code. This replaces "a project's look keeps its own solid surfaces" for cards on platform pages, and the community look setting folds into it.
+- **Navigation:** sidebar Home, Store, Discover, New & upcoming, Community, then You; About moves to the footer. In the phone bar Projects becomes Discover (Community stays, #185). The top-bar logo is a clear Home button with a press state. For signed-in visitors `/` becomes their personal home, replacing `/dashboard`.
+- **Shorter pages:** tabs and collapsing sections, and "how to use the site" copy goes wherever /guide covers it. Home loses "How it works", merges store picks and latest into one row, gets a Discover row and a shorter banner. About becomes what AutoStacc is, for buyers and creators, and why to trust it (wording for the owner's sign-off).
+- **Dashboards:** one tabs component for the Control Center (grouped switches with one home each; statistics in tabs), the Team desk and the personal home. This deliberately revises the workspace's "never tabs" rule. One top-bar bell lists everything waiting.
+- **Adaptive effects:** "the website drops heavy effects if the device can't handle it, while still looking good and seamless": blur, glass and ambient motion step down on weaker devices to near-solid surfaces, with no visible switch-over.
+- **Brand words** keep their place but are paired with plain words the first time they appear.
 
 ## 2026-10-21: Paid storage: saved cards, automatic charges and a cap that grows (owner, #142)
 

@@ -18,7 +18,7 @@
     const items = project ? all.filter((it) => it.projectId === project || assets.some((a) => a.productId === it.productId)) : all;
     if (!assets.length) {
       box.innerHTML = `<p>${items.length ? "Your items are in. Their files are on the way." : "Nothing in Your Stacc yet. Everything you buy or claim lands here, sorted for you."}</p>
-        <div class="actions"><a class="btn" href="/shop">Browse the store</a><a class="btn ghost" href="/projects">Follow projects</a></div>`;
+        <div class="actions"><a class="btn" href="/shop">Browse the store</a><a class="btn ghost" href="/discover">Follow projects</a></div>`;
       return;
     }
     const groups = window.GS.stacc.byKind(assets, catalog);

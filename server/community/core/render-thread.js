@@ -15,7 +15,7 @@ function postHtml(p, kit, { opening = false, thread }) {
   }
   const ctx = { post: p, thread, opening };
   return `<article class="cm-post${opening ? " cm-opening" : ""}${kit.slot("postClass", ctx)}" id="${esc(p.id)}" data-cm-post>
-          <p class="cm-meta">${kit.slot("postBadges", ctx)}${who(p.author, kit)} · <time datetime="${esc(p.createdAt)}">${day(p.createdAt)}</time>${p.editedAt ? " · edited" : ""}</p>
+          <p class="cm-meta">${kit.slot("postBadges", ctx)}${who(p.author, kit, Boolean(p.asTeam))} · <time datetime="${esc(p.createdAt)}">${day(p.createdAt)}</time>${p.editedAt ? " · edited" : ""}</p>
           <div class="cm-body">${format(p.body, kit.format)}</div>
           ${kit.slot("postFooter", ctx)}
         </article>`;

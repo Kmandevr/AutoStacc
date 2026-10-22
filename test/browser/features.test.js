@@ -187,7 +187,7 @@ describe("features in the browser", () => {
     assert.match(await page.textContent(".product-price"), /\$4\.50/);
     assert.match(await page.textContent("main"), /20 drum hits/);
     await page.click("[data-buy]");
-    await page.waitForSelector("text=Go to your cart");
+    await page.waitForSelector("text=In your cart · Checkout");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
@@ -369,7 +369,7 @@ describe("features in the browser", () => {
   test("discovery pages: filter and follow on /projects, Your Stacc search, /explore views, the home hub and dashboard sections", async () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, unique("discover"));
-    await page.goto("/projects");
+    await page.goto("/discover?tab=projects");
     const gs = page.locator(".pcard[data-project='glitches-and-stitches']");
     await gs.waitFor();
     assert.equal(await gs.locator("text=Unverified creator").count(), 0, "AutoStacc's own project is verified");

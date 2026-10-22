@@ -16,7 +16,7 @@ describe("layout in the browser", { concurrency: true }, () => {
       const { ctx, page } = await open({ viewport: { width, height: 800 }, isMobile: width < 700, hasTouch: width < 700 });
       await page.goto("/shop");
       await setCart(page, [{ productId: "wallpapers", quantity: 1 }, { productId: "dev-paused", quantity: 1 }]);
-      for (const p of ["/shop", "/product?p=stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/projects", "/", "/about", "/autostacc/glitches-and-stitches",
+      for (const p of ["/shop", "/product?p=stems-patchwork", "/cart", "/login", "/login#signup", "/library", "/checkout?order=ord_x", "/account", "/discover", "/discover?tab=projects", "/", "/about", "/autostacc/glitches-and-stitches",
         "/privacy", "/terms", "/refunds", "/license", "/help", "/contact", "/security", "/no-such-page"]) {
         await page.goto(p);
         await settle(page);
@@ -35,14 +35,14 @@ describe("layout in the browser", { concurrency: true }, () => {
     });
   }
 
-  test("sidebar: AutoStacc has Home, Store, Explore, Community and About; Projects has Projects and Creators; the footer links Creators", async () => {
+  test("sidebar: AutoStacc has Home, Store, Discover, New & upcoming and Community; the footer links Discover and About", async () => {
     const { ctx, page } = await open(DESK);
-    await page.goto("/projects");
+    await page.goto("/discover?tab=projects");
     const names = (sel) => page.locator(`${sel} a`).evaluateAll((els) => els.map((el) => [el.getAttribute("href"), el.textContent.trim()]));
-    assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/explore", "Explore"], ["/community", "Community"], ["/about", "About"]]);
-    assert.deepEqual(await names("[aria-labelledby=side-projects]"), [["/projects", "Projects"], ["/creators", "Creators"]]);
-    assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Projects");
-    assert.ok(await page.locator("#site-footer a[href='/creators']").count(), "the footer links Creators");
+    assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/discover", "Discover"], ["/explore", "New & upcoming"], ["/community", "Community"]]);
+    assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Discover");
+    assert.ok(await page.locator("#site-footer a[href='/discover']").count(), "the footer links Discover");
+    assert.ok(await page.locator("#site-footer a[href='/about']").count(), "the footer links About");
     await page.goto("/community");
     assert.equal(await page.locator(".side-nav a[aria-current]").getAttribute("href"), "/community", "community pages light up Community");
     assert.deepEqual(page.errors, []);
@@ -114,7 +114,7 @@ describe("layout in the browser", { concurrency: true }, () => {
 
   test("reduced motion: no looping or long animations, and every page still works", async () => {
     const { ctx, page } = await open({ ...DESK, reducedMotion: "reduce" });
-    for (const p of ["/", "/shop", "/about", "/projects", "/privacy", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music/hail", "/no-such-page"]) {
+    for (const p of ["/", "/shop", "/about", "/discover", "/privacy", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music/hail", "/no-such-page"]) {
       await page.goto(p);
       await settle(page);
       const busy = await page.evaluate(() => document.getAnimations().filter((a) => {

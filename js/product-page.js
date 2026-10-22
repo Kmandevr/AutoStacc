@@ -17,7 +17,9 @@
   async function load() {
     if (!/^[a-z0-9_-]{3,60}$/i.test(id)) return missing();
     const [res, live] = await Promise.all([api(`/api/products/${encodeURIComponent(id)}`), api(`/api/products/state?ids=${encodeURIComponent(id)}`)]);
-    if (!res.ok) return missing();
+    // Only a product the store says doesn't exist is "not available"; any other failure keeps the page the server drew.
+    if (res.status === 404) return missing();
+    if (!res.ok) { const m = $(".msg[role=status]", root); if (m) { m.hidden = false; m.textContent = "Couldn't refresh this page just now; what you see may be a minute old."; } return; }
     const p = res.data.product;
     const owned = live.ok && live.data.products[id] && live.data.products[id].owned;
     document.title = `${p.title} · AutoStacc`;
@@ -48,12 +50,16 @@
       if (!res.ok) { if (sk) sk.busy(claim, false); else claim.disabled = false; } else claim.remove();
       return;
     }
+    // Buy now: into the cart (once) and straight to it. Add to cart (the cart keeps one of each), then the button becomes
+    // the way to the cart.
+    if (ev.target.closest("[data-buy-now]")) { cart.add(id, 1); location.href = "/cart"; return; }
     const btn = ev.target.closest("[data-buy]");
     if (!btn) return;
     cart.add(id, 1);
+    btn.outerHTML = '<a class="btn" href="/cart">In your cart · Checkout</a>';
     const msg = $(".msg[role=status]", root);
     msg.hidden = false;
-    msg.innerHTML = 'Added. <a href="/cart">Go to your cart</a>';
+    msg.textContent = "Added to your cart.";
   });
 
   load();

@@ -15,12 +15,12 @@
     const r = await api(base);
     if (!r.ok) return;
     const main = document.querySelector("main");
-    if (r.data.color && /^#[0-9a-f]{6}$/i.test(r.data.color)) main.style.setProperty("--accent", r.data.color);
-    if (/^[a-z]+$/.test(r.data.banner) && r.data.banner !== "none") (document.querySelector(".page-hero") || main).classList.add(`cm-banner-${r.data.banner}`);
+    if (!kit.deskFull && r.data.color && /^#[0-9a-f]{6}$/i.test(r.data.color)) main.style.setProperty("--accent", r.data.color);
+    if (!kit.deskFull && /^[a-z]+$/.test(r.data.banner) && r.data.banner !== "none") (document.querySelector(".page-hero") || main).classList.add(`cm-banner-${r.data.banner}`);
     if (!who.signedIn) return;
     const s = await kit.space();
     if (!s || !s.team) return;
-    const part = kit.deskPart("Look");
+    const part = kit.deskPart("Look", null, "look");
     const accent = el("select", { "aria-label": "Accent colour" }, r.data.accents.map((a) => el("option", { value: a, text: a })));
     const banner = el("select", { "aria-label": "Banner" }, r.data.banners.map((b) => el("option", { value: b, text: b })));
     accent.value = r.data.accent || r.data.accents[0];

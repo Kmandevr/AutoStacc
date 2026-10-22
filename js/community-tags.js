@@ -65,7 +65,7 @@
     const spaceId = kit.desk.dataset.cmSpace;
     const r = await api(`/api/community/tags?space=${enc(spaceId)}`);
     if (!r.ok) return;
-    const part = kit.deskPart(`Space tags (${r.data.space.length})`);
+    const part = kit.deskPart(`Space tags (${r.data.space.length})`, null, "tags");
     r.data.space.forEach((t) => part.append(el("p", { class: "cm-desk-row" }, `${t.label} `, el("button", { class: "btn ghost small", type: "button", text: "Remove", on: { click: async (ev) => {
       const b = ev.currentTarget;
       press(b, true);

@@ -12,7 +12,7 @@
     if (!who.features.includes("upkeep") || !who.signedIn) return;
     const s = await kit.space();
     if (!s || !s.team || s.state !== "read_only" || s.stateReason !== "inactive_team") return;
-    const part = kit.deskPart("Read-only for now");
+    const part = kit.deskPart("Read-only for now", null, "upkeep");
     part.open = true;
     part.append(el("p", { text: "Nobody on the team acted for 40 days, or reports waited that long, so this space turned read-only by itself. Handle the reports that have waited longest, then reopen it." }),
       action("Reopen the space", { path: `/api/community/spaces/${encodeURIComponent(kit.desk.dataset.cmSpace)}/reopen`, method: "POST", cls: "btn small" }));

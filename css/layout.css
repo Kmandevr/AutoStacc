@@ -45,7 +45,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   view-transition-name: side;
 }
 .side-close { display: none; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; color: var(--text); font-size: 1.2rem; letter-spacing: -.02em; }
+.brand { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px; border-radius: 10px; color: var(--text); font-size: 1.2rem; letter-spacing: -.02em; }
 .brand:hover { color: var(--text); background: var(--panel-2); }
 .brand b { color: var(--teal); font-weight: 750; }
 .brand-name { font-weight: 650; }
@@ -71,7 +71,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 10px;
   border-radius: 8px;
   color: var(--text);
@@ -120,6 +120,13 @@ body:has(> .site-frame) { padding-left: var(--side); }
 
 /* ---------- top bar ---------- */
 .site-frame { display: contents; }
+/* Before js/layout.js draws the frame, its space is kept (top bar, sidebar rail, phone bar), so nothing jumps when it
+   appears. Project pages draw their own frame (css/project-frame.css). */
+body:not([data-project]) > #site-header:empty { display: block; height: var(--topbar); }
+body:not([data-project]):has(> #site-header:empty) { padding-left: var(--side); }
+.side-scrim { display: none; }
+/* The page fills the screen, so the footer (drawn by js/layout.js) and late lists settle below the fold, not in view. */
+body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topbar)); }
 .topbar {
   position: sticky;
   top: 0;
@@ -142,7 +149,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -166,8 +173,11 @@ body:has(> .site-frame) { padding-left: var(--side); }
 .snd[aria-pressed="true"] { border-color: var(--teal); color: var(--teal); }
 /* theme switch: a half-filled dot (auto), sun-ish disc (light) or moon-ish disc (dark) */
 .theme-icon { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
-.theme-switch[data-mode="light"] .theme-icon { background: transparent; }
-.theme-switch[data-mode="dark"] .theme-icon { background: currentColor; }
+[data-theme-cycle][data-mode="light"] .theme-icon { background: transparent; }
+[data-theme-cycle][data-mode="dark"] .theme-icon { background: currentColor; }
+.account-theme, .theme-foot { gap: 8px; }
+@keyframes menu-out { to { opacity: 0; transform: scale(.96); } }
+.theme-foot { display: inline-flex; align-items: center; margin-left: 12px; vertical-align: middle; }
 
 /* ---------- account menu: your initial in the top bar, opening a short list of account destinations ---------- */
 .account-menu { position: relative; }
@@ -197,12 +207,13 @@ body:has(> .site-frame) { padding-left: var(--side); }
 .account-who strong { color: var(--text); font-weight: 650; }
 .account-who span { color: var(--muted); font-size: .82rem; overflow-wrap: anywhere; }
 .account-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.account-panel a, .account-signout { display: flex; align-items: center; width: 100%; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
-.account-panel a:hover, .account-signout:hover { background: var(--panel-2); color: var(--text); }
+.account-panel a, .account-signout, .account-theme { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 550; text-align: left; cursor: pointer; }
+.account-panel a:hover, .account-signout:hover, .account-theme:hover { background: var(--panel-2); color: var(--text); }
 .account-panel [aria-current] { background: color-mix(in srgb, var(--teal) 12%, var(--panel)); }
 .account-signout { margin-top: 6px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) {
   .account-panel:not([hidden]) { transform-origin: top right; animation: menu-in .18s var(--snap); }
+  .account-panel.closing { animation: menu-out .14s ease-in forwards; }
 }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: none; } }
 
@@ -222,11 +233,17 @@ body:has(> .site-frame) { padding-left: var(--side); }
 .footer-project > span { font-weight: 650; color: var(--text); }
 .socials { display: flex; gap: 6px 16px; flex-wrap: wrap; }
 .site-footer a { display: inline-block; padding-block: 4px; color: var(--muted); text-shadow: none; }
+@media (max-width: 900px) {
+  .site-footer a, .theme-foot { display: inline-flex; align-items: center; min-height: 44px; }
+  /* phones: each column's links flow side by side, so 44px targets don't make the footer endless */
+  .footer-grid { grid-template-columns: minmax(0, 1fr); }
+  .footer-col ul { display: flex; flex-wrap: wrap; gap: 0 18px; }
+}
 .site-footer a:hover { color: var(--teal); }
 
 /* ---------- phones and small tablets: the sidebar becomes a drawer ---------- */
 @media (max-width: 900px) {
-  body:has(> .site-frame) { padding-left: 0; }
+  body:has(> .site-frame), body:not([data-project]):has(> #site-header:empty) { padding-left: 0; }
   .side, .side-open .side {
     width: min(78vw, 280px);
     gap: 10px;
@@ -244,8 +261,8 @@ body:has(> .site-frame) { padding-left: var(--side); }
     position: absolute;
     top: 12px;
     right: 10px;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: 0;
     border-radius: 10px;
     background: transparent;
@@ -254,7 +271,10 @@ body:has(> .site-frame) { padding-left: var(--side); }
     line-height: 1;
     cursor: pointer;
   }
-  .side-scrim { position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  /* The dim and blur behind the drawer fade in and out with its slide (js/layout.js toggles .open). */
+  .side-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .22s var(--snap), visibility 0s linear .22s; }
+  .side-scrim.open { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .22s var(--snap), visibility 0s; }
   html.menu-open { overflow: hidden; }
   .side-close:hover { background: var(--panel-2); }
   .side-collapse { display: none; }
@@ -271,8 +291,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .footer-brand { grid-column: 1 / -1; }
 }
 @media (max-width: 520px) {
-  .theme-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .tool-link, .theme-switch, .snd { padding: 6px 10px; min-height: 40px; }
+  .tool-link, .theme-switch, .snd { padding: 6px 10px; min-height: 44px; }
   .topbar-tools { gap: 4px; }
   .tool-cta { display: none; }
 }
@@ -284,7 +303,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .snd { font-size: .68rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .side { transition: none; }
+  .side, .side-scrim, .side-scrim.open { transition: none; }
 }
 
 /* ---------- phones: a quick-links bar within thumb reach (Store, Projects, Community, Your Stacc or Log in, Menu) ---------- */
@@ -327,7 +346,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .tabbar a[aria-current], .tabbar a:hover, .tabbar button:hover { color: var(--text); }
   .tabbar a[aria-current] .side-icon { stroke-width: 2.4; }
   .tabbar .side-icon { width: 22px; height: 22px; }
-  body:has(> .site-frame) { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  body:has(> .site-frame), body:not([data-project]):has(> #site-header:empty) { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 380px) { .tabbar a, .tabbar button { padding-inline: 1px; font-size: .64rem; } }
 /* blur isn't motion: only visitors who ask for less transparency get a solid bar */
@@ -342,3 +361,15 @@ body:has(> .site-frame) { padding-left: var(--side); }
 /* the store's notice (js/site-notice.js, set in Control Center › Settings › Switches): one calm line above the page */
 .site-notice { margin: 0; padding: 10px 20px; text-align: center; font-family: var(--font); font-size: .92rem; font-weight: 600;
   color: var(--text); background: color-mix(in srgb, var(--amber) 22%, var(--panel)); border-bottom: 1px solid var(--line); }
+
+/* ---------- press feedback (owner, 2026-10-22): touch gets a quick press on the frame's controls, like a button ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .side-nav a, .tabbar a, .tabbar button, .tool-link, .theme-switch, .brand, .topbar-brand, .account-panel a, .account-signout { transition: transform .08s ease-out, background-color .12s; }
+  .side-nav a:active, .tabbar a:active, .tabbar button:active, .tool-link:active, .theme-switch:active, .brand:active, .topbar-brand:active, .account-panel a:active, .account-signout:active { transform: scale(.96); }
+}
+.side-nav a:active, .tabbar a:active, .tabbar button:active, .account-panel a:active, .account-signout:active { background: var(--panel-2); }
+/* Lighter effects (html.fx-lite): the frame's bars are nearly solid instead of frosted. */
+.fx-lite :is(.topbar, .side, .tabbar) { background: color-mix(in srgb, var(--panel) 96%, transparent); }
+/* The bell (js/account-nav.js): unread community notices, beside the account menu. */
+.bell-link { gap: 4px; }
+.bell-count { min-width: 1.4em; padding: 0 5px; border-radius: 999px; background: var(--coral); color: #fff; font-family: var(--mono); font-size: .72rem; font-weight: 700; text-align: center; }

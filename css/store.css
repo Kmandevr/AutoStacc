@@ -2,6 +2,9 @@
    js/store-sections.js): search with suggestions, categories, the filter sidebar (a drawer on phones), chips, results
    and pages, and the curated rows. Cards themselves are css/shop.css. */
 
+/* Search, filters and results are drawn by js/store-browse.js: their space is kept so what follows doesn't jump. */
+[data-browse] { min-height: min(70svh, 720px); }
+@media (max-width: 900px) { .browse .btn.small, .store-sections .btn.small, .browse .link-btn, .store-tune-actions :is(.btn, .link-btn) { min-height: 44px; } }
 .browse .btn.small, .store-sections .btn.small { min-height: 40px; padding: 6px 14px; font-size: .85rem; }
 
 /* ---------- search with suggestions ---------- */
@@ -184,3 +187,8 @@
 .review-form { display: grid; gap: 10px; max-width: 560px; margin-top: 18px; }
 .review-rating { display: flex; flex-wrap: wrap; gap: 10px; border: 0; padding: 0; margin: 0; }
 .review-form textarea { width: 100%; }
+/* Projects in the store (js/store-browse.js): name matches above the results, and "Shop by project". */
+.browse-makers-wrap:empty { display: none; }
+.browse-makers-wrap { margin: 0 0 14px; }
+.browse-makers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.browse-makers .chip { min-height: 44px; }

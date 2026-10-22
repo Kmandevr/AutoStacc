@@ -86,5 +86,6 @@ export function requireFeature(app, name) {
   if (!isOn(app, name)) fail(404, "not_found", "Not found.");
 }
 
-/** What the browser needs: { name: true|false } (data/features.js). */
-export const browserFeatures = () => Object.fromEntries(Object.entries(FEATURES).map(([k, f]) => [k, f.on]));
+/** What the browser needs: { name: true|false } (data/features.js), with the deployment's FEATURES_ON and FEATURES_OFF
+ *  applied when env is given (the build passes production's, from wrangler.toml), so the pages match the store. */
+export const browserFeatures = (env = {}) => Object.fromEntries(Object.keys(FEATURES).map((k) => [k, isOn({ env }, k)]));

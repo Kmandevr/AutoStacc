@@ -16,7 +16,7 @@
     const path = `/api/community/spaces/${encodeURIComponent(kit.desk.dataset.cmSpace)}/new-account-rule`;
     const r = await api(path);
     if (!r.ok) return;
-    const part = kit.deskPart("New members");
+    const part = kit.deskPart("New members", null, "newmembers");
     const days = el("input", { type: "number", min: 0, max: 90, value: r.data.rule.accountDays, "aria-label": "Account younger than (days)" });
     const posts = el("input", { type: "number", min: 0, max: 20, value: r.data.rule.spacePosts, "aria-label": "Fewer than this many posts here" });
     const mode = el("select", { "aria-label": "What happens" }, el("option", { value: "hold", text: "Hold their posts for the team" }), el("option", { value: "nolinks", text: "Refuse posts with links" }));

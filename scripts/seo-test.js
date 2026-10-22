@@ -243,7 +243,7 @@ for (const p of ["/css/core.css", "/js/util.js", "/data/site.js", "/img/og.png"]
 for (const p of ["/dashboard", "/account", "/settings", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
 // The public directory and every project page stay crawlable whatever is blocked beside them (a rule like
 // "Disallow: /p" or "/projects" would silently hide them).
-for (const p of ["/", "/shop", "/shop/x", "/product", "/events", "/about", "/projects", ...data.projects.filter((x) => !x.draft).map((x) => projectPath(x.id))]) if (!allowed(p)) add("FAIL", "robots-public", `${p} is blocked by robots.txt`);
+for (const p of ["/", "/shop", "/shop/x", "/product", "/events", "/about", "/discover", ...data.projects.filter((x) => !x.draft).map((x) => projectPath(x.id))]) if (!allowed(p)) add("FAIL", "robots-public", `${p} is blocked by robots.txt`);
 if (robots && !out.some((l) => /^FAIL robots/.test(l))) add("PASS", "robots", "public pages crawlable, private areas blocked, sitemap declared");
 
 // ---------- redirects, recorded URLs and preview hosts ----------
@@ -256,7 +256,7 @@ for (const [from, to, code] of redirects) {
   // whose pages the content Function serves), never at a retired news address (a redirect chain).
   const target = to.endsWith("/:splat") ? to.slice(0, -"/:splat".length) : to;
   const lands = to.endsWith("/:splat") ? [...servedPaths].some((s) => s.startsWith(target + "/")) || Boolean(contentAddress(target + "/x"))
-    : servedPaths.has(to) || Boolean(contentAddress(to));
+    : servedPaths.has(to.split("?")[0]) || Boolean(contentAddress(to));
   if (retiredAddress(to.replace(/\/:splat$/, "/x"))) add("FAIL", "redirect-chain", `${from} -> ${to} lands on a retired news address; point it at ${retiredAddress(to.replace(/\/:splat$/, "/x"))}`);
   else if (to !== "/" && !to.startsWith("http") && !lands) add("FAIL", "redirect-target", `${from} -> ${to} goes nowhere`);
 }
@@ -272,7 +272,7 @@ for (const u of recorded) {
   // and isn't a retired news address (whose 301 would make a chain).
   const landing = redirected && (redirected[0].endsWith("/*") ? redirected[1].replace(":splat", p.slice(redirected[0].length - 1)) : redirected[1]);
   if (redirected && retiredAddress(landing)) add("FAIL", "redirect-chain", `${u} redirects to ${landing}, which redirects again; point it at ${retiredAddress(landing)}`);
-  else if (redirected && landing !== "/" && !servedPaths.has(landing) && !contentAddress(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
+  else if (redirected && landing !== "/" && !servedPaths.has(landing.split("?")[0]) && !contentAddress(landing)) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which isn't a page`);
   else if (redirected && contentAddress(landing) && !seeded(contentAddress(landing))) add("FAIL", "url-disappeared", `${u} redirects to ${landing}, which no migration in db/migrations/ moved into the store database`);
   // A release address stays public through the content Function and /sitemap-content.xml, as long as a migration
   // moved it into the store database (the build only records static pages, so these are the old ones). A news address

@@ -66,10 +66,10 @@
   // list is in).
   async function desk() {
     const spaceId = kit.desk.dataset.cmSpace;
-    const [wa, wb, wl] = [kit.deskWait(), kit.deskWait(), kit.deskWait()];
+    const [wa, wb, wl] = [kit.deskWait("appeals"), kit.deskWait("bans"), kit.deskWait("log")];
     const appeals = await api(`/api/community/spaces/${enc(spaceId)}/appeals`);
     if (!appeals.ok) { [wa, wb, wl].forEach((w) => w.remove()); return; }
-    const a = kit.deskPart(`Appeals (${appeals.data.appeals.length})`, wa);
+    const a = kit.deskPart(`Appeals (${appeals.data.appeals.length})`, wa, "appeals");
     if (!appeals.data.appeals.length) a.append(el("p", { class: "cm-small", text: "No appeals waiting." }));
     appeals.data.appeals.forEach((x) => a.append(el("article", { class: "cm-desk-item" },
       el("p", { class: "cm-meta", text: `${x.author || "deleted user"} · ${x.title}` }),
@@ -81,7 +81,7 @@
     const bans = await api(`/api/community/spaces/${enc(spaceId)}/bans`);
     if (!bans.ok) wb.remove();
     else {
-      const b = kit.deskPart(`Bans (${bans.data.bans.length})`, wb);
+      const b = kit.deskPart(`Bans (${bans.data.bans.length})`, wb, "bans");
       bans.data.bans.forEach((x) => b.append(el("p", { class: "cm-desk-row" },
         `${x.name || "deleted user"}: ${x.reason} (${x.until ? "until " + x.until.slice(0, 10) : "until lifted"}) `,
         x.name ? action("Lift", { path: `/api/community/spaces/${enc(spaceId)}/bans`, method: "DELETE", body: { name: x.name } }) : "")));
@@ -90,7 +90,7 @@
     const log = await api(`/api/community/spaces/${enc(spaceId)}/mod-log`);
     if (!log.ok) wl.remove();
     else {
-      const l = kit.deskPart("Team log", wl);
+      const l = kit.deskPart("Team log", wl, "log");
       const list = l.appendChild(el("ol", { class: "cm-log" }));
       log.data.log.forEach((x) => list.append(el("li", {},
         el("time", { datetime: x.at, text: x.at.slice(0, 16).replace("T", " ") }), " ",

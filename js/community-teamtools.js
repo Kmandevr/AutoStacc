@@ -17,7 +17,7 @@
     const base = `/api/community/spaces/${enc(kit.desk.dataset.cmSpace)}`;
     const r = await api(`${base}/settings`);
     if (!r.ok) return;
-    const part = kit.deskPart("Space settings");
+    const part = kit.deskPart("Space settings", null, "settings");
     const msg = status();
     const description = el("textarea", { rows: 2, maxlength: 500, "aria-label": "Description" });
     description.value = r.data.description;

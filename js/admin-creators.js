@@ -1,8 +1,8 @@
 // Control Center: the Creators tab. Every creator with its address, projects, storage and settings, and the switches
 // to run free creator sites: trust (lets search engines index its pages), suspend (its pages and images disappear),
 // whether its packs always wait for review (else only flagged ones do), and its own storage quota or platform fee
-// (empty = the platform default). Above them, the creator sales switch (pause or reopen buying creators' products;
-// closed anyway until the marketplace Stripe key is set). Talks to /api/admin/creators and /api/admin/creator-sales
+// (empty = the platform default). Above them, whether creators' products can be bought (closed anyway until the
+// marketplace Stripe key is set), switched in Settings › Switches. Talks to /api/admin/creators and /api/admin/creator-sales
 // (server/admin/creators.js, creator-sales.js). Starts on "gs:admin". Needs js/util.js.
 (function () {
   "use strict";
@@ -17,9 +17,9 @@
     const state = s.open ? "Open: customers can buy creators' products."
       : s.reason === "no_key" ? `Closed: the marketplace Stripe key isn't set up yet (STRIPE_MARKETPLACE_KEY, see docs/payouts-setup.md). Creators' products can be added to carts but not checked out.${s.paused ? " You have also paused them." : ""}`
       : "Paused by you: creators' products can be added to carts but not checked out.";
+    // The switch itself has one home, Settings › Switches (owner, 2026-10-22); here, the state and a link there.
     return `<div class="panel admin-switch" data-creator-sales><h3>Creator purchases</h3><p>${e(state)}</p>
-      <button class="btn small${s.paused ? "" : " ghost danger"}" type="button" data-sales-open="${s.paused}">${s.paused ? "Allow creator purchases" : "Pause creator purchases"}</button>
-      ${!s.keyReady && s.paused ? '<p class="small-print">Allowing them takes effect once the key is set.</p>' : ""}</div>`;
+      <p class="small-print"><a href="/admin/settings#switches">Change it in Settings › Switches</a></p></div>`;
   }
 
   async function draw(panel, message) {
@@ -48,14 +48,6 @@
     if (!panel) return;
     draw(panel);
     panel.addEventListener("click", async (ev) => {
-      const flip = ev.target.closest("button[data-sales-open]");
-      if (flip) {
-        const open = flip.dataset.salesOpen === "true";
-        if (!open && !confirm("Pause creator purchases? Carts keep creators' products, but nobody can check them out until you allow them again.")) return;
-        flip.disabled = true;
-        const res = await api("/api/admin/creator-sales", { method: "PUT", body: { open } });
-        return draw(panel, res.ok ? (open ? "Creator purchases allowed." : "Creator purchases paused.") : res.error.message);
-      }
       const btn = ev.target.closest("button[data-set], button[data-save]");
       if (!btn) return;
       const row = btn.closest("tr");

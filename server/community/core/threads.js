@@ -12,7 +12,7 @@ export const SORTS = ["hot", "new", "top"];
 
 const THREAD_COLS = `t.id, t.space_id AS spaceId, t.channel_id AS channelId, t.type, t.title, t.slug, t.state, t.locked, t.pinned,
   t.accepted_post_id AS acceptedPostId, t.score, t.reply_count AS replyCount, t.last_post_at AS lastPostAt, t.created_at AS createdAt,
-  m.display_name AS author,
+  COALESCE(t.as_team, m.display_name) AS author, t.as_team IS NOT NULL AS asTeam,
   EXISTS (SELECT 1 FROM community_posts a WHERE a.id = t.accepted_post_id AND a.state = 'visible') AS answered`;
 
 // Hot: score over (age in hours + 2)^1.5, the usual decay; pinned threads first everywhere.
@@ -41,7 +41,7 @@ export const getThread = (db, id) => first(db, `SELECT ${THREAD_COLS} FROM commu
   LEFT JOIN community_members m ON m.user_id = t.author_user_id WHERE t.id = ?`, id);
 
 export const listPosts = (db, threadId) => all(db, `SELECT p.id, p.parent_post_id AS parentId, p.body, p.state, p.helpful, p.created_at AS createdAt, p.edited_at AS editedAt,
-  m.display_name AS author FROM community_posts p LEFT JOIN community_members m ON m.user_id = p.author_user_id
+  COALESCE(p.as_team, m.display_name) AS author, p.as_team IS NOT NULL AS asTeam FROM community_posts p LEFT JOIN community_members m ON m.user_id = p.author_user_id
   WHERE p.thread_id = ? ORDER BY p.created_at, p.id LIMIT 500`, threadId);
 
 // Every visible thread for the sitemap, newest activity first (the sitemap protocol allows 50,000 per file).

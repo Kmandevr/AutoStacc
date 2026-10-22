@@ -29,7 +29,7 @@ export const emptyState = (line) => `<div class="cm-empty"><svg class="cm-empty-
 
 // A take in a list: a channel strip with its channel's track colour, its title, and small meters from the features.
 function strip(t, kit, { showSpace = null } = {}) {
-  const meta = [TYPE_LABEL[t.type] || "Discussion", ...(t.channelName ? [esc(t.channelName)] : []), `by ${who(t.author, kit)}`, day(t.lastPostAt)];
+  const meta = [TYPE_LABEL[t.type] || "Discussion", ...(t.channelName ? [esc(t.channelName)] : []), `by ${who(t.author, kit, Boolean(t.asTeam))}`, day(t.lastPostAt)];
   if (showSpace) meta.unshift(`<a href="${esc(spacePath(showSpace))}">${esc(showSpace.name)}</a>`);
   return `<li class="cm-strip${t.pinned ? " cm-pinned" : ""}" data-track="${track(t.channelPosition)}" data-space="${esc(t.spaceId)}">
             <div class="cm-strip-main">

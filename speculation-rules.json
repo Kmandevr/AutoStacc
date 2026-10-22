@@ -17,6 +17,7 @@
           { "not": { "selector_matches": "a[href*='?'], area[href*='?'], [download], [data-no-prefetch]" } }
         ]
       }
-    }
+    },
+    { "source": "list", "urls": ["/"], "eagerness": "eager" }
   ]
 }

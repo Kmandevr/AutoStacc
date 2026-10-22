@@ -23,7 +23,7 @@ async function check(path, test) {
 }
 
 const ok200 = (r) => (r.status === 200 ? null : `status ${r.status}`);
-const checks = ["/", "/shop", "/about", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/sitemap.xml", "/cart", "/library"].map((p) => [p, ok200]);
+const checks = ["/", "/shop", "/about", "/discover", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music", "/sitemap.xml", "/cart", "/library"].map((p) => [p, ok200]);
 // Old addresses (from before the project moved under /projects/, then into its creator's space) lead straight there.
 for (const old of ["/music/hail", "/projects/glitches-and-stitches/music/hail"])
   checks.push([old, (r) => (r.status === 301 && /^(https:\/\/[^/]+)?\/autostacc\/glitches-and-stitches\/music\/hail$/.test(r.headers.get("location") || "") ? null : `expected a 301 to the project page, got ${r.status} ${r.headers.get("location")}`)]);

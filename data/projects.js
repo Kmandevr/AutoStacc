@@ -10,7 +10,9 @@
 //   creator: id of the creator that owns it (data/creators.js).
 //   summary: one plain-text line for the directory and dashboard, confirmed facts only.
 //   title, description: the project home page's search title and description.
-//   features: the platform features it uses: "releases", "events", "store", "polls", "relationships".
+//   personality: optional { accent, motion } for its cards on AutoStacc (accent: teal, amber, coral, lime or violet;
+//     motion: pulse, glitch, wave or none); the Studio's choice wins.
+//   features: the platform features it uses: "releases", "events", "store", "polls", "relationships", "community" (its community space at /<creator>/<project>/community).
 //     Polls and relationships are refused by the build for projects that don't list them.
 //   pages: its own pages, the nav of its own header: [{ label, path }], path relative to /<creator>/<id>
 //     ("" = its home, "music", "events"). wordmark: optional lettering for its header logo (else its name).
@@ -34,7 +36,10 @@ window.PROJECTS = [
     summary: "An electronic music project that treats unfinished songs as raw material: fragments are torn out, stitched into new tracks and glitched into something new.",
     title: "Glitches & Stitches — Experimental electronic music · AutoStacc",
     description: "Glitches & Stitches on AutoStacc: experimental electronic music built from broken pieces. Releases, events and press.",
-    features: ["releases", "events", "store", "polls", "relationships"],
+    features: ["releases", "events", "store", "polls", "relationships", "community"],
+    // Its personality on AutoStacc's cards: an accent from the track colours and a signature animation (pulse, glitch,
+    // wave or none). The team can change it in the Studio.
+    personality: { accent: "lime", motion: "glitch" },
     pages: [
       { label: "Home", path: "" },
       { label: "Music", path: "music" },

@@ -88,6 +88,29 @@ export default (ctx) => describe("community posting (switched on)", () => {
     assert.equal(r.status, 201, JSON.stringify(r.data));
   });
 
+  test("posting as the team: AutoStacc's admins post under the space's name with a Team badge; members can't", async () => {
+    const admin = await freshAdmin(ctx.mock.url);
+    const join = await admin.req("PUT", "/api/community/me", { body: { displayName: `Admin ${unique("n").slice(-6)}`, ageConfirmed: true } });
+    assert.ok([201, 409].includes(join.status));
+    const mineAdmin = await admin.get("/api/community/spaces/spc_autostacc/mine");
+    assert.equal(mineAdmin.data.team, true);
+    assert.equal(mineAdmin.data.mayUpdate, true);
+    const r = await admin.post("/api/community/threads", { channelId: ANNOUNCE, type: "update", title: "News from the team", body: "Hello", asTeam: true });
+    assert.equal(r.status, 201, JSON.stringify(r.data));
+    assert.equal(db(`SELECT as_team FROM community_threads WHERE id = '${r.data.thread.id}'`)[0][0].as_team, "AutoStacc");
+    assert.equal(db(`SELECT as_team FROM community_posts WHERE thread_id = '${r.data.thread.id}'`)[0][0].as_team, "AutoStacc");
+    const page = await new Client(ctx.mock.url).get(r.data.thread.path);
+    assert.match(String(page.data), /cm-badge-team/);
+    const rep = await admin.post(`/api/community/threads/${r.data.thread.id}/posts`, { body: "Team reply", asTeam: true });
+    assert.equal(rep.status, 201, JSON.stringify(rep.data));
+    const m = await person();
+    assert.equal((await m.c.get("/api/community/spaces/spc_autostacc/mine")).data.mayUpdate, false);
+    const refused = await ask(m.c, { asTeam: true });
+    assert.equal(refused.status, 403);
+    assert.equal(refused.data.error.code, "team_only");
+    assert.equal((await m.c.post(`/api/community/threads/${r.data.thread.id}/posts`, { body: "pretend", asTeam: true })).status, 403);
+  });
+
   test("edits keep history within 24 hours; someone else's post can't be edited or deleted", async () => {
     const a = await person();
     const b = await person();

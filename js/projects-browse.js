@@ -1,4 +1,4 @@
-// The projects browser ([data-projects-browse] on /projects): every project on AutoStacc, AutoStacc's own and creators'
+// The projects browser ([data-projects-browse] on /discover?tab=projects): every project on AutoStacc, AutoStacc's own and creators'
 // from the Studio, to explore and follow. Nothing is bought here; a project links to its items in the store. Search,
 // "what they make", genre and style, recently active and (signed in) followed or not, with counts, removable chips,
 // sort and pages, all answered by GET /api/projects/browse. The address holds the state (/projects?q=&makes=&genre=
@@ -119,7 +119,10 @@
   function go(push = true, keepPage = false) {
     if (!keepPage) params.delete("page");
     const qs = params.toString();
-    history[push ? "pushState" : "replaceState"](null, "", location.pathname + (qs ? `?${qs}` : ""));
+    // On Discover the tab stays in the address (?tab=...), ahead of this browser's own state.
+    const tab = new URLSearchParams(location.search).get("tab");
+    const full = [tab ? `tab=${encodeURIComponent(tab)}` : "", qs].filter(Boolean).join("&");
+    history[push ? "pushState" : "replaceState"](null, "", location.pathname + (full ? `?${full}` : ""));
     load();
   }
 

@@ -50,13 +50,19 @@ function validate(data) {
     if (!c.firstParty) errors.push(`creator ${c.id}: creators in data/creators.js are first-party (firstParty: true); others sign up in the Studio`);
   }
 
-  const FEATURES = ["releases", "events", "store", "polls", "relationships"];
+  const FEATURES = ["releases", "events", "store", "polls", "relationships", "community"];
   for (const p of data.projects) {
     if (!p.name) errors.push(`project ${p.id}: add a name`);
     if (!p.creator) errors.push(`project ${p.id}: add creator (an id in data/creators.js)`);
     else if (!creators.has(p.creator)) errors.push(`project ${p.id}: creator "${p.creator}" is not in data/creators.js`);
     else if (!p.draft && creators.get(p.creator).draft) errors.push(`project ${p.id}: a published project can't belong to the draft creator "${p.creator}"`);
     for (const f of p.features || []) if (!FEATURES.includes(f)) errors.push(`project ${p.id}: unknown feature "${f}"`);
+    // The card personality's presets (server/projects/personality.js): an accent from the track colours and an animation.
+    if (p.personality !== undefined) {
+      const pe = p.personality || {};
+      if (pe.accent !== undefined && !["teal", "amber", "coral", "lime", "violet"].includes(pe.accent)) errors.push(`project ${p.id}: personality.accent must be teal, amber, coral, lime or violet`);
+      if (pe.motion !== undefined && !["pulse", "glitch", "wave", "none"].includes(pe.motion)) errors.push(`project ${p.id}: personality.motion must be pulse, glitch, wave or none`);
+    }
     if (p.pages !== undefined && (!Array.isArray(p.pages) || p.pages.some((x) => !x.label || typeof x.path !== "string" || !/^(#[\w-]+|[a-z0-9-]*)$/.test(x.path))))
       errors.push(`project ${p.id}: pages must be [{ label, path }] with path "", a page name like "music" or an anchor like "#about"`);
   }

@@ -4,7 +4,7 @@
 (function () {
   "use strict";
   const kit = window.GS && window.GS.communityKit;
-  if (!kit || !kit.notices || !kit.desk) return;
+  if (!kit || !kit.desk) return;
   const { el, status, say, busy, press } = kit;
   const api = window.GS.api;
 
@@ -13,7 +13,7 @@
     if (!who.features.includes("welcome") || !who.signedIn || !who.member) return;
     const base = `/api/community/spaces/${encodeURIComponent(kit.desk.dataset.cmSpace)}/welcome`;
     const r = await api(base);
-    if (r.ok && r.data.message) {
+    if (r.ok && r.data.message && kit.notices) {
       kit.notices.hidden = false;
       const b = el("button", { class: "btn ghost small", type: "button", text: "Got it" });
       const box = el("div", { class: "cm-welcome", role: "note" }, el("p", { text: r.data.message }), b);
@@ -24,7 +24,7 @@
     if (!s || !s.team) return;
     const cur = await api(`${base}/message`);
     if (!cur.ok) return;
-    const part = kit.deskPart("Welcome message");
+    const part = kit.deskPart("Welcome message", null, "welcome");
     const text = el("textarea", { rows: 3, maxlength: 500, "aria-label": "Welcome message" });
     text.value = cur.data.message;
     const msg = status();

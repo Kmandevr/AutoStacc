@@ -10,6 +10,21 @@
   if (!main) return;
 
   const root = document.documentElement;
+
+  // Frame check: if this device draws the page's first seconds slowly (most frames over ~33 ms), the next pages use
+  // lighter effects (js/theme.js reads "as-fx" before they paint), so nothing changes on the page being looked at.
+  if (!root.classList.contains("fx-lite") && window.requestAnimationFrame) {
+    const gaps = [];
+    let last = 0;
+    const tick = (t) => {
+      if (last) gaps.push(t - last);
+      last = t;
+      if (gaps.length < 90) return requestAnimationFrame(tick);
+      const slow = gaps.filter((g) => g > 33).length;
+      if (slow > gaps.length / 2) { try { localStorage.setItem("as-fx", "lite"); } catch { /* not remembered */ } }
+    };
+    setTimeout(() => requestAnimationFrame(tick), 600);
+  }
   // css/core.css only hides .reveal items under .motion, so the page stays visible if this script never runs.
   root.classList.add("motion");
   // Ambient loops run on wall-clock time, so they carry on from where they were when you change page.
@@ -81,7 +96,7 @@
   // Clickable cards lean toward a mouse pointer: --tilt-x/--tilt-y feed the hover transform in css/platform.css.
   // Mouse only (touch has no hover); one listener for the whole page, so cards drawn later tilt too.
   const tiltCards = ".card, .project-card, .tile, .pcard, .ex-item, .home-doors a, .stacc-stacclet, .vault-item";
-  if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  if (matchMedia("(hover: hover) and (pointer: fine)").matches && !root.classList.contains("fx-lite")) {
     let tilted = null;
     const settle = () => { if (tilted) { tilted.style.removeProperty("--tilt-x"); tilted.style.removeProperty("--tilt-y"); tilted = null; } };
     main.addEventListener("pointermove", (e) => {

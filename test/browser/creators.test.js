@@ -20,7 +20,7 @@ describe("creators page in the browser", { concurrency: true }, () => {
 
   test("creators are listed as cards with their projects; search is held in the address", async () => {
     const { ctx, page } = await open(DESK);
-    await page.goto("/creators");
+    await page.goto("/discover?tab=creators");
     await page.waitForSelector(".cgrid .ccard");
     await settle(page);
     const grid = page.locator(".cgrid");
@@ -37,7 +37,7 @@ describe("creators page in the browser", { concurrency: true }, () => {
 
     await page.fill("#creators-q", "seen maker");
     await page.press("#creators-q", "Enter");
-    await page.waitForURL((u) => u.search === "?q=seen+maker");
+    await page.waitForURL((u) => u.search === "?tab=creators&q=seen+maker");
     await page.waitForFunction(() => document.querySelectorAll(".cgrid .ccard").length === 1);
     assert.deepEqual(await page.locator(".ccard-name").allInnerTexts(), ["Seen Maker"]);
     await page.goBack();
@@ -51,7 +51,7 @@ describe("creators page in the browser", { concurrency: true }, () => {
     let release;
     const held = new Promise((r) => { release = r; });
     await page.route("**/api/creators*", async (route) => { await held; await route.continue(); });
-    await page.goto("/creators");
+    await page.goto("/discover?tab=creators");
     await page.waitForSelector(".cgrid .sk");
     assert.equal(await page.locator(".cgrid").getAttribute("aria-busy"), "true");
     const sk = await page.locator(".cgrid > .sk").first().boundingBox();
@@ -68,12 +68,12 @@ describe("creators page in the browser", { concurrency: true }, () => {
   test("offline: the built list of AutoStacc's creators stays, and a small phone never scrolls sideways", async () => {
     const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });
     await page.route("**/api/creators*", (route) => route.abort());
-    await page.goto("/creators");
+    await page.goto("/discover?tab=creators");
     await page.waitForSelector(".cgrid .ccard-static a[href='/autostacc']");
     assert.match(await page.locator(".browse-count").innerText(), /offline/i);
     assert.notEqual(await page.locator(".cgrid").getAttribute("aria-busy"), "true");
     await page.unroute("**/api/creators*");
-    await page.goto("/creators");
+    await page.goto("/discover?tab=creators");
     await page.waitForSelector(".cgrid .ccard");
     await settle(page);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no sideways scroll at 320px");

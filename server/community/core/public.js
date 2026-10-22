@@ -58,7 +58,9 @@ async function space(app, url, spaceSlug, channelSlug) {
   const base = channel ? channelPath(s, channel) : spacePath(s);
   const { threads, more } = await listThreads(app.db, { spaceId: s.id, channelId: channel && channel.id, sort, page });
   const kit = renderKit(app);
-  const crumbs = [["Home", "/"], ["Community", "/community"], [s.name, spacePath(s)], ...(channel ? [[channel.name, base]] : [])];
+  // A project space leads back to its project (its address is the space's without /community).
+  const project = s.canonical ? [[s.name, s.canonical.replace(/\/community$/, "")]] : [["Community", "/community"]];
+  const crumbs = [["Home", "/"], ...project, [s.canonical ? "Community" : s.name, spacePath(s)], ...(channel ? [[channel.name, base]] : [])];
   const title = channel ? `${channel.name} · ${s.name}` : s.name;
   return {
     path: base, title, index: page === 1 && sort === "hot",

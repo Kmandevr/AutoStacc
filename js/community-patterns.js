@@ -17,7 +17,7 @@
     const path = `/api/community/spaces/${encodeURIComponent(kit.desk.dataset.cmSpace)}/pattern-rules`;
     const r = await api(path);
     if (!r.ok) return;
-    const part = kit.deskPart(`Rules (${r.data.rules.length})`);
+    const part = kit.deskPart(`Pattern rules (${r.data.rules.length})`, null, "patterns");
     const act = (label, method, body) => el("button", { class: "btn ghost small", type: "button", text: label, on: { click: async (ev) => {
       const b = ev.currentTarget;
       press(b, true);

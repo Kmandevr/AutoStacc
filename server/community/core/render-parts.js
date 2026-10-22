@@ -12,4 +12,5 @@ export const BARE = { slot: () => "", arrange: (t, r) => r, format: { links: [],
 
 export const day = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-export const who = (name, kit = BARE) => `<span class="cm-who">${kit.slot("nameMark", { name })}${name ? `<span class="cm-name">${esc(name)}</span>` : '<span class="cm-deleted">deleted user</span>'}</span>`;
+// asTeam: posted under the space's name by its team, marked with a Team badge instead of the person's own marks.
+export const who = (name, kit = BARE, asTeam = false) => `<span class="cm-who">${asTeam ? '<span class="cm-badge cm-badge-team">Team</span> ' : kit.slot("nameMark", { name })}${name ? `<span class="cm-name">${esc(name)}</span>` : '<span class="cm-deleted">deleted user</span>'}</span>`;

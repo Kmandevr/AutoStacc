@@ -6,7 +6,7 @@
   "use strict";
   const kit = window.GS && window.GS.communityKit;
   if (!kit) return;
-  const { el, status, say, busy, me, mine, gate, tools } = kit;
+  const { el, status, say, busy, me, mine, gate, tools, asPicker } = kit;
   const api = window.GS.api;
   const EDIT_MS = 24 * 3600 * 1000;
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -59,8 +59,9 @@
 
   const TYPE = { discussion: "Discussion", question: "Question", update: "Update" };
 
-  function newTakeForm(box, channels, who) {
+  function newTakeForm(box, channels, who, teamName) {
     const msg = status();
+    const as = asPicker(who, teamName);
     const channel = el("select", { name: "channel" }, channels.map((c) => el("option", { value: c.id, text: c.name })));
     const type = el("select", { name: "type" });
     const fillTypes = () => type.replaceChildren(...channels.find((c) => c.id === channel.value).types.map((t) => el("option", { value: t, text: TYPE[t] })));
@@ -71,7 +72,7 @@
     const form = el("form", { class: "cm-form cm-stack-in", on: { submit: async (ev) => {
       ev.preventDefault();
       busy(form, true);
-      const r = await api("/api/community/threads", { method: "POST", body: { channelId: channel.value, type: type.value, title: title.value, body: text.box.value } });
+      const r = await api("/api/community/threads", { method: "POST", body: { channelId: channel.value, type: type.value, title: title.value, body: text.box.value, asTeam: Boolean(as && as.asTeam()) } });
       busy(form, false);
       if (!r.ok) return say(msg, r.error.message);
       text.clear();
@@ -83,6 +84,7 @@
       channels.length > 1 ? el("label", {}, "Channel", channel) : null,
       el("label", {}, "Kind", type),
       el("label", {}, "Title", title),
+      as && as.wrap,
       text.wrap,
       el("button", { class: "btn", type: "submit", text: "Post take" }), msg);
     const open = el("button", { class: "btn", type: "button", text: "New take", on: { click: () => { open.remove(); box.append(form); title.focus(); } } });
@@ -90,13 +92,14 @@
   }
 
   // A reply form under the take, or under one post (parentId) for a nested reply.
-  function replyForm(threadId, { parentId = null, label, preview }) {
+  function replyForm(threadId, { parentId = null, label, preview, who, teamName }) {
     const msg = status();
+    const as = asPicker(who, teamName);
     const text = composer({ label, draftKey: `reply:${threadId}:${parentId || "top"}`, preview });
     const form = el("form", { class: "cm-form cm-reply-form cm-stack-in", on: { submit: async (ev) => {
       ev.preventDefault();
       busy(form, true);
-      const r = await api(`/api/community/threads/${encodeURIComponent(threadId)}/posts`, { method: "POST", body: { body: text.box.value, parentId } });
+      const r = await api(`/api/community/threads/${encodeURIComponent(threadId)}/posts`, { method: "POST", body: { body: text.box.value, parentId, asTeam: Boolean(as && as.asTeam()) } });
       if (r.ok && r.data.held) {
         text.clear();
         form.replaceWith(el("p", { class: "cm-small", role: "status", text: "Thanks. Your reply is waiting for the space's team to look at it." }));
@@ -110,7 +113,7 @@
       }
       busy(form, false);
       say(msg, r.error.message);
-    } } }, el("h2", { text: label }), text.wrap, el("button", { class: "btn", type: "submit", text: "Post reply" }), msg);
+    } } }, el("h2", { text: label }), as && as.wrap, text.wrap, el("button", { class: "btn", type: "submit", text: "Post reply" }), msg);
     return form;
   }
 
@@ -143,7 +146,7 @@
       const bar = post.querySelector("[data-cm-tools]") || el("div", { class: "cm-post-tools", "data-cm-tools": post.id });
       if (state.canReply) {
         bar.append(el("button", { class: "btn ghost small", type: "button", text: "Reply", on: { click: (ev) => {
-          const f = replyForm(threadId, { parentId: post.id === tools.dataset.cmOpening ? null : post.id, label: "Your reply", preview });
+          const f = replyForm(threadId, { parentId: post.id === tools.dataset.cmOpening ? null : post.id, label: "Your reply", preview, who, teamName: state.teamName });
           ev.currentTarget.disabled = true;
           post.after(f);
           f.querySelector("textarea").focus();
@@ -163,7 +166,7 @@
       }
       if (bar.childElementCount && !bar.isConnected) post.append(bar);
     });
-    if (state.canReply) document.querySelector(".cm-thread-page").append(replyForm(threadId, { label: question ? "Your answer" : "Reply", preview }));
+    if (state.canReply) document.querySelector(".cm-thread-page").append(replyForm(threadId, { label: question ? "Your answer" : "Reply", preview, who, teamName: state.teamName }));
   }
 
   // A post just written settles in like a block stacking (owner: charm), once.
@@ -174,13 +177,24 @@
     if (post && !reduce) post.classList.add("cm-stack-in");
   }
 
+  // The new-take form offers only the channels and kinds this visitor may start (team-only channels and Updates for the
+  // space's team and publishers), and says so when that leaves none.
+  async function takeFormFor(box, who) {
+    const s = (await kit.space()) || {};
+    const channels = JSON.parse(box.dataset.cmCompose)
+      .map((c) => ({ ...c, types: c.types.filter((t) => t !== "update" || s.mayUpdate) }))
+      .filter((c) => c.types.length && (!c.team || s.team || (s.mayUpdate && c.types.includes("update"))));
+    if (!channels.length) { box.append(el("p", { class: "cm-small", text: "Only this space's team starts takes here. You can reply to any take." })); return; }
+    newTakeForm(box, channels, who, s.team || s.mayUpdate ? s.name : null);
+  }
+
   (async () => {
     stackIn();
     const who = await me();
     const compose = document.querySelector("[data-cm-compose]");
     if (compose) {
       compose.hidden = false;
-      gate(compose, who, () => newTakeForm(compose, JSON.parse(compose.dataset.cmCompose), who));
+      gate(compose, who, () => takeFormFor(compose, who));
     }
     if (tools) setupThread(who);
   })();

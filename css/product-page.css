@@ -9,3 +9,9 @@
 .product-info .wish-btn { margin-top: 10px; }
 .product-info .wish-btn[aria-pressed="true"] { border-color: var(--coral); color: var(--coral); }
 .product-info .wish-btn[aria-pressed="true"]::before { content: "♥ "; }
+/* "Made by" (owner, 2026-10-22): the project and creator behind the product, more from them, and following. */
+.product-info .made-by { display: grid; gap: 6px; margin: 18px 0 10px; padding: 14px 16px; border: 1px solid var(--glass-edge, var(--line)); border-radius: calc(var(--radius) + 4px);
+  background: color-mix(in srgb, var(--panel) 76%, transparent); }
+.product-info .made-by p { margin: 0; }
+.product-info .made-by .project-follow:empty { display: none; }
+.product-info .actions { display: flex; flex-wrap: wrap; gap: 10px; }

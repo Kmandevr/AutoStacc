@@ -24,13 +24,15 @@
   const wordmark = e(P.wordmark || P.name).replace(/&amp;/g, '<span class="ph-amp">&amp;</span>');
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
 
+  // A project with the community feature links its space (served by the store at /<creator>/<project>/community).
+  const community = (P.features || []).includes("community") && (window.FEATURES || {})["community.forum"] !== false;
   const main = GS.skipLink();
   header.className = "project-frame";
   header.innerHTML = `
     <div class="as-strip">
       <a class="as-home" href="/">${MARK}<span>${e(SITE.name || "Home")}</span></a>
       <nav class="as-links" aria-label="${e(SITE.name || "Site")}">
-        <a href="/shop">Store</a><a href="/projects">Projects</a>
+        <a href="/shop">Store</a><a href="/discover">Discover</a>
         <a href="/library" data-auth="in" hidden>Your Stacc</a>
       </nav>
       <div class="topbar-tools">
@@ -47,6 +49,7 @@
         <nav class="ph-nav" id="ph-nav" aria-label="${e(P.name)}">
           ${(P.pages || [{ label: "Home", path: "" }]).map((pg) =>
             `<a href="${e(href(pg.path))}"${here(pg.path) ? ' aria-current="page"' : ""}>${e(pg.label)}</a>`).join("")}
+          ${community ? `<a href="${e(href("community"))}">Community</a>` : ""}
           <div class="project-tools"></div>
         </nav>
       </div>

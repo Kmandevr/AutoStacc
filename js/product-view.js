@@ -27,8 +27,8 @@
     const action = preview ? `<button class="btn" type="button"${off}>${p.priceCents ? "Add to cart" : "Get it free"} · Preview</button>`
       : owned ? `<p><span class="owned-badge">STACC'D</span> <a class="btn ghost" href="/library">Open Your Stacc</a></p>`
       : p.available === false ? '<p class="msg">Not on sale right now.</p>'
-      : p.free ? '<button class="btn" type="button" data-claim>Get it free</button>'
-      : '<button class="btn" type="button" data-buy>Add to cart</button>';
+      : p.free ? '<button class="btn" type="button" data-claim>Get it free</button><p class="small-print">Free with an AutoStacc account; you\'ll log in or sign up first if needed.</p>'
+      : '<div class="actions"><button class="btn" type="button" data-buy>Add to cart</button><button class="btn ghost" type="button" data-buy-now>Buy now</button></div>';
     const type = (types[p.type] || {}).label || p.type || "";
     const includes = (p.metadata && p.metadata.includes) || [];
     return `
@@ -46,6 +46,12 @@
         ${preview ? `<button class="btn ghost wish-btn" type="button"${off}>Save to wishlist</button>`
           : p.available !== false && !owned ? `<button class="btn ghost wish-btn" type="button" data-wish="${e(p.id)}" aria-pressed="false">Save to wishlist</button>` : ""}
         ${preview ? "" : '<p class="msg" role="status" hidden></p>'}
+        ${!preview && p.creator ? `<section class="made-by" aria-label="Made by">
+          <p class="card-type">Made by</p>
+          <p><a href="${e(p.projectPath || p.creator.path)}"><strong>${e(p.projectName || p.creator.name)}</strong></a>${p.projectName ? ` · from <a href="${e(p.creator.path)}">${e(p.creator.name)}</a>` : ""}</p>
+          ${p.projectId ? `<p><a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.projectId)}">More from ${e(p.projectName || p.creator.name)}</a></p>` : ""}
+          <div class="project-follow" data-follow-slot="${e(p.projectId || "")}" data-name="${e(p.projectName || "")}"></div>
+        </section>` : ""}
         <p class="small-print">By buying you accept the <a href="/terms">terms</a> and the <a href="/license">licence</a> for this kind of product. <a href="/refunds">Refunds</a>.</p>
       </div>`;
   }

@@ -21,3 +21,13 @@
 .cm-notices h2 { font-size: 1rem; }
 .cm-notice { padding: 10px 12px; border-left: 3px solid var(--amber); background: var(--panel-2); margin: 0 0 8px; overflow-wrap: anywhere; }
 .cm-notice p { margin: 0 0 4px; }
+/* The Team desk (js/community-desk.js): tabs in the Studio, a slim link on the space's page. */
+.cm-desk-slim p { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.cm-desk-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; border-bottom: 1px solid var(--line); }
+.cm-desk-tabs [role="tab"] { min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+.cm-desk-tabs [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--teal); }
+.cm-desk-tabs [role="tab"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.cm-desk-full .cm-desk-part { padding: 12px 0; }
+.cm-desk-full .cm-desk-part > h3 { margin: 0 0 4px; font-size: 1rem; }
+.cm-desk-slot:empty { display: none; }
+.cm-desk-clear { padding: 10px 0; }

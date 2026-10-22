@@ -17,7 +17,7 @@
     const r = await api(path);
     if (!r.ok) return;
     const off = r.data.off.includes("");
-    const part = kit.deskPart("Self-promotion");
+    const part = kit.deskPart("Self-promotion", null, "selfpromo");
     part.append(el("p", { class: "cm-small", text: "Linking your own products or projects is never allowed in questions and their answers. You can also switch it off everywhere in this space." }));
     const b = el("button", { class: "btn ghost small", type: "button", text: off ? "Allow it again in ordinary takes" : "Switch it off in this whole space" });
     b.addEventListener("click", async () => {

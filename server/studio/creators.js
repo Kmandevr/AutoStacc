@@ -5,6 +5,7 @@
 // limited to products and content (their pages are hand-written: no renames, deletes, new projects, builder or
 // profile site); their owner is the verified account the FIRST_PARTY_OWNERS secret names (#172).
 import { json, readJson, str, fail } from "../lib/http.js";
+import { run } from "../lib/db.js";
 import { isOpen } from "../settings/settings.js";
 import { requireUser } from "../auth/session.js";
 import { audit } from "../audit/log.js";
@@ -37,7 +38,7 @@ async function overview(app) {
   const creators = await creatorsOfUser(app.db, user.id);
   const out = await Promise.all(creators.filter((c) => c.source === "studio" || c.source === "catalog").map(async (c) => {
     const [projects, used] = await Promise.all([projectsOf(app.db, c.id), storageUsed(app.db, c.id)]);
-    return { ...publicCreator(c), firstParty: c.source === "catalog", role: c.role, capabilities: capabilitiesIn(c), path: `/${c.slug}`,
+    return { ...publicCreator(c), bio: c.bio || "", firstParty: c.source === "catalog", role: c.role, capabilities: capabilitiesIn(c), path: `/${c.slug}`,
       storage: { usedBytes: used, quotaBytes: quotaOf(c) }, projects: projects.map((p) => ({ ...publicProject(p), path: `/${c.slug}/${p.slug}` })) };
   }));
   return json({ creators: out, limits: LIMITS });
@@ -59,6 +60,12 @@ async function editCreator(app, { creatorId }) {
   const body = await readJson(app.request);
   const slug = body.slug !== undefined ? cleanSlug(body.slug, { creator: true }) : undefined;
   const updated = await updateCreator(app.db, creator, { slug, name: body.name !== undefined ? name(body.name) : undefined });
+  // The short bio (plain text, one or two lines) for the creator's card; empty clears it.
+  if (body.bio !== undefined) {
+    const bio = str(body.bio, "bio", { max: 400 }).replace(/\s+/g, " ").trim().slice(0, 160);
+    await run(app.db, "UPDATE creators SET bio = ? WHERE id = ?", bio || null, creator.id);
+    updated.bio = bio || null;
+  }
   // Published pages carry the creator's address and name, so they are rendered again.
   if (updated.slug !== creator.slug || updated.name !== creator.name) await republishCreator(app, creator.id);
   return json({ creator: { ...publicCreator(updated), path: `/${updated.slug}` } });

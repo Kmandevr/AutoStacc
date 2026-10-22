@@ -17,7 +17,8 @@
 
   // The store's products, in the shape js/product-card.js takes (price in dollars), fetched once per page for every grid.
   let loaded = null;
-  const products = () => loaded || (loaded = GS.api("/api/products").then((res) => (res.ok ? res.data.products : [])
+  // null when the store doesn't answer (offline), so the box can say so instead of "nothing here".
+  const products = () => loaded || (loaded = GS.api("/api/products").then((res) => (res.ok ? res.data.products : null) && res.data.products
     .map((p) => ({ id: p.id, title: p.title, description: p.description, type: p.type, price: p.priceCents / 100, project: p.projectId,
       projectName: p.projectName, projectPath: p.projectPath, path: p.path, artwork: p.artwork, verified: p.verified, featured: p.featured }))));
 
@@ -26,11 +27,11 @@
     const level = Number(cfg.level) || 3;
     const wanted = (p) => (!cfg.project || p.project === cfg.project) && (!("featured" in cfg) || p.featured);
     const draw = (list) => {
-      let items = list.filter(wanted);
+      let items = (list || []).filter(wanted);
       if (cfg.limit) items = items.slice(0, Number(cfg.limit));
       // data-mixed: store-style sizes; in a featured-only grid the first is the banner and the rest are capsules.
       const mixed = "mixed" in cfg, top = (p, i) => ("featured" in cfg ? { ...p, featured: i === 0 } : p);
-      root.innerHTML = `<div class="grid">${items.map((p, i) => card(mixed ? top(p, i) : p, { level, mixed })).join("") || `<p class="empty">Nothing here yet.</p>`}</div>`;
+      root.innerHTML = `<div class="grid">${items.map((p, i) => card(mixed ? top(p, i) : p, { level, mixed })).join("") || `<p class="empty">${list ? "Nothing here yet." : 'The store is offline right now. <a href="/shop">Open the store</a>'}</p>`}</div>`;
       dispatchEvent(new CustomEvent("gs:cards"));
     };
     // Placeholder cards in the grid's own slots while the store answers (js/skeleton.js, when loaded).

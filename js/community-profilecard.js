@@ -4,6 +4,7 @@
 // off.
 (function () {
   "use strict";
+  const ROLE = { founder: "Founder of", team: "Team ·", "creator team": "Creator team ·" };
   const kit = window.GS && window.GS.communityKit;
   if (!kit) return;
   const { el, press } = kit;
@@ -24,7 +25,7 @@
       card = el("div", { class: "cm-profile-card", role: "dialog", "aria-label": `${c.name}` },
         el("strong", { text: c.name }),
         el("p", { class: "cm-small", text: `Joined ${c.since} · ${c.bestAnswers} best ${c.bestAnswers === 1 ? "answer" : "answers"}` }),
-        c.teams.map((t) => el("p", { class: "cm-small", text: `${t.role === "founder" ? "Founder" : "Moderator"} of ${t.space}` })),
+        c.teams.map((t) => el("p", { class: "cm-small", text: ROLE[t.role] ? `${ROLE[t.role]} ${t.space}` : `Moderator of ${t.space}` })),
         el("button", { class: "btn ghost small", type: "button", text: "Close", on: { click: close } }));
       if (who.features.includes("blocks") && who.signedIn && who.member && who.member.displayName !== c.name) {
         const b = el("button", { class: "btn ghost small", type: "button", text: "Block" });

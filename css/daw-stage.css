@@ -93,3 +93,5 @@
   .daw-playhead { left: 78%; opacity: .6; }
   .daw-shade { background: linear-gradient(180deg, color-mix(in srgb, var(--daw-bg) 55%, transparent) 0%, color-mix(in srgb, var(--daw-bg) 82%, transparent) 45%, color-mix(in srgb, var(--daw-bg) 95%, transparent) 100%); }
 }
+/* Lighter effects (html.fx-lite, js/theme.js): the backdrop holds still. */
+.fx-lite :is(.daw-strip, .daw-meter i, .daw-dot) { animation-play-state: paused; }

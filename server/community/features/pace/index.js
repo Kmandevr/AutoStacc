@@ -56,6 +56,14 @@ async function postCheck(app, { user, space, kind, body, team }) {
   if (today.n >= cap) fail(429, "daily_limit", "That's the most you can post today. It resets within a day.");
 }
 
+// The current setting, for the Team desk (team only, like the switch).
+async function getSlowMode(app, { spaceId }) {
+  const user = await requireUser(app);
+  const space = await getSpace(app.db, id(spaceId, "spaceId"));
+  if (!space || !(await isTeam(app, user, space))) fail(404, "not_found", "Not found.");
+  return json({ seconds: space.slow_mode_seconds || 0, choices: SLOW_MODES }, 200, { "Cache-Control": "no-store" });
+}
+
 async function setSlowMode(app, { spaceId }) {
   const user = await requireUser(app);
   const space = await getSpace(app.db, id(spaceId, "spaceId"));
@@ -70,7 +78,7 @@ async function setSlowMode(app, { spaceId }) {
 export default {
   name: "pace",
   switch: "community.pace",
-  routes: [["PUT", "/api/community/spaces/:spaceId/slow-mode", setSlowMode]],
+  routes: [["GET", "/api/community/spaces/:spaceId/slow-mode", getSlowMode], ["PUT", "/api/community/spaces/:spaceId/slow-mode", setSlowMode]],
   checks: { post: postCheck },
   slots: { spaceHeader: ({ space }) => (space.slow_mode_seconds ? `<p class="cm-note cm-slow" role="note">Slow mode: one post every ${esc(label(space.slow_mode_seconds))}.</p>` : "") }
 };

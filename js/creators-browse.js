@@ -1,6 +1,6 @@
-// The creators browser ([data-creators-browse] on /creators): every creator on AutoStacc, AutoStacc's own and Studio
+// The creators browser ([data-creators-browse] on /discover?tab=creators): every creator on AutoStacc, AutoStacc's own and Studio
 // creators', with their projects and a link to /<creator>. Search and sort with pages, answered by GET /api/creators;
-// the address holds the state (/creators?q=&sort=&page=). A short bio shows only for AutoStacc's own creators (their
+// the address holds the state (/discover?tab=creators&q=&sort=&page=). A short bio shows from the Studio (and for AutoStacc's own creators from their
 // summary in data/creators.js). Placeholders while loading (GS.skeleton); offline, the page keeps its built list.
 // Needs js/util.js; js/skeleton.js is optional.
 (function () {
@@ -39,7 +39,7 @@
 
   const initial = (name) => (name.match(/[\p{L}\p{N}]/u) || ["?"])[0].toUpperCase();
   function card(c) {
-    const bio = c.firstParty ? BIO.get(c.slug) : "";
+    const bio = c.firstParty ? BIO.get(c.slug) || c.bio : c.bio;
     return `<li class="ccard">
       <a class="ccard-avatar" href="${e(c.path)}" tabindex="-1" aria-hidden="true"><span>${e(initial(c.name))}</span></a>
       <div class="ccard-body">
@@ -82,7 +82,10 @@
   function go(push = true, keepPage = false) {
     if (!keepPage) params.delete("page");
     const qs = params.toString();
-    history[push ? "pushState" : "replaceState"](null, "", location.pathname + (qs ? `?${qs}` : ""));
+    // On Discover the tab stays in the address (?tab=...), ahead of this browser's own state.
+    const tab = new URLSearchParams(location.search).get("tab");
+    const full = [tab ? `tab=${encodeURIComponent(tab)}` : "", qs].filter(Boolean).join("&");
+    history[push ? "pushState" : "replaceState"](null, "", location.pathname + (full ? `?${full}` : ""));
     load();
   }
 

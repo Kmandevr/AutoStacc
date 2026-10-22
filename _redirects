@@ -18,6 +18,9 @@
 /projects/glitches-and-stitches/news    /autostacc/glitches-and-stitches  301
 /projects/glitches-and-stitches/news/*  /autostacc/glitches-and-stitches  301
 /projects/glitches-and-stitches/*  /autostacc/glitches-and-stitches/:splat  301
+# Projects and Creators became Discover's tabs (owner, 2026-10-22, #208).
+/projects   /discover?tab=projects  301
+/creators   /discover?tab=creators  301
 # 2026-10-08: Account and Settings became one Settings area with a page per section (docs/decisions.md).
 /account    /settings/orders  301
 # Settings sections (/settings/security, ...) are one page. With the store on, functions/settings/[[path]].js gates and
