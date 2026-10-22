@@ -68,7 +68,7 @@
         </nav>
         <button class="side-collapse" type="button" aria-controls="side"><span class="side-collapse-icon" aria-hidden="true"></span><span class="side-text">Collapse</span></button>
       </div>
-      <div class="side-scrim" hidden></div>
+      <div class="side-scrim" aria-hidden="true"></div>
       <nav class="tabbar" aria-label="Quick links">
         <a href="/shop"${current("shop")}>${ICONS.store}<span>Store</span></a>
         <a href="/projects"${current("projects")}>${ICONS.all}<span>Projects</span></a>
@@ -117,7 +117,7 @@
     const behind = () => [$(".topbar", header), $(".tabbar", header), main, footer].filter(Boolean);
     const setOpen = (open, refocus = true) => {
       side.classList.toggle("open", open);
-      scrim.hidden = !open;
+      scrim.classList.toggle("open", open);
       root.classList.toggle("menu-open", open);
       toggle.setAttribute("aria-expanded", String(open));
       opener.setAttribute("aria-expanded", String(open));

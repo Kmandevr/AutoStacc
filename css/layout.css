@@ -120,6 +120,13 @@ body:has(> .site-frame) { padding-left: var(--side); }
 
 /* ---------- top bar ---------- */
 .site-frame { display: contents; }
+/* Before js/layout.js draws the frame, its space is kept (top bar, sidebar rail, phone bar), so nothing jumps when it
+   appears. Project pages draw their own frame (css/project-frame.css). */
+body:not([data-project]) > #site-header:empty { display: block; height: var(--topbar); }
+body:not([data-project]):has(> #site-header:empty) { padding-left: var(--side); }
+.side-scrim { display: none; }
+/* The page fills the screen, so the footer (drawn by js/layout.js) and late lists settle below the fold, not in view. */
+body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topbar)); }
 .topbar {
   position: sticky;
   top: 0;
@@ -226,7 +233,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
 
 /* ---------- phones and small tablets: the sidebar becomes a drawer ---------- */
 @media (max-width: 900px) {
-  body:has(> .site-frame) { padding-left: 0; }
+  body:has(> .site-frame), body:not([data-project]):has(> #site-header:empty) { padding-left: 0; }
   .side, .side-open .side {
     width: min(78vw, 280px);
     gap: 10px;
@@ -254,7 +261,10 @@ body:has(> .site-frame) { padding-left: var(--side); }
     line-height: 1;
     cursor: pointer;
   }
-  .side-scrim { position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  /* The dim and blur behind the drawer fade in and out with its slide (js/layout.js toggles .open). */
+  .side-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .32); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .22s var(--snap), visibility 0s linear .22s; }
+  .side-scrim.open { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .22s var(--snap), visibility 0s; }
   html.menu-open { overflow: hidden; }
   .side-close:hover { background: var(--panel-2); }
   .side-collapse { display: none; }
@@ -284,7 +294,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .snd { font-size: .68rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .side { transition: none; }
+  .side, .side-scrim, .side-scrim.open { transition: none; }
 }
 
 /* ---------- phones: a quick-links bar within thumb reach (Store, Projects, Community, Your Stacc or Log in, Menu) ---------- */
@@ -327,7 +337,7 @@ body:has(> .site-frame) { padding-left: var(--side); }
   .tabbar a[aria-current], .tabbar a:hover, .tabbar button:hover { color: var(--text); }
   .tabbar a[aria-current] .side-icon { stroke-width: 2.4; }
   .tabbar .side-icon { width: 22px; height: 22px; }
-  body:has(> .site-frame) { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  body:has(> .site-frame), body:not([data-project]):has(> #site-header:empty) { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 380px) { .tabbar a, .tabbar button { padding-inline: 1px; font-size: .64rem; } }
 /* blur isn't motion: only visitors who ask for less transparency get a solid bar */

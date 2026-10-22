@@ -1,6 +1,6 @@
 // Light/dark theme for AutoStacc: follows the device until the visitor picks one, then remembers it. Loaded in <head>
 // (before the page paints, so there's no flash) on every page; draws its switch into the top bar once the page is
-// ready. css/platform.css reads <html data-theme>. It also settles aborted page-change animations (below), which must
+// ready. css/platform.css reads <html data-theme>. It also applies the sidebar's remembered width before paint. It also settles aborted page-change animations (below), which must
 // be handled before the page first paints, so it lives in the one script that runs that early. Needs nothing.
 (function () {
   "use strict";
@@ -25,6 +25,9 @@
   try { mode = MODES.includes(localStorage.getItem(KEY)) ? localStorage.getItem(KEY) : "auto"; } catch { /* storage blocked */ }
   const apply = () => (mode === "auto" ? root.removeAttribute("data-theme") : root.setAttribute("data-theme", mode));
   apply();
+  // The sidebar's remembered width (js/layout.js, key "gs:side") is set here too, before the first paint, so pages
+  // don't slide sideways when the frame appears.
+  try { if (localStorage.getItem("gs:side") === "open") root.classList.add("side-open"); } catch { /* storage blocked: rail */ }
 
   addEventListener("DOMContentLoaded", () => {
     const tools = document.querySelector(".topbar-tools");
