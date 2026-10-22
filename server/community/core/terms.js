@@ -7,8 +7,8 @@ import { fold } from "./wording.js";
 const STOP = new Set(["the", "and", "for", "are", "but", "not", "you", "with", "how", "what", "can", "does", "why", "this", "that", "from", "have", "has", "was", "its", "who", "any", "into", "your", "get"]);
 export const MAX_TERMS = 6;
 
-export function terms(raw) {
-  const words = fold(String(raw || "").slice(0, 300)).split(/[^a-z0-9]+/).filter((w) => w.length >= 2 && !STOP.has(w));
+export function terms(raw, min = 2) {
+  const words = fold(String(raw || "").slice(0, 300)).split(/[^a-z0-9]+/).filter((w) => w.length >= min && !STOP.has(w));
   return [...new Set(words)].slice(0, MAX_TERMS);
 }
 

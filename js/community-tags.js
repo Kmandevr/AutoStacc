@@ -11,11 +11,11 @@
   const enc = encodeURIComponent;
   const idOf = (a) => (a.getAttribute("href").match(/\/community\/t\/(thr_[a-z0-9]+)/) || [])[1];
 
-  function results(tag) {
+  function results(tag, spaceId) {
     let box = document.querySelector(".cm-tag-results");
     if (!box) { box = el("div", { class: "cm-tag-results", "aria-live": "polite" }); document.querySelector("main").prepend(box); }
     box.replaceChildren(el("p", { class: "cm-small", text: `Takes tagged ${tag.label}:` }));
-    api(`/api/community/tagged?tag=${enc(tag.key)}`).then((r) => {
+    api(`/api/community/tagged?tag=${enc(tag.key)}${spaceId ? `&space=${enc(spaceId)}` : ""}`).then((r) => {
       if (!r.ok) return;
       if (!r.data.results.length) box.append(el("p", { class: "cm-small", text: "None yet." }));
       r.data.results.forEach((x) => box.append(el("p", { class: "cm-small" }, el("a", { href: x.path, text: x.title }), ` · ${x.space}`)));
@@ -30,8 +30,8 @@
     if (!ids.length) return;
     const r = await api(`/api/community/tags/for?threads=${ids.map(enc).join(",")}`);
     if (!r.ok) return;
-    const chip = (t) => el("button", { class: "cm-tag", type: "button", text: t.label, on: { click: () => results(t) } });
-    links.forEach((a) => (r.data.tags[idOf(a)] || []).forEach((t) => a.closest("li, .cm-strip-main").append(chip(t))));
+    const chip = (t, spaceId) => el("button", { class: "cm-tag", type: "button", text: t.label, on: { click: () => results(t, spaceId) } });
+    links.forEach((a) => (r.data.tags[idOf(a)] || []).forEach((t) => a.closest("li, .cm-strip-main").append(chip(t, a.closest("li") && a.closest("li").dataset.space))));
     if (threadId && kit.tools) {
       const row = el("div", { class: "cm-tags", role: "group", "aria-label": "Tags" }, (r.data.tags[threadId] || []).map(chip));
       kit.tools.before(row);

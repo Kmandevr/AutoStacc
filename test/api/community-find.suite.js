@@ -81,6 +81,13 @@ export default (ctx) => describe("community finding (switched on)", () => {
     assert.equal((await a.c.get("/api/community/tagged?tag=house")).data.results.some((x) => x.id === t.id), false);
     assert.deepEqual((await a.c.get(`/api/community/tags/for?threads=${t.id}`)).data.tags, {});
     assert.equal((await a.c.get("/api/community/tagged?tag=Bad Tag!")).status, 400);
+    assert.equal((await a.c.get("/api/community/tagged?tag=mixing-help")).status, 400, "a space's own tag needs its space");
+    assert.equal((await find(new Client(ctx.mock.url), "ab")).status, 400, "two-letter words aren't searched");
+    // A banned author can't retag their take.
+    const c = await person();
+    const t3 = await take(c.c, `Ban retag ${++n}`, "words here");
+    db(`INSERT INTO community_space_bans (space_id, user_id, reason, created_at) VALUES ('${SPACE}', '${c.user.id}', 'test', '2026-10-22T00:00:00.000Z')`);
+    assert.equal((await c.c.req("PUT", `/api/community/threads/${t3.id}/tags`, { body: { tags: ["house"] } })).status, 403);
   });
 
   test("similar: visible questions that share the words, best first; nothing for other kinds or hidden takes", async () => {

@@ -7,7 +7,7 @@ import { json, readJson, fail, id, str } from "../../../lib/http.js";
 import { all, first, run, stmt, now } from "../../../lib/db.js";
 import { requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
-import { isTeam } from "../../core/access.js";
+import { isTeam, requirePoster, requireTeam } from "../../core/access.js";
 import { getSpace } from "../../core/posting.js";
 import { threadPath } from "../../core/render-parts.js";
 import { teamSpace } from "../../core/team-space.js";
@@ -34,13 +34,14 @@ async function forThreads(app) {
   await limit(app, "community-tags-read", 240, 600);
   const ids = (new URL(app.request.url).searchParams.get("threads") || "").split(",").filter(Boolean).slice(0, 25).map((x) => id(x, "threads"));
   if (!ids.length) return json({ tags: {} }, 200, NO_STORE);
-  const rows = await all(app.db, `SELECT g.thread_id, g.tag, COALESCE(sp.label, g.tag) AS label FROM community_thread_tags g
-    JOIN community_threads t ON t.id = g.thread_id AND t.state = 'visible'
+  const rows = await all(app.db, `SELECT g.thread_id, g.tag, sp.label AS label FROM community_thread_tags g
+    JOIN community_threads t ON t.id = g.thread_id AND t.state = 'visible' JOIN community_spaces s ON s.id = t.space_id AND s.state <> 'archived'
     LEFT JOIN community_space_tags sp ON sp.space_id = t.space_id AND sp.key = g.tag
     WHERE g.thread_id IN (SELECT value FROM json_each(?))`, JSON.stringify(ids));
   const labels = new Map(STARTER.map((t) => [t.key, t.label]));
   const out = {};
-  for (const r of rows) (out[r.thread_id] = out[r.thread_id] || []).push({ key: r.tag, label: labels.get(r.tag) || r.label });
+  // A tag whose space-added label is gone (removed while being set) shows nothing.
+  for (const r of rows) if (labels.has(r.tag) || r.label) (out[r.thread_id] = out[r.thread_id] || []).push({ key: r.tag, label: labels.get(r.tag) || r.label });
   return json({ tags: out }, 200, NO_STORE);
 }
 
@@ -53,6 +54,8 @@ async function setTags(app, { threadId }) {
   const team = await isTeam(app, user, space);
   const mine = t.author_user_id === user.id && Date.now() - Date.parse(t.created_at) <= EDIT_WINDOW_MS;
   if (!team && !mine) fail(403, "not_allowed", "Only the author (for 24 hours) or the space's team sets tags.");
+  // The same standing as posting: a ban, a suspension or a space that isn't open stops it (a team member's own standing is checked as theirs).
+  if (team) await requireTeam(app, user, space); else await requirePoster(app, user, space);
   const body = await readJson(app.request);
   if (!Array.isArray(body.tags) || body.tags.length > MAX_PER_THREAD) fail(400, "invalid_field", `Pick up to ${MAX_PER_THREAD} tags.`, { field: "tags" });
   const ok = await allowed(app.db, t.space_id);
@@ -68,6 +71,8 @@ async function tagged(app) {
   const tag = String(url.searchParams.get("tag") || "").slice(0, 40);
   if (!/^[a-z0-9-]{1,40}$/.test(tag)) fail(400, "invalid_field", "Unknown tag.", { field: "tag" });
   const space = url.searchParams.get("space");
+  // A space's own tag means something only inside that space; AutoStacc's starter tags work everywhere.
+  if (!STARTER_KEYS.has(tag) && !space) fail(400, "invalid_field", "Say which space that tag belongs to.", { field: "space" });
   const rows = await all(app.db, `SELECT t.id, t.slug, t.title, t.type, t.reply_count AS replies, s.name AS space FROM community_thread_tags g
     JOIN community_threads t ON t.id = g.thread_id JOIN community_spaces s ON s.id = t.space_id
     WHERE g.tag = ? AND t.state = 'visible' AND s.state <> 'archived' ${space ? "AND t.space_id = ?" : ""} ORDER BY t.last_post_at DESC LIMIT 30`, tag, ...(space ? [id(space, "space")] : []));

@@ -14,7 +14,8 @@ const TYPES = ["discussion", "question", "update", "poll", "challenge"];
 async function search(app) {
   await limit(app, "community-search", 60, 600);
   const url = new URL(app.request.url);
-  const words = terms(url.searchParams.get("q"));
+  // Words of three letters or more: a two-letter term would scan every post for little value.
+  const words = terms(url.searchParams.get("q"), 3);
   if (!words.length) fail(400, "invalid_field", "Type a word or two to look for.", { field: "q" });
   const where = ["t.state = 'visible'", "s.state <> 'archived'"];
   const args = [];
@@ -27,7 +28,7 @@ async function search(app) {
   pick("channel", "t.channel_id");
   const type = url.searchParams.get("type");
   if (type) { if (!TYPES.includes(type)) fail(400, "invalid_field", "Unknown kind.", { field: "type" }); where.push("t.type = ?"); args.push(type); }
-  const page = Math.min(50, Math.max(1, Number(url.searchParams.get("page")) || 1));
+  const page = Math.min(10, Math.max(1, Number(url.searchParams.get("page")) || 1));
   const rows = await all(app.db, `SELECT t.id, t.slug, t.title, t.type, t.reply_count AS replies, t.last_post_at AS at, s.name AS space, c.name AS channel
     FROM community_threads t JOIN community_spaces s ON s.id = t.space_id JOIN community_channels c ON c.id = t.channel_id
     WHERE ${where.join(" AND ")} ORDER BY t.last_post_at DESC LIMIT ? OFFSET ?`, ...args, PAGE + 1, (page - 1) * PAGE);
