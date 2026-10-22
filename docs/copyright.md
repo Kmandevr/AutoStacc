@@ -2,7 +2,7 @@
 title: Copyright notices and strikes
 summary: Built (#137): level 3 (Studio closed, no links in posts), takedowns, counter-notices and restoring, the public notice form, takedowns, counter-notices and restoring, the public notice form, copyright notices recorded and decided in the Control Center, strikes for the uploader (whole) and the creator space (half, whole for the owner's own upload), levels computed when asked, and what level 2 stops (publishing and pricing for an account; sales, free claims and Auto-Stacc for a space).
 covers: [server/copyright/, server/community/features/textonly/, db/migrations/0037_copyright.sql, db/migrations/0038_copyright_form.sql, db/migrations/0039_copyright_takedowns.sql, copyright-notice.html, js/copyright-notice.js, js/copyright-counter.js, js/admin-copyright.js, test/api/copyright.suite.js, test/unit/copyright-standing.test.js, test/unit/copyright-filing.test.js, test/unit/copyright-business-days.test.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Copyright notices and strikes

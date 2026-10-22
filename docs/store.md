@@ -2,7 +2,7 @@
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
 covers: [server/app.js, server/content/, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, server/settings/, server/collections/, server/billing/, server/reviews/, server/shop/, js/product-reviews.js, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Store
