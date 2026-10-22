@@ -3,7 +3,8 @@
 // core calls these hooks, which only reach features whose switches are on. A manifest may have:
 //   name, switch               the feature's own switch in server/lib/features.js ("community.<name>")
 //   routes                     [[method, path, handler]]: 404 while the feature (or the whole community) is off
-//   checks: { action(app, ctx) }   run before a core write; throw (fail()) to refuse it. Actions: "post" (a take or reply)
+//   checks: { action(app, ctx) }   run before a core write; throw (fail()) to refuse it, or return { hold: { rule, reason } }
+//                                  to have the space's team approve it first (core/holds.js). Actions: "post" (a take, reply or edit)
 //   on: { event(app, payload) }    after a core write; errors are logged, never undo the write. Events: threadStarted,
 //                                  replyPosted, postEdited, postRemoved
 //   slots: { name(ctx) }       HTML for named places on the server-rendered pages (strings, already escaped by the
@@ -32,8 +33,16 @@ export const featureOn = (app, name) => on(app).some((f) => f.name === name);
 // The switched-on features' names, so the browser's feature scripts know whether to do anything.
 export const featuresOn = (app) => on(app).map((f) => f.name);
 
+// → null, or the first hold a check asked for ({ rule, reason }): the core then stores the post hidden for the team
+// (core/holds.js) instead of publishing it. A check refuses by throwing, as before.
 export async function check(app, action, ctx) {
-  for (const f of on(app)) if (f.checks && f.checks[action]) await f.checks[action](app, ctx);
+  let hold = null;
+  for (const f of on(app)) {
+    if (!f.checks || !f.checks[action]) continue;
+    const r = await f.checks[action](app, ctx);
+    if (r && r.hold && !hold) hold = r.hold;
+  }
+  return hold;
 }
 
 export async function emit(app, event, payload) {

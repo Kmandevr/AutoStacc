@@ -26,5 +26,9 @@ window.FEATURES = {
  "community.textOnly": true,
  "community.embeds": true,
  "community.cards": true,
- "community.codeblocks": true
+ "community.codeblocks": true,
+ "community.linkRules": true,
+ "community.wordFilter": true,
+ "community.newAccount": true,
+ "community.patterns": true
 };

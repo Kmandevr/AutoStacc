@@ -27,7 +27,9 @@ export async function editPost(app, user, postId, { body }) {
   await requirePoster(app, user, await getSpace(app.db, post.space_id));
   const text = cleanBody(body);
   if (text === post.body) return post;
-  await check(app, "post", { user, space: await getSpace(app.db, post.space_id), channel: { id: post.channel_id }, thread: { id: post.thread_id }, kind: "edit", body: text, team: false });
+  const hold = await check(app, "post", { user, space: await getSpace(app.db, post.space_id), channel: { id: post.channel_id }, thread: { id: post.thread_id }, kind: "edit", body: text, team: false });
+  // An edit can't wait in a queue (the old text is showing): it is refused, saying why.
+  if (hold) fail(403, "needs_approval", `This edit can't be posted: ${hold.reason}`);
   const at = now();
   await app.db.batch([
     stmt(app.db, "INSERT INTO community_post_edits (post_id, at, body) VALUES (?, ?, ?)", post.id, at, post.body),

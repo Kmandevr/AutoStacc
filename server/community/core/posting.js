@@ -9,6 +9,7 @@ import { fail } from "../../lib/http.js";
 import { MAX_BODY } from "./format.js";
 import { isTeam, requirePoster } from "./access.js";
 import { check, emit } from "./hooks.js";
+import { holdStmts, requireRoom } from "./holds.js";
 
 const BIDI = /[‎‏‪-‮⁦-⁩]/g;
 export const TITLE = { min: 5, max: 150 };
@@ -43,15 +44,17 @@ export async function startThread(app, user, { channelId, type, title, body }) {
   if (!STARTABLE.includes(type) || !channel.post_types.split(",").includes(type)) fail(400, "invalid_field", "This channel doesn't take that kind of post.", { field: "type" });
   const t = cleanTitle(title);
   const text = cleanBody(body);
-  await check(app, "post", { user, space, channel, thread: null, kind: "thread", type, title: t, body: text, team });
+  const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread: null, kind: "thread", type, title: t, body: text, team }));
   const at = now();
   const thread = { id: newId("thr"), slug: slugify(t), spaceId: space.id };
   await app.db.batch([
-    stmt(app.db, `INSERT INTO community_threads (id, space_id, channel_id, type, title, slug, author_user_id, last_post_at, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, thread.id, space.id, channel.id, type, t, thread.slug, user.id, at, at),
+    stmt(app.db, `INSERT INTO community_threads (id, space_id, channel_id, type, title, slug, author_user_id, state, last_post_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, thread.id, space.id, channel.id, type, t, thread.slug, user.id, hold ? "hidden" : "visible", at, at),
     stmt(app.db, "INSERT INTO community_posts (id, thread_id, author_user_id, body, created_at) VALUES (?, ?, ?, ?, ?)", newId("pst"), thread.id, user.id, text, at),
+    ...(hold ? holdStmts(app.db, { targetType: "thread", targetId: thread.id, spaceId: space.id, authorId: user.id, hold }) : []),
     ...(team ? [touchTeam(app.db, space, at)] : [])
   ]);
+  if (hold) return { thread, space, channel, held: true };
   await emit(app, "threadStarted", { user, space, channel, thread: { ...thread, type, title: t }, body: text });
   return { thread, space, channel };
 }
@@ -69,14 +72,15 @@ export async function reply(app, user, threadId, { body, parentId = null }) {
   const channel = await first(app.db, "SELECT * FROM community_channels WHERE id = ?", thread.channel_id);
   if (!channel || channel.archived_at) fail(403, "channel_archived", "This channel is archived: its takes are read-only.");
   const team = await isTeam(app, user, space);
-  await check(app, "post", { user, space, channel, thread, kind: "reply", type: thread.type, parent, body: text, team });
+  const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread, kind: "reply", type: thread.type, parent, body: text, team }));
   const at = now();
   const id = newId("pst");
   await app.db.batch([
-    stmt(app.db, "INSERT INTO community_posts (id, thread_id, parent_post_id, author_user_id, body, created_at) VALUES (?, ?, ?, ?, ?, ?)", id, thread.id, parent ? parent.id : null, user.id, text, at),
-    stmt(app.db, "UPDATE community_threads SET reply_count = reply_count + 1, last_post_at = ? WHERE id = ?", at, thread.id),
+    stmt(app.db, "INSERT INTO community_posts (id, thread_id, parent_post_id, author_user_id, state, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", id, thread.id, parent ? parent.id : null, user.id, hold ? "hidden" : "visible", text, at),
+    ...(hold ? holdStmts(app.db, { targetType: "post", targetId: id, spaceId: space.id, authorId: user.id, hold }) : [stmt(app.db, "UPDATE community_threads SET reply_count = reply_count + 1, last_post_at = ? WHERE id = ?", at, thread.id)]),
     ...(team ? [touchTeam(app.db, space, at)] : [])
   ]);
+  if (hold) return { id, thread: { id: thread.id, slug: thread.slug }, space, channel, held: true };
   await emit(app, "replyPosted", { user, space, channel, thread, parent, post: { id, body: text } });
   return { id, thread: { id: thread.id, slug: thread.slug }, space, channel };
 }

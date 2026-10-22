@@ -18,5 +18,9 @@ import textonly from "./textonly/index.js";
 import embeds from "./embeds/index.js";
 import cards from "./cards/index.js";
 import codeblocks from "./codeblocks/index.js";
+import linkrules from "./linkrules/index.js";
+import wordfilter from "./wordfilter/index.js";
+import newaccount from "./newaccount/index.js";
+import patterns from "./patterns/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns]) register(f);

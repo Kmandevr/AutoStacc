@@ -75,6 +75,8 @@
       busy(form, false);
       if (!r.ok) return say(msg, r.error.message);
       text.clear();
+      // A take held for the space's team isn't there to open yet: say so instead.
+      if (r.data.held) { form.replaceWith(el("p", { class: "cm-small", role: "status", text: "Thanks. Your take is waiting for the space's team to look at it. You'll see it listed as waiting on the community page." })); return; }
       location.href = r.data.thread.path;
     } } },
       el("h2", { text: "New take" }),
@@ -95,6 +97,11 @@
       ev.preventDefault();
       busy(form, true);
       const r = await api(`/api/community/threads/${encodeURIComponent(threadId)}/posts`, { method: "POST", body: { body: text.box.value, parentId } });
+      if (r.ok && r.data.held) {
+        text.clear();
+        form.replaceWith(el("p", { class: "cm-small", role: "status", text: "Thanks. Your reply is waiting for the space's team to look at it." }));
+        return;
+      }
       if (r.ok) {
         text.clear();
         try { sessionStorage.setItem("cm-new-post", r.data.post.id); } catch { /* no animation */ }
