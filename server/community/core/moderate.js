@@ -100,6 +100,7 @@ export async function setState(app, target, to, { action, actorId = null, reason
     guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = ? AND COALESCE(removed_reason, '') = ? AND COALESCE(removed_at, '') = ?)`,
       target.id, target.state, target.removedReason || "", target.removedAt || ""),
     stmt(db, `UPDATE ${table} SET state = ?, removed_reason = ?, removed_at = ? WHERE id = ?`, to, to === "removed" ? "space_rules" : null, to === "removed" ? now() : null, target.id),
+    stmt(db, "DELETE FROM community_holds WHERE target_type = ? AND target_id = ?", target.type, target.id),
     ...(target.type === "post" ? [recount(db, target.thread.id)] : []),
     ...logStmts(db, { spaceId: target.spaceId, actorId, action, targetType: target.type, targetId: target.id, reason, automatic }),
     ...extra
@@ -118,6 +119,7 @@ export async function legalRemove(app, target, { reason, extra = [] }) {
   await guarded(db, [
     guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = ? AND COALESCE(removed_reason, '') = ?)`, target.id, target.state, target.removedReason || ""),
     stmt(db, `UPDATE ${table} SET state = 'removed', removed_reason = 'legal', removed_at = ? WHERE id = ?`, now(), target.id),
+    stmt(db, "DELETE FROM community_holds WHERE target_type = ? AND target_id = ?", target.type, target.id),
     ...(target.type === "post" ? [recount(db, target.thread.id)] : []),
     ...logStmts(db, { spaceId: target.spaceId, action: "legal_remove", targetType: target.type, targetId: target.id, reason: `Removed by AutoStacc: ${reason}`, automatic: true }),
     ...extra
@@ -134,6 +136,7 @@ export async function legalRestore(app, target) {
   await guarded(db, [
     guardStmt(db, `EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND state = 'removed' AND removed_reason = 'legal')`, target.id),
     stmt(db, `UPDATE ${table} SET state = 'visible', removed_reason = NULL, removed_at = NULL WHERE id = ?`, target.id),
+    stmt(db, "DELETE FROM community_holds WHERE target_type = ? AND target_id = ?", target.type, target.id),
     ...(target.type === "post" ? [recount(db, target.thread.id)] : []),
     ...logStmts(db, { spaceId: target.spaceId, action: "legal_restore", targetType: target.type, targetId: target.id, reason: "Restored after a copyright counter-notice.", automatic: true })
   ]);

@@ -55,6 +55,18 @@ export function hasLink(raw) {
   return false;
 }
 
+// The sites a text links to (lowercase, no leading www.), in order and without repeats: the same tokens and URL rule
+// the formatter uses, for the link rules (allowed sites, the ban list).
+export function linkHosts(raw) {
+  const out = [];
+  for (const m of String(clean(raw)).matchAll(TOKEN)) {
+    const u = m[2] !== undefined ? safeUrl(m[3]) : m[4] !== undefined ? safeUrl(m[4].replace(/[.,;:!?)\]]+$/, "")) : null;
+    const h = u && host(u).toLowerCase().replace(/\.+$/, "");
+    if (h && !out.includes(h)) out.push(h);
+  }
+  return out;
+}
+
 export function inline(raw, ext = NO_EXT) {
   raw = clean(raw);
   let out = "";

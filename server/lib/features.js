@@ -56,7 +56,11 @@ export const FEATURES = {
   "community.textOnly": { on: true, label: "Community: no links from accounts at three copyright strikes" },
   "community.embeds": { on: true, label: "Community: music players from SoundCloud, YouTube, Spotify and Apple Music links" },
   "community.cards": { on: true, label: "Community: preview cards for AutoStacc links" },
-  "community.codeblocks": { on: true, label: "Community: code and settings blocks" }
+  "community.codeblocks": { on: true, label: "Community: code and settings blocks" },
+  "community.linkRules": { on: true, label: "Community: link approval (safe list, ban list, team's allowed sites)" },
+  "community.wordFilter": { on: true, label: "Community: word and phrase filters" },
+  "community.newAccount": { on: true, label: "Community: rules for new accounts and new members" },
+  "community.patterns": { on: true, label: "Community: pattern rules built from a form" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

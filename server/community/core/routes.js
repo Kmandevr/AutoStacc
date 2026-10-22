@@ -15,6 +15,7 @@ import { mine } from "./mine.js";
 import { purge } from "./purge.js";
 import { threadPath } from "./render-parts.js";
 import { featureRoutes, state, featuresOn } from "./hooks.js";
+import { holdRoutes } from "./holds-routes.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -49,7 +50,7 @@ async function newThread(app) {
   const r = await startThread(app, user, { channelId: id(body.channelId, "channelId"), type: str(body.type, "type", { max: 20 }),
     title: str(body.title, "title", { max: 400 }), body: str(body.body, "body", { max: 20000 }) });
   purge(app, r);
-  return json({ thread: { id: r.thread.id, path: threadPath(r.thread) } }, 201);
+  return json({ thread: { id: r.thread.id, path: threadPath(r.thread) }, ...(r.held && { held: true }) }, 201);
 }
 
 async function newReply(app, { threadId }) {
@@ -58,7 +59,7 @@ async function newReply(app, { threadId }) {
   const parentId = body.parentId === undefined || body.parentId === null ? null : id(body.parentId, "parentId");
   const r = await reply(app, user, id(threadId, "threadId"), { body: str(body.body, "body", { max: 20000 }), parentId });
   purge(app, r);
-  return json({ post: { id: r.id, path: `${threadPath(r.thread)}#${r.id}` } }, 201);
+  return json({ post: { id: r.id, path: `${threadPath(r.thread)}#${r.id}` }, ...(r.held && { held: true }) }, 201);
 }
 
 async function edit(app, { postId }) {
@@ -102,5 +103,6 @@ export const routes = [
   ["GET", "/api/community/spaces/:spaceId/mine", spaceMine],
   ["PATCH", "/api/community/posts/:postId", edit],
   ["DELETE", "/api/community/posts/:postId", remove],
+  ...holdRoutes,
   ...featureRoutes()
 ];
