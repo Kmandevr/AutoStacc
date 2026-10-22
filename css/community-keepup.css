@@ -1,0 +1,7 @@
+/* Keeping up: the bell and its panel, the Saved list, the Join button (js/community-{inbox,saved,joined}.js). */
+.cm-bell-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; margin: 0 0 .75rem; }
+.cm-bell-count:not(:empty) { margin-left: .25rem; padding: 0 .4rem; border-radius: 999px; background: var(--accent, currentColor); color: var(--bg, #fff); font-size: .8em; }
+.cm-inbox { width: min(28rem, 100%); padding: .6rem .8rem; border: 1px solid var(--line, rgba(128,128,128,.35)); border-radius: 10px; }
+.cm-unread { font-weight: 600; }
+.cm-saved { margin: .5rem 0; }
+.cm-join { margin: .5rem 0; }

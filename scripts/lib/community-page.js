@@ -35,7 +35,7 @@ function communityPage(SITE) {
         ${me}
       </div>
     </section>`;
-  const html = shell(SITE, { page, section: "community", styles: ["community", "community-boost", "community-qa", "community-waves", "community-moderation", "community-safety", "community-embeds", "community-cards", "community-codeblocks"], scripts: ["js/community-kit.js", "js/community.js", "js/community-boost.js", "js/community-qa.js", "js/community-moderation.js", "js/community-reports.js", "js/community-blocks.js", "js/community-upkeep.js", "js/community-cards.js", "js/community-holds.js", "js/community-linkrules.js", "js/community-wordfilter.js", "js/community-newaccount.js", "js/community-patterns.js"], main });
+  const html = shell(SITE, { page, section: "community", styles: ["community", "community-boost", "community-qa", "community-waves", "community-moderation", "community-safety", "community-embeds", "community-cards", "community-codeblocks", "community-keepup"], scripts: ["js/community-kit.js", "js/community.js", "js/community-boost.js", "js/community-qa.js", "js/community-moderation.js", "js/community-reports.js", "js/community-blocks.js", "js/community-upkeep.js", "js/community-cards.js", "js/community-holds.js", "js/community-linkrules.js", "js/community-wordfilter.js", "js/community-newaccount.js", "js/community-patterns.js", "js/community-follows.js", "js/community-saved.js", "js/community-joined.js", "js/community-mentions.js", "js/community-inbox.js"], main });
   return { file: "community.html", page, html };
 }
 

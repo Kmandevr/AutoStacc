@@ -1,0 +1,44 @@
+// Save for later (the saved feature, server/community/features/saved/; needs js/community-kit.js): a Save button in
+// a take's tools, and your private Saved list in the notices area of the community pages. Does nothing when the
+// feature is off or the visitor is signed out.
+(function () {
+  "use strict";
+  const kit = window.GS && window.GS.communityKit;
+  if (!kit) return;
+  const { el, press } = kit;
+  const api = window.GS.api;
+
+  async function button() {
+    const state = await kit.mine();
+    if (!state || !state.features || !state.features.saved) return;
+    let saved = state.features.saved.saved;
+    const path = `/api/community/threads/${encodeURIComponent(kit.tools.dataset.cmThread)}/save`;
+    const b = el("button", { class: "btn ghost small", type: "button" });
+    const draw = () => { b.textContent = saved ? "Saved" : "Save for later"; b.setAttribute("aria-pressed", String(saved)); };
+    draw();
+    b.addEventListener("click", async () => {
+      press(b, true);
+      const r = await api(path, { method: saved ? "DELETE" : "PUT" });
+      press(b, false);
+      if (r.ok) { saved = r.data.saved; draw(); } else window.alert(r.error.message);
+    });
+    kit.tools.hidden = false;
+    kit.tools.append(b);
+  }
+
+  async function list() {
+    const r = await api("/api/community/saved");
+    if (!r.ok || !r.data.saved.length) return;
+    kit.notices.hidden = false;
+    const d = el("details", { class: "cm-saved" }, el("summary", { text: `Saved (${r.data.saved.length})` }));
+    r.data.saved.forEach((x) => d.append(el("p", { class: "cm-small" }, el("a", { href: x.path, text: x.title }), ` · ${x.space}`)));
+    kit.notices.append(d);
+  }
+
+  (async () => {
+    const who = await kit.me();
+    if (!who.features.includes("saved") || !who.signedIn || !who.member) return;
+    if (kit.tools) button();
+    if (kit.notices) list();
+  })();
+})();

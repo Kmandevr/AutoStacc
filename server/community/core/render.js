@@ -31,7 +31,7 @@ export const emptyState = (line) => `<div class="cm-empty"><svg class="cm-empty-
 function strip(t, kit, { showSpace = null } = {}) {
   const meta = [TYPE_LABEL[t.type] || "Discussion", ...(t.channelName ? [esc(t.channelName)] : []), `by ${who(t.author, kit)}`, day(t.lastPostAt)];
   if (showSpace) meta.unshift(`<a href="${esc(spacePath(showSpace))}">${esc(showSpace.name)}</a>`);
-  return `<li class="cm-strip${t.pinned ? " cm-pinned" : ""}" data-track="${track(t.channelPosition)}">
+  return `<li class="cm-strip${t.pinned ? " cm-pinned" : ""}" data-track="${track(t.channelPosition)}" data-space="${esc(t.spaceId)}">
             <div class="cm-strip-main">
               <a class="cm-strip-title" href="${esc(threadPath(t))}">${t.pinned ? '<span class="cm-badge">Pinned</span> ' : ""}${kit.slot("listBadges", { thread: t })}${esc(t.title)}</a>
               <p class="cm-meta">${meta.join(" · ")}</p>

@@ -2,7 +2,7 @@
 // docs/community-safety.md, "Retention"). Deleting: posts and threads stay but no longer name anyone ("deleted user"),
 // the display name, votes, blocks, space roles and edit history go; posts removed for a legal reason keep their text
 // for the legal retention, but not who wrote them; reports keep their text but not who made or decided them, and
-// bans of the person go. The space teams' logs stay as they are (an audit record, append-only). The export lists
+// bans of the person go, and so do the notifications they received (those they caused lose who did it). The space teams' logs stay as they are (an audit record, append-only). The export lists
 // everything the person wrote and did.
 import { stmt, all } from "../../lib/db.js";
 import { eraseStmts, exportData } from "./hooks.js";
@@ -17,6 +17,8 @@ export const eraseCommunityStmts = (db, userId) => [
   stmt(db, "UPDATE community_reports SET reporter_user_id = NULL WHERE reporter_user_id = ?", userId),
   stmt(db, "UPDATE community_reports SET handled_by = NULL WHERE handled_by = ?", userId),
   stmt(db, "DELETE FROM community_space_bans WHERE user_id = ?", userId),
+  stmt(db, "DELETE FROM community_notifications WHERE user_id = ?", userId),
+  stmt(db, "UPDATE community_notifications SET actor_user_id = NULL WHERE actor_user_id = ?", userId),
   // Each feature's own data (its tables), whether or not it is switched on.
   ...eraseStmts(db, userId),
   stmt(db, "DELETE FROM community_members WHERE user_id = ?", userId)

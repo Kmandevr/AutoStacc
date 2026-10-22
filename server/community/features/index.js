@@ -22,5 +22,10 @@ import linkrules from "./linkrules/index.js";
 import wordfilter from "./wordfilter/index.js";
 import newaccount from "./newaccount/index.js";
 import patterns from "./patterns/index.js";
+import follows from "./follows/index.js";
+import joined from "./joined/index.js";
+import saved from "./saved/index.js";
+import mentions from "./mentions/index.js";
+import inbox from "./inbox/index.js";
 
-for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns]) register(f);
+for (const f of [boost, qa, waves, preview, pace, moderation, reports, blocks, crisis, upkeep, legal, textonly, embeds, cards, codeblocks, linkrules, wordfilter, newaccount, patterns, follows, joined, saved, mentions, inbox]) register(f);

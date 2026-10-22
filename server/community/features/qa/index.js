@@ -8,6 +8,7 @@ import { requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
 import { requirePoster, isTeam } from "../../core/access.js";
 import { getSpace } from "../../core/posting.js";
+import { emit } from "../../core/hooks.js";
 import { purge } from "../../core/purge.js";
 import { plain } from "../../core/format.js";
 import { setVote, votesOf } from "../../core/votes-store.js";
@@ -48,6 +49,7 @@ async function pick(app, { threadId }) {
   }
   await run(app.db, "UPDATE community_threads SET accepted_post_id = ? WHERE id = ?", postId, t.id);
   purge(app, { thread: t, space });
+  if (postId) await emit(app, "answerPicked", { user, space, thread: t, post: { id: postId } });
   return json({ ok: true });
 }
 

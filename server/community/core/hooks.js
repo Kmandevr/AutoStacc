@@ -6,7 +6,7 @@
 //   checks: { action(app, ctx) }   run before a core write; throw (fail()) to refuse it, or return { hold: { rule, reason } }
 //                                  to have the space's team approve it first (core/holds.js). Actions: "post" (a take, reply or edit)
 //   on: { event(app, payload) }    after a core write; errors are logged, never undo the write. Events: threadStarted,
-//                                  replyPosted, postEdited, postRemoved
+//                                  replyPosted, postEdited, postRemoved, answerPicked (the qa feature)
 //   slots: { name(ctx) }       HTML for named places on the server-rendered pages (strings, already escaped by the
 //                              feature). Slots: nameMark, postBadges, postClass, postFooter, threadTools, listBadges,
 //                              listMeters, spaceHeader, homeBoxes
