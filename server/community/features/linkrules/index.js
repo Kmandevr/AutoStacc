@@ -6,7 +6,7 @@ import { json, readJson, fail, str } from "../../../lib/http.js";
 import { all, first, run, now } from "../../../lib/db.js";
 import { teamSpace } from "../../core/team-space.js";
 import { linkHosts } from "../../core/format.js";
-import { SAFE, BANNED, siteIn } from "./lists.js";
+import { SAFE, BANNED, siteIn, tooBroad } from "./lists.js";
 
 const OWN = ["autostacc.com"];
 const MAX_ALLOWED = 200;
@@ -34,6 +34,7 @@ async function allow(app, { spaceId }) {
   const { user, space } = await teamSpace(app, spaceId, { write: true, name: "community-allowed-links" });
   const host = str((await readJson(app.request)).host, "host", { max: 100 }).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "");
   if (!HOST.test(host)) fail(400, "invalid_field", "Give a site's address, like example.com.", { field: "host" });
+  if (tooBroad(host)) fail(400, "too_broad", "That address covers many different people's sites. Allow a specific site instead.", { field: "host" });
   if (siteIn(host, BANNED)) fail(400, "site_banned", "AutoStacc doesn't allow links to that site, in any space.", { field: "host" });
   const n = (await first(app.db, "SELECT COUNT(*) AS n FROM community_allowed_links WHERE space_id = ?", space.id)).n;
   if (n >= MAX_ALLOWED) fail(409, "too_many", `A space can allow up to ${MAX_ALLOWED} sites.`);

@@ -44,6 +44,8 @@ async function appeal(app) {
   const target = (type === "thread" || type === "post") && await loadTarget(app.db, type, id(body.targetId, "targetId"));
   // Only your own, and only what a space's team took down under its rules.
   if (!target || target.authorId !== user.id || !(target.state === "hidden" || target.removedReason === "space_rules")) fail(404, "not_found", "Nothing to appeal there.");
+  // A post waiting for approval isn't a takedown: the team decides it from its queue (core/holds.js).
+  if (await first(app.db, "SELECT 1 AS n FROM community_holds WHERE target_type = ? AND target_id = ?", type, target.id)) fail(404, "not_found", "Nothing to appeal there.");
   const note = str(body.note, "note", { max: 1000 }).trim();
   if (note.length < 10) fail(400, "note_required", "Tell the team, in a sentence or two, why it should come back.", { field: "note" });
   const r = await app.db.prepare(`INSERT INTO community_appeals (id, space_id, target_type, target_id, user_id, note, created_at)

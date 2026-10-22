@@ -179,4 +179,31 @@ export default (ctx) => describe("community automod (switched on)", () => {
     for (const r of rules) assert.equal((await team.req("DELETE", path, { body: { id: r.id } })).status, 200);
     assert.equal((await team.req("DELETE", path, { body: { id: "cpr_nope" } })).status, 404);
   });
+
+  test("security review: a trailing dot can't dodge the ban list; a held post can't be appealed; other team actions clear its hold; broad addresses can't be allowed", async () => {
+    const a = await person();
+    const team = await admin();
+    assert.equal((await take(a.c, "see https://pornhub.com./x")).data.error.code, "link_banned");
+    for (const host of ["co.uk", "github.io", "com", "blogspot.com"]) assert.equal((await team.req("PUT", `/api/community/spaces/${SPACE}/allowed-links`, { body: { host } })).status, 400, host);
+    clearPace(a.user.id);
+    const held = (await take(a.c, "https://stale-hold.example/a")).data.thread.id;
+    assert.equal((await a.c.post("/api/community/appeals", { targetType: "thread", targetId: held, note: "Please bring this one back, thanks." })).status, 404);
+    // A team member hides it by hand instead of deciding: the hold goes, so it can't count against the author or reappear.
+    assert.equal((await team.post(`/api/community/mod/threads/${held}`, { action: "remove", reason: "Not for this space" })).status, 200);
+    assert.equal(one(`SELECT COUNT(*) AS n FROM community_holds WHERE target_id = '${held}'`).n, 0);
+    assert.equal((await a.c.get("/api/community/moderated")).data.items.some((x) => x.id === held), true, "now a takedown the author is told about");
+  });
+
+  test("the cap of five waiting posts holds under parallel requests; a team member's own edit with a new link goes through", async () => {
+    const a = await person();
+    const results = await Promise.all(Array.from({ length: 8 }, (_, i) => take(a.c, `https://parallel-${i}.example`, `Parallel take ${i} ${++n}`)));
+    const held = results.filter((r) => r.data.held).length;
+    assert.ok(held <= 5, `held ${held}`);
+    assert.equal(one(`SELECT COUNT(*) AS n FROM community_holds WHERE author_user_id = '${a.user.id}'`).n <= 5, true);
+    const team = await admin();
+    clearPace();
+    const mine = await take(team, "plain team words", "Team edit target");
+    const post = one(`SELECT id FROM community_posts WHERE thread_id = '${mine.data.thread.id}'`).id;
+    assert.equal((await team.req("PATCH", `/api/community/posts/${post}`, { body: { body: "now https://team-edit.example/x" } })).status, 200);
+  });
 });

@@ -9,7 +9,7 @@ import { fail } from "../../lib/http.js";
 import { MAX_BODY } from "./format.js";
 import { isTeam, requirePoster } from "./access.js";
 import { check, emit } from "./hooks.js";
-import { holdStmts, requireRoom } from "./holds.js";
+import { holdStmts, requireRoom, batchPost } from "./holds.js";
 
 const BIDI = /[‎‏‪-‮⁦-⁩]/g;
 export const TITLE = { min: 5, max: 150 };
@@ -47,7 +47,7 @@ export async function startThread(app, user, { channelId, type, title, body }) {
   const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread: null, kind: "thread", type, title: t, body: text, team }));
   const at = now();
   const thread = { id: newId("thr"), slug: slugify(t), spaceId: space.id };
-  await app.db.batch([
+  await batchPost(app.db, [
     stmt(app.db, `INSERT INTO community_threads (id, space_id, channel_id, type, title, slug, author_user_id, state, last_post_at, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, thread.id, space.id, channel.id, type, t, thread.slug, user.id, hold ? "hidden" : "visible", at, at),
     stmt(app.db, "INSERT INTO community_posts (id, thread_id, author_user_id, body, created_at) VALUES (?, ?, ?, ?, ?)", newId("pst"), thread.id, user.id, text, at),
@@ -75,7 +75,7 @@ export async function reply(app, user, threadId, { body, parentId = null }) {
   const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread, kind: "reply", type: thread.type, parent, body: text, team }));
   const at = now();
   const id = newId("pst");
-  await app.db.batch([
+  await batchPost(app.db, [
     stmt(app.db, "INSERT INTO community_posts (id, thread_id, parent_post_id, author_user_id, state, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", id, thread.id, parent ? parent.id : null, user.id, hold ? "hidden" : "visible", text, at),
     ...(hold ? holdStmts(app.db, { targetType: "post", targetId: id, spaceId: space.id, authorId: user.id, hold }) : [stmt(app.db, "UPDATE community_threads SET reply_count = reply_count + 1, last_post_at = ? WHERE id = ?", at, thread.id)]),
     ...(team ? [touchTeam(app.db, space, at)] : [])

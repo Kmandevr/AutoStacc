@@ -11,4 +11,14 @@ export const BANNED = [
   "pornhub.com", "xvideos.com", "xnxx.com", "xhamster.com", "redtube.com", "youporn.com", "onlyfans.com", "chaturbate.com"
 ];
 
-export const siteIn = (host, list) => list.some((d) => host === d || host.endsWith(`.${d}`));
+export const siteIn = (raw, list) => {
+  const host = String(raw).toLowerCase().replace(/\.+$/, "");
+  return list.some((d) => host === d || host.endsWith(`.${d}`));
+};
+
+// Addresses that cover many unrelated people's sites: a team can't allow one (it would allow every subdomain).
+const SHARED = ["github.io", "blogspot.com", "herokuapp.com", "vercel.app", "netlify.app", "pages.dev", "wixsite.com", "weebly.com", "wordpress.com", "tumblr.com", "web.app", "firebaseapp.com", "notion.site"];
+export const tooBroad = (host) => {
+  const labels = host.split(".");
+  return SHARED.includes(host) || labels.length < 2 || (labels.length === 2 && labels[1].length === 2 && ["co", "com", "org", "net", "gov", "ac", "edu"].includes(labels[0]));
+};

@@ -2,20 +2,32 @@
 // reason } } instead of refusing; the core then stores the take or reply hidden with a row in community_holds, shows
 // its writer that it is waiting, and lists it to the space's team, who approve it (it appears) or reject it (removed
 // under the space's rules, the writer told why). The rules themselves live in features; this is only the holding.
-import { all, stmt, now } from "../../lib/db.js";
+import { all, first, run, stmt, now, guardStmt, isGuardFailure } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { loadTarget, loadTargets, setState } from "./moderate.js";
+import { getSpace } from "./posting.js";
+import { emit } from "./hooks.js";
 
 export const MAX_HELD_PER_AUTHOR = 5;
 
-// The statements that record a hold, for the same batch as the post's insert.
+// The statements that record a hold, for the same batch as the post's insert. The first is a guard: the cap on one
+// person's waiting posts is checked inside the batch, so parallel requests can't each slip under it.
 export const holdStmts = (db, { targetType, targetId, spaceId, authorId, hold }) => [
+  guardStmt(db, "(SELECT COUNT(*) FROM community_holds WHERE author_user_id = ?) < ?", authorId, MAX_HELD_PER_AUTHOR),
   stmt(db, "INSERT INTO community_holds (target_type, target_id, space_id, author_user_id, rule, reason, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
     targetType, targetId, spaceId, authorId, String(hold.rule).slice(0, 40), String(hold.reason).slice(0, 300), now())
 ];
 
 // How many of this person's posts are waiting (so held posts can't pile up in a team's queue).
 export const heldCount = async (db, userId) => (await all(db, "SELECT COUNT(*) AS n FROM community_holds WHERE author_user_id = ?", userId))[0].n;
+
+// Runs a post's batch; a failed cap guard is the "too many waiting" answer.
+export async function batchPost(db, stmts) {
+  try { await db.batch(stmts); } catch (e) {
+    if (isGuardFailure(e)) fail(429, "too_many_held", "You have several posts waiting for a team's approval. Wait for those before posting more.");
+    throw e;
+  }
+}
 
 // Passes a check's hold through, unless this person already has the most posts waiting. → the hold or null.
 export async function requireRoom(app, user, hold) {
@@ -54,5 +66,23 @@ export async function decideHold(app, type, targetId, outcome, { actorId, reason
     action: outcome === "approve" ? "hold_approved" : "hold_rejected", actorId, reason,
     extra: [stmt(app.db, "DELETE FROM community_holds WHERE target_type = ? AND target_id = ?", type, targetId)]
   });
+  if (outcome === "approve") await announce(app, target);
   return target;
+}
+
+// An approved post now happens as if it had just been posted: a reply moves its take up, and the features that listen
+// to threadStarted and replyPosted (follows, mentions, the inbox) hear about it. Best effort, like any event.
+async function announce(app, target) {
+  const db = app.db;
+  const space = await getSpace(db, target.spaceId);
+  const channel = await first(db, "SELECT * FROM community_channels WHERE id = ?", target.channelId);
+  const user = { id: target.authorId };
+  if (target.type === "thread") {
+    await emit(app, "threadStarted", { user, space, channel, thread: { id: target.id, slug: target.thread.slug, spaceId: target.spaceId, title: target.thread.title }, body: target.body });
+    return;
+  }
+  const row = await first(db, "SELECT * FROM community_threads WHERE id = ?", target.thread.id);
+  const post = await first(db, "SELECT parent_post_id FROM community_posts WHERE id = ?", target.id);
+  await run(db, "UPDATE community_threads SET last_post_at = ? WHERE id = ? AND last_post_at < ?", now(), row.id, now());
+  await emit(app, "replyPosted", { user, space, channel, thread: row, parent: post && post.parent_post_id ? { id: post.parent_post_id } : null, post: { id: target.id, body: target.body } });
 }
