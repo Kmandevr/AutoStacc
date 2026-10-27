@@ -7,6 +7,8 @@ description: Run the store's three test suites (unit, API security, browser chao
 
 How the suites work and what they attack: [docs/development.md](../../../docs/development.md#tests). Don't restate it; run them.
 
+**While iterating** on a change, run only what it affects: `npm test` for pure modules, or the one group file for the area (see Fixing). The full steps below are required before calling store work done, opening a pull request or merging (owner's decision, 2026-10-27).
+
 1. `npm ci` if `node_modules` is missing (Wrangler, Better Auth, Stripe). Everything below needs it.
 2. **Build and unit tests together** (unit tests don't read the build). One Bash call:
 

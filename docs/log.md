@@ -8,6 +8,7 @@ updated: 2026-10-27
 
 Newest first.
 
+- 2026-10-27: Owner's answers to the usage audit ([decisions](decisions.md)): tests while iterating run only the affected suite (`store-check` skill, CLAUDE.md), full checks still before done, PR or merge; stale `.claude/handoff.md` deleted; connectors to keep recorded.
 - 2026-10-27: Claude setup audited for usage. The session-start output had grown to 11 KB, so the harness showed only a 2 KB preview and the branch and handoff never reached the session: it now prints branch, log and handoff first and a brief map (`tree.sh --brief`), about 5 KB. Graphify: an interrupted build left an empty `graph.json` that `graph.sh` trusted; it now treats an empty graph as stale, logs builds to `graphify-out/update.log` and the hook installs Graphify in the background. Serena now exposes one `serena_repl` tool, so agents' `tools:` and the code-nav and `.claude/README.md` docs use it (the old per-method names gave agents no Serena).
 - 2026-10-27: Four hubs planned with the owner (decisions, #214 with #215–#223). Built #215 and #216: anyone can start a community (the spaces feature, cap in Switches), founders and moderators who only moderate, managers for settings, founder succession on account deletion, and each space's management page at `/community/<space>/manage` (the Studio desk redirects there).
 - 2026-10-22: UX review planned, nothing built: the owner's 18 points investigated (code and headless browser), decisions recorded ([decisions](decisions.md)), six batches opened as #205–#210 under #204.
