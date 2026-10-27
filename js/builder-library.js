@@ -115,7 +115,7 @@
       "lib-preview": (b) => { const p = find(b.dataset.id); if (!p) return; lib.preview = p.id; ed.redraw(); preview(ed.root.querySelector(".bx-piece-frame"), p, ed.doc().theme); },
       async "lib-use"(b) {
         const p = find(b.dataset.id);
-        if (p && p.kind === "template" && !confirm("Replace this draft with the template? Undo brings your draft back.")) return;
+        if (p && p.kind === "template" && !await window.GS.confirm("Replace this draft with the template? Undo brings your draft back.")) return;
         const res = await ed.api(`/api/studio/creators/${encodeURIComponent(creatorId)}/library/${encodeURIComponent(b.dataset.id)}/install`, { method: "POST", body: {} });
         if (!res.ok) return ed.say(res.error.message, true);
         for (const f of res.data.files) if (!ed.data.files.some((x) => x.id === f.id)) ed.data.files.push(f);
@@ -131,7 +131,7 @@
         ed.say(res.ok ? "Thanks: AutoStacc will have a look." : res.error.message, !res.ok);
       },
       async "lib-delete"(b) {
-        if (!confirm("Delete this piece from the library? Sites that use it keep it, and people who bought it keep it.")) return;
+        if (!await window.GS.confirm("Delete this piece from the library? Sites that use it keep it, and people who bought it keep it.")) return;
         const res = await ed.api(`/api/studio/creators/${encodeURIComponent(creatorId)}/library/${encodeURIComponent(b.dataset.id)}`, { method: "DELETE", body: {} });
         if (!res.ok) return ed.say(res.error.message, true);
         ed.say("Deleted from the library.");

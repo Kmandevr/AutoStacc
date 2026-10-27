@@ -20,12 +20,16 @@
     return rows.length ? `<h2>Details</h2><dl class="facts">${rows.map(([t, v]) => `<dt>${e(t)}</dt><dd>${e(v)}</dd>`).join("")}</dl>` : "";
   }
 
+  // A Coming soon day ("YYYY-MM-DD", UTC) as people read it.
+  const soonDay = (d) => { try { return new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }); } catch { return d; } };
+
   // p: the API's product; opts: { owned, preview }.
   function render(p, { owned = false, preview = false } = {}) {
     const types = window.PRODUCT_TYPES || {};
     const off = preview ? ' disabled aria-disabled="true"' : "";
     const action = preview ? `<button class="btn" type="button"${off}>${p.priceCents ? "Add to cart" : "Get it free"} · Preview</button>`
       : owned ? `<p><span class="owned-badge">STACC'D</span> <a class="btn ghost" href="/library">Open Your Stacc</a></p>`
+      : p.comingSoon ? `<p class="msg coming-soon"><strong>Coming soon.</strong> On sale from ${e(soonDay(p.comingSoon.on))}.</p>`
       : p.available === false ? '<p class="msg">Not on sale right now.</p>'
       : p.free ? '<button class="btn" type="button" data-claim>Get it free</button><p class="small-print">Free with an AutoStacc account; you\'ll log in or sign up first if needed.</p>'
       : '<div class="actions"><button class="btn" type="button" data-buy>Add to cart</button><button class="btn ghost" type="button" data-buy-now>Buy now</button></div>';
@@ -44,7 +48,7 @@
         ${details(p)}
         ${action}
         ${preview ? `<button class="btn ghost wish-btn" type="button"${off}>Save to wishlist</button>`
-          : p.available !== false && !owned ? `<button class="btn ghost wish-btn" type="button" data-wish="${e(p.id)}" aria-pressed="false">Save to wishlist</button>` : ""}
+          : (p.available !== false || p.comingSoon) && !owned ? `<button class="btn ghost wish-btn" type="button" data-wish="${e(p.id)}" aria-pressed="false">Save to wishlist</button>` : ""}
         ${preview ? "" : '<p class="msg" role="status" hidden></p>'}
         ${!preview && p.creator ? `<section class="made-by" aria-label="Made by">
           <p class="card-type">Made by</p>

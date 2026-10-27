@@ -169,7 +169,7 @@
     }
     const refund = e.target.closest("[data-refund]");
     if (refund) {
-      if (refund.disabled || !confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
+      if (refund.disabled || !await window.GS.confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
       refund.disabled = true;
       const res = await api(`/api/orders/${encodeURIComponent(refund.dataset.refund)}/refund`, { method: "POST", body: {} });
       if (res.ok) return show(res.data.order);

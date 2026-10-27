@@ -15,3 +15,4 @@
 .product-info .made-by p { margin: 0; }
 .product-info .made-by .project-follow:empty { display: none; }
 .product-info .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.coming-soon { border-left: 3px solid var(--amber); padding-left: 10px; }

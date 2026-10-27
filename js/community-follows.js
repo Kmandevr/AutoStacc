@@ -21,7 +21,7 @@
       press(b, true);
       const r = await window.GS.api(path, { method: following ? "DELETE" : "PUT" });
       press(b, false);
-      if (r.ok) { following = r.data.following; draw(); } else window.alert(r.error.message);
+      if (r.ok) { following = r.data.following; draw(); } else window.GS.toast(r.error.message, true);
     });
     kit.tools.hidden = false;
     kit.tools.append(b);

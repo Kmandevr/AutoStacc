@@ -65,7 +65,7 @@
       const save = ev.target.closest("[data-card-save]");
       const remove = ev.target.closest("[data-card-remove]");
       if (!save && !remove) return;
-      if (remove && !confirm("Remove this card? Future statements come by email with a link to pay them yourself. Nothing you store changes.")) return;
+      if (remove && !await window.GS.confirm("Remove this card? Future statements come by email with a link to pay them yourself. Nothing you store changes.")) return;
       const btn = save || remove;
       busy(true, btn);
       const out = save ? await api(`${base}/card`, { method: "POST", body: {} }) : await api(`${base}/card`, { method: "DELETE", body: {} });

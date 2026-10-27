@@ -24,7 +24,7 @@
         press(b, true);
         const res = await api(`/api/community/spaces/${encodeURIComponent(spaceId)}/join`, { method: joined.has(spaceId) ? "DELETE" : "PUT" });
         press(b, false);
-        if (!res.ok) return window.alert(res.error.message);
+        if (!res.ok) return window.GS.toast(res.error.message, true);
         if (res.data.joined) joined.add(spaceId); else joined.delete(spaceId);
         draw();
       });

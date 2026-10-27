@@ -133,7 +133,7 @@
         say(`Published at ${location.origin}${data.site.path}`);
       },
       async unpublish() {
-        if (!confirm("Take this offline? Visitors will no longer see it.")) return;
+        if (!await window.GS.confirm("Take this offline? Visitors will no longer see it.")) return;
         const res = await api(`${base}/unpublish`, { method: "POST", body: {} });
         if (!res.ok) return say(res.error.message, true);
         data.site.live = false;
@@ -145,7 +145,7 @@
       },
       save,
       async template(b) {
-        if (!confirm("Replace this draft with the template? Undo brings your draft back.")) return;
+        if (!await window.GS.confirm("Replace this draft with the template? Undo brings your draft back.")) return;
         const res = await api(`/api/studio/templates/${encodeURIComponent(b.dataset.id)}`);
         if (!res.ok) return say(res.error.message, true);
         pageIndex = 0;
@@ -154,7 +154,7 @@
         say(`${res.data.label} template in place. Make it yours, then save.`);
       },
       async "file-delete"(b) {
-        if (!confirm("Delete this file? If a published page still uses it, it stays there until nothing does.")) return;
+        if (!await window.GS.confirm("Delete this file? If a published page still uses it, it stays there until nothing does.")) return;
         const res = await api(`/api/studio/creators/${encodeURIComponent(data.creator.id)}/images/${encodeURIComponent(b.dataset.id)}`, { method: "DELETE", body: {} });
         if (!res.ok) return say(res.error.message, true);
         const gone = data.files.find((f) => f.id === b.dataset.id);
@@ -165,7 +165,7 @@
       },
       async copy(b) { try { await navigator.clipboard.writeText(b.dataset.text); say("Address copied."); } catch { say(b.dataset.text); } },
       async restore(b) {
-        if (dirty && !confirm("Restoring replaces your unsaved changes. Go ahead?")) return;
+        if (dirty && !await window.GS.confirm("Restoring replaces your unsaved changes. Go ahead?")) return;
         const res = await api(`${base}/versions/${encodeURIComponent(b.dataset.version)}/restore`, { method: "POST", body: {} });
         if (!res.ok) return say(res.error.message, true);
         doc = res.data.document;
@@ -197,7 +197,7 @@
 
     async function act(b) {
       const a = b.dataset.action;
-      if (a === "back") { if (!dirty || confirm("Leave without saving?")) { removeEventListener("beforeunload", guard); removeEventListener("keydown", onKey); onBack(); } return; }
+      if (a === "back") { if (!dirty || await window.GS.confirm("Leave without saving?")) { removeEventListener("beforeunload", guard); removeEventListener("keydown", onKey); onBack(); } return; }
       if (a === "device") { device = b.dataset.device; drawBar(); drawCanvas(); return; }
       if (a === "undo") return undo();
       if (a === "redo") return redo();

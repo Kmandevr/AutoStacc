@@ -78,7 +78,7 @@
   root.addEventListener("click", async (ev) => {
     const btn = ev.target.closest("[data-refund]");
     if (!btn || btn.disabled) return;
-    if (!confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
+    if (!await window.GS.confirm("Refund this order? The money goes back to your card and the files leave Your Stacc.")) return;
     busy(btn, true);
     const res = await api(`/api/orders/${encodeURIComponent(btn.dataset.refund)}/refund`, { method: "POST", body: {} });
     if (!res.ok) { busy(btn, false); return draw(res.error.message); }

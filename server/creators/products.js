@@ -17,6 +17,7 @@ import { loadReadiness } from "./readiness.js";
 import { recordEvent } from "./events.js";
 import { changeEvents, recordChanges } from "./product-history.js";
 import { rolesFor } from "./roles.js";
+import { cleanComingSoon, requireAnnounceable } from "./coming-soon.js";
 
 const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export { productPath };
@@ -67,6 +68,7 @@ export function cleanProductInput(body, { requireAll = false } = {}) {
     if (body.specs !== null && (typeof body.specs !== "object" || Array.isArray(body.specs))) fail(400, "invalid_field", "specs is { sampleRate, bitDepth }.", { field: "specs" });
     out.specs = body.specs || {};
   }
+  if (has("comingSoonOn")) out.comingSoonOn = cleanComingSoon(body.comingSoonOn);
   for (const k of ["published", "salesPaused", "deleted"]) {
     if (has(k)) { if (typeof body[k] !== "boolean") fail(400, "invalid_field", `${k} must be true or false.`, { field: k }); out[k] = body[k]; }
   }
@@ -183,6 +185,11 @@ export async function updateProduct(db, { product, project, creator, input, user
     if (input.published) await requireReady(db, product, creator, input);
     add("published", input.published ? 1 : 0);
   }
+  // Coming soon (coming-soon.js): a day for an unpublished product; going on sale or taking it back clears it.
+  if (input.comingSoonOn !== undefined && input.comingSoonOn !== null && !input.published) {
+    await requireAnnounceable(db, product, creator, input);
+    add("coming_soon_on", input.comingSoonOn);
+  } else if (input.comingSoonOn === null || input.published === true || input.deleted === true) add("coming_soon_on", null);
   if (input.deleted !== undefined) {
     add("deleted_at", input.deleted ? now() : null);
     if (input.deleted) add("published", 0);
@@ -207,6 +214,7 @@ export async function productViews(db, rows) {
   return rows.map((p) => ({
     id: p.id, title: p.title, description: p.description, type: p.type, priceCents: p.price_cents, currency: p.currency, artwork: p.artwork,
     tags: parseJson(p.tags, []), includes: parseJson(p.metadata, {}).includes || [], published: Boolean(p.published), salesPaused: Boolean(p.sales_paused),
+    comingSoonOn: p.coming_soon_on || null,
     deleted: Boolean(p.deleted_at), path: productPath(p), preview: p.preview || null, createdAt: p.created_at,
     facets: facets[p.id] || {}, bpm: p.bpm_min ? [p.bpm_min, p.bpm_max] : null, specs: parseJson(p.metadata, {}).specs || {},
     // Values the product's own words point to and it doesn't have yet, for the creator to accept or ignore.

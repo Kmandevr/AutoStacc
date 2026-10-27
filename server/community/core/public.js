@@ -10,7 +10,7 @@
 // in the edge cache for a minute in production, keyed by address; the HTML is the same for every visitor.
 import { getSpaceBySlug, listSpaces, listChannels, getChannel, weeklyActivity, spaceShown } from "./spaces.js";
 import { listThreads, getThread, listPosts, unanswered, SORTS } from "./threads.js";
-import { hero, threadList, mixer, questionBox, spaceAside, sortNav, threadPath, spacePath, channelPath, esc, composeHook, spaceHook, manageHook, noticesHook } from "./render.js";
+import { hero, threadList, mixer, questionBox, spaceAside, sortNav, threadPath, spacePath, channelPath, esc, composeHook, spaceHook, manageHook, noticesHook, barHook } from "./render.js";
 import { threadMain, threadHook } from "./render-thread.js";
 import { renderKit, schema } from "./hooks.js";
 import { fill, headers } from "./page.js";
@@ -39,7 +39,7 @@ async function home(app, url) {
     description: "AutoStacc's community for music and sound: questions and answers, feedback, and the spaces of the projects and creators on AutoStacc.",
     hero: hero([["Home", "/"], ["Community", "/community"]], "AutoStacc", "Community",
       'Music and sound: ask, answer, share and talk with the people behind the projects. <a href="/community-rules">Community rules</a>.'),
-    main: `${mixer(spaces, activity)}${noticesHook()}
+    main: `${barHook()}${mixer(spaces, activity)}${noticesHook()}
         <div class="cm-layout"><div class="cm-col">
         <h2>${sort === "hot" ? "Hot takes" : sort === "new" ? "Fresh takes" : "Top takes"}</h2>${sortNav("/community", sort)}
         ${threadList(threads, { kit, spaces: bySpace, base: "/community", sort, page, more })}
@@ -69,7 +69,7 @@ async function space(app, url, spaceSlug, channelSlug) {
     description: clip(s.description || `${s.name} on AutoStacc's community: questions, answers and talk about music and sound.`),
     hero: hero(crumbs, s.kind === "community" && !s.official ? "Unofficial community" : "Community", channel ? channel.name : s.name,
       s.description ? esc(s.description) : ""),
-    main: `${kit.slot("spaceHeader", { space: s, channel })}${noticesHook()}${spaceHook(s)}<div class="cm-layout"><div class="cm-col">${composeHook(s, channels, channel)}${sortNav(base, sort)}
+    main: `${barHook()}${kit.slot("spaceHeader", { space: s, channel })}${noticesHook()}${spaceHook(s)}<div class="cm-layout"><div class="cm-col">${composeHook(s, channels, channel)}${sortNav(base, sort)}
         ${threadList(threads, { kit, base, sort, page, more, empty: channel ? "No takes in this channel yet. Start the first one." : "No takes here yet. Be the first." })}
         </div>${spaceAside(s, channels, channel, kit)}</div>`
   };
@@ -110,7 +110,7 @@ async function thread(app, id, slug) {
     schema: [t.type === "question" ? { "@type": "QAPage", url, mainEntity: entity } : entity],
     description: clip(text || t.title),
     hero: hero([["Home", "/"], ["Community", "/community"], [s.name, spacePath(s)], [t.title, threadPath(t)]], esc(s.name), t.title),
-    main: `<div class="cm-layout"><div class="cm-col cm-thread-page">${threadHook(t, posts)}${threadMain(t, posts, kit)}</div></div>`
+    main: `${barHook()}<div class="cm-layout"><div class="cm-col cm-thread-page">${threadHook(t, posts)}${threadMain(t, posts, kit)}</div></div>`
   };
 }
 

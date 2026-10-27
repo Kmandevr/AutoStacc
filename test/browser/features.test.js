@@ -172,8 +172,8 @@ describe("features in the browser", () => {
     // The one drop zone: a whole Pac (the conformance case the mock engine knows) opens in the builder, then Publish.
     await page.setInputFiles("[data-pd-files]", path.join(ROOT, "engine/conformance/cases/editor-file.zip"));
     await page.waitForSelector("[data-pack-publish]", { timeout: 60000 });
-    page.once("dialog", (d) => d.accept());
     await page.click("[data-pack-publish]");
+    await page.click(".gs-confirm button[value=yes]");
     await page.waitForSelector("[data-pack-version] >> text=Published");
     await page.click("[data-ws-open]");
     await page.click('[data-ws-item="release"]');
@@ -284,8 +284,8 @@ describe("features in the browser", () => {
     await page.click("[data-mock=paid]");
     await page.waitForSelector("text=Payment confirmed");
     await page.waitForSelector("[data-refund]");
-    page.once("dialog", (d) => d.accept());
     await page.click("[data-refund]");
+    await page.click(".gs-confirm button[value=yes]");
     await page.waitForSelector("text=This order was refunded");
     assert.deepEqual(ordersFor(email).map((o) => o.status), ["refunded"]);
     // A second order, downloaded from first: no refund offered.

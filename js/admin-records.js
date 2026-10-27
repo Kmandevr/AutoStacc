@@ -87,7 +87,7 @@
       }
       const v = e.target.closest("[data-revoke]");
       // A refused revoke says why beside its button instead of silently redrawing.
-      if (v && !v.disabled && confirm("Revoke this access?")) {
+      if (v && !v.disabled && await window.GS.confirm("Revoke this access?")) {
         const reason = prompt("Reason (shown in the record):", "revoked by admin") || "revoked by admin";
         v.disabled = true;
         const res = await api(`/api/admin/entitlements/${encodeURIComponent(v.dataset.revoke)}/revoke`, { method: "POST", body: { reason } });

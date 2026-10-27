@@ -91,12 +91,13 @@ export function browserStore({ name, port, vars = {} }) {
   async function startImpersonating(page, id) {
     await page.click(`[data-preview="${id}"]`);
     await page.waitForSelector(".admin-preview h2");
-    page.once("dialog", (d) => d.accept());
     try {
       await page.click("[data-impersonate]", { timeout: 15000 });
     } catch (e) {
       throw new Error("no Impersonate button; the preview shows: " + (await page.locator("#customer-preview").innerText()).replace(/\s+/g, " ").slice(0, 500));
     }
+    // The shared confirmation dialog (GS.confirm) asks first.
+    await page.click(".gs-confirm button[value=yes]");
   }
 
   return { get base() { return base; }, get browser() { return browser; }, stateDir, open, logOut, ordersFor, setCart, toMockPay, signUp, startImpersonating };

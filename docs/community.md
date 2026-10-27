@@ -185,3 +185,7 @@ Built (owner, 2026-10-27, #215; the **spaces** feature, `features/spaces/start.j
 10. [Profiles](profiles.md): badges, points, showcase, friends, feed, collab requests, point items.
 
 Each step runs `store-check` and the security, backend and SEO reviewers.
+
+**Confirmations and messages** (owner, 2026-10-27, #219): deleting a post, blocking, handing over and archiving ask with the shared dialog (`GS.confirm`), and a team action's or a button's failure shows as the shared message line (`GS.toast`) instead of a browser alert ([modules](modules.md#shared-helpers-every-feature-uses)).
+
+**Toolbar** (owner, 2026-10-27, #220): the front page, a space and a take start with one toolbar inside the page width (`barHook`, `css/community.css`): search on the left, and the visitor's own panels on the right, **Notifications** (the inbox, with the @mention switch at its foot) and **Saved**, opened one at a time and closed by Escape or a click outside. Features put things there through the kit's shared `panel(key, label)`, so the inbox and mentions share a panel without knowing each other. The management page has no toolbar. This replaced the search bar and bell drawn above the page header and the loose Saved list and mention switch.

@@ -156,12 +156,12 @@
       if (mineHere) {
         if (Date.now() - Date.parse(mineHere.createdAt) < EDIT_MS) bar.append(el("button", { class: "btn ghost small", type: "button", text: "Edit", on: { click: () => editForm(post, bar, mineHere.body, preview) } }));
         bar.append(el("button", { class: "btn ghost small", type: "button", text: "Delete", on: { click: async (ev) => {
-          if (!window.confirm("Delete this post?")) return;
+          if (!await window.GS.confirm("Delete this post?")) return;
           ev.currentTarget.disabled = true;
           const r = await api(`/api/community/posts/${encodeURIComponent(post.id)}`, { method: "DELETE" });
           if (r.ok) return location.reload();
           ev.currentTarget.disabled = false;
-          window.alert(r.error.message);
+          window.GS.toast(r.error.message, true);
         } } }));
       }
       if (bar.childElementCount && !bar.isConnected) post.append(bar);

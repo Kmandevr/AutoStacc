@@ -46,14 +46,15 @@
     const priceText = live ? (p.free ? "Free" : `${p.sale ? `<s class="price-was">${e(cents(p.listPriceCents, p.currency))}</s> ` : ""}${e(cents(p.priceCents, p.currency))}`)
       : (p.price ? money(p.price) : "Free");
     // Static fallback; js/store.js swaps in the live control (Add to cart, STACC'D, ...).
-    const button = live && p.available === false
+    const button = live && p.comingSoon ? `<span class="btn ghost" aria-disabled="true">Coming soon</span>`
+      : live && p.available === false
       ? `<span class="btn" aria-disabled="true">Unavailable</span>`
       : live && p.free ? `<button class="btn" type="button" data-claim="${e(p.id)}">Get it free</button>`
       : `<button class="btn" type="button" data-add-to-cart="${e(p.id)}">Add to cart</button>`;
     const by = p.projectName || projectOf(project).name || "";
     const href = GS.shopItemPath(p);
     const b = p.badges || {};
-    const badges = [b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
+    const badges = [p.comingSoon ? "Coming soon" : "", b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
       // Buyers' reviews (server/reviews/), only when there are any.
       p.rating ? `★ ${p.rating.average} (${p.rating.count} review${p.rating.count === 1 ? "" : "s"})` : ""].filter(Boolean);
     const art = p.artwork;

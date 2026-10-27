@@ -21,7 +21,7 @@
         b.addEventListener("click", async () => {
           b.disabled = true;
           const res = await api(path, { method: "PUT", body: { on: !on } });
-          if (res.ok) { on = res.data.on; paint(); } else { b.disabled = false; window.alert(res.error.message); }
+          if (res.ok) { on = res.data.on; paint(); } else { b.disabled = false; window.GS.toast(res.error.message, true); }
         });
         const a = el.querySelector("[data-cm-link]");
         if (a) a.href = `${el.closest(".studio-project").querySelector(".studio-path").getAttribute("href")}/community`;

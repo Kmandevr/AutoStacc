@@ -1,7 +1,6 @@
 /* Finding: the search box and results, tag buttons, similar questions (js/community-{search,tags,similar}.js). */
-.cm-find { margin: 0 0 1rem; }
-.cm-search { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-.cm-search input[type="search"] { flex: 1 1 14rem; }
+.cm-search { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; flex: 1 1 20rem; min-width: 0; }
+.cm-search input[type="search"] { flex: 1 1 8rem; min-width: 0; }
 .cm-results, .cm-tag-results, .cm-similar { margin: .5rem 0; }
 .cm-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0; }
 .cm-tag { margin-left: .4rem; padding: .05rem .5rem; border: 1px solid var(--line, rgba(128,128,128,.4)); border-radius: 999px; background: transparent; color: inherit; font-size: .8em; cursor: pointer; }

@@ -31,7 +31,7 @@
         press(b, true);
         const res = await api("/api/community/holds/decide", { method: "POST", body: { targetType: x.type, targetId: x.id, outcome, reason } });
         press(b, false);
-        if (res.ok) location.reload(); else window.alert(res.error.message);
+        if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
       } } });
       part.append(el("article", { class: "cm-desk-item" },
         el("p", { class: "cm-meta", text: `${x.author || "deleted user"} · ${x.title} · ${x.type === "post" ? "reply" : "take"}` }),

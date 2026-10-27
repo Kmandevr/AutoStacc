@@ -11,6 +11,7 @@ const JS = ["data/site.js", "data/projects.js", "data/product-types.js", "js/uti
   "data/vocabulary.js", "js/product-card.js", "js/taste.js", "js/product-view.js", "js/product-page.js", "data/features.js", "js/product-contents.js",
   "js/product-reviews.js", "js/similar.js", "js/wishlist.js", "js/store.js", "js/motion.js", "js/prefetch.js"];
 const money = (c, cur) => { try { return new Intl.NumberFormat("en-US", { style: "currency", currency: cur || "USD" }).format(c / 100); } catch { return (c / 100).toFixed(2); } };
+const day = (d) => { try { return new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }); } catch { return d; } };
 const kind = (t) => String(t || "").replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
 
 function documentFor(siteUrl, page, crumbs, title, main) {
@@ -61,7 +62,9 @@ const includes = (p) => {
 function view(p, s) {
   const by = s ? ` · by <a href="${esc(s.projectPath)}">${esc(s.projectName)}</a> from <a href="${esc(s.creatorPath)}">${esc(s.creatorName)}</a>` : "";
   const art = local(p.artwork);
-  const action = !p.available ? '<p class="msg">Not on sale right now.</p>'
+  const soon = p.comingSoon && p.comingSoon.on;
+  const action = soon ? `<p class="msg coming-soon"><strong>Coming soon.</strong> On sale from ${esc(day(soon))}.</p>`
+    : !p.available ? '<p class="msg">Not on sale right now.</p>'
     : p.free ? '<button class="btn" type="button" data-claim>Get it free</button>' : '<button class="btn" type="button" data-buy>Add to cart</button>';
   return `${art ? `<img class="product-art" src="${esc(art)}" alt="" width="480" height="480">` : ""}
           <div class="product-info">

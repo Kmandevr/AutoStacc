@@ -33,7 +33,7 @@
       if (m.role === "moderator" && d.you.founder) {
         const hand = el("button", { class: "btn ghost small", type: "button", text: "Make founder" });
         hand.addEventListener("click", async () => {
-          if (!window.confirm(`Hand ${m.name} the founder's role? You'll stay on as a moderator and can't take it back yourself.`)) return;
+          if (!await window.GS.confirm(`Hand ${m.name} the founder's role? You'll stay on as a moderator and can't take it back yourself.`)) return;
           K.press(hand, true);
           const x = await GS.api(api("/hand-over"), { method: "POST", body: { userId: m.userId } });
           K.press(hand, false);
@@ -84,7 +84,7 @@
     const b = el("button", { class: archived ? "btn small" : "btn ghost small cm-danger", type: "button", text: archived ? "Reopen this space" : "Archive this space" });
     const msg = status();
     b.addEventListener("click", async () => {
-      if (!archived && !window.confirm("Archive this space? It stays readable, but nobody can post until you reopen it.")) return;
+      if (!archived && !await window.GS.confirm("Archive this space? It stays readable, but nobody can post until you reopen it.")) return;
       K.press(b, true);
       const x = await GS.api(api("/archived"), { method: "PUT", body: { archived: !archived } });
       K.press(b, false);

@@ -3,7 +3,7 @@
 // (sitemap.js). The old Studio address /product?p=<id> answers a 301 to /shop/<id> (/product alone to /shop); mixed
 // case, a trailing slash and the old generated /shop/<id>.html answer a 301 to the clean address. /shop itself stays the
 // static store page. Kept in the edge cache for a minute in production.
-import { getProduct, isVisible, isPurchasable, publicProduct, makerOf } from "../catalog/products.js";
+import { getProduct, isVisible, isComingSoon, isPurchasable, publicProduct, makerOf } from "../catalog/products.js";
 import { runningSales } from "../promotions/promotions.js";
 import { pageHeaders } from "../content/page.js";
 import { renderProduct, renderMissing } from "./page.js";
@@ -17,7 +17,8 @@ const redirect = (siteUrl, path) => new Response(null, { status: 301, headers: {
 async function product(app, id, head) {
   const { db, config } = app;
   const p = await getProduct(db, id);
-  if (!isVisible(p)) return new Response(head ? null : renderMissing(config.siteUrl, `/shop/${id}`), { status: 404, headers: { ...pageHeaders(), "Cache-Control": "public, max-age=60" } });
+  // A Coming soon product has its page too (nothing to buy yet); any other unpublished one is the 404.
+  if (!isVisible(p) && !isComingSoon(p)) return new Response(head ? null : renderMissing(config.siteUrl, `/shop/${id}`), { status: 404, headers: { ...pageHeaders(), "Cache-Control": "public, max-age=60" } });
   const [maker, sales] = await Promise.all([makerOf(db, p.id), runningSales(db)]);
   const s = maker && { creatorName: maker.creator_name, creatorPath: `/${maker.creator_slug}`, projectName: maker.project_name,
     projectPath: `/${maker.creator_slug}/${maker.project_slug}`, trusted: Boolean(maker.trusted) };

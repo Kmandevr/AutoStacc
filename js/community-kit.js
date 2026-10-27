@@ -6,7 +6,7 @@
 (function () {
   "use strict";
   const GS = window.GS;
-  if (!GS || !document.querySelector("[data-cm-compose], [data-cm-thread], [data-cm-space], [data-cm-notices]")) return;
+  if (!GS || !document.querySelector("[data-cm-compose], [data-cm-thread], [data-cm-space], [data-cm-notices], [data-cm-bar]")) return;
 
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
@@ -63,7 +63,7 @@
       const r = await GS.api(typeof path === "function" ? path() : path, { method: typeof method === "function" ? method() : method, body });
       press(b, false);
       if (r.ok) return done ? done(r.data, b) : location.reload();
-      window.alert(r.error.message);
+      window.GS.toast(r.error.message, true);
     });
     return b;
   };
@@ -110,5 +110,36 @@
     return { wrap: el("label", {}, "Post as", sel), as: () => sel.value || null };
   };
 
-  GS.communityKit = { asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
+  // The toolbar's panels (server: barHook): panel(key, label) gives the one { button, box } for that key, made on first
+  // ask, so two features can share a panel (the inbox and mention alerts share "Notifications") without knowing each
+  // other. Opening one closes the others; Escape or a click outside closes it. The box gets "gs:cm-open" when opened.
+  const bar = document.querySelector("[data-cm-bar]");
+  const barTools = bar && bar.querySelector("[data-cm-bar-tools]");
+  const panels = {};
+  const closeAll = (except) => Object.values(panels).forEach((x) => { if (x !== except) { x.box.hidden = true; x.button.setAttribute("aria-expanded", "false"); } });
+  const panel = (key, label) => {
+    if (!barTools) return null;
+    if (panels[key]) return panels[key];
+    const id = `cm-panel-${key}`;
+    const button = el("button", { class: "btn ghost small cm-bar-button", type: "button", "aria-expanded": "false", "aria-controls": id, "data-panel": key, text: label });
+    const box = el("div", { class: "cm-bar-panel", id, hidden: true });
+    button.addEventListener("click", () => {
+      const open = box.hidden;
+      closeAll();
+      box.hidden = !open;
+      button.setAttribute("aria-expanded", String(open));
+      if (open) box.dispatchEvent(new Event("gs:cm-open"));
+    });
+    barTools.append(el("div", { class: "cm-bar-item", "data-panel": key }, button, box));
+    return (panels[key] = { button, box });
+  };
+  if (barTools) {
+    document.addEventListener("click", (ev) => { if (!ev.target.closest(".cm-bar-item")) closeAll(); });
+    document.addEventListener("keydown", (ev) => {
+      const open = Object.values(panels).find((x) => !x.box.hidden);
+      if (ev.key === "Escape" && open) { closeAll(); open.button.focus(); }
+    });
+  }
+
+  GS.communityKit = { bar, panel, asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
 })();

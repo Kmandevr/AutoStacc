@@ -36,7 +36,7 @@
       press(b, true);
       const res = await api(`${base}/channels`, { method: "PATCH", body });
       press(b, false);
-      if (res.ok) location.reload(); else window.alert(res.error.message);
+      if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
     };
     r.data.channels.forEach((c) => {
       const b = el("button", { class: "btn ghost small", type: "button", text: c.archived ? "Bring back" : "Archive" });

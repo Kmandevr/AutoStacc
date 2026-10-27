@@ -23,7 +23,7 @@
       press(b, true);
       const res = await api(path, { method: "DELETE", body: { id: w.id } });
       press(b, false);
-      if (res.ok) location.reload(); else window.alert(res.error.message);
+      if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
     } } }))));
     const msg = status();
     const phrase = el("input", { name: "phrase", required: true, maxlength: 60, "aria-label": "Word or phrase" });

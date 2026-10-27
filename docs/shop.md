@@ -2,7 +2,7 @@
 title: Shop
 summary: The catalogue: product kinds, products made in the Studio by every creator (the code-based catalog is retired, #176), each product's page at /shop/<id> (#175), and the test fixtures. How selling works is in store.md.
 covers: [data/product-types.js, shop.html, server/shop/, test/support/catalog-fixtures.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Shop
@@ -26,3 +26,5 @@ Every product, any creator's, has a page rendered on the server at **`/shop/<pro
 The six former placeholder products (`sample-pack-vol1`, `serum-presets`, `stems-patchwork`, `ep-corrupted-thread`, `wallpapers`, `vj-loops`), the placeholder Stacclet `frayed-signals` with its four Pacs, and one test event are deleted from `data/` (#173). They live on only as dev-only fixtures in `test/support/catalog-fixtures.js`, seeded by `scripts/dev.js` into the local store so the suites keep their ids. They are never facts about the artist and never reach the deploy.
 
 The real catalogue is whatever creators publish in the Studio; it isn't copied here.
+
+**Coming soon** (owner, 2026-10-27, #218): a Studio product announced with a day has its page too, saying "Coming soon. On sale from <day>." with no buy button, and a Coming soon label on its store card; it isn't published, so nothing about buying changes ([studio](studio.md#coming-soon-built-owner-2026-10-27-218)).

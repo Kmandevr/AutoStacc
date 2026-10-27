@@ -24,7 +24,7 @@
       press(b, true);
       const res = await api(path, { method: "DELETE", body: { host } });
       press(b, false);
-      if (res.ok) location.reload(); else window.alert(res.error.message);
+      if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
     } } }))));
     const msg = status();
     const host = el("input", { name: "host", required: true, maxlength: 100, placeholder: "example.com", "aria-label": "Site to allow" });

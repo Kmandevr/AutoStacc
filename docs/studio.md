@@ -1,7 +1,7 @@
 ---
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
-covers: [data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
+covers: [server/creators/coming-soon.js, db/migrations/0070_coming_soon.sql, test/api/coming-soon.suite.js, data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
 updated: 2026-10-27
 ---
 
@@ -108,6 +108,10 @@ Not tracked: traffic sources. The section says "not tracked yet" instead of show
 - **Controls:** Publish (put on sale), Back to draft, Pause and resume sales, and Remove (buyers keep their files). Saved edits to a published product are live as soon as they are saved, and the history records them. The section says that publishing doesn't email followers (only the Control Center's Email followers does), that a free product goes straight to followers with Auto-Stacc on, and that the files buyers download change only by publishing a Pac version in the Pac Builder.
 - **Release history:** every publish, unpublish, pause, resume, removal, price change, sale start or end, store preview clip added or removed, Pac version submitted, approved, refused or published, and file added or removed, with who did it and when (`product_events`).
 - **Rollback:** not supported yet. A superseded Pac version can't be restored; upload it again. Removed or replaced files stay delivered to earlier buyers for 30 days ([packs](packs.md)).
+
+### Coming soon (Built; owner, 2026-10-27, #218)
+
+In Release, a draft can be **announced as Coming soon** with the day it goes on sale (`PATCH /api/studio/products/:id` `{ comingSoonOn: "YYYY-MM-DD" }`, tomorrow up to a year ahead; `null` takes it back), stored in `products.coming_soon_on` (migration `0070_coming_soon.sql`, `server/creators/coming-soon.js`). Announcing needs the title, an allowed price and an active creator, not the files yet. The product stays unpublished, so the cart, checkout and free claims refuse it exactly as before; its page (`/shop/<id>`), `GET /api/products[/:id]` (`comingSoon: { on }`, `available: false`) and its store card say **Coming soon** with the day. The daily sweep puts it on sale on that day (UTC) through the same readiness check as Publish, compare-and-set, recorded as `published` in the history; if something blocks it, it stays Coming soon and the creator's owner gets one `coming-soon-blocked` email for that day. Publishing, removing or cancelling clears the day. Store search doesn't list Coming soon products (search and filters were left as they are). Nothing new is collected, so `/privacy` is unchanged.
 
 ### Creator purchases switch (Built)
 

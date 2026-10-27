@@ -106,7 +106,7 @@
       if (act === "list") return toList();
       if (act === "open") return show(b.dataset.id);
       if (K.click && K.click(act, b)) return;
-      if (act !== "delete" || !confirm(`Delete "${K.name(current)}"? It comes off the site at once.`)) return;
+      if (act !== "delete" || !await window.GS.confirm(`Delete "${K.name(current)}"? It comes off the site at once.`)) return;
       b.disabled = true;
       const res = await api(url(current.id), { method: "DELETE", body: {} });
       b.disabled = false;

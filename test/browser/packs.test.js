@@ -72,8 +72,8 @@ test("a Studio creator uploads their product's pack, a clean pack publishes at o
     assert.ok(await page.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth + 1), `no sideways scroll at ${width}px`);
   }
   await page.setViewportSize(DESK.viewport);
-  page.once("dialog", (d) => d.accept());
   await page.click("[data-pack-publish]");
+  await page.click(".gs-confirm button[value=yes]");
   await page.waitForSelector("[data-pack-version] >> text=Published");
   // Release no longer blocks for want of a file.
   await page.waitForTimeout(2000);
@@ -129,8 +129,8 @@ test("one drop zone: a single file opens in the builder and waits for Publish; a
   await page.waitForSelector(".pe-tree .pe-file:has-text('Kick 07.wav') [data-pe-play]", { timeout: 60000 });
   assert.match(await page.locator(".pe-file:has-text('Kick 07.wav') .pe-badges").innerText(), /WAV/);
   assert.equal(live(), 0, "nothing goes live before Publish");
-  page.once("dialog", (d) => d.accept());
   await page.click("[data-pack-publish]");
+  await page.click(".gs-confirm button[value=yes]");
   for (let i = 0; i < 50 && !live(); i++) await page.waitForTimeout(200);
   assert.equal(live(), 1);
 
@@ -164,8 +164,8 @@ test("one drop zone: a single file opens in the builder and waits for Publish; a
   const [saved] = await Promise.all([page.waitForResponse((r) => r.url().endsWith("/readme") && r.request().method() === "PUT"), page.click("[data-pe-readme-form] button[type=submit]")]);
   assert.equal(saved.status(), 200, await saved.text());
   await page.waitForSelector("[data-pe-readme-form]", { state: "hidden" });
-  page.once("dialog", (d) => d.accept());
   await page.click(".pe-file:has-text('Kick 07.wav') [data-pe-rmfile]");
+  await page.click(".gs-confirm button[value=yes]");
   await page.waitForFunction(() => !document.querySelector(".pe-tree").innerText.includes("Kick 07.wav"));
   // The previews panel is there for the Pac.
   await page.waitForSelector("[data-pac-previews] >> text=Previews");

@@ -111,3 +111,8 @@
 }
 .sr-sale [data-pr-at][hidden] { display: none; }
 .spc-files .studio-upload { justify-self: start; }
+/* Release › Coming soon (js/studio-section-release.js): the day and its buttons. */
+.sr-soon { margin: 14px 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+.sr-soon h3 { margin: 0 0 4px; }
+.sr-soon-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.sr-soon-row input { min-height: 44px; }

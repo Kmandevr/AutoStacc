@@ -33,7 +33,7 @@
           press(b, true);
           const res = await api("/api/community/blocks", { method: "PUT", body: { name: c.name } });
           press(b, false);
-          if (res.ok) location.reload(); else window.alert(res.error.message);
+          if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
         });
         card.append(b);
       }

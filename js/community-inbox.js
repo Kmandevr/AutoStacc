@@ -1,5 +1,5 @@
-// The bell (the inbox feature, server/community/features/inbox/; needs js/community-kit.js): a small button at the top
-// of the community pages with the number of unread notices; opening it lists them (replies, mentions, best answers,
+// The bell (the inbox feature, server/community/features/inbox/; needs js/community-kit.js): the Notifications panel in
+// the community toolbar (owner, 2026-10-27), with the number of unread notices; opening it lists them (replies, mentions, best answers,
 // followed takes) and marks them seen. Text only through textContent. Does nothing when the feature is off or the
 // visitor is signed out.
 (function () {
@@ -13,26 +13,24 @@
   (async () => {
     const who = await kit.me();
     if (!who.features.includes("inbox") || !who.signedIn || !who.member) return;
-    const main = document.querySelector("main");
     const r = await api("/api/community/inbox");
-    if (!main || !r.ok) return;
+    const slot = r.ok && kit.panel("inbox", "Notifications");
+    if (!slot) return;
     let unread = r.data.unread;
     const count = el("span", { class: "cm-bell-count", text: unread ? String(unread) : "" });
-    const bell = el("button", { class: "btn ghost small cm-bell", type: "button", "aria-expanded": "false", "aria-label": "Notifications" }, "Notifications ", count);
-    const panel = el("div", { class: "cm-inbox", hidden: true });
-    r.data.items.forEach((x) => panel.append(el("p", { class: `cm-small${x.read ? "" : " cm-unread"}` },
+    slot.button.replaceChildren("Notifications", count);
+    slot.button.setAttribute("aria-label", unread ? `Notifications: ${unread} unread` : "Notifications");
+    const list = el("div", { class: "cm-inbox" });
+    r.data.items.forEach((x) => list.append(el("p", { class: `cm-small${x.read ? "" : " cm-unread"}` },
       `${x.actor || "Someone"} ${WHAT[x.kind] || "wrote in"} `, el("a", { href: x.path, text: x.title }))));
-    if (!r.data.items.length) panel.append(el("p", { class: "cm-small", text: "Nothing yet." }));
-    bell.addEventListener("click", async () => {
-      const open = panel.hidden;
-      panel.hidden = !open;
-      bell.setAttribute("aria-expanded", String(open));
-      if (open && unread) {
-        unread = 0;
-        count.textContent = "";
-        await api("/api/community/inbox/read", { method: "POST", body: { all: true } });
-      }
+    if (!r.data.items.length) list.append(el("p", { class: "cm-small", text: "Nothing yet. Replies to you, mentions and best answers land here." }));
+    slot.box.prepend(list);
+    slot.box.addEventListener("gs:cm-open", async () => {
+      if (!unread) return;
+      unread = 0;
+      count.textContent = "";
+      slot.button.setAttribute("aria-label", "Notifications");
+      await api("/api/community/inbox/read", { method: "POST", body: { all: true } });
     });
-    main.prepend(el("div", { class: "cm-bell-wrap" }, bell, panel));
   })();
 })();

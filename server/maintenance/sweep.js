@@ -8,7 +8,8 @@
 // anymore (library/sweep.js); and the admins hear about meters
 // near the allowance; last, paid creator storage is measured, last month's statements issued and overdue ones acted on
 // (billing/statements.js); and the community's upkeep: 12-month retention and its features' daily work
-// (community/index.js); and copyright counter-notices whose wait is over (copyright/sweep.js).
+// (community/index.js); copyright counter-notices whose wait is over (copyright/sweep.js); and Coming soon products
+// whose day has come (creators/coming-soon.js).
 // Bounded per run; anything left waits for the next day.
 import { deactivateExpiredRetired } from "../files/files.js";
 import { hashLegacyFiles } from "../files/legacy.js";
@@ -26,6 +27,7 @@ import { sweepReleased } from "../library/sweep.js";
 import { runStorageBilling } from "../billing/statements.js";
 import { communitySweep } from "../community/index.js";
 import { copyrightSweep } from "../copyright/sweep.js";
+import { releaseComingSoon } from "../creators/coming-soon.js";
 
 export async function sweep(app, { nowMs = Date.now() } = {}) {
   const retiredFiles = await deactivateExpiredRetired(app.db, nowMs);
@@ -45,5 +47,7 @@ export async function sweep(app, { nowMs = Date.now() } = {}) {
   const storageBilling = await runStorageBilling(app, { nowMs });
   const community = await communitySweep(app, { nowMs });
   const copyright = await copyrightSweep(app, { nowMs });
-  return { community, copyright, retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage, storageBilling };
+  // Coming soon products whose day has come go on sale if they're ready (creators/coming-soon.js).
+  const comingSoon = await releaseComingSoon(app, { nowMs });
+  return { community, copyright, comingSoon, retiredFiles, purgedFiles, versions, blobs, bundles, contents, waiting, additions, legacy, variants, sites, usage, storageBilling };
 }

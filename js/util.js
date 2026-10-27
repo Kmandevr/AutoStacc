@@ -237,6 +237,58 @@ const GS = (function () {
     return go;
   };
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, pendingUsername, cart, track, projectPath, currentProject, skipLink, showCartCount, look, moduleProject, wear, shopItemPath, viewSwap, say, tabs };
+  // One confirmation dialog for every page (owner, 2026-10-27, #219), in place of the browser's confirm(): the question,
+  // a button named for the action (red when it deletes, removes or ends something) and "Not now". Escape, the backdrop
+  // or "Not now" answer false; focus goes back where it was. → Promise<boolean>. opts: { action, danger }.
+  const VERBS = /^(Delete|Remove|Refund|Archive|Block|Suspend|Revoke|Discard|Deactivate|Leave|End|Cancel|Take|Publish|Send|Replace|Start|Turn on|Turn off|Turn|Email|Hand|Lift)\b/;
+  const DANGER = /^(Delete|Remove|Refund|Archive|Block|Suspend|Revoke|Discard|Deactivate|Leave|End|Cancel|Take)\b/;
+  const confirm = (message, opts = {}) => {
+    const text = String(message);
+    if (typeof HTMLDialogElement !== "function") return Promise.resolve(window.confirm(text));
+    const verb = (text.match(VERBS) || [])[1];
+    const action = opts.action || (verb === "Hand" ? "Hand it over" : verb === "Cancel" ? "Yes, cancel" : verb || "Go ahead");
+    const danger = opts.danger !== undefined ? opts.danger : DANGER.test(text);
+    const back = document.activeElement;
+    const d = document.createElement("dialog");
+    d.className = "gs-confirm";
+    d.innerHTML = `<form method="dialog"><p class="gs-confirm-text"></p><div class="gs-confirm-actions">
+      <button class="btn ghost" value="no" type="submit">Not now</button><button class="btn${danger ? " danger" : ""}" value="yes" type="submit"></button></div></form>`;
+    $(".gs-confirm-text", d).textContent = text;
+    $("[value=yes]", d).textContent = action;
+    document.body.append(d);
+    return new Promise((resolve) => {
+      d.addEventListener("close", () => {
+        resolve(d.returnValue === "yes");
+        d.remove();
+        if (back && back.focus && back.isConnected) back.focus();
+      });
+      d.addEventListener("click", (ev) => { if (ev.target === d) d.close("no"); });
+      d.showModal();
+      $("[value=yes]", d).focus();
+    });
+  };
+
+  // One message line for what an action did when there's no form to say it in (owner, 2026-10-27, #219), in place of
+  // the browser's alert(): fixed at the foot of the screen, announced (as an alert when it went wrong), gone after a
+  // few seconds or when closed. Never blocks the page.
+  let toastBox = null, toastTimer = 0;
+  const toast = (text, error = false) => {
+    if (!toastBox) {
+      toastBox = document.createElement("div");
+      toastBox.className = "gs-toast";
+      toastBox.innerHTML = '<p></p><button type="button" class="gs-toast-close" aria-label="Close">&times;</button>';
+      $(".gs-toast-close", toastBox).addEventListener("click", () => { toastBox.hidden = true; });
+      document.body.append(toastBox);
+    }
+    const p = $("p", toastBox);
+    p.setAttribute("role", error ? "alert" : "status");
+    p.textContent = String(text || (error ? "That didn't work. Try again." : "Done."));
+    toastBox.classList.toggle("error", error);
+    toastBox.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { if (toastBox) toastBox.hidden = true; }, error ? 9000 : 5000);
+  };
+
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, pendingUsername, cart, track, projectPath, currentProject, skipLink, showCartCount, look, moduleProject, wear, shopItemPath, viewSwap, say, tabs, confirm, toast };
 })();
 window.GS = GS;

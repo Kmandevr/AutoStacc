@@ -94,6 +94,9 @@ export const spaceHook = (space) => `<section class="cm-desk" data-cm-space="${e
 export const manageHook = (space) => `<section class="cm-desk cm-desk-full" data-cm-space="${esc(space.id)}" data-cm-path="${esc(spacePath(space))}" data-cm-desk aria-label="Manage ${esc(space.name)}"></section>
         <p class="cm-small cm-desk-note" data-cm-desk-note>Only this space's team can manage it. If nothing appears, <a href="/login">log in</a> with the account that runs it.</p>`;
 export const noticesHook = () => '<div class="cm-notices" data-cm-notices hidden></div>';
+// The community's toolbar (owner, 2026-10-27, #220): one row at the top of the content where features put search and
+// the visitor's own panels (Notifications, Saved). Not on a space's management page.
+export const barHook = () => '<div class="cm-bar" data-cm-bar><div class="cm-bar-tools" data-cm-bar-tools></div></div>';
 
 // Where the browser script (js/community.js) puts the "New take" form: the channels a visitor may post in, as JSON in
 // an attribute (escaped like any value). The script asks the API who the visitor is before showing anything.

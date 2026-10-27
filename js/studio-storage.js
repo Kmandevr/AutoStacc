@@ -88,7 +88,7 @@
       const t = ev.target;
       const cancel = t.closest("[data-cancel]");
       if (cancel) {
-        if (!confirm("Cancel paid storage? Nothing is deleted; uploads stop above your free storage.")) return;
+        if (!await window.GS.confirm("Cancel paid storage? Nothing is deleted; uploads stop above your free storage.")) return;
         cancel.disabled = true;
         const out = await api(`${base}/plan`, { method: "DELETE", body: {} });
         if (!out.ok) cancel.disabled = false;

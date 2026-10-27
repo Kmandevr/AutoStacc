@@ -10,8 +10,9 @@ export const getProducts = async (db, ids) => {
   return all(db, `SELECT * FROM products WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
 };
 
+// The store's list: what's on sale, plus Coming soon products (shown, never sold; owner, 2026-10-27).
 export const listProducts = (db, { includeHidden = false } = {}) =>
-  all(db, `SELECT * FROM products ${includeHidden ? "" : "WHERE published = 1 AND deleted_at IS NULL"} ORDER BY featured DESC, title`);
+  all(db, `SELECT * FROM products ${includeHidden ? "" : `WHERE (published = 1 OR ${COMING_SOON_SQL}) AND deleted_at IS NULL`} ORDER BY featured DESC, title`);
 
 // Visible products of the given projects (follows, Auto-Stacc).
 export const listProjectProducts = async (db, projectIds) => {
@@ -40,6 +41,9 @@ export const indexableProducts = (db) => all(db, `SELECT p.id, p.updated_at FROM
   JOIN creators c ON c.id = j.creator_id WHERE p.published = 1 AND p.deleted_at IS NULL AND c.trusted = 1 AND c.status = 'active'
   AND c.published = 1 AND c.deleted_at IS NULL AND j.published = 1 AND j.deleted_at IS NULL ORDER BY p.id LIMIT 50000`);
 
+// Coming soon (server/creators/coming-soon.js): unpublished with a day to go on sale. Its page and card show, nothing sells.
+const COMING_SOON_SQL = "(published = 0 AND coming_soon_on IS NOT NULL AND source = 'studio')";
+export const isComingSoon = (p) => Boolean(p && !p.published && !p.deleted_at && p.coming_soon_on && p.source === "studio");
 // Visible in the store: published and not removed from data/.
 export const isVisible = (p) => Boolean(p && p.published && !p.deleted_at);
 // Can be bought right now.
@@ -73,6 +77,7 @@ export function publicProduct(p, sales = [], seller = null) {
     pacs: parseJson(p.pacs, []),
     maxQuantity: p.max_quantity,
     available: isPurchasable(p) || isFree(p),
+    comingSoon: isComingSoon(p) ? { on: p.coming_soon_on } : null,
     free: p.price_cents === 0,
     path: productPath(p),
     source: p.source || "catalog",
