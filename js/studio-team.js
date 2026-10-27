@@ -58,9 +58,9 @@
       const b = ev.target.closest("button[data-team-remove], button[data-team-withdraw], button[data-team-leave]");
       if (!b) return;
       b.disabled = true;
-      if (b.dataset.teamRemove && confirm("Remove this person from the team?")) return after(await api(`${base}/members/${encodeURIComponent(b.dataset.teamRemove)}`, { method: "DELETE", body: {} }), "Removed.");
+      if (b.dataset.teamRemove && await window.GS.confirm("Remove this person from the team?")) return after(await api(`${base}/members/${encodeURIComponent(b.dataset.teamRemove)}`, { method: "DELETE", body: {} }), "Removed.");
       if (b.dataset.teamWithdraw) return after(await api(`${base}/invites/${encodeURIComponent(b.dataset.teamWithdraw)}`, { method: "DELETE", body: {} }), "Invitation withdrawn.");
-      if (b.hasAttribute("data-team-leave") && confirm("Leave this team? You'll need a new invitation to come back.")) {
+      if (b.hasAttribute("data-team-leave") && await window.GS.confirm("Leave this team? You'll need a new invitation to come back.")) {
         const me = t.members.find((m) => m.you);
         const r = await api(`${base}/members/${encodeURIComponent(me.userId)}`, { method: "DELETE", body: {} });
         if (r.ok) { location.hash = ""; location.reload(); return; }

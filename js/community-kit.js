@@ -63,7 +63,7 @@
       const r = await GS.api(typeof path === "function" ? path() : path, { method: typeof method === "function" ? method() : method, body });
       press(b, false);
       if (r.ok) return done ? done(r.data, b) : location.reload();
-      window.alert(r.error.message);
+      window.GS.toast(r.error.message, true);
     });
     return b;
   };

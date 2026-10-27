@@ -106,7 +106,7 @@
     });
     root.addEventListener("click", async (ev) => {
       const b = ev.target.closest("[data-promo-end]");
-      if (!b || b.disabled || !confirm("End this now? Orders already placed keep their discount.")) return;
+      if (!b || b.disabled || !await window.GS.confirm("End this now? Orders already placed keep their discount.")) return;
       b.disabled = true;
       await api(`/api/admin/promotions/${encodeURIComponent(b.dataset.promoEnd)}/end`, { method: "POST", body: {} });
       draw();

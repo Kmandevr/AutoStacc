@@ -28,7 +28,7 @@
       b.disabled = true;
       const r = await window.GS.api(`/api/community/threads/${encodeURIComponent(box.dataset.cmBoost)}/boost`, { method: on ? "DELETE" : "PUT" });
       b.disabled = false;
-      if (!r.ok) return window.alert(r.error.message);
+      if (!r.ok) return window.GS.toast(r.error.message, true);
       on = r.data.boosted;
       draw(r.data.count);
       if (on && !reduce) { box.classList.remove("cm-bounce"); void box.offsetWidth; box.classList.add("cm-bounce"); }

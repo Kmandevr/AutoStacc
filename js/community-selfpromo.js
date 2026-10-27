@@ -24,7 +24,7 @@
       press(b, true);
       const res = await api(path, { method: off ? "DELETE" : "PUT", body: {} });
       press(b, false);
-      if (res.ok) location.reload(); else window.alert(res.error.message);
+      if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
     });
     part.append(b);
   })();

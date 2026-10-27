@@ -95,7 +95,7 @@
     async function release(act, btn, extra = null) {
       const body = BODIES[act] && { ...BODIES[act], ...(extra || {}) };
       if (!body) return null;
-      if (act === "remove" && !confirm("Remove this product from the store? People who already have it keep their files.")) return null;
+      if (act === "remove" && !await window.GS.confirm("Remove this product from the store? People who already have it keep their files.")) return null;
       if (btn) btn.disabled = true;
       const res = await api(url, { method: "PATCH", body });
       if (btn) btn.disabled = false;

@@ -62,18 +62,18 @@
   // then must still open the preview.
   addEventListener("gs:admin", () => {
     products = api("/api/admin/products").then((res) => (res.ok ? res.data.products : []));
-    root.addEventListener("click", (ev) => {
+    root.addEventListener("click", async (ev) => {
       const p = ev.target.closest("[data-preview]");
       if (p) return preview(p.dataset.preview);
       const panel = ev.target.closest("[data-customer]");
       if (!panel) return;
       const id = encodeURIComponent(panel.dataset.customer);
       const imp = ev.target.closest("[data-impersonate]");
-      if (imp && confirm("Start impersonating this customer? You'll see the store as them until you exit.")) {
+      if (imp && await window.GS.confirm("Start impersonating this customer? You'll see the store as them until you exit.")) {
         return go(imp, `/api/admin/customers/${id}/impersonate`, { note: $("#imp-note").value });
       }
       const tp = ev.target.closest("[data-test-purchase]");
-      if (tp && confirm("Start a test purchase as this customer? You'll shop as them with test payments.")) {
+      if (tp && await window.GS.confirm("Start a test purchase as this customer? You'll shop as them with test payments.")) {
         return go(tp, "/api/admin/test-purchases", { userId: panel.dataset.customer, productId: $("[data-tp-product]").value });
       }
     });

@@ -185,9 +185,9 @@
         return;
       }
       const rm = ev.target.closest("[data-pe-rmfile]");
-      if (rm && confirm("Remove this file from the version? Buyers keep the live version until you publish.")) return send("POST", "/remove", { assetIds: [rm.dataset.peRmfile] }, rm);
+      if (rm && await window.GS.confirm("Remove this file from the version? Buyers keep the live version until you publish.")) return send("POST", "/remove", { assetIds: [rm.dataset.peRmfile] }, rm);
       const rmf = ev.target.closest("[data-pe-rmfolder]");
-      if (rmf && confirm("Remove this folder and everything in it from the version?")) return send("DELETE", `/folders/${encodeURIComponent(rmf.dataset.peRmfolder)}`, undefined, rmf);
+      if (rmf && await window.GS.confirm("Remove this folder and everything in it from the version?")) return send("DELETE", `/folders/${encodeURIComponent(rmf.dataset.peRmfolder)}`, undefined, rmf);
     };
   }
 

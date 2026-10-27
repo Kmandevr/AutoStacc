@@ -145,7 +145,7 @@
     const id = $("[data-pack-version]", el).dataset.id;
     const verb = act.hasAttribute("data-pack-publish") ? "publish" : act.hasAttribute("data-pack-reject") ? "reject" : "discard";
     let body = {};
-    if (verb === "publish" && !confirm("Publish this version? Customers get its files right away; files that changed or were removed are replaced.")) return;
+    if (verb === "publish" && !await window.GS.confirm("Publish this version? Customers get its files right away; files that changed or were removed are replaced.")) return;
     if (verb === "reject") {
       const note = prompt("Why isn't it accepted? The creator sees this.", "");
       if (note === null) return;

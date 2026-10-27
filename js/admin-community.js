@@ -62,7 +62,7 @@
     panel.addEventListener("click", async (ev) => {
       const act = ev.target.closest("[data-act]"), lift = ev.target.closest("[data-lift]");
       if (act) return decide(panel, act);
-      if (!lift || !confirm("Lift this suspension?")) return;
+      if (!lift || !await window.GS.confirm("Lift this suspension?")) return;
       lift.disabled = true;
       const res = await api(`/api/admin/community/suspensions/${encodeURIComponent(lift.dataset.lift)}`, { method: "DELETE" });
       load(panel, res.ok ? "Lifted." : res.error.message);

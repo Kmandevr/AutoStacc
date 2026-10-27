@@ -77,7 +77,7 @@
     const btn = $(`[data-switch="${id}"]`, panel);
     const title = $(`[data-switch-row="${id}"] h3`, panel).firstChild.textContent.trim();
     const on = $(`[data-switch-row="${id}"] .is-on`, panel) !== null;
-    if (!confirm(`${on ? "Turn off" : "Turn on"} ${title}?`)) return;
+    if (!await window.GS.confirm(`${on ? "Turn off" : "Turn on"} ${title}?`)) return;
     btn.disabled = true;
     const simple = SIMPLE.find(([k]) => k === id);
     const res = simple ? await api("/api/admin/switches", { method: "PUT", body: { key: id, value: on ? simple[5] : simple[4] } })

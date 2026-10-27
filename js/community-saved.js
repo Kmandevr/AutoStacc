@@ -20,7 +20,7 @@
       press(b, true);
       const r = await api(path, { method: saved ? "DELETE" : "PUT" });
       press(b, false);
-      if (r.ok) { saved = r.data.saved; draw(); } else window.alert(r.error.message);
+      if (r.ok) { saved = r.data.saved; draw(); } else window.GS.toast(r.error.message, true);
     });
     kit.tools.hidden = false;
     kit.tools.append(b);

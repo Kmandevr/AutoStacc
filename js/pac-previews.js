@@ -107,7 +107,7 @@
     box.onclick = async (ev) => {
       if (ev.target.closest("[data-pp-choose]")) return $("[data-pp-upload]", box).click();
       const rm = ev.target.closest("[data-pp-remove]");
-      if (!rm || !confirm("Remove this preview?")) return;
+      if (!rm || !await window.GS.confirm("Remove this preview?")) return;
       rm.disabled = true;
       const res = await api(`${opts.url}/${encodeURIComponent(rm.dataset.ppRemove)}`, { method: "DELETE" });
       if (!res.ok) { rm.disabled = false; return say(res.error.message, true); }

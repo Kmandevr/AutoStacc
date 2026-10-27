@@ -109,7 +109,7 @@
 
       el.addEventListener("click", async (ev) => {
         const end = ev.target.closest("[data-pr-end]");
-        if (!end || !confirm("End this sale now? Orders already made keep their price.")) return;
+        if (!end || !await window.GS.confirm("End this sale now? Orders already made keep their price.")) return;
         end.disabled = true;
         const res = await api(`${base}/sales/${encodeURIComponent(end.dataset.prEnd)}`, { method: "DELETE" });
         if (!res.ok) { end.disabled = false; return ctx.note(res.error.message, true); }

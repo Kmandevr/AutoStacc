@@ -157,8 +157,8 @@
       if (!act) return;
       const id = $("[data-pack-version]", el).dataset.id;
       const publishing = act.hasAttribute("data-pack-publish");
-      if (publishing && !confirm("Publish this version? It becomes the files buyers download. People who already bought keep files you removed or replaced for 30 days.")) return;
-      if (!publishing && !confirm("Discard this draft version? Its upload, arrangement, renames, removals, added files, folders, folder defaults and read me are lost. Values you set on files and your ✓/✕ on suggestions stay with the files. The live version buyers have stays as it is.")) return;
+      if (publishing && !await window.GS.confirm("Publish this version? It becomes the files buyers download. People who already bought keep files you removed or replaced for 30 days.")) return;
+      if (!publishing && !await window.GS.confirm("Discard this draft version? Its upload, arrangement, renames, removals, added files, folders, folder defaults and read me are lost. Values you set on files and your ✓/✕ on suggestions stay with the files. The live version buyers have stays as it is.")) return;
       act.disabled = true;
       const res = await api(`${BASE}/versions/${encodeURIComponent(id)}/${publishing ? "publish" : "discard"}`, { method: "POST", body: {} });
       if (!res.ok) {

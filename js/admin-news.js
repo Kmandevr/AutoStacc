@@ -42,7 +42,7 @@
       if (!form) return;
       ev.preventDefault();
       const btn = $("button[type=submit]", form), msg = $("[role=status]", form);
-      if (btn.disabled || !confirm("Send this to everyone who switched AutoStacc news on? It can't be unsent.")) return;
+      if (btn.disabled || !await window.GS.confirm("Send this to everyone who switched AutoStacc news on? It can't be unsent.")) return;
       btn.disabled = true;
       let total = 0;
       for (;;) {

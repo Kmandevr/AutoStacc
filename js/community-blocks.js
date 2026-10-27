@@ -24,12 +24,12 @@
   }
 
   const toggle = (name, blocked) => el("button", { class: "btn ghost small", type: "button", text: blocked ? "Unblock" : "Block", on: { click: async (ev) => {
-    if (!blocked && !window.confirm(`Block ${name}? Their posts fold away for you, and they can't reply under your posts. They aren't notified.`)) return;
+    if (!blocked && !await window.GS.confirm(`Block ${name}? Their posts fold away for you, and they can't reply under your posts. They aren't notified.`)) return;
     const b = ev.currentTarget;
     press(b, true);
     const r = await api("/api/community/blocks", { method: blocked ? "DELETE" : "PUT", body: { name } });
     press(b, false);
-    if (r.ok) location.reload(); else window.alert(r.error.message);
+    if (r.ok) location.reload(); else window.GS.toast(r.error.message, true);
   } } });
 
   (async () => {

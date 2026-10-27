@@ -19,7 +19,7 @@
       box.disabled = true;
       const res = await api("/api/community/mentions/prefs", { method: "PUT", body: { alerts: box.checked } });
       box.disabled = false;
-      if (!res.ok) { box.checked = !box.checked; window.alert(res.error.message); }
+      if (!res.ok) { box.checked = !box.checked; window.GS.toast(res.error.message, true); }
     });
     kit.notices.hidden = false;
     kit.notices.append(el("label", { class: "cm-check cm-small" }, box, " Tell me when someone @mentions me"));

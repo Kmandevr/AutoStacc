@@ -72,7 +72,7 @@
     const say = (text) => {
       const m = root.querySelector(".stacc-personal .msg") || root.querySelector(".stacc-selection");
       if (m && m.matches(".msg")) { m.hidden = !text; m.className = "msg error"; m.textContent = text; }
-      else if (text) alert(text);
+      else if (text) window.GS.toast(text, true);
     };
     const selected = () => (root.staccSelection ? root.staccSelection() : []);
     const filterOf = (k) => { const s = root.querySelector(`[data-filter="${k}"]`); return s ? s.value : ""; };
@@ -113,7 +113,7 @@
       const untag = t.closest("[data-untag]");
       if (untag && (await call(untag, "/api/tags/remove", "POST", { fileIds: [untag.dataset.file], tag: untag.dataset.untag }))) return changed(false);
       const del = t.closest("[data-search-delete]");
-      if (del && confirm("Delete this saved search?") && (await call(del, `/api/saved-searches/${encodeURIComponent(del.dataset.searchDelete)}`, "DELETE"))) return changed(false);
+      if (del && await window.GS.confirm("Delete this saved search?") && (await call(del, `/api/saved-searches/${encodeURIComponent(del.dataset.searchDelete)}`, "DELETE"))) return changed(false);
       if (!cid) return;
       const base = `/api/collections/${encodeURIComponent(cid)}`;
       const remove = t.closest("[data-personal-remove]");
@@ -126,7 +126,7 @@
         if (name && (await call(rename, base, "PATCH", { name }))) return changed(false);
       }
       const drop = t.closest("[data-personal-delete]");
-      if (drop && confirm("Delete this collection? Its files stay in Your Stacc.") && (await call(drop, base, "DELETE"))) {
+      if (drop && await window.GS.confirm("Delete this collection? Its files stay in Your Stacc.") && (await call(drop, base, "DELETE"))) {
         root.dispatchEvent(new CustomEvent("gs:stacc-personal", { detail: { clear: true, leave: "collection" } }));
       }
     });

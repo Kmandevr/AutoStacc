@@ -2,7 +2,7 @@
 title: Visual builder
 summary: BUILT (phases 1–9, 2026-10-15) (owner, 2026-10-15): one visual, Wix-like editor for creator profiles and project sites (free grid, edit on the live page, templates, checked CSS, AutoStacc's trusted interactive library, a shared community library with paid pieces, roles, version history, scheduling, fonts, one storage cap); the decisions and the build order.
 covers: [server/library/, js/admin-library.js, db/migrations/0027_community_library.sql, js/builder*.js, js/site-*.js, css/builder.css, css/builder-canvas.css, css/creator-site.css, server/sites/, server/studio/sites.js, server/studio/site-files.js, server/creators/storage.js, db/migrations/0025_visual_builder.sql, test/unit/builder.test.js, test/api/builder.suite.js, test/browser/builder.test.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Visual builder

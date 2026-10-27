@@ -200,3 +200,24 @@ html:active-view-transition-type(page)::view-transition-new(root) { animation: p
   .section-head { margin-bottom: 22px; }
   .btn { padding: 12px 18px; text-align: center; }
 }
+
+/* The shared confirmation dialog (GS.confirm, js/util.js): the question, "Not now" and the action. */
+.gs-confirm { max-width: min(28rem, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--text); box-shadow: var(--shadow); }
+.gs-confirm::backdrop { background: rgba(0, 0, 0, .45); }
+.gs-confirm-text { margin: 0 0 16px; line-height: 1.5; }
+.gs-confirm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.gs-confirm-actions .btn { min-height: 44px; }
+.btn.danger { background: var(--coral); border-color: var(--coral); color: var(--on-accent); text-shadow: none; }
+.btn.danger:hover { background: var(--coral); border-color: var(--coral); color: var(--on-accent); }
+@media (prefers-reduced-motion: no-preference) {
+  .gs-confirm[open] { animation: gs-confirm-in .16s ease-out; }
+  @keyframes gs-confirm-in { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+}
+/* The shared message line (GS.toast, js/util.js): above the phones' bottom bar, never over the page's own controls for long. */
+.gs-toast { position: fixed; z-index: 60; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: min(34rem, calc(100vw - 32px)); padding: 10px 12px 10px 16px; border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: var(--radius); background: var(--panel); color: var(--text); box-shadow: var(--shadow); }
+.gs-toast.error { border-left-color: var(--coral); }
+.gs-toast[hidden] { display: none; }
+.gs-toast p { margin: 0; }
+.gs-toast-close { min-width: 44px; min-height: 44px; border: 0; background: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; }
+@media (max-width: 900px) { .gs-toast { bottom: calc(72px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: no-preference) { .gs-toast:not([hidden]) { animation: gs-confirm-in .16s ease-out; } }

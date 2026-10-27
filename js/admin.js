@@ -193,7 +193,7 @@
     const rmProduct = e.target.closest("[data-product-remove]");
     if (rmProduct) {
       const li = rmProduct.closest("[data-product]");
-      if (!confirm(`Remove "${li.querySelector("strong").textContent}" from the store? People who already bought it keep their files. You can restore it later.`)) return;
+      if (!await window.GS.confirm(`Remove "${li.querySelector("strong").textContent}" from the store? People who already bought it keep their files. You can restore it later.`)) return;
       rmProduct.disabled = true;
       return act(rmProduct, `/api/admin/products/${encodeURIComponent(li.dataset.product)}`, { deleted: true });
     }
@@ -206,7 +206,7 @@
     const announce = e.target.closest("[data-announce]");
     if (announce && !announce.disabled) {
       const li = announce.closest("[data-product]"), msg = $("[data-announce-msg]", li);
-      if (!confirm(`Email "${li.querySelector("strong").textContent}" to its project's followers? Each follower gets it once.`)) return;
+      if (!await window.GS.confirm(`Email "${li.querySelector("strong").textContent}" to its project's followers? Each follower gets it once.`)) return;
       announce.disabled = true;
       // "Sent" means the email provider accepted it; refused sends stay pending and the loop stops instead of retrying forever.
       let total = 0;
@@ -237,7 +237,7 @@
       return act(rej, `/api/admin/files/${encodeURIComponent(rej.dataset.rejectFile)}`, { status: "rejected", ...(note.trim() && { note: note.trim() }) });
     }
     const rm = e.target.closest("[data-remove-file]");
-    if (rm && !rm.disabled && confirm("Deactivate this file? Owners lose the download link; the file stays in storage.")) {
+    if (rm && !rm.disabled && await window.GS.confirm("Deactivate this file? Owners lose the download link; the file stays in storage.")) {
       rm.disabled = true;
       return act(rm, `/api/admin/files/${encodeURIComponent(rm.dataset.removeFile)}`, undefined, "DELETE");
     }

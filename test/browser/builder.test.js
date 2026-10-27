@@ -32,8 +32,8 @@ describe("the visual builder in the browser", () => {
     assert.equal(await page.locator('.bx-tabs [data-tab="add"]').getAttribute("aria-selected"), "true");
     await shot(page, "01-new-profile");
 
-    page.once("dialog", (d) => d.accept());
     await page.click('[data-action="template"][data-id="artist"]');
+    await page.click(".gs-confirm button[value=yes]");
     await frame(page).locator("text=Your artist name").waitFor();
     await settle(page);
     await shot(page, "02-artist-template");
@@ -184,8 +184,8 @@ describe("the visual builder in the browser", () => {
     sql(t.stateDir, `UPDATE creators SET trusted = 1 WHERE slug = '${sellerSlug}'`);
     await seller.page.click("[data-profile]");
     await seller.page.waitForSelector(".bx-frame");
-    seller.page.once("dialog", (d) => d.accept());
     await seller.page.click('[data-action="template"][data-id="dj"]');
+    await seller.page.click(".gs-confirm button[value=yes]");
     await frame(seller.page).locator("text=YOUR DJ NAME").waitFor();
     await frame(seller.page).locator("[data-sec]").first().click({ position: { x: 5, y: 5 } });
     await seller.page.click('.bx-panel-body [data-action="share"][data-kind="section"]');

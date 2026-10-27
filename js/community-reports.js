@@ -70,7 +70,7 @@
         press(btn, true);
         const res = await api("/api/community/reports/resolve", { method: "POST", body: { targetType: x.type, targetId: x.id, outcome, reason } });
         press(btn, false);
-        if (res.ok) location.reload(); else window.alert(res.error.message);
+        if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
       } } });
       part.append(el("article", { class: `cm-desk-item${x.danger ? " cm-danger" : ""}` },
         el("p", { class: "cm-meta" }, x.danger ? el("span", { class: "cm-badge cm-badge-danger", text: "Danger" }) : "", " ",

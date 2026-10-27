@@ -71,7 +71,7 @@
       press(b, true);
       const res = await api(`/api/community/spaces/${enc(spaceId)}/tags`, { method: "DELETE", body: { key: t.key } });
       press(b, false);
-      if (res.ok) location.reload(); else window.alert(res.error.message);
+      if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
     } } }))));
     const msg = status();
     const label = el("input", { required: true, maxlength: 30, "aria-label": "New tag" });

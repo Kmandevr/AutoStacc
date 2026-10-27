@@ -71,7 +71,7 @@
 
       el.addEventListener("click", async (ev) => {
         const rm = ev.target.closest("[data-spc-remove]");
-        if (!rm || !confirm("Remove this file from the product?")) return;
+        if (!rm || !await window.GS.confirm("Remove this file from the product?")) return;
         rm.disabled = true;
         const res = await api(`/api/studio/products/${encodeURIComponent(id)}/files/${encodeURIComponent(rm.dataset.spcRemove)}`, { method: "DELETE" });
         if (!res.ok) { rm.disabled = false; return window.GS.say(filesBox, res.error.message, true); }

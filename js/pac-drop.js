@@ -135,7 +135,7 @@
         // A creator's storage: a warning, not a refusal (files the store already has, and replaced ones, count once).
         const size = s.zip ? s.zip.size : files.reduce((n, f) => n + f.blob.size, 0);
         if (storage && storage.quotaBytes && size > storage.quotaBytes - storage.usedBytes
-          && !confirm(`This drop is ${mb(size)} and your file storage has ${mb(Math.max(0, storage.quotaBytes - storage.usedBytes))} free. Files AutoStacc already has count once, so it may still fit. Try anyway?`)) return say("");
+          && !await window.GS.confirm(`This drop is ${mb(size)} and your file storage has ${mb(Math.max(0, storage.quotaBytes - storage.usedBytes))} free. Files AutoStacc already has count once, so it may still fit. Try anyway?`)) return say("");
         const byId = (id) => id && versions.find((v) => v.id === id);
         const draft = pac && byId(pac.draftVersionId), live = pac && byId(pac.liveVersionId);
         const has = [draft, live].some((v) => v && v.stats && v.stats.files > 0);
@@ -147,7 +147,7 @@
         if (s.zip) await list(s.zip);
         // Replacing needs the draft gone first (one version in progress per Pac), so a draft with work in it is confirmed.
         if (draft && (choice === "replace" || whole) && draft.stats && draft.stats.files > 0
-          && !confirm("Discard your unpublished draft first? Its arrangement, renames, folders, folder defaults and read me are lost, even if this upload then fails. Values you set on files stay with them. The live version buyers have doesn't change.")) return say("");
+          && !await window.GS.confirm("Discard your unpublished draft first? Its arrangement, renames, folders, folder defaults and read me are lost, even if this upload then fails. Values you set on files stay with them. The live version buyers have doesn't change.")) return say("");
         if (draft && (choice === "replace" || whole)) {
           const gone = await api(`${opts.base}/versions/${encodeURIComponent(draft.id)}/discard`, { method: "POST", body: {} });
           if (!gone.ok) throw new Error(gone.error.message);

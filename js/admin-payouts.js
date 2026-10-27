@@ -29,7 +29,7 @@
       const btn = ev.target.closest("[data-settle]");
       if (!btn || btn.disabled) return;
       const stripe = btn.textContent.includes("Stripe");
-      if (!confirm(btn.dataset.settle === "paid" ? (stripe ? "Send this payout now? Stripe transfers the money to the creator's account." : "Mark this payout as paid? Only do this after sending the money.") : "Decline this payout request?")) return;
+      if (!await window.GS.confirm(btn.dataset.settle === "paid" ? (stripe ? "Send this payout now? Stripe transfers the money to the creator's account." : "Mark this payout as paid? Only do this after sending the money.") : "Decline this payout request?")) return;
       btn.disabled = true;
       const note = $("[data-note]", btn.closest("td"));
       const res = await api(`/api/admin/payouts/${encodeURIComponent(btn.dataset.id)}`, { method: "PATCH", body: { status: btn.dataset.settle, note: note ? note.value : "" } });

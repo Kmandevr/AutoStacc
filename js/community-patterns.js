@@ -23,7 +23,7 @@
       press(b, true);
       const res = await api(path, { method, body });
       press(b, false);
-      if (res.ok) location.reload(); else window.alert(res.error.message);
+      if (res.ok) location.reload(); else window.GS.toast(res.error.message, true);
     } } });
     r.data.rules.forEach((x) => part.append(el("p", { class: "cm-desk-row" },
       `${x.name}: ${x.field === "any" ? "title or text" : x.field} ${TESTS[x.test]}${x.value ? ` "${x.value}"` : ""} → ${x.action === "hold" ? "hold" : "refuse"}${x.enabled ? "" : " (off)"} `,

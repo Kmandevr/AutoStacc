@@ -58,7 +58,7 @@
         const fee = $("[data-fee]", row).value.trim();
         body = { storageQuotaBytes: quota === "" ? null : Math.round(Number(quota) * 1048576), platformFeeBps: fee === "" ? null : Math.round(Number(fee)) };
       }
-      if (body.status === "suspended" && !confirm("Suspend this creator? Their pages and images go offline at once.")) return;
+      if (body.status === "suspended" && !await window.GS.confirm("Suspend this creator? Their pages and images go offline at once.")) return;
       btn.disabled = true;
       const res = await api(`/api/admin/creators/${encodeURIComponent(row.dataset.id)}`, { method: "PATCH", body });
       btn.disabled = false;

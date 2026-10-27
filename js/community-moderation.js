@@ -24,7 +24,7 @@
     press(b, true);
     const r = await api(path, { method: "POST", body: { ...payload, reason } });
     press(b, false);
-    if (r.ok) location.reload(); else window.alert(r.error.message);
+    if (r.ok) location.reload(); else window.GS.toast(r.error.message, true);
   } } });
 
   function threadTools(state) {
@@ -59,7 +59,7 @@
     press(btn, true);
     const r = await api(`/api/community/spaces/${enc(spaceId)}/bans`, { method: "PUT", body: { name, reason, days: days.trim() ? Number(days) : null } });
     press(btn, false);
-    window.alert(r.ok ? `${name} is banned from this space.` : r.error.message);
+    window.GS.toast(r.ok ? `${name} is banned from this space.` : r.error.message, !r.ok);
   } } });
 
   // A team member's desk on a space: appeals to decide, who's banned, and what the team did (placeholders until each
