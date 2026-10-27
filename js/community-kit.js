@@ -93,12 +93,16 @@
     box.append(form);
   }
 
-  // "Post as": for a space's team, a choice between their own community name and the space's (the server checks it).
-  // Returns null for everyone else; asTeam() is what the form sends.
+  // "Post as": your own username, the space's name for its team, and the names you may speak for anywhere (AutoStacc
+  // for its admins, projects whose team you're on; who.identities from /api/community/me). The server checks it.
+  // Returns null when there's nothing to choose; as() is what the form sends (null for your own name).
   const asPicker = (who, teamName) => {
-    if (!teamName) return null;
-    const sel = el("select", { name: "as" }, el("option", { value: "me", text: who.member ? who.member.displayName : "Me" }), el("option", { value: "team", text: `${teamName} (Team)` }));
-    return { wrap: el("label", {}, "Post as", sel), asTeam: () => sel.value === "team" };
+    const opts = [];
+    if (teamName) opts.push(["space", `${teamName} (Team)`]);
+    (who.identities || []).filter((x) => x.name !== teamName).forEach((x) => opts.push([x.id, `${x.name} (Team)`]));
+    if (!opts.length) return null;
+    const sel = el("select", { name: "as" }, el("option", { value: "", text: who.member ? who.member.displayName : "Me" }), opts.map(([v, t]) => el("option", { value: v, text: t })));
+    return { wrap: el("label", {}, "Post as", sel), as: () => sel.value || null };
   };
 
   GS.communityKit = { asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };

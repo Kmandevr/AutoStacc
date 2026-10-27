@@ -15,6 +15,7 @@ import { mine } from "./mine.js";
 import { purge } from "./purge.js";
 import { threadPath, spacePath } from "./render-parts.js";
 import { listSpaces } from "./spaces.js";
+import { identitiesOf } from "./identities.js";
 import { featureRoutes, state, featuresOn } from "./hooks.js";
 import { holdRoutes } from "./holds-routes.js";
 
@@ -33,7 +34,8 @@ async function me(app) {
   const features = featuresOn(app);
   if (!user) return json({ signedIn: false, features }, 200, NO_STORE);
   const member = await getMember(app.db, user.id);
-  return json({ signedIn: true, emailVerified: Boolean(user.emailVerified), member: member && { displayName: member.displayName }, features }, 200, NO_STORE);
+  return json({ signedIn: true, emailVerified: Boolean(user.emailVerified), member: member && { displayName: member.displayName }, features,
+    identities: await identitiesOf(app, user) }, 200, NO_STORE);
 }
 
 async function setMe(app) {
@@ -45,11 +47,14 @@ async function setMe(app) {
   return json({ member: { displayName: member.displayName } }, 201);
 }
 
+// Who a post goes out as: as = "space" or an identity id (core/identities.js); asTeam: true is the older "space".
+const postingAs = (body) => (typeof body.as === "string" && body.as ? str(body.as, "as", { max: 120 }) : body.asTeam === true ? "space" : null);
+
 async function newThread(app) {
   const user = await writer(app);
   const body = await readJson(app.request, 24 * 1024);
   const r = await startThread(app, user, { channelId: id(body.channelId, "channelId"), type: str(body.type, "type", { max: 20 }),
-    title: str(body.title, "title", { max: 400 }), body: str(body.body, "body", { max: 20000 }), asTeam: body.asTeam === true });
+    title: str(body.title, "title", { max: 400 }), body: str(body.body, "body", { max: 20000 }), as: postingAs(body) });
   purge(app, r);
   return json({ thread: { id: r.thread.id, path: threadPath(r.thread) }, ...(r.held && { held: true }) }, 201);
 }
@@ -58,7 +63,7 @@ async function newReply(app, { threadId }) {
   const user = await writer(app);
   const body = await readJson(app.request, 24 * 1024);
   const parentId = body.parentId === undefined || body.parentId === null ? null : id(body.parentId, "parentId");
-  const r = await reply(app, user, id(threadId, "threadId"), { body: str(body.body, "body", { max: 20000 }), parentId, asTeam: body.asTeam === true });
+  const r = await reply(app, user, id(threadId, "threadId"), { body: str(body.body, "body", { max: 20000 }), parentId, as: postingAs(body) });
   purge(app, r);
   return json({ post: { id: r.id, path: `${threadPath(r.thread)}#${r.id}` }, ...(r.held && { held: true }) }, 201);
 }

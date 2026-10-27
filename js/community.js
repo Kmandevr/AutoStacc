@@ -72,7 +72,7 @@
     const form = el("form", { class: "cm-form cm-stack-in", on: { submit: async (ev) => {
       ev.preventDefault();
       busy(form, true);
-      const r = await api("/api/community/threads", { method: "POST", body: { channelId: channel.value, type: type.value, title: title.value, body: text.box.value, asTeam: Boolean(as && as.asTeam()) } });
+      const r = await api("/api/community/threads", { method: "POST", body: { channelId: channel.value, type: type.value, title: title.value, body: text.box.value, as: as ? as.as() : null } });
       busy(form, false);
       if (!r.ok) return say(msg, r.error.message);
       text.clear();
@@ -99,7 +99,7 @@
     const form = el("form", { class: "cm-form cm-reply-form cm-stack-in", on: { submit: async (ev) => {
       ev.preventDefault();
       busy(form, true);
-      const r = await api(`/api/community/threads/${encodeURIComponent(threadId)}/posts`, { method: "POST", body: { body: text.box.value, parentId, asTeam: Boolean(as && as.asTeam()) } });
+      const r = await api(`/api/community/threads/${encodeURIComponent(threadId)}/posts`, { method: "POST", body: { body: text.box.value, parentId, as: as ? as.as() : null } });
       if (r.ok && r.data.held) {
         text.clear();
         form.replaceWith(el("p", { class: "cm-small", role: "status", text: "Thanks. Your reply is waiting for the space's team to look at it." }));

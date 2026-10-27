@@ -170,4 +170,29 @@ export default (ctx) => describe("community project spaces (switched on)", () =>
     assert.equal((await other.c.req("PUT", `/api/community/projects/${b2.id}/space`, { body: { on: true } })).status, 200);
     assert.equal(one(`SELECT name FROM community_spaces WHERE project_id = '${b2.id}'`).name, `Same Name Project (Second ${slug2})`);
   });
+
+  test("Post as: a project's team posts under the project's name anywhere; others can't; admins may speak for AutoStacc and first-party projects", async () => {
+    const owner = await person();
+    const other = await person();
+    const p = await project(owner);
+    const as = `project:${p.proj.id}`;
+    assert.ok((await owner.c.get("/api/community/me")).data.identities.some((x) => x.id === as && x.name === p.proj.name));
+    assert.deepEqual((await other.c.get("/api/community/me")).data.identities, []);
+    clearPace();
+    const t = await owner.c.post("/api/community/threads", { channelId: "chn_autostacc_help", type: "question", title: "From the project", body: `Hello ${unique("pa")}`, as });
+    assert.equal(t.status, 201, JSON.stringify(t.data));
+    assert.equal(one(`SELECT as_team FROM community_threads WHERE id = '${t.data.thread.id}'`).as_team, p.proj.name);
+    const rep = await other.c.post(`/api/community/threads/${t.data.thread.id}/posts`, { body: "pretend", as });
+    assert.equal(rep.status, 403);
+    assert.equal(rep.data.error.code, "team_only");
+    assert.equal((await other.c.post(`/api/community/threads/${t.data.thread.id}/posts`, { body: "pretend", as: "autostacc" })).status, 403);
+    db(`UPDATE projects SET published = 0 WHERE id = '${p.proj.id}'`);
+    assert.equal((await owner.c.post(`/api/community/threads/${t.data.thread.id}/posts`, { body: `Unlisted ${unique("pa")}`, as })).status, 403, "an unpublished project isn't a name to post under");
+    db(`UPDATE projects SET published = 1 WHERE id = '${p.proj.id}'`);
+    const was = one("SELECT published FROM projects WHERE id = 'glitches-and-stitches'").published;
+    db("UPDATE projects SET published = 1 WHERE id = 'glitches-and-stitches'");
+    const ids = (await (await freshAdmin(ctx.mock.url)).get("/api/community/me")).data.identities.map((x) => x.id);
+    db(`UPDATE projects SET published = ${was ? 1 : 0} WHERE id = 'glitches-and-stitches'`);
+    assert.ok(ids.includes("autostacc") && ids.includes("project:glitches-and-stitches"), JSON.stringify(ids));
+  });
 });
