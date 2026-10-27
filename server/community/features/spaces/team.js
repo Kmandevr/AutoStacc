@@ -6,12 +6,12 @@
 // settings, the team or anything in the Studio. Every change is logged in the space's team log.
 import { fail } from "../../../lib/http.js";
 import { first, all, stmt, now, guardStmt, isGuardFailure } from "../../../lib/db.js";
-import { getSetting } from "../../../settings/settings.js";
 import { requireTeam, requireManager, spaceRole, teamRoleOf } from "../../core/access.js";
 import { nameKey, cleanName } from "../../core/names.js";
 import { logStmts } from "../../core/moderate.js";
 import { getSpace } from "../../core/posting.js";
 import { OWNED } from "./start.js";
+import { capFor } from "./caps.js";
 
 export const MAX_MODERATORS = 25;
 const SINCE = "r.created_at AS since";
@@ -106,7 +106,7 @@ export async function setArchived(app, user, spaceId, archived) {
     ]);
   } else {
     if (space.state !== "archived" || space.state_reason !== "founder") fail(409, "not_archived", "Only a space its founder archived can be reopened here.");
-    const cap = Number(await getSetting(app.db, "community_space_cap"));
+    const cap = await capFor(app.db, user.id);
     try {
       await app.db.batch([
         guardStmt(app.db, `(${OWNED}) < ?`, user.id, cap),

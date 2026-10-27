@@ -38,7 +38,7 @@
   // the account menu and the footer (owner, 2026-10-27).
   const YOU = [["/library", "Your Stacc", "library", "stacc"], ["/studio", "Studio", "studio", "studio", " data-creator hidden"], ["/settings", "Settings", "settings", "settings"]];
   // The four hubs (owner, 2026-10-27): Discover holds creators, projects, communities and, as a tab, New & upcoming
-  // (/explore, which marks itself data-section="discover"); About lives in the footer.
+  // (/discover/explore, which marks itself data-section="discover"); About lives in the footer.
   const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/discover", "Discover", "discover", "creators"], ["/community", "Community", "community", "community"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page || (key === "home" && body.page === "dashboard") ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
@@ -152,7 +152,7 @@
           <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
           ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
-        ${col("Explore", [["/shop", "Store"], ["/discover", "Discover"], ["/explore", "New & upcoming"], ["/events", "Events"], ["/community", "Community"], ["/studio", "Become a creator"], ["/about", "About"]])}
+        ${col("Explore", [["/shop", "Store"], ["/discover", "Discover"], ["/discover/explore", "New & upcoming"], ["/events", "Events"], ["/community", "Community"], ["/studio", "Become a creator"], ["/about", "About"]])}
         ${col("Help", [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/security", "Security"]])}
         ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/copyright", "Copyright"], ["/community-rules", "Community rules"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>

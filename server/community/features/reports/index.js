@@ -11,6 +11,10 @@ export default {
   name: "reports",
   switch: "community.reports",
   routes: [...filingRoutes, ...queueRoutes],
+  // Open reports routed to each team, one per take or post (as the queue counts them).
+  waiting: async (db, spaceIds) => Object.fromEntries((await all(db, `SELECT space_id AS id, COUNT(DISTINCT target_type || ':' || target_id) AS n
+    FROM community_reports WHERE route = 'space' AND status = 'open' AND space_id IN (SELECT value FROM json_each(?)) GROUP BY space_id`,
+  JSON.stringify(spaceIds))).map((r) => [r.id, r.n])),
   // Account deletion keeps reports (they're evidence for 12 months) but not who made them: the core does that.
   exportData: async (db, userId) => ({
     reports: await all(db, `SELECT target_type AS targetType, target_id AS targetId, reason, note, status, created_at AS createdAt

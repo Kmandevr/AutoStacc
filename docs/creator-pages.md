@@ -218,7 +218,7 @@ Separate from the level a page uses, each project has a **trust level** that onl
 
 ## 6. Creator URLs and routing
 
-Addresses are `https://autostacc.com/<creator>/<project>` and `/<creator>/<project>/<page>`. Generated release and news pages are `/<creator>/<project>/music/<release>` and `/news/<post>`.
+Addresses are `https://autostacc.com/<creator>/<project>` and `/<creator>/<project>/<page>`. Starting templates (`server/sites/templates.js`) link only to platform addresses such as `/discover/explore`. Generated release and news pages are `/<creator>/<project>/music/<release>` and `/news/<post>`.
 
 ```
 GET autostacc.com/<creator>/<project>/<page>

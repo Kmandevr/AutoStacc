@@ -1,13 +1,13 @@
 // Starting a community (owner, 2026-10-27; docs/community.md, "Starting communities"): any account with a confirmed
 // email, a username and the 16+ confirmation, no creator needed. The founder names it and may give a description,
 // rules and channel names; each has a default, so the minimum is a name, and the rest is edited later on the space's
-// management page. At most community_space_cap (default 3) open or read-only communities per account, checked inside
+// management page. At most community_space_cap (default 3), or the account's own exception (caps.js), open or read-only communities per account, checked inside
 // the write so two at once can't pass it. Names follow the username rules (reserved words, creators' and projects'
 // names unless they're your own team's) and are unique among spaces; the address is made from the name and permanent.
 import { fail } from "../../../lib/http.js";
 import { first, stmt, now, newId, guardStmt, isGuardFailure } from "../../../lib/db.js";
 import { RESERVED } from "../../../lib/slugs.js";
-import { getSetting } from "../../../settings/settings.js";
+import { capFor } from "./caps.js";
 import { getMember } from "../../core/members.js";
 import { spaceNameProblem, nameKey, cleanName } from "../../core/names.js";
 import { slugify } from "../../core/posting.js";
@@ -48,7 +48,7 @@ export const OWNED = "SELECT COUNT(*) FROM community_spaces WHERE founder_user_i
 
 // How many more communities this account may start, for the start form.
 export async function startAllowance(app, user) {
-  const cap = Number(await getSetting(app.db, "community_space_cap"));
+  const cap = await capFor(app.db, user.id);
   const owned = (await first(app.db, `${OWNED.replace("COUNT(*)", "COUNT(*) AS n")}`, user.id)).n;
   return { cap, owned, left: Math.max(0, cap - owned) };
 }
@@ -64,7 +64,7 @@ export async function startSpace(app, user, body) {
   const description = text(body.description, "description", 500, "A description");
   const rules = text(body.rules, "rules", 4000, "Rules");
   const channels = channelNames(body.channels);
-  const cap = Number(await getSetting(app.db, "community_space_cap"));
+  const cap = await capFor(app.db, user.id);
   const at = now();
   const spaceId = newId("spc");
   try {

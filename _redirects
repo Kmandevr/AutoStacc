@@ -21,6 +21,9 @@
 # Projects and Creators became Discover's tabs (owner, 2026-10-22, #208).
 /projects   /discover?tab=projects  301
 /creators   /discover?tab=creators  301
+# New & upcoming moved under Discover (owner, 2026-10-27, #214); the query (view, filters) goes along.
+/explore       /discover/explore  301
+/explore.html  /discover/explore  301
 # 2026-10-08: Account and Settings became one Settings area with a page per section (docs/decisions.md).
 /account    /settings/orders  301
 # Settings sections (/settings/security, ...) are one page. With the store on, functions/settings/[[path]].js gates and

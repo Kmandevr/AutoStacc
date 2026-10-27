@@ -1,16 +1,20 @@
 // Communities anyone can start and run, with no creator needed (owner, 2026-10-27; docs/community.md, "Starting
 // communities" and "Who runs a space"): starting one (start.js), its team of founder and moderators, handing it over and
-// archiving it (team.js). Its own switch (community.spaces): off, these routes are 404 and the spaces already started
-// stay as they are, run by their teams through the other features.
+// archiving it (team.js), and AutoStacc's per-account exceptions to the cap (caps.js). Its own switch
+// (community.spaces): off, these routes are 404 and the spaces already started stay as they are, run by their teams
+// through the other features.
 import { json, readJson, fail, id, str } from "../../../lib/http.js";
 import { currentUser, requireUser } from "../../../auth/session.js";
 import { limit } from "../../../lib/ratelimit.js";
-import { all } from "../../../lib/db.js";
+import { all, first, stmt } from "../../../lib/db.js";
 import { getMember } from "../../core/members.js";
 import { getSpace } from "../../core/posting.js";
 import { spacePath } from "../../core/render-parts.js";
 import { purge } from "../../core/purge.js";
+import { heldIn } from "../../core/holds.js";
+import { waiting } from "../../core/hooks.js";
 import { startSpace, startAllowance, DEFAULT_CHANNELS } from "./start.js";
+import { capRoutes } from "./caps.js";
 import { teamOf, addModerator, removeModerator, handOver, setArchived } from "./team.js";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -40,12 +44,16 @@ async function start(app) {
   return json({ space: { ...space, path: spacePath({ ...space, kind: "community" }), manage: `${spacePath({ ...space, kind: "community" })}/manage` } }, 201);
 }
 
-// The spaces the visitor helps run, for their home and the community's "Spaces you run".
+// The spaces the visitor helps run, for their home, the bell and the community's "Spaces you run", each with how much
+// waits on its team (held posts and the switched-on features' queues, such as open reports).
 async function mine(app) {
   const user = await requireUser(app);
   const rows = await all(app.db, `SELECT s.id, s.slug, s.name, s.kind, s.state, r.role FROM community_space_roles r JOIN community_spaces s ON s.id = r.space_id
     WHERE r.user_id = ? ORDER BY s.name COLLATE NOCASE LIMIT 100`, user.id);
-  return json({ spaces: rows.map((s) => ({ id: s.id, name: s.name, role: s.role, state: s.state, path: spacePath(s), manage: `${spacePath(s)}/manage` })) }, 200, NO_STORE);
+  const ids = rows.map((s) => s.id);
+  const [held, queued] = ids.length ? await Promise.all([heldIn(app.db, ids), waiting(app, ids)]) : [{}, {}];
+  return json({ spaces: rows.map((s) => ({ id: s.id, name: s.name, role: s.role, state: s.state, path: spacePath(s), manage: `${spacePath(s)}/manage`,
+    waiting: (held[s.id] || 0) + (queued[s.id] || 0) })) }, 200, NO_STORE);
 }
 
 const team = async (app, { spaceId }) => json(await teamOf(app, await requireUser(app), await spaceOf(app, spaceId)), 200, NO_STORE);
@@ -95,6 +103,10 @@ export default {
     ["POST", "/api/community/spaces/:spaceId/moderators", appoint],
     ["DELETE", "/api/community/spaces/:spaceId/moderators/:userId", dismiss],
     ["POST", "/api/community/spaces/:spaceId/hand-over", handTo],
-    ["PUT", "/api/community/spaces/:spaceId/archived", archive]
-  ]
+    ["PUT", "/api/community/spaces/:spaceId/archived", archive],
+    ...capRoutes
+  ],
+  // An account's own cap goes with it (core/erase.js hands its communities on).
+  erase: (db, userId) => [stmt(db, "DELETE FROM community_space_caps WHERE user_id = ?", userId)],
+  exportData: async (db, userId) => ({ spaceCap: await first(db, "SELECT cap, note, created_at AS setAt FROM community_space_caps WHERE user_id = ?", userId) })
 };

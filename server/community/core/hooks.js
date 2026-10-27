@@ -16,6 +16,7 @@
 //   schema: { thread(ctx, entity) }        adds fields to a take's JSON-LD entity (ctx: thread, posts, url)
 //   erase(db, userId) -> statements, exportData(db, userId) -> object   for account deletion and the data download
 //   sweep(app, { nowMs }) -> summary     the feature's part of the daily sweep (server/maintenance/sweep.js)
+//   waiting(db, spaceIds) -> { spaceId: n }   what waits on each space's team in the feature's own queue (the bell, the home)
 import { isOn } from "../../lib/features.js";
 import { fail } from "../../lib/http.js";
 
@@ -63,6 +64,17 @@ export function formatExtensions(app) {
 export async function state(app, user, thread) {
   const out = {};
   for (const f of on(app)) if (f.state && f.state.thread) out[f.name] = await f.state.thread(app, user, thread);
+  return out;
+}
+
+// What waits on each of these spaces' teams in the switched-on features' queues: { spaceId: n }, added up.
+export async function waiting(app, spaceIds) {
+  const out = {};
+  if (!spaceIds.length) return out;
+  for (const f of on(app)) {
+    if (!f.waiting) continue;
+    for (const [id, n] of Object.entries(await f.waiting(app.db, spaceIds))) out[id] = (out[id] || 0) + n;
+  }
   return out;
 }
 

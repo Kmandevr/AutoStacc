@@ -113,6 +113,15 @@ export default (ctx) => describe("coming soon", () => {
     const other = await seller("soon-att-b");
     assert.equal((await other.c.get(`/api/studio/creators/${s.creator.id}/attention`)).status, 404, "not their creator");
     assert.equal((await new Client(base()).get(`/api/studio/creators/${s.creator.id}/attention`)).status, 401);
+    // The summary for the bell and the home: every creator of this person, drafts and Coming soon waiting but not
+    // needing them; nobody else's creators.
+    const sum = await s.c.get("/api/studio/attention");
+    assert.equal(sum.status, 200);
+    assert.equal(sum.data.member, true);
+    const mine = sum.data.creators.find((c) => c.id === s.creator.id);
+    assert.deepEqual([mine.waiting >= 2, mine.needsYou], [true, 0]);
+    assert.ok(!(await other.c.get("/api/studio/attention")).data.creators.some((c) => c.id === s.creator.id));
+    assert.equal((await new Client(base()).get("/api/studio/attention")).status, 401);
     // On sale: no longer waiting.
     assert.equal((await upload(s, draft)).status, 201);
     assert.equal((await patch(s, draft, { published: true })).status, 200);

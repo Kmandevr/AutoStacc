@@ -405,7 +405,7 @@ describe("features in the browser", () => {
 
     // /explore: views as tabs (releases and events, no news), filters and chips in the address, event cards linking to
     // their own pages and the events view pointing to the /events calendar.
-    await page.goto("/explore");
+    await page.goto("/discover/explore");
     await page.waitForSelector(".ex-item");
     assert.deepEqual(await page.locator("[data-view]").evaluateAll((b) => b.map((x) => x.dataset.view)), ["releases", "events"]);
     assert.ok(await page.locator("[data-calendar]").isHidden(), "the calendar link belongs to the events view");
@@ -421,10 +421,12 @@ describe("features in the browser", () => {
     await page.keyboard.press("ArrowLeft");
     await page.waitForURL((u) => !u.search.includes("view="));
     await page.waitForSelector("[data-view=releases][aria-selected=true]");
-    // An old shows address opens the events view; an old news one falls back to releases.
+    // An old shows address opens the events view (through the old /explore address, which keeps its query); an old
+    // news one falls back to releases.
     await page.goto("/explore?view=shows");
+    await page.waitForURL((u) => u.pathname === "/discover/explore" && u.search === "?view=shows");
     await page.waitForSelector("[data-view=events][aria-selected=true]");
-    await page.goto("/explore?view=news");
+    await page.goto("/discover/explore?view=news");
     await page.waitForSelector("[data-view=releases][aria-selected=true]");
 
     // The project's home: upcoming events (no news) with a link to its events list.
