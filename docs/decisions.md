@@ -6,6 +6,12 @@ updated: 2026-10-27
 
 # Decisions
 
+## 2026-10-27: Lighter Claude sessions (owner)
+
+- **Tests while iterating:** only the suite the change affects; the full `store-check` and `release-check` stay required before a change is called done, a pull request or a merge. Saves usage without lowering what reaches `main`.
+- **Connectors kept:** GitHub, Google Drive, Stripe, Brevo and Cloudflare, for viewing and changing settings when needed. The rest (Gmail, Google Calendar, the data and engineering plugins) are switched off by the owner in claude.ai settings; they are account settings, not repository files.
+- **Old handoff removed:** `.claude/handoff.md` described another branch's finished work, failed its own check and was printed into every session.
+
 ## 2026-10-27: Four hubs, community ownership without a creator, Coming soon (owner)
 
 The owner's brief "Platform cohesion, four-hub architecture and UX", answered one question at a time in chat. Tracked as #214, with a child issue per batch (#215–#223). Where this entry and the 2026-10-22 entry below disagree, this one wins.

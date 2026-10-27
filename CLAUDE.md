@@ -45,7 +45,7 @@ Keep context while it helps; clean up only at a task boundary (task done, PR ope
 
 ## Checking changes
 
-Run `node scripts/build.js`, then `node scripts/seo-test.js` and the `verify-site` skill (the `seo-check` skill covers all three). For anything touching the store (`server/`, `functions/`, `db/`, store pages or scripts) also run the `store-check` skill (unit, API security and browser chaos tests). Before calling a change ready, run `release-check`. CI (`.github/workflows/seo.yml`) and the deploy run the same SEO tests; the deploy stops if they fail.
+Run `node scripts/build.js`, then `node scripts/seo-test.js` and the `verify-site` skill (the `seo-check` skill covers all three). For anything touching the store (`server/`, `functions/`, `db/`, store pages or scripts) also run the `store-check` skill (while iterating, only the affected suite). Before calling a change ready, run `release-check`. CI (`.github/workflows/seo.yml`) and the deploy run the same SEO tests; the deploy stops if they fail.
 
 ## Git
 
