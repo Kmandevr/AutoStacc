@@ -2,7 +2,7 @@
 title: Community
 summary: PLANNED, foundations built (#135: switch off, tables, formatter, rules pages) (owner, 2026-10-16): spaces for AutoStacc, each project and user-made communities, with channels; discussions, questions and answers, updates, polls and challenges; upvotes; AutoStacc base rules everywhere plus stricter local rules; moderation, age, notifications, build order.
 covers: [server/community/, functions/community.js, functions/community/, scripts/lib/community-page.js, css/community*.css, js/community*.js, db/migrations/0031_community.sql, db/migrations/0032_community_platform_space.sql, db/migrations/0033_community_nested_replies.sql, db/migrations/0034_community_pace.sql, db/migrations/0035_community_moderation.sql, db/migrations/0036_community_upkeep.sql, test/unit/community-format.test.js, test/unit/community-names.test.js, test/unit/community-hooks.test.js, test/unit/community-moderation.test.js, test/api/community.suite.js, test/api/community-posting.suite.js, test/api/community-moderation.suite.js, test/api/community-upkeep.suite.js, test/api/community-legal.suite.js, test/api/community.test.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Community
