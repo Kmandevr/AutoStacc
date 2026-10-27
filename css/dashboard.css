@@ -1,14 +1,12 @@
-/* The dashboard (/dashboard): the grid of mixer panels (css/panels.css) and Your Stacc's meters and latest additions. */
+/* The signed-in home (/, dashboard.html): the grid of mixer panels (css/panels.css) and Your Stacc's meters and latest additions. */
 /* Used by dashboard.html with css/panels.css and css/projects.css (project cards). */
 
 .dash-hello { margin: 0 0 8px; font-family: var(--mono); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
 .dash-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; gap: 18px; padding-bottom: 56px; }
 .dash-grid > .dash-stacc, .dash-grid > .dash-releases { grid-column: span 6; }
-.dash-grid > .dash-projects, .dash-grid > .dash-latest { grid-column: 1 / -1; }
-.dash-grid > .dash-discover { grid-column: span 7; }
-.dash-grid > .dash-links { grid-column: span 5; }
+.dash-grid > .dash-attention, .dash-grid > .dash-links { grid-column: 1 / -1; }
 .dash-search { margin: 18px 0 0; }
-.dash-latest .latest { margin-inline: 18px; }
+.dash-releases .latest { margin-inline: 18px; }
 
 .dash-total { margin: 0 0 12px; color: var(--muted); }
 .dash-total strong { color: var(--text); font-family: var(--mono); }
@@ -44,6 +42,10 @@
 .home-tabs [role="tab"] { min-height: 44px; padding: 0 16px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-weight: 650; cursor: pointer; }
 .home-tabs [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--teal); }
 .home-tabs [role="tab"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
-.dash-grid > .dash-community { grid-column: 1 / -1; }
 .dash-notices { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .dash-notices .is-unread { font-weight: 650; }
+/* The home's parts (owner, 2026-10-27, #223): what needs you, community notices under "Pick up", quick actions. */
+.dash-attention { border-left: 3px solid var(--amber); }
+.dash-sub { margin: 14px 0 6px; font-size: .95rem; }
+.dash-actions { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.dash-actions .btn { min-height: 44px; }

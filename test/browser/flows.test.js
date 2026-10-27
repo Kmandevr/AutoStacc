@@ -605,7 +605,7 @@ describe("store in the browser", () => {
   test("signed in: the app's navigation, dashboard, account, settings and Your Stacc; log out returns to the public site", async () => {
     const { ctx, page } = await open(DESK);
     await signUp(page, unique("app"));
-    await page.waitForSelector("h1:has-text('Dashboard')");
+    await page.waitForSelector("h1:has-text('Home')");
     await page.waitForSelector("[data-stacc-glance] >> text=Nothing in Your Stacc yet.");
     assert.ok(await page.locator(".side a[href='/'][aria-current=page]").isVisible(), "Home is your own home once signed in");
     assert.ok(await page.locator(".side a[href='/library']").isVisible());
@@ -627,7 +627,7 @@ describe("store in the browser", () => {
     await menu.waitFor({ state: "hidden" });
     assert.equal(await menu.isVisible(), false, "a click elsewhere closes it");
     await page.goto("/");
-    await page.waitForSelector("h1:has-text('Dashboard')");
+    await page.waitForSelector("h1:has-text('Home')");
     assert.equal(await page.locator("main a[href='/login#signup']").count(), 0, "signed in, / is your own home, not the cover");
     for (const [p, ready] of [["/settings/orders", "text=No orders yet."], ["/settings/security", "[data-form=password]"], ["/settings/email", ".switch"],
       ["/settings/privacy", "[data-export-now]"], ["/library", "text=Nothing Stacc'd yet."]]) {
