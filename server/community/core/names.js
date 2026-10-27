@@ -25,8 +25,9 @@ const hits = (key, protectedKey) => variants(key).some((v) => v === protectedKey
 
 const RESERVED_KEYS = new Set([...RESERVED, ...EXTRA_RESERVED].map(nameKey).filter(Boolean));
 
-// null when the name may be used by this person, else a { code, message } to show.
-export async function nameProblem(db, rawName, userId) {
+// The checks a username and a community's name share (shape, AutoStacc's reserved words, creators' and projects'
+// names unless they're the person's own team's): null, or a { code, message } to show.
+async function sharedProblem(db, rawName, userId) {
   const name = String(rawName || "").normalize("NFC").replace(/\s+/g, " ").trim();
   if (!SHAPE.test(unaccent(name))) return { code: "name_shape", message: "Use 3 to 30 letters, numbers, spaces, dots, hyphens or underscores, starting with a letter or number." };
   const key = nameKey(name);
@@ -44,8 +45,24 @@ export async function nameProblem(db, rawName, userId) {
     const own = new Set(mine.map((m) => m.creator_id));
     if (clash.some((o) => !own.has(o.creatorId))) return { code: "name_taken", message: "That's the name of a creator or project on AutoStacc. Pick another." };
   }
+  return null;
+}
+
+// null when the name may be used by this person, else a { code, message } to show.
+export async function nameProblem(db, rawName, userId) {
+  const shared = await sharedProblem(db, rawName, userId);
+  if (shared) return shared;
+  const key = nameKey(cleanName(rawName));
   const taken = await first(db, "SELECT user_id FROM community_members WHERE name_key = ? AND user_id <> ?", key, userId);
   if (taken) return { code: "name_taken", message: "Someone already uses that name. Pick another." };
+  return null;
+}
+
+// A new community's name (owner, 2026-10-27): the username rules, and not another space's name.
+export async function spaceNameProblem(db, rawName, userId) {
+  const shared = await sharedProblem(db, rawName, userId);
+  if (shared) return shared;
+  if (await first(db, "SELECT 1 AS n FROM community_spaces WHERE name_key = ?", nameKey(cleanName(rawName)))) return { code: "name_taken", message: "A community already has that name. Pick another." };
   return null;
 }
 

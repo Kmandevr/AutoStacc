@@ -44,5 +44,6 @@ window.FEATURES = {
  "community.look": true,
  "community.teamTools": true,
  "community.profileCard": true,
- "community.projectSpaces": true
+ "community.projectSpaces": true,
+ "community.spaces": true
 };

@@ -30,6 +30,8 @@ export async function addChannel(db, space, { name, whoMayStart, postTypes }) {
   const live = await all(db, "SELECT position FROM community_channels WHERE space_id = ? AND archived_at IS NULL", space.id);
   if (live.length >= MAX_CHANNELS) fail(409, "too_many", `A space can have up to ${MAX_CHANNELS} channels.`);
   const slug = slugify(n);
+  // /<space>/manage is the space's management page.
+  if (slug === "manage") fail(400, "invalid_field", "A channel can't be called that. Pick another name.", { field: "name" });
   if (await first(db, "SELECT 1 AS n FROM community_channels WHERE space_id = ? AND slug = ?", space.id, slug)) fail(409, "channel_exists", "A channel with that name is already here (or archived).");
   const at = now();
   await run(db, "INSERT INTO community_channels (id, space_id, slug, name, position, post_types, who_may_start, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

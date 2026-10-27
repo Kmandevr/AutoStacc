@@ -18,6 +18,8 @@ export const SETTINGS = {
   // The Control Center's Settings › Switches (server/admin/switches.js; owner, 2026-10-16). Each is enforced where the
   // action happens, never only in the page: all buying (checkout and free claims), creators' payout requests, new
   // accounts, new Studio creators, writing reviews; and a short notice shown on every page ("" for none).
+  // How many communities one account may start (owner, 2026-10-27; docs/community.md, "Starting communities").
+  community_space_cap: { valid: (v) => /^(0|[1-9]\d?)$/.test(v), default: "3" },
   store_sales: { values: ["open", "paused"], default: "open" },
   payout_requests: { values: ["open", "paused"], default: "open" },
   signups: { values: ["open", "closed"], default: "open" },
