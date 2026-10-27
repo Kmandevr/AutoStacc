@@ -99,4 +99,23 @@ export default (ctx) => describe("coming soon", () => {
     assert.equal((await sweep()).status, 200);
     assert.equal(one(`SELECT published FROM products WHERE id = '${late.id}'`).published, 1);
   });
+
+  test("Needs you lists what waits in a creator's products, for its product team only", async () => {
+    const s = await seller("soon-att");
+    const draft = await make(s, { title: "Plain Draft" });
+    const soon = await make(s, { title: "Soon Drums" });
+    assert.equal((await patch(s, soon, { comingSoonOn: day(4) })).status, 200);
+    const r = await s.c.get(`/api/studio/creators/${s.creator.id}/attention`);
+    assert.equal(r.status, 200);
+    const kinds = Object.fromEntries(r.data.items.map((x) => [x.productId, x.kind]));
+    assert.deepEqual([kinds[draft.id], kinds[soon.id]], ["draft", "coming_soon"]);
+    assert.ok(r.data.items.every((x) => x.href.startsWith("#product=")));
+    const other = await seller("soon-att-b");
+    assert.equal((await other.c.get(`/api/studio/creators/${s.creator.id}/attention`)).status, 404, "not their creator");
+    assert.equal((await new Client(base()).get(`/api/studio/creators/${s.creator.id}/attention`)).status, 401);
+    // On sale: no longer waiting.
+    assert.equal((await upload(s, draft)).status, 201);
+    assert.equal((await patch(s, draft, { published: true })).status, 200);
+    assert.ok(!(await s.c.get(`/api/studio/creators/${s.creator.id}/attention`)).data.items.some((x) => x.productId === draft.id));
+  });
 });

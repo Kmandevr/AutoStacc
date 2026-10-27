@@ -40,6 +40,12 @@
       return;
     }
     const may = (c, cap) => (c.capabilities || []).includes(cap);
+    // Tabs (owner, 2026-10-27, #221; GS.tabs): Projects, then Team, Storage and Earnings where this member has them.
+    const tabsOf = (c) => [["projects", "Projects"], ...(!c.firstParty ? [["team", "Team"]] : []), ["storage", "Storage"],
+      ...(!c.firstParty && c.role === "owner" ? [["earnings", "Earnings"]] : [])];
+    const tabList = (c) => `<div class="studio-tabs" role="tablist" aria-label="${e(c.name)}">${tabsOf(c).map(([k, label]) =>
+      `<button type="button" role="tab" id="st-${e(c.id)}-${k}-tab" aria-controls="st-${e(c.id)}-${k}">${label}</button>`).join("")}</div>`;
+    const panel = (c, k, html) => `<div class="studio-tabpanel" role="tabpanel" id="st-${e(c.id)}-${k}" aria-labelledby="st-${e(c.id)}-${k}-tab" hidden>${html}</div>`;
     // A first-party creator's pages are hand-written: no builder, profile, renames, deletes, new projects, team or money here.
     const own = (c) => !c.firstParty;
     root.innerHTML = data.creators.map((c) => `
@@ -57,6 +63,9 @@
             <meter min="0" max="${data.limits.projectsPerCreator}" value="${c.projects.length}" aria-label="Projects used"></meter></li>` : ""}
         </ul>
         ${own(c) ? "" : '<p class="small-print">AutoStacc\'s own creator: its pages are hand-written, so here you run its products, music and events. No limits, no storage charges and no platform fee: every sale is AutoStacc\'s own.</p>'}
+        ${may(c, "products") ? `<div class="studio-attention" data-attention="${e(c.id)}"></div>` : ""}
+        ${tabList(c)}
+        <div class="studio-tabpanel" role="tabpanel" id="st-${e(c.id)}-projects" aria-labelledby="st-${e(c.id)}-projects-tab">
         ${own(c) ? `<div class="studio-profile"><div><h3 class="studio-sub">Your profile</h3><p class="small-print">Your home at ${e(location.host + c.path)}: who you are, your music, your projects.</p></div>
           ${may(c, "site.edit") ? `<button class="btn small" type="button" data-profile="${e(c.id)}">Design your profile</button>` : ""}</div>` : ""}
         <h3 class="studio-sub">Projects</h3>
@@ -68,26 +77,32 @@
             ${may(c, "products") ? `<button class="btn ghost small" type="button" data-products="${e(p.id)}">Products</button>` : ""}
             ${may(c, "site.edit") ? ["music", "events"].map((k) => `<button class="btn ghost small" type="button" data-content="${e(p.id)}" data-kind="${k}">${k[0].toUpperCase() + k.slice(1)}<span class="sr-only"> of ${e(p.name)}</span></button>`).join("") : ""}
           </div>
-          ${own(c) && may(c, "projects") ? `<div class="studio-community" data-community="${e(p.id)}"></div><div class="studio-personality-slot" data-personality="${e(p.id)}"></div>` : ""}
+          ${own(c) && may(c, "projects") ? `<details class="studio-project-more"><summary>Community and card look</summary><div class="studio-community" data-community="${e(p.id)}"></div><div class="studio-personality-slot" data-personality="${e(p.id)}"></div></details>` : ""}
           ${own(c) && may(c, "projects") ? `<details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
               <button class="btn ghost small" type="submit">Save</button></form>
             <form class="studio-danger" data-form="project-delete" data-id="${e(p.id)}"><div class="field"><label for="pd-${e(p.id)}">Type ${e(p.slug)} to delete</label><input id="pd-${e(p.id)}" name="confirm" required autocomplete="off"></div>
               <button class="btn ghost small danger" type="submit">Delete project</button></form>
           </details>` : ""}</li>`).join("") || `<li class="studio-empty">No projects yet. Name your first one below: it opens in the editor straight away.</li>`}</ul>
-        ${own(c) && may(c, "projects") && c.projects.length < data.limits.projectsPerCreator ? `<form class="studio-new" data-form="project" data-creator="${e(c.id)}"><h3>New project</h3>${nameFields("pr")}<button class="btn" type="submit">Create project</button></form>` : ""}
+        ${own(c) && may(c, "projects") && c.projects.length < data.limits.projectsPerCreator ? `<details class="studio-new-wrap"${c.projects.length ? "" : " open"}><summary class="btn ghost small">New project</summary><form class="studio-new" data-form="project" data-creator="${e(c.id)}">${nameFields("pr")}<button class="btn" type="submit">Create project</button></form></details>` : ""}
         ${own(c) && c.role === "owner" ? `<details><summary>Name, address and bio</summary><form data-form="creator-edit" data-id="${e(c.id)}">
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}
           <div class="field"><label for="ce-bio-${e(c.id)}">Short bio</label><textarea id="ce-bio-${e(c.id)}" name="bio" rows="2" maxlength="160">${e(c.bio || "")}</textarea>
             <p class="small-print">One or two lines on your card in the creators directory. Plain text, up to 160 characters.</p></div>
           <div class="studio-creator-images" data-creator-images="${e(c.id)}" data-avatar="${e(c.avatar || "")}" data-banner="${e(c.banner || "")}"></div>
           <button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
-        ${own(c) ? `<div class="studio-team-panel" data-team="${e(c.id)}"></div>
-` : ""}
-        <div class="studio-earnings" data-storage="${e(c.id)}"></div>
-        ${own(c) && c.role === "owner" ? `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>` : ""}
+        </div>
+        ${own(c) ? panel(c, "team", `<div class="studio-team-panel" data-team="${e(c.id)}"></div>`) : ""}
+        ${panel(c, "storage", `<div class="studio-earnings" data-storage="${e(c.id)}"></div>`)}
+        ${own(c) && c.role === "owner" ? panel(c, "earnings", `<div class="studio-earnings" data-earnings="${e(c.id)}"></div>`) : ""}
         <p class="msg" role="status" hidden></p>
       </section>`).join("");
+    root.querySelectorAll(".studio-creator").forEach((sec) => {
+      const panels = [...sec.querySelectorAll(":scope > .studio-tabpanel")];
+      const pick = window.GS.tabs(sec.querySelectorAll(":scope > .studio-tabs [role=tab]"), (i) => panels.forEach((pn, j) => { pn.hidden = i !== j; }));
+      pick(0, false);
+    });
+    root.querySelectorAll("[data-attention]").forEach((el) => window.GS.studioAttention && window.GS.studioAttention.draw(el, el.dataset.attention));
     root.querySelectorAll("[data-earnings]").forEach((el) => window.GS.studioEarnings.draw(el, el.dataset.earnings));
     root.querySelectorAll("[data-storage]").forEach((el) => window.GS.studioStorage.draw(el, el.dataset.storage));
     root.querySelectorAll("[data-team]").forEach((el) => window.GS.studioTeam.draw(el, el.dataset.team));

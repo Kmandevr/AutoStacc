@@ -2,7 +2,7 @@
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
 covers: [data/site.js, data/creators.js, data/projects.js, data/content-types.js, data/product-types.js, data/polls.js, data/relationships.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/relations.js, db/migrations/0003_platform.sql, server/projects/, server/polls/, server/entitlements/autostacc.js, server/app.js, js/stacc-model.js, js/projects.js, js/polls.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Architecture
@@ -104,3 +104,5 @@ Code: `server/projects/` (projects, follows), `server/entitlements/autostacc.js`
 - **Licences:** one licence per kind of product (`data/licenses.js`, picked by `license` in `data/product-types.js`), shown on `/license` and each product page; no per-purchase licence records.
 - **Project pages per project and project-specific branding** beyond the first project's existing pages; the first second project will show what it needs. Creators' own sites and profiles, designed in the visual builder with checked CSS and AutoStacc's trusted interactive pieces, and selling from the Studio are built ([builder](builder.md), [creators](creators.md)); the earlier design for sandboxed creator code is in [creator pages](creator-pages.md) (not built; superseded for now).
 - (Resolved 2026-10-08: the site is AutoStacc; projects live at `/<creator>/<project>` and creators build free sites in the Studio; see [creators](creators.md) and [decisions](decisions.md).)
+
+`server/app.js` also wires `server/studio/attention.js` (owner, 2026-10-27): the Studio's "Needs you" list, a read-only view over a creator's products, files and Pac versions ([creators](creators.md)).
