@@ -93,3 +93,5 @@ Each note in `docs/` names the code it describes in its `covers:` frontmatter. `
 - **New API route:** add it to the owning module's `routes` table; a new module adds one import and one entry in `server/app.js`.
 
 The studio API group also runs `coming-soon.suite.js` and gets `SWEEP_TOKEN`, so its tests can run the daily sweep (`POST /api/internal/sweep`). Browser tests answer the shared confirmation dialog by clicking `.gs-confirm button[value=yes]`.
+
+The studio group's `coming-soon.suite.js` also checks the Studio's "Needs you" answer (`GET /api/studio/creators/:id/attention`).

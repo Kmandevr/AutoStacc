@@ -106,3 +106,5 @@ Phases 1–6 shipped together in one change, without the feature switch first pl
 ## Tests
 
 `test/unit/builder.test.js` (document, CSS checker, renderer, templates, fonts), `test/api/builder.suite.js` (profiles, ownership, the address space, history, scheduling, CSS, fonts, storage, kept files, templates) `test/api/team.suite.js`, `test/api/library.suite.js` (trust, own files only, personal parts stripped, free and paid installs, deleting, reports and takedown) and `test/browser/builder.test.js` (template, edit, type, add, drag, undo / redo, phone view, publish, the public page's only script; CSS; teams; sharing and using a library piece; the editor on a phone). `BUILDER_SHOTS=<folder>` saves its screenshots.
+
+The team test opens the Studio's **Team** tab first (the Studio's first screen has tabs since 2026-10-27, #221).
