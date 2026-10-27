@@ -32,3 +32,19 @@
 .cm-desk-slot:empty { display: none; }
 .cm-desk-clear { padding: 10px 0; }
 .cm-desk-count { color: var(--coral); font-weight: 650; }
+/* A space's team and archive on its management page (js/community-team.js) and the start box (js/community-start.js). */
+.cm-team-list { list-style: none; margin: 8px 0; padding: 0; }
+.cm-team-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.cm-team-list li:last-child { border-bottom: 0; }
+.cm-team-tools { display: flex; gap: 6px; margin-left: auto; }
+.cm-inline-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.cm-inline-form label { flex: 1 1 14rem; }
+.cm-danger { color: var(--coral); border-color: color-mix(in srgb, var(--coral) 50%, var(--line)); }
+.cm-desk-note { margin: 0 0 18px; }
+.cm-start { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.cm-start .cm-runs { margin: 0 0 12px; padding: 0 0 12px; border-bottom: 1px solid var(--line); }
+.cm-start .cm-runs ul { margin: 4px 0 0; padding-left: 1.1rem; }
+.cm-more { margin: 4px 0; }
+.cm-more > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.cm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 560px) { .cm-team-tools { margin-left: 0; width: 100%; } }

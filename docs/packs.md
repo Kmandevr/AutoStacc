@@ -2,7 +2,7 @@
 title: Pack Builder and processing engine
 summary: BUILT (Phases 0–9 and the Pac editor; Phase 10 optional). Approved plan and status of the Pack Builder, the Pac editor, the asset model (folders, versions, provenance), the Rust processing engine in a Cloudflare Container, selective downloads, derived store facets and staying inside the $5 Workers Paid plan.
 covers: [server/packs/, server/blobs/, server/maintenance/, server/usage/, db/migrations/0021_usage_guard.sql, db/migrations/0023_pac_editor.sql, js/pac-*.js, js/pack-*.js, js/packs-*.js, js/admin-packs*.js, js/studio-packs.js, js/zip-make.js, js/zip-thin.js, js/library-bundle.js, server/lib/features.js, data/features.js, server/files/, server/storage/, server/downloads/, db/migrations/0015_pack_publish.sql, server/studio/product-files.js, server/admin/files.js, server/discovery/vocabulary.js, js/stacc-model.js, data/content-types.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Pack Builder and processing engine

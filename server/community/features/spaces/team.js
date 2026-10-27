@@ -17,7 +17,8 @@ export const MAX_MODERATORS = 25;
 const SINCE = "r.created_at AS since";
 
 export async function teamOf(app, user, space) {
-  await requireTeam(app, user, space);
+  // An archived community's founder still sees its team, to reopen it.
+  if (!(space.state === "archived" && (await spaceRole(app, user.id, space)) === "founder")) await requireTeam(app, user, space);
   const rows = await all(app.db, `SELECT r.user_id AS userId, r.role, ${SINCE}, m.display_name AS name FROM community_space_roles r
     LEFT JOIN community_members m ON m.user_id = r.user_id WHERE r.space_id = ? ORDER BY CASE r.role WHEN 'founder' THEN 0 ELSE 1 END, r.created_at`, space.id);
   const role = await teamRoleOf(app, user, space);

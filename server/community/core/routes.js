@@ -122,7 +122,7 @@ async function spaceMine(app, { spaceId }) {
   const user = await currentUser(app);
   const role = user ? await teamRoleOf(app, user, space) : null;
   const mayUpdate = user ? await mayPublishUpdate(app, user, space) : false;
-  return json({ signedIn: Boolean(user), team: Boolean(role), role, mayUpdate, name: space.name, kind: space.kind, state: space.state, stateReason: space.state_reason || null }, 200, NO_STORE);
+  return json({ signedIn: Boolean(user), team: Boolean(role), role, mayUpdate, name: space.name, kind: space.kind, path: spacePath(space), state: space.state, stateReason: space.state_reason || null }, 200, NO_STORE);
 }
 
 // Every space the public sees, for Discover's Communities (owner, 2026-10-22): names, kinds and addresses only.

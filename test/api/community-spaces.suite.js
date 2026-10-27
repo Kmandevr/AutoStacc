@@ -163,4 +163,17 @@ export default (ctx) => describe("community: communities anyone can start (switc
     const s = one(`SELECT state, state_reason AS r, founder_user_id AS f FROM community_spaces WHERE id = '${alone.id}'`);
     assert.deepEqual([s.state, s.r, s.f], ["archived", "founder_left", null]);
   });
+
+  test("each space has a management page, never indexed; a project space's is under its project's address", async () => {
+    const a = await person();
+    const space = (await start(a.c, { name: `Manage Page ${tag()}` })).data.space;
+    const page = await new Client(ctx.mock.url).get(space.manage);
+    assert.equal(page.status, 200);
+    assert.match(page.data, /noindex/);
+    assert.match(page.data, /data-cm-desk/);
+    assert.equal((await a.c.get(`/api/community/spaces/${space.id}/mine`)).data.path, space.path);
+    const t = await a.c.req("POST", `/api/community/spaces/${space.id}/channels`, { body: { name: "Manage", whoMayStart: "everyone", postTypes: ["discussion"] } });
+    assert.equal(t.status, 400, "a channel can't take the manage address");
+    assert.equal((await new Client(ctx.mock.url).get(`${space.path}/no-such-channel`)).status, 404);
+  });
 });

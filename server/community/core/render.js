@@ -88,7 +88,11 @@ export function spaceAside(space, channels, current = null, kit = BARE) {
 
 // Where features' browser scripts put a space team's desk (reports, appeals, the log...) and a visitor's own notices
 // (a post of theirs a team took down, with why). Empty and hidden: the scripts ask the API before showing anything.
-export const spaceHook = (space) => `<section class="cm-desk" data-cm-space="${esc(space.id)}" aria-label="Team desk" hidden></section>`;
+export const spaceHook = (space) => `<section class="cm-desk" data-cm-space="${esc(space.id)}" data-cm-path="${esc(spacePath(space))}" aria-label="Manage this space" hidden></section>`;
+// A space's management page (owner, 2026-10-27): the full desk, filled by the browser for the space's team only (the
+// API refuses everyone else); the page itself holds nothing private.
+export const manageHook = (space) => `<section class="cm-desk cm-desk-full" data-cm-space="${esc(space.id)}" data-cm-path="${esc(spacePath(space))}" data-cm-desk aria-label="Manage ${esc(space.name)}"></section>
+        <p class="cm-small cm-desk-note" data-cm-desk-note>Only this space's team can manage it. If nothing appears, <a href="/login">log in</a> with the account that runs it.</p>`;
 export const noticesHook = () => '<div class="cm-notices" data-cm-notices hidden></div>';
 
 // Where the browser script (js/community.js) puts the "New take" form: the channels a visitor may post in, as JSON in

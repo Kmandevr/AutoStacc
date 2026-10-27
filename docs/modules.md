@@ -2,7 +2,7 @@
 title: Modules
 summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
 covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/project-events.js, js/events-calendar.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, js/project-content.js, js/skeleton.js, css/skeleton.css, js/prefetch.js, js/creators-browse.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Modules

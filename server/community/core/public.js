@@ -3,13 +3,14 @@
 //   /community                      spaces and the hottest threads everywhere
 //   /community/<space>              a space: its channels and threads (?sort=hot|new|top, ?page=)
 //   /community/<space>/<channel>    one channel
+//   /community/<space>/manage       the space's management page, for its team (never indexed)
 //   /community/t/<id>[-<slug>]      a thread; a missing or outdated slug redirects (301) to the current one
 //   /community/sitemap.xml          every visible thread
 // Answers null for anything else (the static 404). Hidden and removed threads are 404 to the public. Pages are kept
 // in the edge cache for a minute in production, keyed by address; the HTML is the same for every visitor.
 import { getSpaceBySlug, listSpaces, listChannels, getChannel, weeklyActivity, spaceShown } from "./spaces.js";
 import { listThreads, getThread, listPosts, unanswered, SORTS } from "./threads.js";
-import { hero, threadList, mixer, questionBox, spaceAside, sortNav, threadPath, spacePath, channelPath, esc, composeHook, spaceHook, noticesHook } from "./render.js";
+import { hero, threadList, mixer, questionBox, spaceAside, sortNav, threadPath, spacePath, channelPath, esc, composeHook, spaceHook, manageHook, noticesHook } from "./render.js";
 import { threadMain, threadHook } from "./render-thread.js";
 import { renderKit, schema } from "./hooks.js";
 import { fill, headers } from "./page.js";
@@ -42,7 +43,7 @@ async function home(app, url) {
         <div class="cm-layout"><div class="cm-col">
         <h2>${sort === "hot" ? "Hot takes" : sort === "new" ? "Fresh takes" : "Top takes"}</h2>${sortNav("/community", sort)}
         ${threadList(threads, { kit, spaces: bySpace, base: "/community", sort, page, more })}
-        </div><aside class="cm-aside">${questionBox(questions)}${kit.slot("homeBoxes", {})}</aside></div>`
+        </div><aside class="cm-aside"><div class="cm-start" data-cm-start hidden></div>${questionBox(questions)}${kit.slot("homeBoxes", {})}</aside></div>`
   };
 }
 
@@ -51,6 +52,7 @@ async function space(app, url, spaceSlug, channelSlug) {
   if (!s) return null;
   // A project space has one address, its project's; /community/<space> sends everyone there.
   if (s.canonical && !app.canonicalServe) return { redirect: `${s.canonical}${channelSlug ? `/${channelSlug}` : ""}${url.search}` };
+  if (channelSlug === "manage") return manage(s);
   const channels = await listChannels(app.db, s.id);
   const channel = channelSlug ? await getChannel(app.db, s.id, channelSlug) : null;
   if (channelSlug && !channel) return null;
@@ -70,6 +72,18 @@ async function space(app, url, spaceSlug, channelSlug) {
     main: `${kit.slot("spaceHeader", { space: s, channel })}${noticesHook()}${spaceHook(s)}<div class="cm-layout"><div class="cm-col">${composeHook(s, channels, channel)}${sortNav(base, sort)}
         ${threadList(threads, { kit, base, sort, page, more, empty: channel ? "No takes in this channel yet. Start the first one." : "No takes here yet. Be the first." })}
         </div>${spaceAside(s, channels, channel, kit)}</div>`
+  };
+}
+
+// The management page: the same for everyone; the desk asks the API, which answers only the space's team.
+function manage(s) {
+  const project = s.canonical ? [[s.name, s.canonical.replace(/\/community$/, "")]] : [["Community", "/community"]];
+  const path = `${spacePath(s)}/manage`;
+  return {
+    path, title: `Manage · ${s.name}`, index: false, description: `Settings, members and moderation for ${s.name}, for its team.`,
+    hero: hero([["Home", "/"], ...project, [s.canonical ? "Community" : s.name, spacePath(s)], ["Manage", path]], esc(s.name), "Manage this space",
+      `What's waiting, the team and members, the space's settings and rules, and the log. <a href="${esc(spacePath(s))}">Back to the space</a>.`),
+    main: manageHook(s)
   };
 }
 

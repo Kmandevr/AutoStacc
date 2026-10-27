@@ -2,7 +2,7 @@
 title: Creators and the Studio
 summary: Creators own projects; addresses /<creator>/<project>; the Studio's free sites and profiles (the visual builder) and selling, how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
 covers: [data/creators.js, server/creators/, server/studio/, server/sites/, server/revenue/, server/files/, server/integrations/providers.js, server/lib/slugs.js, functions/[[path]].js, server/content/, js/project-content.js, db/migrations/0040_project_content.sql, db/migrations/0041_events.sql, db/migrations/0043_first_party_owners.sql, server/lib/tags.js, functions/media/sites/, functions/studio.js, studio.html, js/studio*.js, js/product-page.js, css/studio.css, css/creator-site.css, scripts/dist.js, scripts/lib/creator-page.js, db/migrations/0006_creators.sql, db/migrations/0009_creator_selling.sql, db/migrations/0011_marketplace_payouts.sql, server/billing/, server/revenue/deductions.js, server/payments/refund-amount.js, server/studio/storage.js, server/admin/storage-billing.js, js/studio-storage.js, js/admin-storage-billing.js, db/migrations/0029_storage_billing.sql, db/migrations/0044_storage_cards.sql, server/payments/stripe-cards.js]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Creators and the Studio
@@ -79,7 +79,7 @@ Every creator, first-party included, keeps each project's releases and events in
 - **Directory activity** (Discover's Projects tab) reads the dates of published releases and the next event from here, for every project.
 - **On creator pages:** the visual builder's **Releases** and **Events** elements show a creator's own project's releases or upcoming events ([builder](builder.md)).
 
-A project can have a community space, switched on by its owner or admins in the Studio (`js/studio-community.js`) and served at `/<creator>/<project>/community` ([community](community.md)).
+A project can have a community space, switched on by its owner or admins in the Studio (`js/studio-community.js`) and served at `/<creator>/<project>/community` and managed at its `/manage` page, where the owner and admins can also add moderators who only moderate ([community](community.md)).
 
 ## Teams (built 2026-10-15)
 
