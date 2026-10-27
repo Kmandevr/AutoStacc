@@ -86,8 +86,9 @@ export async function guardPage(context) {
   if (!(await signedIn(context))) {
     return new Response(null, { status: 302, headers: { Location: loginRedirect(url), "Cache-Control": "no-store" } });
   }
-  // The dashboard is the signed-in home page now (owner, 2026-10-22): /dashboard sends you to /.
-  if (url.pathname.replace(/\/+$/, "") === "/dashboard") return new Response(null, { status: 302, headers: { Location: "/", "Cache-Control": "no-store" } });
+  // The dashboard is the signed-in home page now (owner, 2026-10-22): /dashboard sends you to /, keeping its query
+  // (?welcome=1 says the email was confirmed).
+  if (url.pathname.replace(/\/+$/, "") === "/dashboard") return new Response(null, { status: 302, headers: { Location: `/${url.search}`, "Cache-Control": "no-store" } });
   return noStore(await context.next());
 }
 

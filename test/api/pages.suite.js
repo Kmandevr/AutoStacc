@@ -84,6 +84,7 @@ export default (ctx) => describe("pages", () => {
     // Signed in: /dashboard sends you to /, and / is your own home (the dashboard page, never cached).
     const dash = await c.get("/dashboard");
     assert.deepEqual([dash.status, dash.headers.get("location")], [302, "/"]);
+    assert.equal((await c.get("/dashboard?welcome=1")).headers.get("location"), "/?welcome=1", "the query comes along");
     const own = await c.get("/");
     assert.equal(own.status, 200);
     assert.match(String(own.data), /data-stacc-glance/);

@@ -56,8 +56,10 @@ export function browserStore({ name, port, vars = {} }) {
   // Log out the way a visitor does: the account menu in the top bar, then Log out.
   async function logOut(page, bar = ".topbar") {
     await page.click(`${bar} .account-button`);
-    await page.click(`${bar} .account-panel [data-signout]`);
+    // Signed in, / is already the page's address (the signed-in home), so wait for the navigation itself.
+    await Promise.all([page.waitForEvent("framenavigated", (f) => f === page.mainFrame()), page.click(`${bar} .account-panel [data-signout]`)]);
     await page.waitForURL(base + "/");
+    await page.waitForLoadState("load");
   }
   const ordersFor = (email) => sql(stateDir, `SELECT id, status FROM orders WHERE email = '${email}'`);
   const setCart = (page, items) => page.evaluate((i) => localStorage.setItem("gs:cart", JSON.stringify(i)), items);
