@@ -1,10 +1,25 @@
 ---
 title: Decisions
 summary: Dated record of what was chosen and why.
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Decisions
+
+## 2026-10-27: Four hubs, community ownership without a creator, Coming soon (owner)
+
+The owner's brief "Platform cohesion, four-hub architecture and UX", answered one question at a time in chat. Tracked as #214, with a child issue per batch (#215–#223). Where this entry and the 2026-10-22 entry below disagree, this one wins.
+- **Four hubs:** **Studio** (Hub 1, the creator dashboard; the name and `/studio` stay), **Store** (what can be bought), **Discover** (creators, projects, communities and, as a tab, releases and events) and **Community**. Your Stacc is the personal library and download hub for everyone, creator or not, and stays separate from the Store.
+- **New & upcoming folds into Discover** as a tab. Built keeping its address `/explore` (Claude, #217): pages are hand-written root files, so moving it under `/discover/` would change its address and its search head for no gain to the visitor; it shows Discover's tabs, crumbs and highlight instead. Owner may still ask for the redirect. The Store's and Discover's search and filters are out of scope (the excluded "Priority 1") and keep working as they do; community search and the events filters may be fixed.
+- **Navigation:** sidebar Home, Store, Discover, Community, then You. Phones' bar: Home, Store, Discover, Community, You (Your Stacc, Studio for creators, Settings). On phones people mostly shop, comment and browse rather than download or do creator work, so those sit under You: everything stays possible on a phone, just not in the way.
+- **Studio for non-creators:** no Studio item in the main navigation, only a quiet "Become a creator" link (account menu, footer). Creators see "Studio · N waiting". The Studio gets one overview of what needs attention and clearer project ↔ product ↔ public page links, after an audit whose findings come back first.
+- **Signed-in home:** one simple page, not another dashboard: pick up where you left off, what's new for you, what needs your attention, quick actions. Each part shows only when it applies to that person; no bloat.
+- **Community management leaves the Studio** (replaces "Team desk in the Studio", 2026-10-22): each space's desk is at `/community/<space>/manage`, a project space's at `/<creator>/<project>/community/manage`, checked on the server. `/studio?desk=<space>` redirects there; the Studio only links to project spaces' desks.
+- **Anyone can start a community**, no creator needed: a verified account with a username and the 16+ confirmation, at most 3 per account (admin-adjustable), reserved names checked. Setup asks for name, description, rules and channels, all with defaults, so the founder can take the minimum and edit the rest later in the desk. The founder appoints and removes moderators, can hand the space over and archive it. Looks stay presets only, no image uploads.
+- **Moderators who only moderate:** project spaces may also have community moderators who are not on the creator's team (nothing in the Studio, no products or money). Only the creator's owner and admins appoint or remove them; moderators can't appoint moderators. Scopes stay separate: member, moderator, founder, creator team, platform admin.
+- **Coming soon products:** a new product state: a public page with previews, contents, price and a release date, no buy button, which goes on sale by itself at the date. If it isn't ready to sell then (payouts or files missing), it stays Coming soon and the creator is emailed.
+- **Follower alerts:** the interface must not promise alerts that aren't sent; release emails stay with #131.
+- **#205–#210:** the parts these decisions replace (the desk in the Studio, the home tabs, the phone bar of #185) are folded into the new batches.
 
 ## 2026-10-22: UX overhaul, the owner's 18-point review (owner, #204)
 

@@ -1,7 +1,8 @@
-// A space team's Team desk (owner, 2026-10-22; GS.communityDesk, used by js/community-kit.js, which loads after it):
-// in the Studio (/studio?desk=<space>, a host with data-cm-desk) the desk is tabs (To do, Members, Space, Rules, Log)
-// with a fixed place for each feature's part, so nothing moves while the parts load; on the space's own page the team
-// sees only a slim link to it there, with how many things wait in To do. Features hand their parts over with a key (KEYS below). Needs js/util.js.
+// A space team's desk (owner, 2026-10-22 and 2026-10-27; GS.communityDesk, used by js/community-kit.js, which loads
+// after it): on the space's management page (/community/<space>/manage, a host with data-cm-desk) the desk is tabs (To
+// do, Members, Space, Rules, Log) with a fixed place for each feature's part, so nothing moves while the parts load;
+// moderators see only To do, Members and Log (settings and rules are the managers'). On the space's own page the team
+// sees only a slim link to it, with how many things wait in To do. Features hand their parts over with a key (KEYS below). Needs js/util.js.
 (function () {
   "use strict";
   const GS = window.GS;
@@ -9,8 +10,8 @@
 
   const TABS = [
     ["todo", "To do", ["upkeep", "reports", "held", "appeals"]],
-    ["members", "Members", ["bans"]],
-    ["space", "Space", ["settings", "tags", "look", "welcome"]],
+    ["members", "Members", ["team", "bans"]],
+    ["space", "Space", ["settings", "tags", "look", "welcome", "archive"]],
     ["rules", "Rules", ["slowmode", "newmembers", "words", "links", "patterns", "selfpromo"]],
     ["log", "Log", ["log"]]
   ];
@@ -23,9 +24,11 @@
     selfpromo: "Whether people may link their own products and projects here."
   };
   const TODO = new Set(TABS[0][2]);
+  const MANAGERS_ONLY = new Set(["space", "rules"]);
 
   // The desk's parts for one host element: { open, wait(key), part(title, wait, key) }.
-  function make(host, el, sk) {
+  // role(): a promise of the visitor's /mine answer ({ team, role }), so moderators get only their tabs.
+  function make(host, el, sk, role = () => Promise.resolve(null)) {
     const full = host.hasAttribute("data-cm-desk");
     const slots = {};
     const tabs = [];
@@ -43,15 +46,15 @@
       built = true;
       host.hidden = false;
       if (!full) {
-        // The space's page: one slim link to the full desk in the Studio.
+        // The space's page: one slim link to its management page.
         host.classList.add("cm-desk-slim");
         slimCount = el("span", { class: "cm-desk-count" });
-        host.append(el("p", {}, el("strong", { text: "Team desk" }), slimCount, " Reports, approvals, members and rules are in the Studio. ",
-          el("a", { class: "btn small", href: `/studio?desk=${encodeURIComponent(host.dataset.cmSpace)}`, text: "Open the Team desk" })));
+        host.append(el("p", {}, el("strong", { text: "You help run this space" }), slimCount, " ",
+          el("a", { class: "btn small", href: `${host.dataset.cmPath || ""}/manage`, text: "Manage" })));
         return;
       }
-      const list = el("div", { class: "cm-desk-tabs", role: "tablist", "aria-label": "Team desk" });
-      host.append(el("h2", { class: "cm-desk-title", text: "Team desk" }), list);
+      const list = el("div", { class: "cm-desk-tabs", role: "tablist", "aria-label": "Manage this space" });
+      host.append(list);
       TABS.forEach(([id, label, keys]) => {
         const btn = el("button", { type: "button", role: "tab", id: `desk-tab-${id}`, "aria-controls": `desk-${id}`, text: label });
         const panel = el("div", { class: "cm-desk-panel", role: "tabpanel", id: `desk-${id}`, "aria-labelledby": `desk-tab-${id}` });
@@ -66,6 +69,11 @@
       });
       pick = GS.tabs(tabs.map((t) => t.btn), show);
       pick(0, false);
+      role().then((d) => {
+        if (!d || d.role !== "moderator") return;
+        TABS.forEach(([id], i) => { if (MANAGERS_ONLY.has(id)) { tabs[i].btn.hidden = true; tabs[i].panel.hidden = true; } });
+        slots.team.before(el("p", { class: "cm-small", text: "As a moderator you handle what's waiting, members and bans. The space's settings and rules are changed by its founder or owners." }));
+      });
     }
 
     // A placeholder in a part's slot while its list loads (busy for screen readers).

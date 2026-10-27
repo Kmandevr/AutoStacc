@@ -64,6 +64,12 @@
           <p>A short line at the top of every page (maintenance, a sale ending). Leave it empty for none. Pages pick it up within a minute.</p>
           <input id="site-notice" maxlength="200" value="${e(v.site_notice)}" placeholder="No notice"></div>
         <div class="actions"><button class="btn small" type="submit">Save notice</button>${v.site_notice ? '<button class="btn small ghost" type="button" data-notice-clear>Clear</button>' : ""}</div>
+      </form>
+      <form class="admin-switch-row admin-notice" data-cap-form>
+        <div><h3><label for="space-cap">Communities per account</label></h3>
+          <p>How many communities one account may start. Creator and project spaces don't count. 0 stops new ones.</p>
+          <input id="space-cap" type="number" min="0" max="99" inputmode="numeric" value="${e(v.community_space_cap)}"></div>
+        <div class="actions"><button class="btn small" type="submit">Save</button></div>
       </form>`;
   }
 
@@ -96,6 +102,13 @@
       if (ev.target.closest("[data-notice-clear]")) return notice(panel, "");
     });
     panel.addEventListener("submit", (ev) => {
+      if (ev.target.matches("[data-cap-form]")) {
+        ev.preventDefault();
+        const btn = $("button[type=submit]", ev.target);
+        btn.disabled = true;
+        return api("/api/admin/switches", { method: "PUT", body: { key: "community_space_cap", value: String($("#space-cap", panel).value).trim() } })
+          .then((res) => draw(panel, res.ok ? "Communities per account saved." : res.error.message));
+      }
       if (!ev.target.matches("[data-notice-form]")) return;
       ev.preventDefault();
       notice(panel, $("#site-notice", panel).value.trim());

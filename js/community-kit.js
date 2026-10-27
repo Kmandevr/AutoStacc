@@ -44,9 +44,12 @@
   const space = () => (spacePromise = spacePromise || (desk
     ? GS.api(`/api/community/spaces/${encodeURIComponent(desk.dataset.cmSpace)}/mine`).then((r) => (r.ok ? r.data : null))
     : Promise.resolve(null)));
-  // The team desk (js/community-desk.js): tabs in the Studio, a slim link on the space's page. Features add their parts
+  // The team desk (js/community-desk.js): tabs on the space's management page, a slim link on the space's page. Features add their parts
   // with a key that gives each its fixed place; without the desk module, parts are drawn nowhere.
-  const D = desk && GS.communityDesk ? GS.communityDesk.make(desk, el, sk) : null;
+  const D = desk && GS.communityDesk ? GS.communityDesk.make(desk, el, sk, space) : null;
+  // The management page's note ("only the team...") stays only for people who aren't on the team.
+  const deskNote = document.querySelector("[data-cm-desk-note]");
+  if (deskNote) space().then((d) => { if (d && d.team) deskNote.hidden = true; else if (desk) desk.hidden = true; });
   const deskWait = (key) => (D ? D.wait(key) : el("div"));
   const deskPart = (title, wait = null, key = "") => (D ? D.part(title, wait, key) : el("section"));
   const deskFull = Boolean(D && D.full);

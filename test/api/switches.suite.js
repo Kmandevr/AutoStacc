@@ -27,8 +27,9 @@ export default (ctx) => describe("switches", () => {
     }
     const admin = await adminClient(base());
     const now = (await admin.get("/api/admin/switches")).data.switches;
-    assert.deepEqual(now, { store_sales: "open", payout_requests: "open", signups: "open", creator_signups: "open", reviews: "open", site_notice: "" });
+    assert.deepEqual(now, { store_sales: "open", payout_requests: "open", signups: "open", creator_signups: "open", reviews: "open", site_notice: "", community_space_cap: "3" });
     for (const body of [{ key: "creator_sales", value: "paused" }, { key: "storage_cap_gb", value: "1" }, { key: "store_sales", value: "off" },
+      { key: "community_space_cap", value: "-1" }, { key: "community_space_cap", value: "100" }, { key: "community_space_cap", value: 3 }, { key: "community_space_cap", value: "03" },
       { key: "signups", value: true }, { key: "site_notice", value: "x".repeat(201) }, { key: "site_notice", value: "two\nlines" }]) {
       assert.equal((await admin.req("PUT", "/api/admin/switches", { body })).status, 400, JSON.stringify(body).slice(0, 60));
     }

@@ -49,6 +49,8 @@ Built 2026-10-21 (owner: "all projects should be credited projects"). The people
 
 ## New & upcoming: releases and events (`/explore`)
 
+Since 2026-10-27 (owner, #217) it is Discover's fifth tab: the same link tabs as `/discover`, breadcrumbs Home › Discover › New & upcoming, and `data-section="discover"` so the sidebar lights Discover. It keeps its address and its own filters (the excluded search and filter work), so no link changes.
+
 `/music` and `/news` stay redirects to Glitches & Stitches' pages (`/news` now to its home, since news is hidden, #174), so the platform view is a page of its own. It has two views as tabs:
 
 - **Releases**, filtered by project, type and year;

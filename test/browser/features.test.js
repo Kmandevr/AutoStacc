@@ -192,13 +192,13 @@ describe("features in the browser", () => {
     await ctx.close();
   });
 
-  test("phone quick-links bar: Store, Discover, Community, Log in and Menu are within reach at 320px; Menu opens the drawer and Escape closes it", async () => {
+  test("phone quick-links bar: Home, Store, Discover, Community and Log in (You once signed in) are within reach at 320px; You opens the drawer and Escape closes it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/shop");
     const bar = page.locator(".tabbar");
     assert.equal(await bar.isVisible(), true);
     const names = await bar.locator("a:visible, button:visible").allTextContents();
-    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Discover", "Community", "Log in", "Menu"]);
+    assert.deepEqual(names.map((t) => t.trim()), ["Home", "Store", "Discover", "Community", "Log in"]);
     assert.equal(await bar.locator("a[aria-current]").textContent(), "Store");
     const small = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
     assert.equal(small, 0, "every quick link is at least 44px tall");
@@ -209,6 +209,8 @@ describe("features in the browser", () => {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "nothing scrolls sideways at 320px");
     await page.goto("/community");
     assert.equal(await page.locator(".tabbar a[aria-current]").textContent(), "Community");
+    await signUp(page, unique("tabbar"));
+    await page.goto("/community");
     await bar.locator("[data-tab-menu]").click();
     await page.waitForSelector(".side.open");
     await page.keyboard.press("Escape");

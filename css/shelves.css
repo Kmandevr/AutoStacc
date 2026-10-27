@@ -21,6 +21,11 @@
 .shelf-all a { display: grid; place-items: center; height: 100%; min-height: 120px; border: 1px dashed var(--line); border-radius: calc(var(--radius) + 4px); color: var(--muted); font-weight: 600; }
 .shelf-all a:hover { border-color: var(--teal); color: var(--text); }
 
+/* Discover's link tabs, also on New & upcoming (its fifth tab; owner, 2026-10-27). */
+.discover-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 650; text-decoration: none; }
+.discover-tabs a[aria-current] { color: var(--text); border-bottom-color: var(--teal); }
+.discover-tabs a:hover { color: var(--text); }
+@media (max-width: 420px) { .discover-tabs a { padding: 0 10px; } }
 .shelf-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; border-bottom: 1px solid var(--line); }
 .shelf-tabs [role="tab"] { min-height: 44px; padding: 0 16px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: inherit; font-weight: 650; cursor: pointer; }
 .shelf-tabs [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--teal); }

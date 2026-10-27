@@ -1,8 +1,5 @@
-/* Discover (/discover, js/discover.js): link tabs, the spotlight's slides, creator and community cards, and the
-   invitation to become a creator. Rows and the banner's dots are css/shelves.css; project cards css/projects.css. */
-.discover-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 650; text-decoration: none; }
-.discover-tabs a[aria-current] { color: var(--text); border-bottom-color: var(--teal); }
-.discover-tabs a:hover { color: var(--text); }
+/* Discover (/discover, js/discover.js): the spotlight's slides, creator and community cards, and the
+   invitation to become a creator. Rows, link tabs and the banner's dots are css/shelves.css; project cards css/projects.css. */
 
 .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 16px; }
 .dcard { display: grid; gap: 6px; padding: 12px; height: 100%; align-content: start; background: color-mix(in srgb, var(--panel) 76%, transparent);

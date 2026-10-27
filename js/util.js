@@ -225,10 +225,13 @@ const GS = (function () {
     list.forEach((b, i) => {
       b.addEventListener("click", () => go(i, false));
       b.addEventListener("keydown", (ev) => {
-        const step = { ArrowRight: 1, ArrowLeft: -1, Home: -i, End: list.length - 1 - i }[ev.key];
-        if (step === undefined) return;
+        // Hidden tabs (a role that doesn't get them) are skipped.
+        const shown = list.filter((x) => !x.hidden);
+        const at = shown.indexOf(b);
+        const to = { ArrowRight: at + 1, ArrowLeft: at - 1, Home: 0, End: shown.length - 1 }[ev.key];
+        if (to === undefined || at < 0) return;
         ev.preventDefault();
-        go((i + step + list.length) % list.length, true);
+        go(list.indexOf(shown[(to + shown.length) % shown.length]), true);
       });
     });
     return go;

@@ -1,6 +1,6 @@
 // Who may do what in a space (docs/community.md, "Rules" and "Who enforces what"), checked on the server for every
 // write. A space's team: for AutoStacc's own space, AutoStacc's admins; for a project space, the creator's members whose
-// role has community.moderate (and AutoStacc's admins for first-party projects); for a community, its founder and moderators. Posting needs a confirmed email (requireUser),
+// role has community.moderate (and AutoStacc's admins for first-party projects) plus community-only moderators; for a community, its founder and moderators. Posting needs a confirmed email (requireUser),
 // a community name with the 16+ confirmation, no community suspension, no ban from the space, and an open space.
 import { first } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
@@ -21,10 +21,35 @@ export async function isTeam(app, user, space) {
     const project = await projectOf(app, space);
     if (project && project.source === "catalog" && await isAdmin(app, user)) return true;
     const role = project && await roleOf(app.db, project.creator_id, user.id);
+    if (role && can(role, "community.moderate")) return true;
+  }
+  return Boolean(await spaceRole(app, user.id, space));
+}
+
+// A community role row (founder or moderator) in this space; project spaces may have moderators who only moderate
+// (owner, 2026-10-27), with nothing in the Studio.
+export const spaceRole = async (app, userId, space) => {
+  const r = await first(app.db, "SELECT role FROM community_space_roles WHERE space_id = ? AND user_id = ?", space.id, userId);
+  return r ? r.role : null;
+};
+
+// Who manages a space (its settings, rules and team), beyond moderating it (owner, 2026-10-27): AutoStacc's admins for
+// its own space, the creator's owner and admins for a project space (and AutoStacc's admins for first-party ones), the
+// founder for a community. Moderators moderate only.
+export async function isManager(app, user, space) {
+  if (!user || !space) return false;
+  if (space.kind === "platform") return isAdmin(app, user);
+  if (space.kind === "project") {
+    const project = await projectOf(app, space);
+    if (project && project.source === "catalog" && await isAdmin(app, user)) return true;
+    const role = project && await roleOf(app.db, project.creator_id, user.id);
     return Boolean(role && can(role, "community.moderate"));
   }
-  return Boolean(await first(app.db, "SELECT 1 AS n FROM community_space_roles WHERE space_id = ? AND user_id = ?", space.id, user.id));
+  return (await spaceRole(app, user.id, space)) === "founder";
 }
+
+// What the person is in a space's team: "manager", "moderator" or null, for the desk and the space's buttons.
+export const teamRoleOf = async (app, user, space) => (await isManager(app, user, space) ? "manager" : await isTeam(app, user, space) ? "moderator" : null);
 
 // Whether this person may post an Update (an official announcement) in a space: the platform's admins for AutoStacc's own
 // space, a community's founder and moderators, and for a project space those whose role on the creator's team has the
@@ -61,6 +86,13 @@ export async function requireTeam(app, user, space) {
   if (space.state === "archived") fail(403, "space_archived", "This space is archived.");
   const suspended = await first(app.db, "SELECT until FROM community_suspensions WHERE user_id = ?", user.id);
   if (suspended && active(suspended.until)) fail(403, "suspended", "Your account can't act in the community right now.");
+  return space;
+}
+
+// A manager acting on settings or the team: a moderator gets 403 (they can see the space's desk), anyone else 404.
+export async function requireManager(app, user, space) {
+  await requireTeam(app, user, space);
+  if (!(await isManager(app, user, space))) fail(403, "managers_only", "Only the space's founder or owners change this.");
   return space;
 }
 

@@ -2,7 +2,7 @@
 title: Production requirements
 summary: What makes AutoStacc fit to run as a public store (trust pages, licences, support, privacy, security, accessibility, SEO) and the rules every change must keep.
 covers: [data/legal.js, data/help.js, data/licenses.js, data/product-types.js, data/site.js, scripts/lib/trust-pages.js, scripts/lib/rich-text.js, scripts/seo-test.js, _headers, server/files/policy.js, server/sites/images.js, server/sites/render.js, server/auth/index.js, server/lib/ratelimit.js, server/account/, server/email/preferences.js, server/analytics/routes.js, server/downloads/, server/impersonation/, server/packs/review.js, js/layout.js, js/skeleton.js, css/skeleton.css, js/prefetch.js, speculation-rules.json, SECURITY.md, LICENSE]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Production requirements
@@ -69,7 +69,7 @@ Keep: skip link, one `h1`, landmarks, labels on every field, errors announced (`
 
 ## Footer and navigation
 
-The sidebar has AutoStacc (Home, Store, Discover, New & upcoming, Community) and, signed in, You; the phones' bottom bar has Store, Discover, Community, Your Stacc or Log in, and Menu, and fits 320px without sideways scroll ([autostacc](autostacc.md#site-structure)); the frame's controls are at least 44px on phones. The platform footer has Explore (Store, Discover, New & upcoming, Events, Community, Studio, About) and the theme switch, Help (Help, Guides, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences, Copyright, Community rules); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
+The sidebar has the four hubs (Home, Store, Discover, Community; owner, 2026-10-27) and, signed in, You (Your Stacc, the Studio only for people on a creator's team, Settings); the phones' bottom bar has Home, Store, Discover, Community and You (opening the drawer) or Log in, and fits 320px without sideways scroll ([autostacc](autostacc.md#site-structure)); the frame's controls are at least 44px on phones. The platform footer has Explore (Store, Discover, New & upcoming, Events, Community, Studio, About) and the theme switch, Help (Help, Guides, Contact, Security) and Legal (Terms, Privacy, Refunds, Licences, Copyright, Community rules); a project's footer links Help and the legal pages too. Account links live in the top bar's account menu, not the footer. Sign-up and checkout link the terms they rely on.
 
 ## Not built yet (on purpose)
 

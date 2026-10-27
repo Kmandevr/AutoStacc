@@ -74,7 +74,8 @@ export const FEATURES = {
   "community.look": { on: true, label: "Community: a space's accent colour and banner" },
   "community.teamTools": { on: true, label: "Community: team editing of a space's rules and channels" },
   "community.profileCard": { on: true, label: "Community: the mini profile card on names" },
-  "community.projectSpaces": { on: true, label: "Community: a creator's switch for a project's community space" }
+  "community.projectSpaces": { on: true, label: "Community: a creator's switch for a project's community space" },
+  "community.spaces": { on: true, label: "Community: communities anyone can start, with founders and moderators" }
 };
 
 const listIn = (env, key) => new Set(String((env && env[key]) || "").split(",").map((s) => s.trim()).filter(Boolean));

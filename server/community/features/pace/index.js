@@ -10,7 +10,7 @@
 import { json, readJson, fail, id, int } from "../../../lib/http.js";
 import { first, run, newId } from "../../../lib/db.js";
 import { requireUser } from "../../../auth/session.js";
-import { isTeam } from "../../core/access.js";
+import { isTeam, requireManager } from "../../core/access.js";
 import { getSpace } from "../../core/posting.js";
 import { purge } from "../../core/purge.js";
 import { esc } from "../../core/render-parts.js";
@@ -66,8 +66,7 @@ async function getSlowMode(app, { spaceId }) {
 
 async function setSlowMode(app, { spaceId }) {
   const user = await requireUser(app);
-  const space = await getSpace(app.db, id(spaceId, "spaceId"));
-  if (!space || !(await isTeam(app, user, space))) fail(404, "not_found", "Not found.");
+  const space = await requireManager(app, user, await getSpace(app.db, id(spaceId, "spaceId")));
   const seconds = int((await readJson(app.request)).seconds, "seconds", { min: 0, max: 600 });
   if (!SLOW_MODES.includes(seconds)) fail(400, "invalid_field", "Choose off, 30 seconds, 2 minutes or 10 minutes.", { field: "seconds" });
   await run(app.db, "UPDATE community_spaces SET slow_mode_seconds = ? WHERE id = ?", seconds, space.id);

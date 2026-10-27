@@ -1,13 +1,14 @@
 ---
 title: Log
 summary: Dated history of changes, newest first.
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Log
 
 Newest first.
 
+- 2026-10-27: Four hubs planned with the owner (decisions, #214 with #215–#223). Built #215 and #216: anyone can start a community (the spaces feature, cap in Switches), founders and moderators who only moderate, managers for settings, founder succession on account deletion, and each space's management page at `/community/<space>/manage` (the Studio desk redirects there).
 - 2026-10-22: UX review planned, nothing built: the owner's 18 points investigated (code and headless browser), decisions recorded ([decisions](decisions.md)), six batches opened as #205–#210 under #204.
 - 2026-10-21: Copyright step 4 (#137): at three strikes the Studio refuses changes (`server/copyright/policy.js`, gate in `server/app.js`; deleting, payouts, the payout account and storage billing stay open) and the community refuses links in posts (feature `textonly`). Copyright notices and strikes are now built end to end.
 - 2026-10-21: Paid creator storage, #142 answers built and still off (decisions): saved cards on the main Stripe account (`server/billing/cards.js`, `server/payments/stripe-cards.js`, migration `0044_storage_cards.sql`, the Studio card panel `js/studio-storage-card.js`), automatic off-session charges after earnings with retries on days 0, 3, 7 and 12 and owner emails (`server/billing/charges.js`, `mail.js`; the pay page stays the fallback), the platform storage cap growing by active plans' paid limits above free storage (base + paid = effective in the Control Center), the general tax code kept pending a tax adviser, `/privacy` and `/terms` updated. Owner's steps in [store-setup](store-setup.md#paid-storage-saved-cards). Known limit: a pay page opened while a statement was declined or had no card can still be paid after the card is charged (refused, admins refund; [creators](creators.md#paid-storage-built-2026-10-16-off)). Follow-ups: #192 (builder browser test already failing on main), #193 (split files over ~150 lines).
