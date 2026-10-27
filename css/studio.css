@@ -126,3 +126,6 @@
 .cx-tags li { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: .8rem; color: var(--muted); }
 .cx-check input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
 @media (pointer: coarse), (max-width: 700px) { .cx-tabs a, .cx-cell input { min-height: 44px; } }
+/* A creator's avatar and banner (js/studio-creator-images.js). */
+.studio-creator-image { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 8px 0; }
+.studio-creator-image img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }

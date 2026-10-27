@@ -97,6 +97,28 @@ export default (ctx) => describe("studio", () => {
     assert.equal(db(`SELECT bio FROM creators WHERE id = '${s.creator.id}'`)[0].bio, null);
   });
 
+  test("a creator's avatar and banner: only their own uploaded images, cleared with an empty value, kept while used", async () => {
+    const s = await seller("pics");
+    const other = await seller("pics-other");
+    const T = new Date().toISOString();
+    const img = (id, creator, type = "image/png") => db(`INSERT INTO site_assets (id, creator_id, r2_key, filename, content_type, size_bytes, status, created_by, created_at)
+      VALUES ('${id}', '${creator}', 'sites/${id}', 'a.png', '${type}', 10, 'active', '${s.user.id}', '${T}')`);
+    // Image ids look like the store's own (as_ + base32).
+    const aid = () => `as_${Array.from({ length: 24 }, () => "abcdefghijklmnopqrstuvwxyz234567"[Math.floor(Math.random() * 32)]).join("")}`;
+    const mine = aid(), theirs = aid(), font = aid();
+    img(mine, s.creator.id); img(theirs, other.creator.id); img(font, s.creator.id, "font/woff2");
+    const path = `/api/studio/creators/${s.creator.id}`;
+    assert.equal((await s.c.req("PATCH", path, { body: { avatarId: theirs } })).status, 400, "not someone else's image");
+    assert.equal((await s.c.req("PATCH", path, { body: { bannerId: font } })).status, 400, "not a font");
+    assert.equal((await s.c.req("PATCH", path, { body: { avatarId: "missing" } })).status, 400);
+    assert.equal((await s.c.req("PATCH", path, { body: { avatarId: mine, bannerId: mine } })).status, 200);
+    assert.deepEqual(db(`SELECT avatar_asset, banner_asset FROM creators WHERE id = '${s.creator.id}'`)[0], { avatar_asset: mine, banner_asset: mine });
+    assert.equal((await s.c.req("DELETE", `/api/studio/creators/${s.creator.id}/images/${mine}`)).status, 200);
+    assert.equal(db(`SELECT status FROM site_assets WHERE id = '${mine}'`)[0].status, "active", "still the avatar: hidden, not removed");
+    assert.equal((await s.c.req("PATCH", path, { body: { avatarId: "", bannerId: "" } })).status, 200);
+    assert.deepEqual(db(`SELECT avatar_asset, banner_asset FROM creators WHERE id = '${s.creator.id}'`)[0], { avatar_asset: null, banner_asset: null });
+  });
+
   test("nobody but the product's owner or editor reaches any Product Studio route", async () => {
     const s = await seller("ps-owner", { trusted: true });
     const t = await seller("ps-thief", { trusted: true });

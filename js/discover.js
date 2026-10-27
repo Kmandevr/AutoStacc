@@ -18,7 +18,7 @@
 
   const initials = (name) => name.split(/\s+/).filter((w) => /\w/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
   const creatorCard = (c) => `<article class="dcard" data-kind="creator">
-      <a class="dcard-art" href="${e(c.path)}" tabindex="-1" aria-hidden="true"><span>${e(initials(c.name))}</span></a>
+      <a class="dcard-art" href="${e(c.path)}" tabindex="-1" aria-hidden="true">${c.banner || c.avatar ? `<img src="${e(c.banner || c.avatar)}" alt="" width="240" height="240" loading="lazy">` : `<span>${e(initials(c.name))}</span>`}</a>
       <p class="card-type">Creator${c.verified ? "" : " · unverified"}</p>
       <h3 class="dcard-name"><a href="${e(c.path)}">${e(c.name)}</a></h3>
       <p class="dcard-sub">${c.bio ? e(c.bio) : `${c.projects.length} project${c.projects.length === 1 ? "" : "s"}`}</p>
@@ -34,7 +34,8 @@
   // The spotlight's big slide: art, what it is, the name, one line and one link.
   const slide = (x) => {
     const path = x.path;
-    const art = x.kind === "project" && x.image ? `<img src="${e(x.image)}" alt="" width="320" height="320" loading="lazy">` : `<span>${e(initials(x.name))}</span>`;
+    const pic = x.kind === "project" ? x.image : x.kind === "creator" ? x.banner || x.avatar : "";
+    const art = pic ? `<img src="${e(pic)}" alt="" width="320" height="320" loading="lazy">` : `<span>${e(initials(x.name))}</span>`;
     const line = x.tagline || x.bio || x.description || "";
     return `<div class="dspot" data-kind="${e(x.kind)}"><a class="dspot-art" href="${e(path)}" tabindex="-1" aria-hidden="true">${art}</a>
       <div class="dspot-body"><p class="card-type">${e({ project: "Project", creator: "Creator", community: "Community" }[x.kind])}</p>

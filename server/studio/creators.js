@@ -16,6 +16,7 @@ import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, u
 import { requireProject, createProject, updateProject, deleteProject } from "../creators/projects.js";
 import { republishCreator } from "../sites/publish.js";
 import { storageUsed } from "../creators/storage.js";
+import { imageSrc, ownImage } from "../sites/images.js";
 
 const name = (v, field = "name") => str(v, field, { max: 60 });
 
@@ -38,7 +39,7 @@ async function overview(app) {
   const creators = await creatorsOfUser(app.db, user.id);
   const out = await Promise.all(creators.filter((c) => c.source === "studio" || c.source === "catalog").map(async (c) => {
     const [projects, used] = await Promise.all([projectsOf(app.db, c.id), storageUsed(app.db, c.id)]);
-    return { ...publicCreator(c), bio: c.bio || "", firstParty: c.source === "catalog", role: c.role, capabilities: capabilitiesIn(c), path: `/${c.slug}`,
+    return { ...publicCreator(c), bio: c.bio || "", avatar: c.avatar_asset ? imageSrc(c.avatar_asset) : "", banner: c.banner_asset ? imageSrc(c.banner_asset) : "", firstParty: c.source === "catalog", role: c.role, capabilities: capabilitiesIn(c), path: `/${c.slug}`,
       storage: { usedBytes: used, quotaBytes: quotaOf(c) }, projects: projects.map((p) => ({ ...publicProject(p), path: `/${c.slug}/${p.slug}` })) };
   }));
   return json({ creators: out, limits: LIMITS });
@@ -65,6 +66,16 @@ async function editCreator(app, { creatorId }) {
     const bio = str(body.bio, "bio", { min: 0, max: 400 }).replace(/\s+/g, " ").trim().slice(0, 160);
     await run(app.db, "UPDATE creators SET bio = ? WHERE id = ?", bio || null, creator.id);
     updated.bio = bio || null;
+  }
+  // Avatar and banner: one of this creator's own uploaded images (site_assets), or "" to clear (#211).
+  for (const [field, col] of [["avatarId", "avatar_asset"], ["bannerId", "banner_asset"]]) {
+    if (body[field] === undefined) continue;
+    const pick = str(body[field], field, { min: 0, max: 80 });
+    if (pick && !(await ownImage(app.db, creator.id, pick))) {
+      fail(400, "invalid_field", "Pick one of your own uploaded images.", { field });
+    }
+    await run(app.db, `UPDATE creators SET ${col} = ? WHERE id = ?`, pick || null, creator.id);
+    updated[col] = pick || null;
   }
   // Published pages carry the creator's address and name, so they are rendered again.
   if (updated.slug !== creator.slug || updated.name !== creator.name) await republishCreator(app, creator.id);

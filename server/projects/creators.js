@@ -2,6 +2,7 @@
 // data/creators.js) and Studio creators that are active, published and not deleted, with at least one visible project.
 // Each says only what its /<creator> profile already shows: name, address, whether AutoStacc trusts it (as
 // publicProject does) and its visible projects (name and address). Search, sort and pages are worked out here.
+import { imageSrc } from "../sites/images.js";
 import { all } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { projectAddress } from "./projects.js";
@@ -22,7 +23,7 @@ export function parseCreatorFilters(params) {
 // Visible creators with their visible projects. A suspended, unpublished or deleted creator is never listed, nor
 // are its projects; a creator without a published project isn't either.
 export async function creatorEntries(db) {
-  const rows = await all(db, `SELECT c.id, c.slug, c.name, c.source, c.trusted, c.bio, c.created_at, p.id AS project_id, p.slug AS project_slug, p.name AS project_name
+  const rows = await all(db, `SELECT c.id, c.slug, c.name, c.source, c.trusted, c.bio, c.avatar_asset, c.banner_asset, c.created_at, p.id AS project_id, p.slug AS project_slug, p.name AS project_name
     FROM creators c JOIN projects p ON p.creator_id = c.id
     WHERE c.status = 'active' AND c.published = 1 AND c.deleted_at IS NULL AND p.published = 1 AND p.deleted_at IS NULL
     ORDER BY p.name`);
@@ -30,7 +31,8 @@ export async function creatorEntries(db) {
   for (const r of rows) {
     if (!byId.has(r.id)) {
       byId.set(r.id, { slug: r.slug, name: r.name, path: `/${r.slug}`, firstParty: r.source !== "studio",
-        verified: r.source !== "studio" || Boolean(r.trusted), bio: r.bio || "", projects: [], createdAt: r.created_at });
+        verified: r.source !== "studio" || Boolean(r.trusted), bio: r.bio || "", avatar: r.avatar_asset ? imageSrc(r.avatar_asset) : "",
+        banner: r.banner_asset ? imageSrc(r.banner_asset) : "", projects: [], createdAt: r.created_at });
     }
     byId.get(r.id).projects.push({ name: r.project_name, path: projectAddress({ creator_slug: r.slug, slug: r.project_slug, id: r.project_id }) });
   }
