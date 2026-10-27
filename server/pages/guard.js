@@ -91,7 +91,7 @@ export async function guardPage(context) {
   return noStore(await context.next());
 }
 
-// /: the public cover for everyone else, and for a signed-in visitor their own home (the dashboard page, served
+// /: (functions/_middleware.js) the public cover for everyone else, and for a signed-in visitor their own home (the dashboard page, served
 // private and no-store). Only a request carrying a session cookie costs a session check, so the public page stays
 // as cheap as a static file. The answer varies by cookie, so no cache hands one visitor's page to another.
 export async function guardHome(context) {

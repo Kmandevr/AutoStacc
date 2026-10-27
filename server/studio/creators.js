@@ -62,7 +62,7 @@ async function editCreator(app, { creatorId }) {
   const updated = await updateCreator(app.db, creator, { slug, name: body.name !== undefined ? name(body.name) : undefined });
   // The short bio (plain text, one or two lines) for the creator's card; empty clears it.
   if (body.bio !== undefined) {
-    const bio = str(body.bio, "bio", { max: 400 }).replace(/\s+/g, " ").trim().slice(0, 160);
+    const bio = str(body.bio, "bio", { min: 0, max: 400 }).replace(/\s+/g, " ").trim().slice(0, 160);
     await run(app.db, "UPDATE creators SET bio = ? WHERE id = ?", bio || null, creator.id);
     updated.bio = bio || null;
   }

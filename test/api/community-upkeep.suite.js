@@ -62,6 +62,9 @@ export default (ctx) => describe("community upkeep (switched on)", () => {
     await admin.req("PUT", "/api/community/me", { body: { displayName: "Team Admin", ageConfirmed: true } });
     await block(b, "Team Admin");
     const bTake = await take(b.c);
+    // The admin account is shared by this group's suites, so its posting pace may be used up elsewhere.
+    const adminId = (await admin.get("/api/account")).data.user.id;
+    db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${adminId}'`);
     assert.equal((await replyTo(admin, bTake, "team reply")).status, 201);
     db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${b.user.id}'`); // three posts a minute (pace) counts tries
     assert.equal((await replyTo(b.c, t, "back in")).status, 201);

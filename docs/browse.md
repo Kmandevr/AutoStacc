@@ -82,7 +82,7 @@ On every visit the AutoStacc mark in the sidebar rail (computers) or top bar (ph
 
 ## Dashboard (your home at `/`)
 
-Since 2026-10-22 (owner, #208) a signed-in visitor's `/` is this page: `functions/index.js` runs `guardHome` (`server/pages/guard.js`), which checks the session only when a session cookie is sent and then serves `dashboard.html`, no-store and `Vary: Cookie`; everyone else gets the public cover. `/dashboard` sends a signed-in visitor to `/` (signed out, it still goes to login).
+Since 2026-10-22 (owner, #208) a signed-in visitor's `/` is this page: `functions/_middleware.js` runs `guardHome` (`server/pages/guard.js`) for `/` only (Pages serves a root `index.html` before a `functions/index.js` would run, so it has to be the middleware; `scripts/dist.js` keeps `/` routed to the Functions), which checks the session only when a session cookie is sent and then serves `dashboard.html`, no-store and `Vary: Cookie`; everyone else gets the public cover. `/dashboard` sends a signed-in visitor to `/` (signed out, it still goes to login).
 
 The dashboard has:
 

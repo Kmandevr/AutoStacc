@@ -95,7 +95,7 @@ export default (ctx) => describe("community posting (switched on)", () => {
     const mineAdmin = await admin.get("/api/community/spaces/spc_autostacc/mine");
     assert.equal(mineAdmin.data.team, true);
     assert.equal(mineAdmin.data.mayUpdate, true);
-    const r = await admin.post("/api/community/threads", { channelId: ANNOUNCE, type: "update", title: "News from the team", body: "Hello", asTeam: true });
+    const r = await admin.post("/api/community/threads", { channelId: ANNOUNCE, type: "update", title: "News from the team", body: `Team news ${unique("tn")}`, asTeam: true });
     assert.equal(r.status, 201, JSON.stringify(r.data));
     assert.equal(db(`SELECT as_team FROM community_threads WHERE id = '${r.data.thread.id}'`)[0][0].as_team, "AutoStacc");
     assert.equal(db(`SELECT as_team FROM community_posts WHERE thread_id = '${r.data.thread.id}'`)[0][0].as_team, "AutoStacc");
@@ -103,6 +103,8 @@ export default (ctx) => describe("community posting (switched on)", () => {
     assert.match(String(page.data), /cm-badge-team/);
     const rep = await admin.post(`/api/community/threads/${r.data.thread.id}/posts`, { body: "Team reply", asTeam: true });
     assert.equal(rep.status, 201, JSON.stringify(rep.data));
+    // The admin account is shared with other suites: give back the posting pace this test used.
+    db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${(await admin.get("/api/account")).data.user.id}'`);
     const m = await person();
     assert.equal((await m.c.get("/api/community/spaces/spc_autostacc/mine")).data.mayUpdate, false);
     const refused = await ask(m.c, { asTeam: true });

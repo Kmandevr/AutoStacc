@@ -69,8 +69,9 @@ for (const file of pages(OUT)) {
 // (each by its exact address, so their generated pages reach the Function) and the old addresses
 // _redirects sends on. Pages with their own Function (account pages, admin, studio) and /api/* and /media/* keep running theirs.
 const withFunction = new Set(fs.readdirSync(path.join(ROOT, "functions")).filter((f) => f.endsWith(".js") && !f.startsWith("[")).map((f) => f.replace(/\.js$/, "")));
-// Root pages the catch-all Function answers instead of the file: /product redirects to /shop/<id>.
-const SERVED = ["product"];
+// Root pages a Function answers instead of the file: /product redirects to /shop/<id> (the catch-all), and / is the
+// signed-in visitor's own home (functions/_middleware.js).
+const SERVED = ["product", "index"];
 const staticPages = fs.readdirSync(OUT).filter((f) => f.endsWith(".html")).map((f) => f.replace(/\.html$/, ""))
   .filter((n) => !withFunction.has(n) && !CREATORS.includes(n) && !SERVED.includes(n)).map((n) => (n === "index" ? "/" : "/" + n));
 // Rewrites (200 rules) stay with their Function when they have one: /settings/* is the gated Settings page.

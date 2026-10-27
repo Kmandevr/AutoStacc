@@ -12,6 +12,9 @@
   const id = root.dataset.product || "";
   if (!id) return;
 
+  // The store can't be reached (offline, 503, a hiccup): say so, without claiming the product is gone and without a
+  // buy button that has no live price behind it.
+  const offline = () => { root.innerHTML = '<p class="msg error">The store can\'t be reached right now, so this product can\'t be bought this minute. Try again shortly, or go <a href="/shop">back to the store</a>.</p>'; };
   const missing = () => { root.innerHTML = '<p class="msg error">That product isn\'t available. <a href="/shop">Back to the store</a></p>'; };
 
   async function load() {
@@ -19,7 +22,7 @@
     const [res, live] = await Promise.all([api(`/api/products/${encodeURIComponent(id)}`), api(`/api/products/state?ids=${encodeURIComponent(id)}`)]);
     // Only a product the store says doesn't exist is "not available"; any other failure keeps the page the server drew.
     if (res.status === 404) return missing();
-    if (!res.ok) { const m = $(".msg[role=status]", root); if (m) { m.hidden = false; m.textContent = "Couldn't refresh this page just now; what you see may be a minute old."; } return; }
+    if (!res.ok) { offline(); return; }
     const p = res.data.product;
     const owned = live.ok && live.data.products[id] && live.data.products[id].owned;
     document.title = `${p.title} · AutoStacc`;
@@ -50,16 +53,16 @@
       if (!res.ok) { if (sk) sk.busy(claim, false); else claim.disabled = false; } else claim.remove();
       return;
     }
-    // Buy now: into the cart (once) and straight to it. Add to cart (the cart keeps one of each), then the button becomes
-    // the way to the cart.
+    // Buy now: into the cart (once) and straight to it. Add to cart (the cart keeps one of each, so a second press adds
+    // nothing): the button says it's in the cart and the status line links there.
     if (ev.target.closest("[data-buy-now]")) { cart.add(id, 1); location.href = "/cart"; return; }
     const btn = ev.target.closest("[data-buy]");
     if (!btn) return;
     cart.add(id, 1);
-    btn.outerHTML = '<a class="btn" href="/cart">In your cart · Checkout</a>';
+    btn.textContent = "In your cart";
     const msg = $(".msg[role=status]", root);
     msg.hidden = false;
-    msg.textContent = "Added to your cart.";
+    msg.innerHTML = 'Added. <a href="/cart">Go to your cart</a>';
   });
 
   load();

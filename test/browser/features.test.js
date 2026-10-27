@@ -187,7 +187,7 @@ describe("features in the browser", () => {
     assert.match(await page.textContent(".product-price"), /\$4\.50/);
     assert.match(await page.textContent("main"), /20 drum hits/);
     await page.click("[data-buy]");
-    await page.waitForSelector("text=In your cart · Checkout");
+    await page.waitForSelector("text=Go to your cart");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

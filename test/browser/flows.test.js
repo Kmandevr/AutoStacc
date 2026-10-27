@@ -618,10 +618,12 @@ describe("store in the browser", () => {
     assert.equal(await menu.locator("a[href='/admin']").count(), 0);
     assert.ok(await menu.locator("a[href='/'][aria-current=page]").isVisible(), "the menu marks where you are");
     await page.keyboard.press("Escape");
+    await menu.waitFor({ state: "hidden" }); // after its short closing fade
     assert.equal(await menu.isVisible(), false, "Escape closes it");
     assert.equal(await page.evaluate(() => document.activeElement.className), "account-button", "and gives focus back");
     await page.click(".topbar .account-button");
     await page.click("main h1");
+    await menu.waitFor({ state: "hidden" });
     assert.equal(await menu.isVisible(), false, "a click elsewhere closes it");
     await page.goto("/");
     await page.waitForSelector("h1:has-text('Dashboard')");

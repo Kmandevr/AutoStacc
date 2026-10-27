@@ -46,7 +46,11 @@ export default (ctx) => describe("community project spaces (switched on)", () =>
   });
 
   test("a first-party project with the community feature has a space whose team is AutoStacc's admins, not members", async () => {
+    // Another suite in this group unpublishes it (community-rich); live for this check, as it was afterwards.
+    const was = one("SELECT published FROM projects WHERE id = 'glitches-and-stitches'").published;
+    db("UPDATE projects SET published = 1 WHERE id = 'glitches-and-stitches'");
     const page = await new Client(ctx.mock.url).get("/autostacc/glitches-and-stitches/community");
+    db(`UPDATE projects SET published = ${was ? 1 : 0} WHERE id = 'glitches-and-stitches'`);
     assert.equal(page.status, 200);
     const space = one("SELECT s.id FROM community_spaces s JOIN projects p ON p.id = s.project_id WHERE p.source = 'catalog' AND p.id LIKE '%glitches%'");
     assert.ok(space, "the first visit made the space");
