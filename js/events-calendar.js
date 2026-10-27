@@ -90,7 +90,7 @@
     }
     const events = res.data.events || [];
     list.innerHTML = events.length ? `<ul class="ecards">${events.map(card).join("")}</ul>`
-      : `<p class="empty">No events from projects you follow in these dates. <a href="/explore">Find projects to follow</a>.</p>`;
+      : `<p class="empty">No events from projects you follow in these dates. <a href="/discover?tab=projects">Find projects to follow</a>.</p>`;
     markGrid(new Set(events.map((x) => x.path)));
   }
 

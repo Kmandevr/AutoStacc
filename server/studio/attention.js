@@ -2,11 +2,13 @@
 // answer so the Studio's first screen says it instead of making people open each product. Drafts not on sale yet,
 // Coming soon products and their day, files waiting for AutoStacc's check or refused, and Pac versions checked and
 // waiting to be published, waiting for review or failed. Only for members who run products (roles.js "products");
-// first-party creators' members included. Read-only: every item links to where it's fixed.
+// first-party creators' members included. Read-only: every item links to where it's fixed. GET /api/studio/attention
+// adds it up over all of one person's creators, for the top-bar bell and the signed-in home (one request, not one
+// per creator); "needsYou" counts only what waits on the creator, never what only needs patience.
 import { json } from "../lib/http.js";
 import { all } from "../lib/db.js";
 import { requireUser } from "../auth/session.js";
-import { requireCreator } from "../creators/creators.js";
+import { requireCreator, creatorsOfUser } from "../creators/creators.js";
 import { rolesFor } from "../creators/roles.js";
 
 const OF_CREATOR = "p.source = 'studio' AND p.deleted_at IS NULL AND p.project_id IN (SELECT id FROM projects WHERE creator_id = ? AND deleted_at IS NULL)";
@@ -41,4 +43,23 @@ async function attention(app, { creatorId }) {
   return json({ items: await attentionOf(app.db, creator.id) }, 200, { "Cache-Control": "no-store" });
 }
 
-export const routes = [["GET", "/api/studio/creators/:creatorId/attention", attention]];
+// What waits on the creator: drafts and Coming soon wait on the day or the creator's choice, reviews on AutoStacc.
+const NEEDS_YOU = new Set(["file_refused", "version_failed", "version_ready"]);
+const MAX_CREATORS = 10;
+
+async function summary(app) {
+  const user = await requireUser(app);
+  const roles = rolesFor("products");
+  const member = (await creatorsOfUser(app.db, user.id)).filter((c) => c.source === "studio" || c.source === "catalog");
+  const mine = member.filter((c) => c.status === "active" && roles.includes(c.role)).slice(0, MAX_CREATORS);
+  const creators = await Promise.all(mine.map(async (c) => {
+    const items = await attentionOf(app.db, c.id);
+    return { id: c.id, name: c.name, waiting: items.length, needsYou: items.filter((x) => NEEDS_YOU.has(x.kind)).length };
+  }));
+  return json({ member: member.length > 0, creators }, 200, { "Cache-Control": "no-store" });
+}
+
+export const routes = [
+  ["GET", "/api/studio/attention", summary],
+  ["GET", "/api/studio/creators/:creatorId/attention", attention]
+];

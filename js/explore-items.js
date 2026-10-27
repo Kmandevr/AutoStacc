@@ -1,4 +1,4 @@
-// Releases and upcoming events across projects (GS.exploreItems), the model behind /explore (js/explore-browse.js) and
+// Releases and upcoming events across projects (GS.exploreItems), the model behind /discover/explore (js/explore-browse.js) and
 // the [data-latest] lists (js/latest.js): every published release and upcoming event of a visible project, from the
 // content API (js/project-content.js, which load() reads), in one shape ({ view, id, project, date, title, href, ... })
 // made by from(), plus the filter, facet-count and search rules (OR within a filter, AND between filters, each filter's

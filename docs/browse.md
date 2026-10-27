@@ -1,7 +1,7 @@
 ---
 title: Browsing projects and content
-summary: How visitors find projects and what they put out - the projects and creators browsers and their APIs, /explore for releases and events, the /events calendar, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
-covers: [discover.html, js/discover.js, css/discover.css, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, js/page-spotlight.js, js/studio-creator-images.js, db/migrations/0068_creator_images.sql, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
+summary: How visitors find projects and what they put out - the projects and creators browsers and their APIs, /discover/explore (New & upcoming) for releases and events, the /events calendar, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
+covers: [discover.html, js/discover.js, css/discover.css, server/projects/creators.js, js/creators-browse.js, css/creators.css, discover/explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, js/page-spotlight.js, js/studio-creator-images.js, db/migrations/0068_creator_images.sql, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
 updated: 2026-10-27
 ---
 
@@ -47,7 +47,9 @@ Built 2026-10-21 (owner: "all projects should be credited projects"). The people
 - **API:** `GET /api/creators` (`server/projects/creators.js`, routed in `server/projects/routes.js`). Parameters: `q` (creator and project names, up to 80 characters), `sort=name|newest|projects`, `page` (24 a page). Malformed input is a 400 `invalid_filter`. The answer holds `total`, `page`, `pages`, `sort` and `creators`, each with only `name`, `slug`, `path`, `firstParty`, `verified` and its visible `projects` (name and address): what its `/<creator>` profile already shows. Nothing depends on who asks, so it is cached publicly for a minute; 120 requests a minute per client (`limit(app, "browse")`).
 - **Page:** the Creators tab of `discover.html` (head, canonical and sitemap entry from the build; a plain built list of first-party creators between `<!-- creators:start -->` markers), enhanced by `js/creators-browse.js` (`css/creators.css`). Each card: name, its initial as avatar, a short bio only for first-party creators (their `summary`, read in the browser from `data/creators.js`), its projects and a link to `/<creator>`. The address holds the state (`/creators?q=&sort=&page=`). Offline, the page keeps its built list.
 
-## New & upcoming: releases and events (`/explore`)
+## New & upcoming: releases and events (`/discover/explore`)
+
+Discover's New & upcoming tab, a hand-written page in the `discover/` hub folder (owner, 2026-10-27, #214; it was `/explore`, which now answers a 301 that keeps its query, so old links with a view or filters still open them). The build gives pages in a hub folder their own head block and a breadcrumb through the hub (Home › Discover › New & upcoming).
 
 Since 2026-10-27 (owner, #217) it is Discover's fifth tab: the same link tabs as `/discover`, breadcrumbs Home › Discover › New & upcoming, and `data-section="discover"` so the sidebar lights Discover. It keeps its address and its own filters (the excluded search and filter work), so no link changes.
 
@@ -56,7 +58,7 @@ Since 2026-10-27 (owner, #217) it is Discover's fifth tab: the same link tabs as
 - **Releases**, filtered by project, type and year;
 - **Events**, upcoming only, filtered by project, city and month, with a link to the `/events` calendar.
 
-Each view also has a search box. It reads the newest published releases and upcoming events from `GET /api/content/latest` (up to 50 of each, through `js/project-content.js`); drafts and past events never appear. The rules are in `js/explore-items.js` (`GS.exploreItems`, unit-tested) and the page is `js/explore-browse.js`. The address holds the state (`/explore?view=events&q=&project=...`; the old `view=shows` opens events, and `view=news` falls back to releases). Every creator's Studio-made releases and events are listed; a Studio site's hand-typed events stay in its site document and aren't.
+Each view also has a search box. It reads the newest published releases and upcoming events from `GET /api/content/latest` (up to 50 of each, through `js/project-content.js`); drafts and past events never appear. The rules are in `js/explore-items.js` (`GS.exploreItems`, unit-tested) and the page is `js/explore-browse.js`. The address holds the state (`/discover/explore?view=events&q=&project=...`; the old `view=shows` opens events, and `view=news` falls back to releases). Every creator's Studio-made releases and events are listed; a Studio site's hand-typed events stay in its site document and aren't.
 
 ## Events calendar (`/events`)
 
@@ -105,7 +107,7 @@ Every list on these pages (the projects and creators browsers, Explore, the cale
 
 ## Privacy
 
-Searches and filters on Discover's Projects tab and `/explore` join the store's on-device history under its existing rules: 90 days, forget, turn off. The home page reads that history without sending it. `/privacy` says so (`data/legal.js`).
+Searches and filters on Discover's Projects tab and New & upcoming join the store's on-device history under its existing rules: 90 days, forget, turn off. The home page reads that history without sending it. `/privacy` says so (`data/legal.js`).
 
 Tests:
 

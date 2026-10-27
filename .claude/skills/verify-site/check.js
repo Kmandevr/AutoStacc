@@ -15,9 +15,10 @@ const { loadData, contentAddress } = require(path.join(root, "scripts/lib/data.j
 const htmlUnder = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
 const { SITE, projects, creators } = loadData(root);
-// Root pages and every first-party creator's folder (its projects' pages), as in scripts/seo-test.js. Product, release
-// and event pages are rendered by the store API (server/shop/, server/content/), so there are no files for them.
-const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...creators.flatMap((c) => htmlUnder(c.id))];
+// Root pages, the discover/ hub folder (New & upcoming) and every first-party creator's folder (its projects' pages), as
+// in scripts/seo-test.js. Product, release and event pages are rendered by the store API (server/shop/,
+// server/content/), so there are no files for them.
+const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ...htmlUnder("discover"), ...creators.flatMap((c) => htmlUnder(c.id))];
 const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).

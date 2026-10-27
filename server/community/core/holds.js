@@ -21,6 +21,11 @@ export const holdStmts = (db, { targetType, targetId, spaceId, authorId, hold })
 // How many of this person's posts are waiting (so held posts can't pile up in a team's queue).
 export const heldCount = async (db, userId) => (await all(db, "SELECT COUNT(*) AS n FROM community_holds WHERE author_user_id = ?", userId))[0].n;
 
+// Held posts waiting on each of these spaces' teams: { spaceId: n }.
+export const heldIn = async (db, spaceIds) => Object.fromEntries((await all(db,
+  "SELECT space_id AS id, COUNT(*) AS n FROM community_holds WHERE space_id IN (SELECT value FROM json_each(?)) GROUP BY space_id",
+  JSON.stringify(spaceIds))).map((r) => [r.id, r.n]));
+
 // Runs a post's batch; a failed cap guard is the "too many waiting" answer.
 export async function batchPost(db, stmts) {
   try { await db.batch(stmts); } catch (e) {
