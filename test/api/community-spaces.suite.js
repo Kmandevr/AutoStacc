@@ -171,6 +171,8 @@ export default (ctx) => describe("community: communities anyone can start (switc
     assert.equal(page.status, 200);
     assert.match(page.data, /noindex/);
     assert.match(page.data, /data-cm-desk/);
+    assert.doesNotMatch(page.data, /data-cm-bar/, "no community toolbar on the management page");
+    assert.match((await new Client(ctx.mock.url).get(space.path)).data, /data-cm-bar/, "the space's page has the toolbar");
     assert.equal((await a.c.get(`/api/community/spaces/${space.id}/mine`)).data.path, space.path);
     const t = await a.c.req("POST", `/api/community/spaces/${space.id}/channels`, { body: { name: "Manage", whoMayStart: "everyone", postTypes: ["discussion"] } });
     assert.equal(t.status, 400, "a channel can't take the manage address");

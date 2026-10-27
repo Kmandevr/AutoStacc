@@ -1,5 +1,5 @@
-// Community search (the search feature, server/community/features/search/; needs js/community-kit.js): a search box at
-// the top of the community pages; results list inline below it, text only through textContent, with "more" paging.
+// Community search (the search feature, server/community/features/search/; needs js/community-kit.js): a search box in
+// the community toolbar (owner, 2026-10-27); results list inline below it, text only through textContent, with "more" paging.
 // The words go in the address (?q=), so a search can be shared and survives a reload; on a space's page a checkbox
 // keeps the search inside that space. Does nothing when the feature is off.
 (function () {
@@ -12,8 +12,7 @@
   (async () => {
     const who = await kit.me();
     if (!who.features.includes("search")) return;
-    const main = document.querySelector("main");
-    if (!main) return;
+    if (!kit.bar) return;
     const q = el("input", { type: "search", name: "q", maxlength: 100, "aria-label": "Search the community", placeholder: "Search takes" });
     const msg = status();
     const spaceId = kit.desk && kit.desk.dataset.cmSpace;
@@ -39,7 +38,8 @@
     };
     const form = el("form", { class: "cm-search", role: "search", on: { submit: (ev) => { ev.preventDefault(); if (q.value.trim()) run(false); } } },
       q, el("button", { class: "btn small", type: "submit", text: "Search" }), here && el("label", { class: "cm-check" }, here, " Only this space"), msg);
-    main.prepend(el("div", { class: "cm-find" }, form, out));
+    kit.bar.prepend(form);
+    kit.bar.append(out);
     const asked = new URLSearchParams(location.search).get("q");
     if (asked && asked.trim()) { q.value = asked.slice(0, 100); run(false); }
   })();

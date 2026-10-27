@@ -1,10 +1,10 @@
 // Mention alerts (the mentions feature, server/community/features/mentions/; needs js/community-kit.js): a small
-// switch in the community pages' notices area for being told when someone @mentions you. Does nothing when the
+// switch at the foot of the toolbar's Notifications panel (shared through the kit, so neither feature knows the other) for being told when someone @mentions you. Does nothing when the
 // feature is off or the visitor is signed out.
 (function () {
   "use strict";
   const kit = window.GS && window.GS.communityKit;
-  if (!kit || !kit.notices) return;
+  if (!kit || !kit.bar) return;
   const { el } = kit;
   const api = window.GS.api;
 
@@ -21,7 +21,7 @@
       box.disabled = false;
       if (!res.ok) { box.checked = !box.checked; window.GS.toast(res.error.message, true); }
     });
-    kit.notices.hidden = false;
-    kit.notices.append(el("label", { class: "cm-check cm-small" }, box, " Tell me when someone @mentions me"));
+    const slot = kit.panel("inbox", "Notifications");
+    if (slot) slot.box.append(el("label", { class: "cm-check cm-small cm-bar-setting" }, box, " Tell me when someone @mentions me"));
   })();
 })();

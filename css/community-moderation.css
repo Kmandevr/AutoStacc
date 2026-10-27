@@ -1,6 +1,6 @@
 /* Moderation and reports (server/community/features/moderation/ and reports/, js/community-moderation.js and
    js/community-reports.js): the space team's desk, the team bar on a take, the report form and people's notices. */
-.cm-desk { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: var(--radius); background: var(--panel); }
+.cm-desk, .platform .cm-desk { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: var(--radius); background: var(--panel); }
 .cm-desk-title { font-size: 1rem; margin: 0 0 6px; }
 .cm-desk-part { border-top: 1px solid var(--line); padding: 8px 0; }
 .cm-desk-part > summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }

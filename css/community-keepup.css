@@ -1,7 +1,6 @@
-/* Keeping up: the bell and its panel, the Saved list, the Join button (js/community-{inbox,saved,joined}.js). */
-.cm-bell-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; margin: 0 0 .75rem; }
+/* Keeping up: the Notifications and Saved panels' contents, the Join button (js/community-{inbox,saved,joined}.js). */
 .cm-bell-count:not(:empty) { margin-left: .25rem; padding: 0 .4rem; border-radius: 999px; background: var(--accent, currentColor); color: var(--bg, #fff); font-size: .8em; }
-.cm-inbox { width: min(28rem, 100%); padding: .6rem .8rem; border: 1px solid var(--line, rgba(128,128,128,.35)); border-radius: 10px; }
+.cm-inbox p { margin: 0 0 .4rem; }
 .cm-unread { font-weight: 600; }
-.cm-saved { margin: .5rem 0; }
+.cm-saved p { margin: 0 0 .4rem; }
 .cm-join { margin: .5rem 0; }
