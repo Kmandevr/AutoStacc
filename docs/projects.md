@@ -45,3 +45,5 @@ The first project (`glitches-and-stitches`). It uses every feature, including po
 4. It appears on Discover (Projects tab and the A–Z list), under its creator on the Creators tab, and on its creator's generated profile (`/<creator>`, `scripts/lib/creator-page.js`); customers can follow it; its products show "by <name>" and its content files itself in Your Stacc.
 
 No platform code changes. Its home page is `<creator>/<id>.html` (copy a project page, set `data-project`; title and description come from its data entry) and any further pages go in `<creator>/<id>/`; a skin is `css/projects/<id>/skin.css` scoped to `.skin-<id>` (set `skin: true`), without one its pages use the AutoStacc look. Not built yet: a generated default home page for projects that don't want to write one.
+
+`js/util.js` also carries the site's shared confirmation dialog and message line (`GS.confirm`, `GS.toast`; [modules](modules.md#shared-helpers-every-feature-uses)).

@@ -91,3 +91,5 @@ Each note in `docs/` names the code it describes in its `covers:` frontmatter. `
 - **New email provider:** one function in `server/email/providers.js`. **New email:** one template in `server/email/templates.js`, sent with `sendEmail(app, kind, to, data, { dedupeKey })` (the key is claimed before sending, so it goes once even from two requests at once).
 - **New entitlement source** (bundle, subscription): grant with `grantStmt` and a new `source_type` (add it to the CHECK in a migration).
 - **New API route:** add it to the owning module's `routes` table; a new module adds one import and one entry in `server/app.js`.
+
+The studio API group also runs `coming-soon.suite.js` and gets `SWEEP_TOKEN`, so its tests can run the daily sweep (`POST /api/internal/sweep`). Browser tests answer the shared confirmation dialog by clicking `.gs-confirm button[value=yes]`.

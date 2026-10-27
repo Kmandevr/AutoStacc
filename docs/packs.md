@@ -750,3 +750,5 @@ These remain open. Each has a default the plan uses unless you say otherwise.
 - **Performance and cost:** targets met or revised with recorded numbers; cost per GB processed documented; a normal month of use stays inside the $5 Workers Paid allowance, and the budget guard is tested (80% alert, 95% pause, owner override).
 - **Reliability:** resumable uploads; idempotent jobs; dead-letter queue → visible failure; failed revision leaves live intact; sweeps clean orphans.
 - **Docs:** `docs/packs.md`, docs/engine.md (contract, how to replace the engine), decisions and privacy updated; deferred items opened as issues.
+
+Publishing or discarding a version, removing files, folders and previews ask with the site's shared confirmation dialog (`GS.confirm`, [modules](modules.md#shared-helpers-every-feature-uses)).

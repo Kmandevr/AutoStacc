@@ -176,3 +176,5 @@ Guests: a purchase entitlement carries the buyer's email and no account. When so
 ## Not built yet
 
 Bundles, subscriptions and licences have entitlement sources reserved but no checkout. Discounts are sales and promo codes ([control center](admin.md#sales-and-promo-codes-promotions)); there are no automatic bundle or quantity discounts. A price changed in the Control Center shows on product cards (`js/store.js`) and on the product's server-rendered page (cached at the edge for a short time) and is what checkout charges.
+
+**Coming soon** (owner, 2026-10-27, #218): `products.coming_soon_on` (migration 0070) marks an unpublished product announced with a day; it's listed and has a page but stays unpublished, so pricing, the cart, checkout and free claims refuse it as any draft, until the daily sweep publishes it ([studio](studio.md)). Confirmations across the store use the shared dialog (`GS.confirm`).
