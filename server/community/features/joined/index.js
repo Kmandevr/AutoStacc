@@ -15,7 +15,7 @@ const NO_STORE = { "Cache-Control": "no-store" };
 async function join(app, { spaceId }, on) {
   const user = await requireUser(app);
   await limit(app, "community-join-space", 120, 600, { by: user.id });
-  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your community name first.");
+  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your username first.");
   const space = await getSpace(app.db, id(spaceId, "spaceId"));
   if (!space || space.state === "archived") fail(404, "not_found", "That space doesn't exist.");
   if (!on) await run(app.db, "DELETE FROM community_space_joins WHERE user_id = ? AND space_id = ?", user.id, space.id);

@@ -26,3 +26,18 @@
 .shelf-tabs [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--teal); }
 .shelf-tabs [role="tab"]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .spot-dots button::before { transition: none; } }
+
+/* A spotlight slide (js/discover.js, js/page-spotlight.js): art, what it is, the name, one line and one link. */
+.dspot { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 24px; align-items: center; padding: 22px;
+  background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid var(--glass-edge, var(--line)); border-radius: inherit; }
+.dspot-art { display: grid; place-items: center; aspect-ratio: 1; border-radius: calc(var(--radius) + 4px); overflow: hidden; text-decoration: none;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--teal) 60%, #000), color-mix(in srgb, var(--violet) 45%, #000)); }
+.dspot-art img { width: 100%; height: 100%; object-fit: cover; }
+.dspot-art span { font-size: 3rem; font-weight: 800; color: #fff; }
+.dspot-body { display: grid; gap: 8px; justify-items: start; min-width: 0; }
+.dspot-name { margin: 0; font-size: clamp(1.4rem, 4vw, 2.1rem); }
+.dspot-body p { margin: 0; color: var(--muted); }
+@media (max-width: 600px) { .dspot { grid-template-columns: minmax(0, 1fr); padding: 16px; } .dspot-art { max-width: 200px; } }
+
+/* An empty spotlight slot (offline, a filtered view, nothing to show) takes no room. */
+.spot-slot:empty { display: none; }

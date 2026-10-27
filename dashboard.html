@@ -58,33 +58,42 @@
       </div>
     </div>
 
+    <div class="wrap"><div class="home-tabs" role="tablist" aria-label="Your home" data-home-tabs hidden>
+      <button type="button" role="tab" data-home-tab="overview" aria-selected="true">Overview</button><button type="button" role="tab" data-home-tab="discover" aria-selected="false" tabindex="-1">Discover</button><button type="button" role="tab" data-home-tab="community" aria-selected="false" tabindex="-1">Community</button><button type="button" role="tab" data-home-tab="account" aria-selected="false" tabindex="-1">Account</button>
+    </div></div>
+
     <div class="wrap dash-grid">
-      <section class="mix-panel dash-stacc" data-track="samples" aria-labelledby="dash-stacc-title">
+      <section class="mix-panel dash-stacc" data-home-panel="overview" data-track="samples" aria-labelledby="dash-stacc-title">
         <div class="mix-head"><h2 id="dash-stacc-title">Your Stacc</h2><a href="/library">Open &rarr;</a></div>
         <div data-stacc-glance><p class="msg pending">Loading Your Stacc…</p></div>
       </section>
 
-      <section class="mix-panel dash-releases" data-track="midi" aria-labelledby="dash-releases-title">
+      <section class="mix-panel dash-releases" data-home-panel="overview" data-track="midi" aria-labelledby="dash-releases-title">
         <div class="mix-head"><h2 id="dash-releases-title">New releases</h2><a href="/shop">Store &rarr;</a></div>
         <ul class="clip-feed" data-release-feed data-personal data-limit="6"></ul>
       </section>
 
-      <section class="mix-panel dash-projects" data-track="presets" aria-labelledby="dash-projects-title">
+      <section class="mix-panel dash-projects" data-home-panel="overview" data-track="presets" aria-labelledby="dash-projects-title">
         <div class="mix-head"><h2 id="dash-projects-title">Projects you follow</h2><a href="/discover?tab=projects&amp;followed=1">All you follow &rarr;</a></div>
         <div data-project-picks data-picks="following" data-limit="4"><p class="msg pending">Loading the projects you follow…</p></div>
       </section>
 
-      <section class="mix-panel dash-latest" data-track="loops" aria-labelledby="dash-latest-title">
+      <section class="mix-panel dash-latest" data-home-panel="overview" data-track="loops" aria-labelledby="dash-latest-title">
         <div class="mix-head"><h2 id="dash-latest-title">Latest from the projects</h2><a href="/explore">Explore &rarr;</a></div>
         <div class="latest" data-latest data-limit="3"></div>
       </section>
 
-      <section class="mix-panel dash-discover" data-track="samples" aria-labelledby="dash-discover-title">
+      <section class="mix-panel dash-discover" data-home-panel="discover" data-track="samples" aria-labelledby="dash-discover-title">
         <div class="mix-head"><h2 id="dash-discover-title">Projects to try</h2><a href="/discover">Discover more &rarr;</a></div>
         <div data-project-picks data-limit="2"><p class="small-print">Find more on the <a href="/discover">Discover page</a>.</p></div>
       </section>
 
-      <section class="mix-panel dash-links" data-track="loops" aria-labelledby="dash-links-title">
+      <section class="mix-panel dash-community" data-track="presets" data-home-panel="community" aria-labelledby="dash-community-title" hidden>
+        <div class="mix-head"><h2 id="dash-community-title">Your community</h2><a href="/community">Community &rarr;</a></div>
+        <div data-home-notices><p class="small-print">Replies, mentions and best answers show here once you've joined the community.</p></div>
+      </section>
+
+      <section class="mix-panel dash-links" data-home-panel="account" data-track="loops" aria-labelledby="dash-links-title">
         <div class="mix-head"><h2 id="dash-links-title">Your account</h2></div>
         <ul class="dash-shortcuts">
           <li><a href="/library">Your Stacc</a><span class="small-print">Everything you've Stacc'd, sorted, with downloads.</span></li>

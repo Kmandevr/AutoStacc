@@ -18,7 +18,7 @@ async function logIn(page) {
   await page.fill("#email", account);
   await page.fill("#password", "browser-pass-123");
   await page.click("button[type=submit]");
-  await page.waitForURL((u) => u.pathname === "/dashboard");
+  await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
 }
 
 describe("the Product Studio in the browser", () => {

@@ -49,6 +49,15 @@ function page(SITE, { path, title, description, type, extra }) {
 
 const help = `<nav class="prose-related" aria-label="More help"><p>Still stuck?</p><ul><li><a href="/help">Quick answers</a></li><li><a href="/contact">Contact support</a></li><li><a href="/guide">All guides</a></li></ul></nav>`;
 
+// "Start here": the few guides most people need first (data/guides.js `start`), above the full list.
+function start(guides) {
+  const list = (guides.start || []).map((id) => guides.articles.find((a) => a.id === id)).filter(Boolean);
+  return list.length ? `        <section class="guide-start" aria-labelledby="guide-start-h">
+          <h2 id="guide-start-h">Start here</h2>
+          <ul class="guide-start-list">${list.map((a) => `<li><a href="${articlePath(a)}">${esc(a.title)}</a></li>`).join("")}</ul>
+        </section>` : "";
+}
+
 function indexPage(SITE, guides) {
   const crumbs = [["Home", "/"], ["Guides", "/guide"]];
   const description = "Step-by-step guides to AutoStacc: buying, Your Stacc, downloads, following projects and refunds, plus the creator manual for the Studio, selling, packs and payouts.";
@@ -59,6 +68,7 @@ function indexPage(SITE, guides) {
     <section>
       <div class="wrap guide-home">
         ${searchBox("Search guides and help")}
+${start(guides)}
 ${guides.sections.map((s) => `        <section class="guide-section" id="${esc(s.id)}" aria-labelledby="${esc(s.id)}-h">
           <h2 id="${esc(s.id)}-h">${esc(s.title)}</h2>
           <p class="guide-intro">${esc(s.intro)}</p>

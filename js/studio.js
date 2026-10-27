@@ -80,6 +80,7 @@
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}
           <div class="field"><label for="ce-bio-${e(c.id)}">Short bio</label><textarea id="ce-bio-${e(c.id)}" name="bio" rows="2" maxlength="160">${e(c.bio || "")}</textarea>
             <p class="small-print">One or two lines on your card in the creators directory. Plain text, up to 160 characters.</p></div>
+          <div class="studio-creator-images" data-creator-images="${e(c.id)}" data-avatar="${e(c.avatar || "")}" data-banner="${e(c.banner || "")}"></div>
           <button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
         ${own(c) ? `<div class="studio-team-panel" data-team="${e(c.id)}"></div>
 ` : ""}
@@ -91,6 +92,7 @@
     root.querySelectorAll("[data-storage]").forEach((el) => window.GS.studioStorage.draw(el, el.dataset.storage));
     root.querySelectorAll("[data-team]").forEach((el) => window.GS.studioTeam.draw(el, el.dataset.team));
     root.querySelectorAll("[data-community]").forEach((el) => window.GS.studioCommunity && window.GS.studioCommunity.draw(el, el.dataset.community));
+    root.querySelectorAll("[data-creator-images]").forEach((el) => window.GS.studioCreatorImages && window.GS.studioCreatorImages.draw(el));
     root.querySelectorAll("[data-personality]").forEach((el) => window.GS.studioPersonality && window.GS.studioPersonality.draw(el, el.dataset.personality));
   }
 

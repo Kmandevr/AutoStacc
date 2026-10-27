@@ -26,7 +26,7 @@ async function named(app) {
 
 async function block(app) {
   const { user, other } = await named(app);
-  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your community name first.");
+  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your username first.");
   const count = await first(app.db, "SELECT COUNT(*) AS n FROM community_blocks WHERE user_id = ?", user.id);
   if (count.n >= MAX_BLOCKS) fail(400, "too_many_blocks", "That's the most people you can block.");
   await run(app.db, "INSERT INTO community_blocks (user_id, blocked_user_id, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", user.id, other.user_id, now());

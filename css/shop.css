@@ -158,13 +158,6 @@ a.cover:hover { color: #fff; }
 /* ---------- the store page (shop.html): hero and how buying works ---------- */
 .shop-kicker { margin: 0 0 6px; color: var(--accent-2); font-family: var(--mono); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; }
 .shop-section { padding-top: 8px; }
-.shop-how h2 { margin: 0 0 18px; }
-.shop-steps { list-style: none; counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; margin: 0 0 18px; padding: 0; }
-.shop-steps li { counter-increment: step; display: grid; gap: 6px; align-content: start; padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
-.shop-steps li::before { content: counter(step); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-family: var(--mono); font-weight: 700; color: var(--on-accent); background: var(--accent); }
-.shop-steps span { color: var(--muted); font-size: .95rem; }
-.shop-steps a { display: inline-block; padding-block: 2px; }
-.shop-how .small-print a { display: inline-block; padding-block: 2px; }
 
 /* ---------- store-style sizes (productCard's mixed option): banner and capsule ---------- */
 /* every card's artwork ends at a faint ring in the text colour, so dark art on a dark page (or light on light) still
@@ -209,3 +202,6 @@ a.cover:hover { color: #fff; }
   .card.capsule .card-desc { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .card.capsule :is(.card-desc, .buy) { transition: none; } }
+
+/* The one line on buying under the store (the steps live in /guide/buying). */
+.shop-how-line { padding-block: 0 32px; }

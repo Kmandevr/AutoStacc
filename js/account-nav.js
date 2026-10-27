@@ -43,7 +43,7 @@
         <div class="account-panel" id="${id}" hidden>
           ${user ? `<p class="account-who"><strong>${e(user.name || "You")}</strong><span>${e(user.email)}</span></p>` : ""}
           <ul>
-            ${link("/dashboard", "Dashboard")}${link("/library", "Your Stacc")}${link("/studio", "Studio")}${link("/settings", "Settings")}
+            ${link("/", "Home")}${link("/library", "Your Stacc")}${link("/studio", "Studio")}${link("/settings", "Settings")}
             ${user && user.admin ? link("/admin", "Control Center") : ""}
           </ul>
           <button class="account-theme" type="button" data-theme-cycle></button>

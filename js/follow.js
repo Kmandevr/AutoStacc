@@ -16,11 +16,11 @@
     const note = message ? `<p class="msg${message.error ? " error" : ""}" role="status">${e(message.text)}</p>` : "";
     if (!loaded) return "";
     if (follows === null && signedIn) return `<p class="small-print">Confirm your email (check your inbox) to follow ${e(name)}.</p>${note}`;
-    if (follows === null) return `<p class="small-print"><a href="${e(loginPath(location.pathname + location.search))}">Log in</a> to follow ${e(name)} and switch on Auto-Stacc.</p>${note}`;
+    if (follows === null) return `<p class="small-print"><a href="${e(loginPath(location.pathname + location.search))}">Log in</a> to follow ${e(name)} and get its free releases automatically.</p>${note}`;
     const f = follows[id];
     if (!f) return `<div class="actions"><button class="btn" type="button" data-follow="${e(id)}">Follow<span class="sr-only"> ${e(name)}</span></button></div>${note}`;
     return `<div class="actions">
-      <label class="auto-stacc"><input type="checkbox" data-auto="${e(id)}"${f.autoStacc ? " checked" : ""}> Auto-Stacc: add its free items to Your Stacc</label>
+      <label class="auto-stacc"><input type="checkbox" data-auto="${e(id)}"${f.autoStacc ? " checked" : ""}> Get its free releases automatically <span class="small-print">(Auto-Stacc)</span></label>
       <button class="btn ghost" type="button" data-unfollow="${e(id)}">Following ✓ · Unfollow<span class="sr-only"> ${e(name)}</span></button></div>${note}`;
   }
 

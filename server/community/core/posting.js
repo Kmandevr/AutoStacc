@@ -4,6 +4,7 @@
 // after, the core emits threadStarted or replyPosted for features to react to (follows, mentions, the inbox). The channel decides which types it takes and whether only the space's
 // team may start threads. A locked thread or a space that isn't open takes no replies. Thread addresses are made here
 // from the title: lowercase letters, digits and hyphens only, which is all /community/t/<id>-<slug> accepts.
+import { identitiesOf } from "./identities.js";
 import { first, stmt, newId, now } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { MAX_BODY } from "./format.js";
@@ -35,14 +36,21 @@ export function cleanBody(raw) {
 export const getSpace = (db, id) => first(db, `SELECT *, ${CANONICAL} FROM community_spaces WHERE id = ?`, id);
 // The name a post goes out under when its author asks to post as the space's team: the space's own name, only for
 // its team (and, for an Update, its publishers). null: the author's own community name.
-function postAs(space, asTeam, allowed) {
-  if (!asTeam) return null;
-  if (!allowed) fail(403, "team_only", "Only this space's team can post under its name.");
-  return space.name;
+// as: "space" (the space's own name, for its team), an identity id from identitiesOf (AutoStacc, or a project the
+// person speaks for, in any space), or null for their own name.
+async function postAs(app, user, space, as, allowed) {
+  if (!as) return null;
+  if (as === "space") {
+    if (!allowed) fail(403, "team_only", "Only this space's team can post under its name.");
+    return space.name;
+  }
+  const found = (await identitiesOf(app, user)).find((x) => x.id === as);
+  if (!found) fail(403, "team_only", "You can't post under that name.");
+  return found.name;
 }
 const touchTeam = (db, space, at) => stmt(db, "UPDATE community_spaces SET last_team_activity_at = ? WHERE id = ?", at, space.id);
 
-export async function startThread(app, user, { channelId, type, title, body, asTeam = false }) {
+export async function startThread(app, user, { channelId, type, title, body, as = null }) {
   const channel = await first(app.db, "SELECT * FROM community_channels WHERE id = ? AND archived_at IS NULL", channelId);
   if (!channel) fail(404, "not_found", "That channel doesn't exist.");
   const space = await getSpace(app.db, channel.space_id);
@@ -52,7 +60,7 @@ export async function startThread(app, user, { channelId, type, title, body, asT
   if (channel.who_may_start === "team" && !team && !publisher) fail(403, "team_only", "Only this space's team starts threads here.");
   if (!STARTABLE.includes(type) || !channel.post_types.split(",").includes(type)) fail(400, "invalid_field", "This channel doesn't take that kind of post.", { field: "type" });
   if (type === "update" && !publisher) fail(403, "team_only", "Only this space's team posts Updates.");
-  const as = postAs(space, asTeam, team || publisher);
+  const asName = await postAs(app, user, space, as, team || publisher);
   const t = cleanTitle(title);
   const text = cleanBody(body);
   const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread: null, kind: "thread", type, title: t, body: text, team }));
@@ -60,8 +68,8 @@ export async function startThread(app, user, { channelId, type, title, body, asT
   const thread = { id: newId("thr"), slug: slugify(t), spaceId: space.id };
   await batchPost(app.db, [
     stmt(app.db, `INSERT INTO community_threads (id, space_id, channel_id, type, title, slug, author_user_id, as_team, state, last_post_at, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, thread.id, space.id, channel.id, type, t, thread.slug, user.id, as, hold ? "hidden" : "visible", at, at),
-    stmt(app.db, "INSERT INTO community_posts (id, thread_id, author_user_id, as_team, body, created_at) VALUES (?, ?, ?, ?, ?, ?)", newId("pst"), thread.id, user.id, as, text, at),
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, thread.id, space.id, channel.id, type, t, thread.slug, user.id, asName, hold ? "hidden" : "visible", at, at),
+    stmt(app.db, "INSERT INTO community_posts (id, thread_id, author_user_id, as_team, body, created_at) VALUES (?, ?, ?, ?, ?, ?)", newId("pst"), thread.id, user.id, asName, text, at),
     ...(hold ? holdStmts(app.db, { targetType: "thread", targetId: thread.id, spaceId: space.id, authorId: user.id, hold }) : []),
     ...(team ? [touchTeam(app.db, space, at)] : [])
   ]);
@@ -70,7 +78,7 @@ export async function startThread(app, user, { channelId, type, title, body, asT
   return { thread, space, channel };
 }
 
-export async function reply(app, user, threadId, { body, parentId = null, asTeam = false }) {
+export async function reply(app, user, threadId, { body, parentId = null, as = null }) {
   const thread = await first(app.db, "SELECT * FROM community_threads WHERE id = ? AND state = 'visible'", threadId);
   if (!thread) fail(404, "not_found", "That thread doesn't exist.");
   const space = await getSpace(app.db, thread.space_id);
@@ -83,12 +91,12 @@ export async function reply(app, user, threadId, { body, parentId = null, asTeam
   const channel = await first(app.db, "SELECT * FROM community_channels WHERE id = ?", thread.channel_id);
   if (!channel || channel.archived_at) fail(403, "channel_archived", "This channel is archived: its takes are read-only.");
   const team = await isTeam(app, user, space);
-  const as = postAs(space, asTeam, team);
+  const asName = await postAs(app, user, space, as, team);
   const hold = await requireRoom(app, user, await check(app, "post", { user, space, channel, thread, kind: "reply", type: thread.type, parent, body: text, team }));
   const at = now();
   const id = newId("pst");
   await batchPost(app.db, [
-    stmt(app.db, "INSERT INTO community_posts (id, thread_id, parent_post_id, author_user_id, as_team, state, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", id, thread.id, parent ? parent.id : null, user.id, as, hold ? "hidden" : "visible", text, at),
+    stmt(app.db, "INSERT INTO community_posts (id, thread_id, parent_post_id, author_user_id, as_team, state, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", id, thread.id, parent ? parent.id : null, user.id, asName, hold ? "hidden" : "visible", text, at),
     ...(hold ? holdStmts(app.db, { targetType: "post", targetId: id, spaceId: space.id, authorId: user.id, hold }) : [stmt(app.db, "UPDATE community_threads SET reply_count = reply_count + 1, last_post_at = ? WHERE id = ?", at, thread.id)]),
     ...(team ? [touchTeam(app.db, space, at)] : [])
   ]);

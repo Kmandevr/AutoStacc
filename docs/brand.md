@@ -2,7 +2,7 @@
 title: Brand
 summary: Glitches & Stitches' skin: how its pages apply the identity (colours, fonts, glitch motifs, motion, sound, tone) inside the AutoStacc frame.
 covers: [css/projects/glitches-and-stitches/, css/eggs.css, js/sound.js, js/motion.js, js/eggs.js, js/terminal.js, img/projects/glitches-and-stitches/, docs/assets/gs-logo/]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Brand: the Glitches & Stitches skin
@@ -37,7 +37,7 @@ Old-school terminal (owner's choice, 2026-10-07): a glowing CRT screen in three 
 - Generated product covers (no artwork yet) glow green or purple depending on the product's `hue`, including on the store's platform pages
 - Store pages (cart, login, Your Stacc, checkout, settings, admin) use the AutoStacc look ([autostacc](autostacc.md)), not this skin. The store scripts still request sounds (`stitch` on add to cart, `cinch` on a confirmed payment) through `gs:sound`; they play only where `js/sound.js` is loaded, i.e. on this project's pages.
 
-- Phones (≤600px; the header collapses at ≤900px): nothing may be wider than the screen (a 5px overflow made the whole page look squished and shifted right). Up to 900px the header is just the logo and a roomy `[≡]`/`[×]` menu button; the menu fills the screen below the header with big terminal-style rows and the sound switch at the bottom (the page behind doesn't scroll, Esc closes it). The sound switch lives at the end of the nav on every screen size. Tighter section spacing, a hero only as tall as what it holds (owner, 2026-10-22), full-width stacked hero buttons, streaming links and ticket buttons in even grids, a smaller offset layer, and the chant sized to stay on one line. Checked at 320, 360, 390 and 430px.
+- Phones (≤600px; the header collapses at ≤900px): nothing may be wider than the screen (a 5px overflow made the whole page look squished and shifted right). Up to 900px the header is just the logo and a roomy `[≡]`/`[×]` menu button; the menu fills the screen below the header with big terminal-style rows and the sound switch at the bottom (the page behind doesn't scroll, Esc closes it). The sound switch lives at the end of the nav on every screen size. Tighter section spacing, a hero only as tall as what it holds and the About emblem as a small badge (owner, 2026-10-22), full-width stacked hero buttons, streaming links and ticket buttons in even grids, a smaller offset layer, and the chant sized to stay on one line. Checked at 320, 360, 390 and 430px.
 - Fonts: VT323 (pixel terminal font) for the logo, headings and covers; JetBrains Mono for everything else
 
 ## Tone

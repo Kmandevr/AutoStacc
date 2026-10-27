@@ -33,6 +33,10 @@ export const listImages = (db, creatorId) =>
 export const ownImages = (db, creatorId, ids) => (ids.length
   ? all(db, `SELECT id, content_type FROM site_assets WHERE creator_id = ? AND status = 'active' AND released_at IS NULL AND id IN (${ids.map(() => "?").join(",")})`, creatorId, ...ids)
   : Promise.resolve([]));
+// Whether an id is one of this creator's own active images (for choices like the creator's avatar and banner).
+export const ownImage = (db, creatorId, id) => first(db,
+  "SELECT 1 AS n FROM site_assets WHERE id = ? AND creator_id = ? AND status = 'active' AND content_type LIKE 'image/%'", id, creatorId);
+
 // What /media/sites/<id> serves: an active file of a creator that isn't suspended.
 export const servableImage = (db, id) => first(db,
   `SELECT a.r2_key, a.content_type, a.size_bytes FROM site_assets a JOIN creators c ON c.id = a.creator_id
@@ -70,7 +74,7 @@ export async function uploadImage(app, creator, user, filename) {
 }
 
 // Whether any kept version, draft or published document of the creator's sites, or a piece they share in the
-// community library (server/library/), still names this file.
+// community library (server/library/), or the creator's avatar or banner, still names this file.
 export async function stillUsed(db, creatorId, id) {
   const like = `%${id}%`;
   const row = await first(db, `SELECT
@@ -79,7 +83,8 @@ export async function stillUsed(db, creatorId, id) {
     OR EXISTS (SELECT 1 FROM project_sites s JOIN projects p ON p.id = s.project_id WHERE p.creator_id = ?1 AND p.deleted_at IS NULL AND (s.published LIKE ?2 OR s.scheduled_draft LIKE ?2))
     OR EXISTS (SELECT 1 FROM creator_sites WHERE creator_id = ?1 AND (published LIKE ?2 OR scheduled_draft LIKE ?2))
     OR EXISTS (SELECT 1 FROM library_pieces WHERE creator_id = ?1 AND status = 'active' AND assets LIKE ?2)
-    OR EXISTS (SELECT 1 FROM project_releases r JOIN projects p ON p.id = r.project_id WHERE p.creator_id = ?1 AND r.deleted_at IS NULL AND r.artwork LIKE ?2) AS used`, creatorId, like);
+    OR EXISTS (SELECT 1 FROM project_releases r JOIN projects p ON p.id = r.project_id WHERE p.creator_id = ?1 AND r.deleted_at IS NULL AND r.artwork LIKE ?2)
+    OR EXISTS (SELECT 1 FROM creators WHERE id = ?1 AND (avatar_asset = ?3 OR banner_asset = ?3)) AS used`, creatorId, like, id);
   return Boolean(row && row.used);
 }
 

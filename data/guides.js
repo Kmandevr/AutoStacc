@@ -7,6 +7,8 @@
 // subheadings ({ heading: "...", id: "..." }, listed in the article's "On this page"). Text may use [label](/path),
 // **bold** and {contact}, nothing else (scripts/lib/rich-text.js).
 window.GUIDES = {
+  // "Start here" at the top of /guide (owner, 2026-10-22): the guides most people need first, by id.
+  start: ["buying", "your-stacc", "becoming-a-creator"],
   sections: [
     { id: "using", title: "Using AutoStacc", intro: "Buying, Your Stacc, downloads, following projects and refunds, step by step." },
     { id: "creators", title: "Creator manual", intro: "Everything in the Studio: your creator name, your sites, selling, packs, getting paid, your team and your storage." }
@@ -42,11 +44,18 @@ window.GUIDES = {
       ]
     },
     {
-      id: "your-stacc", section: "using", updated: "2026-10-16",
+      id: "your-stacc", section: "using", updated: "2026-10-22",
       title: "Getting around Your Stacc",
-      summary: "Your Stacc's two views, search and filters, downloading files, folders and whole Pacs, preview clips, read me files and updates.",
+      summary: "The words Your Stacc uses, its two views, search and filters, downloading files, folders and whole Pacs, preview clips, read me files and updates.",
       body: [
         "[Your Stacc](/library) is everything you own on AutoStacc, from every project, organised by what it is rather than by order.",
+        { heading: "The words you'll see", id: "words" },
+        { list: [
+          "**Your Stacc**: your library, everything you've Stacc'd (bought or got free), from every project.",
+          "**Stacclet**: a collection of related Pacs from one project.",
+          "**Pac**: a folder of content: MIDI, samples, loops, presets and more. Download one file, a selection or the whole Pac.",
+          "**Auto-Stacc**: adds a followed project's free releases to Your Stacc automatically. Paid releases are shown as new, never added for you."
+        ] },
         { heading: "Two views of the same files", id: "views" },
         { list: [
           "**By project**: each project, then its Stacclets and Pacs, then the files in them.",

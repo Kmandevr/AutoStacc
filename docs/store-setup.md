@@ -2,7 +2,7 @@
 title: Store setup
 summary: The owner's checklist to switch the store on: Cloudflare token permissions, secrets, Stripe and Brevo setup, first admin, uploading files, going live.
 covers: [.github/workflows/deploy.yml, scripts/cloudflare.js, scripts/deploy-check.js, server/lib/config.js, wrangler.toml, server/payments/stripe.js, server/payments/tax-codes.js, server/email/providers.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Store setup (owner)

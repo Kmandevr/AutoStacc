@@ -44,7 +44,7 @@ async function autoHide(app, target) {
 async function report(app) {
   const user = await requireUser(app);
   await limit(app, "community-report", 20, 3600, { by: user.id });
-  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your community name and confirm you're 16 or older first.");
+  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick a username and confirm you're 16 or older first.");
   const suspended = await first(app.db, "SELECT until FROM community_suspensions WHERE user_id = ?", user.id);
   if (suspended && (!suspended.until || Date.parse(suspended.until) > Date.now())) fail(403, "suspended", "Your account can't act in the community right now.");
   const body = await readJson(app.request);

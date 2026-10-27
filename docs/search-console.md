@@ -2,7 +2,7 @@
 title: Search Console
 summary: Step-by-step for the owner: set up Google Search Console for autostacc.com, submit the sitemap, request indexing, and point every official profile back to the site.
 covers: [data/projects.js, robots.txt, _redirects, sitemap.xml, server/content/sitemap.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Google Search Console and profile checklist

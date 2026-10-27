@@ -1,4 +1,5 @@
-// Server-side gate for the account pages (/dashboard, /settings and its sections, /studio), run by their Pages Functions before the
+// Server-side gate for the account pages (/dashboard, which now sends a signed-in visitor to /, /settings and its
+// sections, /studio) and the home page's signed-in view (guardHome), run by their Pages Functions before the
 // static page is served. Without a signed-in session (or when the store can't check one) the answer is a redirect to
 // /login?next=<that page>, so a signed-out visitor never receives the app at all. Signed in, the static page is
 // served marked no-store, so no shared or back/forward cache replays it after sign-out. The pages hold no private data
@@ -85,7 +86,27 @@ export async function guardPage(context) {
   if (!(await signedIn(context))) {
     return new Response(null, { status: 302, headers: { Location: loginRedirect(url), "Cache-Control": "no-store" } });
   }
+  // The dashboard is the signed-in home page now (owner, 2026-10-22): /dashboard sends you to /, keeping its query
+  // (?welcome=1 says the email was confirmed).
+  if (url.pathname.replace(/\/+$/, "") === "/dashboard") return new Response(null, { status: 302, headers: { Location: `/${url.search}`, "Cache-Control": "no-store" } });
   return noStore(await context.next());
+}
+
+// /: (functions/_middleware.js) the public cover for everyone else, and for a signed-in visitor their own home (the dashboard page, served
+// private and no-store). Only a request carrying a session cookie costs a session check, so the public page stays
+// as cheap as a static file. The answer varies by cookie, so no cache hands one visitor's page to another.
+export async function guardHome(context) {
+  const { request } = context;
+  const cookie = request.headers.get("Cookie") || "";
+  if ((request.method === "GET" || request.method === "HEAD") && /session_token=/.test(cookie) && (await signedIn(context))) {
+    const page = noStore(await context.env.ASSETS.fetch(new URL("/dashboard", request.url)));
+    page.headers.set("Vary", "Cookie");
+    return page;
+  }
+  const res = await context.next();
+  const out = new Response(res.body, res);
+  out.headers.append("Vary", "Cookie");
+  return out;
 }
 
 // /settings and /settings/<section>: the same gate, then the one Settings page for every known section (the page

@@ -29,7 +29,7 @@ describe("features in the browser", () => {
     await page.goto("/admin/daily");
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
-    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
     for (const path of ["/dashboard", "/library", "/product?p=wallpapers", "/autostacc/glitches-and-stitches"]) {
       await page.goto(path);
       // A product page sets its title once the product arrives; the marker must survive that.
@@ -51,7 +51,7 @@ describe("features in the browser", () => {
     // Ended elsewhere (here: its time limit): the page says so instead of quietly turning back into the admin.
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
-    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
     sql(t.stateDir, `UPDATE impersonations SET expires_at = '2000-01-01T00:00:00.000Z' WHERE ended_at IS NULL AND customer_user_id = '${id}'`);
     await page.goto("/library");
     await page.waitForSelector("#impersonation-bar.imp-ended");
@@ -187,18 +187,18 @@ describe("features in the browser", () => {
     assert.match(await page.textContent(".product-price"), /\$4\.50/);
     assert.match(await page.textContent("main"), /20 drum hits/);
     await page.click("[data-buy]");
-    await page.waitForSelector("text=In your cart · Checkout");
+    await page.waitForSelector("text=Go to your cart");
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });
 
-  test("phone quick-links bar: Store, Projects, Community, Log in and Menu are within reach at 320px; Menu opens the drawer and Escape closes it", async () => {
+  test("phone quick-links bar: Store, Discover, Community, Log in and Menu are within reach at 320px; Menu opens the drawer and Escape closes it", async () => {
     const { ctx, page } = await open(PHONE);
     await page.goto("/shop");
     const bar = page.locator(".tabbar");
     assert.equal(await bar.isVisible(), true);
     const names = await bar.locator("a:visible, button:visible").allTextContents();
-    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Projects", "Community", "Log in", "Menu"]);
+    assert.deepEqual(names.map((t) => t.trim()), ["Store", "Discover", "Community", "Log in", "Menu"]);
     assert.equal(await bar.locator("a[aria-current]").textContent(), "Store");
     const small = await bar.locator("a:visible, button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
     assert.equal(small, 0, "every quick link is at least 44px tall");
@@ -442,7 +442,7 @@ describe("features in the browser", () => {
     await ctx.close();
   });
 
-  test("home banner: a DAW backdrop fixed behind the page, the hero most of the screen, still once scrolled past or for less motion", async () => {
+  test("home banner: a DAW backdrop fixed behind the page, a short hero (owner, 2026-10-22), still once scrolled past or for less motion", async () => {
     const { ctx, page } = await open({ ...DESK, reducedMotion: "no-preference" });
     await page.goto("/");
     await page.waitForSelector(".daw-stage .daw-clip");
@@ -455,7 +455,7 @@ describe("features in the browser", () => {
     const first = await facts();
     assert.equal(first.position, "fixed");
     assert.equal(first.hidden, "true", "decorative: hidden from screen readers");
-    assert.ok(first.hero >= 0.75, `the hero takes most of the screen (${first.hero})`);
+    assert.ok(first.hero >= 0.4 && first.hero <= 0.75, `the hero is a short banner, not the whole screen (${first.hero})`);
     assert.ok(first.moving > 0, "the arrangement scrolls past the playhead");
     await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
     await page.waitForFunction(() => document.querySelector(".daw-stage").classList.contains("is-still"));

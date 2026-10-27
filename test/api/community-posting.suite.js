@@ -43,6 +43,41 @@ export default (ctx) => describe("community posting (switched on)", () => {
     assert.equal((await c.get("/api/community/me")).data.member.displayName, "Joiner One");
   });
 
+  test("usernames: checked before choosing, changed under the same rules, a few times a month; posts show the new name", async () => {
+    const check = (c, name) => c.get(`/api/community/names/check?name=${encodeURIComponent(name)}`);
+    const anon = new Client(ctx.mock.url);
+    assert.deepEqual((await check(anon, `Fresh ${unique("u").slice(-6)}`)).data, { ok: true });
+    for (const [name, code] of [["AutoStacc", "name_reserved"], ["Glitches and Stitches", "name_taken"], ["x", "name_shape"]]) {
+      const r = await check(anon, name);
+      assert.equal(r.data.ok, false, name);
+      assert.equal(r.data.code, code, name);
+    }
+    assert.equal((await anon.req("PATCH", "/api/community/me", { body: { displayName: "Someone New" } })).status, 401);
+    const stranger = new Client(ctx.mock.url);
+    await verifiedUser(stranger, unique("cmr"));
+    assert.equal((await stranger.req("PATCH", "/api/community/me", { body: { displayName: "Not Joined" } })).status, 404, "join first");
+    const a = await person();
+    const b = await person();
+    assert.equal((await check(anon, a.name)).data.code, "name_taken");
+    assert.equal((await check(a.c, a.name)).data.ok, true, "your own name is yours");
+    const t = await ask(a.c, { body: `Rename me ${unique("rn")}` });
+    assert.equal(t.status, 201);
+    const bad = await a.c.req("PATCH", "/api/community/me", { body: { displayName: "Autostacc Support" } });
+    assert.equal(bad.status, 400);
+    assert.equal(bad.data.error.code, "name_reserved");
+    assert.equal((await a.c.req("PATCH", "/api/community/me", { body: { displayName: b.name } })).data.error.code, "name_taken");
+    const fresh = `Renamed ${Date.now().toString(36).slice(-5)}`;
+    const ok = await a.c.req("PATCH", "/api/community/me", { body: { displayName: fresh } });
+    assert.equal(ok.status, 200, JSON.stringify(ok.data));
+    assert.equal(ok.data.member.displayName, fresh);
+    assert.equal((await a.c.get("/api/community/me")).data.member.displayName, fresh);
+    assert.equal((await check(anon, a.name)).data.ok, true, "the old name is free again");
+    const page = await new Client(ctx.mock.url).get(`${t.data.thread.path}?v=${Date.now()}`);
+    assert.match(String(page.data), new RegExp(fresh));
+    for (let i = 0; i < 4; i++) await a.c.req("PATCH", "/api/community/me", { body: { displayName: `${fresh} ${i}` } });
+    assert.equal((await a.c.req("PATCH", "/api/community/me", { body: { displayName: `${fresh} x` } })).status, 429, "five changes a month");
+  });
+
   test("posting without a community name is refused; a question is stored as written and shown escaped", async () => {
     const plain = new Client(ctx.mock.url);
     await verifiedUser(plain, unique("cm-noname"));
@@ -95,7 +130,7 @@ export default (ctx) => describe("community posting (switched on)", () => {
     const mineAdmin = await admin.get("/api/community/spaces/spc_autostacc/mine");
     assert.equal(mineAdmin.data.team, true);
     assert.equal(mineAdmin.data.mayUpdate, true);
-    const r = await admin.post("/api/community/threads", { channelId: ANNOUNCE, type: "update", title: "News from the team", body: "Hello", asTeam: true });
+    const r = await admin.post("/api/community/threads", { channelId: ANNOUNCE, type: "update", title: "News from the team", body: `Team news ${unique("tn")}`, asTeam: true });
     assert.equal(r.status, 201, JSON.stringify(r.data));
     assert.equal(db(`SELECT as_team FROM community_threads WHERE id = '${r.data.thread.id}'`)[0][0].as_team, "AutoStacc");
     assert.equal(db(`SELECT as_team FROM community_posts WHERE thread_id = '${r.data.thread.id}'`)[0][0].as_team, "AutoStacc");
@@ -103,6 +138,8 @@ export default (ctx) => describe("community posting (switched on)", () => {
     assert.match(String(page.data), /cm-badge-team/);
     const rep = await admin.post(`/api/community/threads/${r.data.thread.id}/posts`, { body: "Team reply", asTeam: true });
     assert.equal(rep.status, 201, JSON.stringify(rep.data));
+    // The admin account is shared with other suites: give back the posting pace this test used.
+    db(`DELETE FROM rateLimit WHERE key = 'gs:community-pace:${(await admin.get("/api/account")).data.user.id}'`);
     const m = await person();
     assert.equal((await m.c.get("/api/community/spaces/spc_autostacc/mine")).data.mayUpdate, false);
     const refused = await ask(m.c, { asTeam: true });

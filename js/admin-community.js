@@ -25,7 +25,7 @@
       </article>`).join("") || "<p>No reports waiting.</p>"}
       <h3>Suspended from the community</h3>
       <div class="admin-table"><table><thead><tr><th>Name</th><th>Why</th><th>Until</th><th></th></tr></thead><tbody>${suspensions.map((s) => `<tr>
-        <td>${e(s.name || "no community name")}</td><td>${e(s.reason)}</td><td>${e(s.until ? day(s.until) : "until lifted")}</td>
+        <td>${e(s.name || "no username")}</td><td>${e(s.reason)}</td><td>${e(s.until ? day(s.until) : "until lifted")}</td>
         <td><button class="btn ghost small" type="button" data-lift="${e(s.userId)}">Lift</button></td></tr>`).join("") || '<tr><td colspan="4">Nobody.</td></tr>'}</tbody></table></div>`;
   }
 

@@ -41,7 +41,7 @@
   function card(c) {
     const bio = c.firstParty ? BIO.get(c.slug) || c.bio : c.bio;
     return `<li class="ccard">
-      <a class="ccard-avatar" href="${e(c.path)}" tabindex="-1" aria-hidden="true"><span>${e(initial(c.name))}</span></a>
+      <a class="ccard-avatar" href="${e(c.path)}" tabindex="-1" aria-hidden="true">${c.avatar ? `<img src="${e(c.avatar)}" alt="" width="64" height="64" loading="lazy">` : `<span>${e(initial(c.name))}</span>`}</a>
       <div class="ccard-body">
         <h3 class="ccard-name"><a href="${e(c.path)}">${e(c.name)}</a></h3>
         ${c.verified ? "" : `<p class="ccard-by"><span class="tag unverified" title="AutoStacc hasn't verified this creator">Unverified creator</span></p>`}

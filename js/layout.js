@@ -32,12 +32,13 @@
   };
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
   // Studio, Settings and the rest of the account live in the top bar's account menu (js/account-nav.js).
-  const YOU = [["/dashboard", "Dashboard", "dashboard", "dashboard"], ["/library", "Your Stacc", "library", "stacc"]];
+  // Signed in, / is your own home (the dashboard page; owner, 2026-10-22), so Home stands for it.
+  const YOU = [["/library", "Your Stacc", "library", "stacc"]];
   // Owner, 2026-10-22: Discover holds creators, projects and communities; New & upcoming (/explore) releases and
   // events; About lives in the footer.
   const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/discover", "Discover", "discover", "creators"], ["/explore", "New & upcoming", "explore", "explore"], ["/community", "Community", "community", "community"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
-  const current = (key) => (key === body.page ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
+  const current = (key) => (key === body.page || (key === "home" && body.page === "dashboard") ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
   const item = (href, label, icon, attrs = "") =>
     `<li><a href="${e(href)}" title="${e(label)}"${attrs}>${icon}<span class="side-text">${e(label)}</span></a></li>`;

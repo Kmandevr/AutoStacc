@@ -55,11 +55,7 @@
   function tabs(container, list, current, select) {
     container.innerHTML = `<div class="shelf-tabs" role="tablist">${list.map(([id, label]) => `<button type="button" role="tab" data-tab="${e(id)}" aria-selected="${id === current}" tabindex="${id === current ? 0 : -1}">${e(label)}</button>`).join("")}</div>`;
     const btns = [...container.querySelectorAll("[role=tab]")];
-    const go = (i, focus) => { btns.forEach((b, j) => { b.setAttribute("aria-selected", String(i === j)); b.tabIndex = i === j ? 0 : -1; }); if (focus) btns[i].focus(); select(btns[i].dataset.tab); };
-    btns.forEach((b, i) => {
-      b.addEventListener("click", () => go(i, false));
-      b.addEventListener("keydown", (ev) => { const s = { ArrowRight: 1, ArrowLeft: -1 }[ev.key]; if (s) { ev.preventDefault(); go((i + s + btns.length) % btns.length, true); } });
-    });
+    GS.tabs(btns, (i) => select(btns[i].dataset.tab));
   }
 
   // One listener for every row's arrows and every banner's dots, wherever they are drawn.

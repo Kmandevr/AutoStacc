@@ -199,7 +199,8 @@
   .hero .actions { flex-direction: column; align-items: stretch; max-width: 280px; margin: 0 auto; }
   .kicker { font-size: .72rem; letter-spacing: .05em; }
   .show .btn { justify-self: stretch; }
-  .about { gap: 32px; }
-  .about .art { width: 100%; max-width: 300px; margin: 0 auto; }
+  .about { gap: 20px; }
+  /* phones: the G&S emblem is a small badge beside the text instead of a square of its own (shorter page, 2026-10-22) */
+  .about .art { width: 96px; max-width: 96px; margin: 0; font-size: 2.4rem; }
   .loop strong { min-width: 0; }
 }

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { Client, verifiedUser, sql, unique } from "../support/client.js";
 import { adminClient } from "../support/flows.js";
 
-const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/projects", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music",
+const PUBLIC = ["/", "/shop", "/shop/wallpapers", "/discover", "/autostacc/glitches-and-stitches", "/autostacc/glitches-and-stitches/music",
   "/autostacc/glitches-and-stitches/music/hail", "/autostacc/glitches-and-stitches/events", "/events", "/about"];
 const GATED = ["/dashboard", "/settings", "/settings/profile", "/settings/security", "/settings/orders", "/settings/email", "/settings/privacy", "/studio"];
 const goesToLogin = (r, next) => {
@@ -27,11 +27,10 @@ export default (ctx) => describe("pages", () => {
     // News waits for each creator's community (#174): its old addresses lead to the project's home.
     const news = await anon.get("/autostacc/glitches-and-stitches/news/hail-out-now");
     assert.deepEqual([news.status, new URL(news.headers.get("location"), ctx.mock.url).pathname], [301, "/autostacc/glitches-and-stitches"]);
-    // The home page is the public cover: it offers signing in and creating an account, and the app's links start hidden.
+    // The home page is the public cover: it offers creating an account (Log in is in the top bar), and no app links.
     const home = (await anon.get("/")).data;
     assert.match(home, /href="\/login#signup" data-auth="out"/);
-    assert.match(home, /<span data-auth="out">[^<]*<a href="\/login">Log in<\/a>/);
-    assert.match(home, /href="\/dashboard" data-auth="in" hidden/);
+    assert.doesNotMatch(home, /href="\/dashboard"/, "signed in, / itself is your home (server/pages/guard.js guardHome)");
     assert.doesNotMatch(home, /\/js\/(dashboard|account|settings|store)\.js/, "the cover loads no account or ownership script");
   });
 
@@ -82,7 +81,15 @@ export default (ctx) => describe("pages", () => {
 
     const c = new Client(ctx.mock.url);
     const user = await verifiedUser(c, unique("gate-expire"));
-    assert.equal((await c.get("/dashboard")).status, 200);
+    // Signed in: /dashboard sends you to /, and / is your own home (the dashboard page, never cached).
+    const dash = await c.get("/dashboard");
+    assert.deepEqual([dash.status, dash.headers.get("location")], [302, "/"]);
+    assert.equal((await c.get("/dashboard?welcome=1")).headers.get("location"), "/?welcome=1", "the query comes along");
+    const own = await c.get("/");
+    assert.equal(own.status, 200);
+    assert.match(String(own.data), /data-stacc-glance/);
+    assert.equal(own.headers.get("cache-control"), "no-store");
+    assert.doesNotMatch(String((await new Client(ctx.mock.url).get("/")).data), /data-stacc-glance/, "the public cover for everyone else");
     sql(ctx.mock.stateDir, `UPDATE session SET expiresAt = '2000-01-01T00:00:00.000Z' WHERE userId = '${user.id}'`);
     goesToLogin(await c.get("/dashboard"), "/dashboard");
 
@@ -99,7 +106,8 @@ export default (ctx) => describe("pages", () => {
   test("signed in: the account pages are served, never cached, under the strict CSP", async () => {
     const c = new Client(ctx.mock.url);
     const user = await verifiedUser(c, unique("gate-ok"));
-    for (const p of GATED) {
+    // /dashboard sends a signed-in visitor to their home at / (served the same way, checked as "/" below).
+    for (const p of [...GATED.filter((x) => x !== "/dashboard"), "/"]) {
       const r = await c.get(p);
       assert.equal(r.status, 200, p);
       assert.equal(r.headers.get("cache-control"), "no-store", p);

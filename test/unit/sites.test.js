@@ -24,7 +24,8 @@ test("every top-level name the site uses is reserved, so no creator can take it"
   let ignored = new Set();
   try { ignored = new Set(execFileSync("git", ["check-ignore", ...names], { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().split("\n")); } catch { /* none ignored, or no git */ }
   const top = names.filter((f) => !f.startsWith(".") && !ignored.has(f) && !["node_modules", "README.md", "CLAUDE.md", "LICENSE", "SECURITY.md", "package.json", "package-lock.json", "wrangler.toml", "test", "docs", "db"].includes(f));
-  const fromFunctions = fs.readdirSync(path.join(ROOT, "functions")).filter((f) => !f.startsWith("[") && !f.startsWith(".") && f !== "package.json");
+  // Middleware (functions/_middleware.js) runs before routes; like Pages, underscore files aren't addresses.
+  const fromFunctions = fs.readdirSync(path.join(ROOT, "functions")).filter((f) => !f.startsWith("[") && !f.startsWith(".") && !f.startsWith("_") && f !== "package.json");
   const creators = new Set(["autostacc", "autostacc.html"]);
   for (const f of [...top, ...fromFunctions].filter((x) => !creators.has(x))) {
     assert.ok(RESERVED.has(f.replace(/\.(html|js)$/, "")) || RESERVED.has(f), `${f} must be in server/lib/slugs.js RESERVED`);

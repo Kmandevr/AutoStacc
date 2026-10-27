@@ -29,3 +29,5 @@
 @media (prefers-reduced-motion: reduce) { .ccard { transition: none; } }
 /* Links in the intro and the built list stay at least 24px tall (WCAG 2.2 target size). */
 .platform .page-hero p a, .ccard-static h3 a { display: inline-block; padding-block: 2px; }
+/* An avatar the creator chose (Studio), else the initial. */
+.ccard-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }

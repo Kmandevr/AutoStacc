@@ -1,8 +1,8 @@
 ---
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects and creators browsers and their APIs, /explore for releases and events, the /events calendar, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
-covers: [discover.html, js/discover.js, css/discover.css, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
-updated: 2026-10-22
+covers: [discover.html, js/discover.js, css/discover.css, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, js/page-spotlight.js, js/studio-creator-images.js, db/migrations/0068_creator_images.sql, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
+updated: 2026-10-27
 ---
 
 # Browsing projects and content
@@ -11,9 +11,9 @@ Owner decision 2026-10-09 ([decisions](decisions.md)): projects get their own br
 
 ## Building blocks (owner, 2026-10-22, #207)
 
-- **Project cards** (`js/project-card.js`) are AutoStacc's glass with the project's **personality**: the art tile wears the project's own look, and an accent (a track colour) and a small signature animation (pulse, glitch, wave or none; once as the card arrives, again on hover or focus, never for reduced motion) come from the Studio's presets (`project_personality`, `GET`/`PUT /api/studio/projects/:id/personality`, `js/studio-personality.js`), else `data/projects.js` `personality`, else the defaults. Every card has a type label (`.card-type`: Project, Creator, Community...). `compact` is a poster card for rows.
+- **Project cards** (`js/project-card.js`) are AutoStacc's glass with the project's **personality**: the art tile wears the project's own look, and an accent (a track colour) and a small signature animation (pulse, glitch, wave or none; once as the card arrives, again on hover or focus, never for reduced motion) come from the Studio's presets (`project_personality`, `GET`/`PUT /api/studio/projects/:id/personality`, `js/studio-personality.js`), else `data/projects.js` `personality`, else the defaults. Every card has a type label (`.card-type`: Project, Creator, Community...). Creators can upload an **avatar and banner** in the Studio (`js/studio-creator-images.js`, migration 0068; any of the creator's own uploaded images, checked by `ownImage` in `server/sites/images.js`, and kept while used); creator cards and the spotlight show them, else the initial (#211). `compact` is a poster card for rows.
 - **Browse layout** (`js/browse-shelves.js`, `css/shelves.css`, `GS.shelves`): a spotlight banner, sideways rows that snap (arrows with a mouse, a See all end card) shown only from 4 items, and tabs.
-- **Spotlight:** the admins' picks first (Control Center › Manage › Spotlight, `server/spotlight/`, `spotlight_picks`, audited; public `GET /api/spotlight?page=discover|store|explore`, ids only), then a fair rotation the page computes from what it already lists: a new order each day (a stable hash of the date and id), so every creator gets equal turns and nothing is ranked by popularity (ranking stays an open question in [vision](vision.md)).
+- **Spotlight:** the admins' picks first (Control Center › Manage › Spotlight, `server/spotlight/`, `spotlight_picks`, audited; public `GET /api/spotlight?page=discover|store|explore`, ids only), then a fair rotation the page computes from what it already lists: a new order each day (a stable hash of the date and id), so every creator gets equal turns and nothing is ranked by popularity (ranking stays an open question in [vision](vision.md)). Discover shows it at the top of All; the Store and New & upcoming show it below their main list on their plain view (`js/page-spotlight.js`, `[data-spotlight]`), so nothing above it moves when it arrives.
 
 ## Discover (`/discover`; owner, 2026-10-22, #208)
 
@@ -35,7 +35,7 @@ Every visible project: AutoStacc's own and published Studio projects of active c
   - activity is the newest release or published product, and the next event (read at request time from the Studio's `project_releases` and `project_events` tables by `contentDates` in `server/content/content.js`; drafts and deleted items never count, and hidden news doesn't either, #174. The old `projects.activity` column is no longer written or read);
   - "recently active" means active in the last 30 days or an event within 60.
   - A project shows how many store items it has and links to `/shop?creator=<id>`, never a price or a buy button.
-- **Page:** `js/projects-browse.js` keeps its state in the address (`/projects?genre=edm&active=1`) and has a phone drawer, chips and pages, the same as the store. Offline, it keeps the built list of AutoStacc's projects.
+- **Page:** `js/projects-browse.js` keeps its state in the address (`/discover?tab=projects&genre=edm&active=1`) and has a phone drawer, chips and pages, the same as the store. Offline, it keeps the built list of AutoStacc's projects.
 - **Cards:** `js/project-card.js` (`GS.projectCard`).
 - **Follow controls:** `js/follow.js`, a drop-in for any `[data-follow-slot]`. It tells other features who is followed (`gs:follows`).
 
@@ -45,7 +45,7 @@ Built 2026-10-21 (owner: "all projects should be credited projects"). The people
 
 - **Who is listed:** AutoStacc's own creators (`data/creators.js`) and Studio creators that are active, published and not deleted and have at least one published project. Suspended, unpublished or deleted creators and creators with no visible project never appear, nor do their projects. A Studio creator is marked **Unverified creator** until AutoStacc trusts it, as in the store.
 - **API:** `GET /api/creators` (`server/projects/creators.js`, routed in `server/projects/routes.js`). Parameters: `q` (creator and project names, up to 80 characters), `sort=name|newest|projects`, `page` (24 a page). Malformed input is a 400 `invalid_filter`. The answer holds `total`, `page`, `pages`, `sort` and `creators`, each with only `name`, `slug`, `path`, `firstParty`, `verified` and its visible `projects` (name and address): what its `/<creator>` profile already shows. Nothing depends on who asks, so it is cached publicly for a minute; 120 requests a minute per client (`limit(app, "browse")`).
-- **Page:** `creators.html` (head, canonical and sitemap entry from the build; a plain built list of first-party creators between `<!-- creators:start -->` markers), enhanced by `js/creators-browse.js` (`css/creators.css`). Each card: name, its initial as avatar, a short bio only for first-party creators (their `summary`, read in the browser from `data/creators.js`), its projects and a link to `/<creator>`. The address holds the state (`/creators?q=&sort=&page=`). Offline, the page keeps its built list.
+- **Page:** the Creators tab of `discover.html` (head, canonical and sitemap entry from the build; a plain built list of first-party creators between `<!-- creators:start -->` markers), enhanced by `js/creators-browse.js` (`css/creators.css`). Each card: name, its initial as avatar, a short bio only for first-party creators (their `summary`, read in the browser from `data/creators.js`), its projects and a link to `/<creator>`. The address holds the state (`/creators?q=&sort=&page=`). Offline, the page keeps its built list.
 
 ## New & upcoming: releases and events (`/explore`)
 
@@ -73,14 +73,16 @@ The home page has, in order:
 - the banner: the cover's headline and buttons over a DAW arrange view drawn in code (`js/daw-stage.js`, `css/daw-stage.css`; lanes of clips in the track colours, a playhead the arrangement scrolls past, mixer meters). It takes about 85% of the first screen and is fixed behind the page: every section after it is frosted and slides over it like a curtain, so the studio stays faintly visible to the bottom. It is decorative (`aria-hidden`), follows the light or dark theme (owner decision 2026-10-16; it was always dark before), stops moving once the hero is scrolled away, and never moves for visitors who ask for less motion (owner decision 2026-10-09);
 - a store search and three ways in (Store, Projects, Releases and events);
 - two store sections from the store's recommendations, with the same tune, forget and turn-off controls (`[data-store-sections data-sections="2" data-brief]`). The featured products show instead while the store has no picks;
-- **Projects to follow** (`js/project-picks.js`), ordered by how well their genres and styles match this browser's own history (`js/taste.js`, read on the device and never sent), leaving out projects already followed;
+- **Projects to follow** (now the home page's Discover row; `js/project-picks.js`), ordered by how well their genres and styles match this browser's own history (`js/taste.js`, read on the device and never sent), leaving out projects already followed;
 - **Latest from the projects** (`js/latest.js`), with followed projects first;
 - How it works;
 - a closing call to create an account and follow artists for their free releases.
 
 On every visit the AutoStacc mark in the sidebar rail (computers) or top bar (phones) plays a short intro: its four bars drop and stack into place, bottom row first, in about a second, then rest (owner, 2026-10-21; `css/cover.css`, home only through `body[data-page="home"]`). It only moves the bars, so content and input are never delayed; under reduced motion it is the still mark.
 
-## Dashboard
+## Dashboard (your home at `/`)
+
+Since 2026-10-22 (owner, #208) a signed-in visitor's `/` is this page: `functions/_middleware.js` runs `guardHome` (`server/pages/guard.js`) for `/` only (Pages serves a root `index.html` before an index Function would run, so it has to be the middleware; `scripts/dist.js` keeps `/` routed to the Functions), which checks the session only when a session cookie is sent and then serves `dashboard.html`, no-store and `Vary: Cookie`; everyone else gets the public cover. `/dashboard` sends a signed-in visitor to `/`, keeping its query (signed out, it still goes to login). The page is in tabs (owner, 2026-10-22, #209; `js/dashboard.js` with `GS.tabs`): **Overview** (Your Stacc, new releases, projects you follow, the latest), **Discover** (projects to try), **Community** (your newest notices from the community inbox) and **Account**.
 
 The dashboard has:
 
@@ -101,7 +103,7 @@ Every list on these pages (the projects and creators browsers, Explore, the cale
 
 ## Privacy
 
-Searches and filters on `/projects` and `/explore` join the store's on-device history under its existing rules: 90 days, forget, turn off. The home page reads that history without sending it. `/privacy` says so (`data/legal.js`).
+Searches and filters on Discover's Projects tab and `/explore` join the store's on-device history under its existing rules: 90 days, forget, turn off. The home page reads that history without sending it. `/privacy` says so (`data/legal.js`).
 
 Tests:
 

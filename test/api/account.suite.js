@@ -73,6 +73,33 @@ export default (ctx) => describe("account", () => {
       [{ new_releases: 1, platform_news: 0 }]);
   });
 
+  test("phone number: private, validated, cleared when empty, in the export, gone with the account", async () => {
+    const anon = new Client(ctx.mock.url);
+    assert.equal((await anon.get("/api/account/phone")).status, 401);
+    assert.equal((await anon.req("PUT", "/api/account/phone", { body: { phone: "+1 555 010 0000" } })).status, 401);
+    const { c, user } = await newBuyer(ctx.mock.url, "phone");
+    const other = await newBuyer(ctx.mock.url, "phone2");
+    assert.equal((await c.get("/api/account/phone")).data.phone, null);
+    const set = await c.req("PUT", "/api/account/phone", { body: { phone: "+44 (20) 7946-0000" } });
+    assert.equal(set.status, 200);
+    assert.equal(set.data.phone, "+442079460000");
+    assert.equal((await c.get("/api/account/phone")).data.phone, "+442079460000");
+    assert.equal((await other.c.get("/api/account/phone")).data.phone, null, "nobody else's");
+    for (const phone of ["12", "call me", "+1 555 010 0000 ext 5", "1".repeat(16), 5550100]) {
+      assert.equal((await c.req("PUT", "/api/account/phone", { body: { phone } })).status, 400, String(phone));
+    }
+    const evil = new Client(ctx.mock.url, { origin: "https://evil.example" });
+    evil.jar = c.jar;
+    assert.equal((await evil.req("PUT", "/api/account/phone", { body: { phone: "5550100999" } })).status, 403);
+    const exported = await c.post("/api/account/export", {});
+    assert.equal(exported.data.account.phone, "+442079460000");
+    assert.equal((await c.req("PUT", "/api/account/phone", { body: { phone: "" } })).data.phone, null);
+    assert.equal(sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM account_phone WHERE user_id = '${user.id}'`)[0].n, 0);
+    await c.req("PUT", "/api/account/phone", { body: { phone: "555 010 0000" } });
+    assert.equal((await c.post("/api/account/delete", { confirm: user.email, password: PASSWORD })).status, 200);
+    assert.equal(sql(ctx.mock.stateDir, `SELECT COUNT(*) AS n FROM account_phone WHERE user_id = '${user.id}'`)[0].n, 0);
+  });
+
   test("data export: your orders, library, follows and votes; nobody else's; never a token; POST only", async () => {
     const anon = new Client(ctx.mock.url);
     assert.equal((await anon.post("/api/account/export", {})).status, 401);

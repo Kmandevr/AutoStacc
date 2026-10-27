@@ -1,6 +1,6 @@
 // Deleting your account. The person types their email and password. The account, its sign-ins, follows, wishlist,
 // collections, tags and saved searches, votes, community name, community votes and blocks (posts stay as "deleted user"),
-// email preferences and creator memberships go; orders stay as anonymous sales records (tax, refunds, disputes) and
+// email preferences, phone number and creator memberships go; orders stay as anonymous sales records (tax, refunds, disputes) and
 // everything it owned stops downloading. One transaction, so a failure leaves the account exactly as it was.
 // Refused while it still owns a Studio creator (its pages and sales need an owner: AutoStacc sorts that out), while a
 // checkout of theirs could still be paid, and for admin accounts. A POST, so an impersonating admin can never reach it
@@ -25,6 +25,7 @@ import { forgetActorStmt } from "../creators/events.js";
 import { eraseCommunityStmts } from "../community/core/erase.js";
 import { randomToken } from "../lib/db.js";
 import { limit } from "../lib/ratelimit.js";
+import { erasePhoneStmt } from "./phone.js";
 
 // Stands in for the email on what is kept. The reserved .invalid domain can never receive mail.
 const anonymousEmail = () => `deleted-${randomToken(10)}@deleted.invalid`;
@@ -55,6 +56,7 @@ async function deleteAccount(app) {
     eraseEmailClaimsStmt(db, email),
     anonymiseDownloadsStmt(db, user.id, randomToken(10)),
     erasePreferencesStmt(db, user.id),
+    erasePhoneStmt(db, user.id),
     removeAllFollowsStmt(db, user.id),
     removeWishlistStmt(db, user.id),
     ...eraseCollectionsStmts(db, user.id),

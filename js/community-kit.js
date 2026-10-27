@@ -30,7 +30,9 @@
   };
 
   let mePromise = null;
-  const me = () => (mePromise = mePromise || GS.api("/api/community/me").then((r) => (r.ok ? r.data : { signedIn: false, features: [] })));
+  // A username picked at sign-up joins first (GS.pendingUsername), so the page then shows the visitor as a member.
+  const me = () => (mePromise = mePromise || (GS.pendingUsername ? GS.pendingUsername.apply() : Promise.resolve())
+    .then(() => GS.api("/api/community/me")).then((r) => (r.ok ? r.data : { signedIn: false, features: [] })));
   const tools = document.querySelector("[data-cm-thread]");
   let minePromise = null;
   const mine = () => (minePromise = minePromise || (tools
@@ -63,7 +65,7 @@
     return b;
   };
 
-  // Signed out, unconfirmed or without a community name: what's needed, in place of the form. then() runs once the
+  // Signed out, unconfirmed or without a username: what's needed, in place of the form. then() runs once the
   // visitor can post.
   function gate(box, who, then) {
     if (!who.signedIn) {
@@ -73,7 +75,7 @@
     if (!who.emailVerified) { box.append(el("p", { class: "cm-small", text: "Confirm your email address to take part." })); return; }
     if (who.member) { then(); return; }
     const msg = status();
-    const name = el("input", { name: "displayName", required: true, minlength: 3, maxlength: 30, autocomplete: "nickname" });
+    const name = el("input", { name: "displayName", required: true, minlength: 3, maxlength: 30, autocomplete: "username" });
     const age = el("input", { type: "checkbox", name: "age", required: true });
     const form = el("form", { class: "cm-form cm-stack-in", on: { submit: async (ev) => {
       ev.preventDefault();
@@ -86,19 +88,23 @@
       then();
     } } },
       el("h2", { text: "One step before your first post" }),
-      el("p", { class: "cm-small", text: "Pick the name people will see on your posts. You do this once, and it's never your email. AutoStacc and creators' names are kept: a space's team posts under those with \"Post as\" once joined." }),
-      el("label", {}, "Community name", name),
+      el("p", { class: "cm-small", text: "Pick a username: the name people see on your posts (never your email). You can change it later in Settings. AutoStacc's and creators' names are kept for their owners, so pick your own here: if you're on a project's team, you'll post as the project by choosing it under \"Post as\"." }),
+      el("label", {}, "Username", name),
       el("label", { class: "cm-check" }, age, " I'm 16 or older, and I'll follow the ", el("a", { href: "/community-rules", text: "community rules" }), "."),
       el("button", { class: "btn", type: "submit", text: "Join and continue" }), msg);
     box.append(form);
   }
 
-  // "Post as": for a space's team, a choice between their own community name and the space's (the server checks it).
-  // Returns null for everyone else; asTeam() is what the form sends.
+  // "Post as": your own username, the space's name for its team, and the names you may speak for anywhere (AutoStacc
+  // for its admins, projects whose team you're on; who.identities from /api/community/me). The server checks it.
+  // Returns null when there's nothing to choose; as() is what the form sends (null for your own name).
   const asPicker = (who, teamName) => {
-    if (!teamName) return null;
-    const sel = el("select", { name: "as" }, el("option", { value: "me", text: who.member ? who.member.displayName : "Me" }), el("option", { value: "team", text: `${teamName} (Team)` }));
-    return { wrap: el("label", {}, "Post as", sel), asTeam: () => sel.value === "team" };
+    const opts = [];
+    if (teamName) opts.push(["space", `${teamName} (Team)`]);
+    (who.identities || []).filter((x) => x.name !== teamName).forEach((x) => opts.push([x.id, `${x.name} (Team)`]));
+    if (!opts.length) return null;
+    const sel = el("select", { name: "as" }, el("option", { value: "", text: who.member ? who.member.displayName : "Me" }), opts.map(([v, t]) => el("option", { value: v, text: t })));
+    return { wrap: el("label", {}, "Post as", sel), as: () => sel.value || null };
   };
 
   GS.communityKit = { asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };

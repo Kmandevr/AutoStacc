@@ -68,6 +68,7 @@
     $("[data-stats-mode]", el).value = d.mode;
     out.innerHTML = `<p class="admin-mode ${d.mode}"><strong>${d.mode === "live" ? "LIVE" : "TEST"} figures</strong> ${e(d.since)} to ${e(d.until)}${d.mode === "live" ? "" : " · test orders only, never revenue"}</p>
       ${tabsHTML(d.sections)}<p class="small-print">Generated ${e(d.generatedAt.slice(0, 16).replace("T", " "))} UTC.</p>`;
+    el.dispatchEvent(new Event("gs:stats-drawn"));
   }
 
   // The figures in tabs on the same page (owner, 2026-10-22): Sales, Customers, Catalog, Creators, Traffic; a section
@@ -84,9 +85,8 @@
       `<button type="button" role="tab" id="stats-tab-${e(id)}" aria-controls="stats-panel-${e(id)}" aria-selected="${id === openTab}" tabindex="${id === openTab ? 0 : -1}" data-stats-tab="${e(id)}">${e(label)}</button>`).join("")}</div>
       ${tabs.map(([id, , list]) => `<div class="stats-panel" role="tabpanel" id="stats-panel-${e(id)}" aria-labelledby="stats-tab-${e(id)}"${id === openTab ? "" : " hidden"}>${list.map(section).join("")}</div>`).join("")}`;
   }
-  function pick(el, id, focus) {
+  function pick(el, id) {
     openTab = id;
-    el.querySelectorAll("[data-stats-tab]").forEach((b) => { const on = b.dataset.statsTab === id; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
     el.querySelectorAll(".stats-panel").forEach((p) => { p.hidden = p.id !== `stats-panel-${id}`; });
   }
 
@@ -98,18 +98,11 @@
         <button class="btn ghost" type="submit">Refresh</button></form>
       <p class="stats-legend">${Object.entries(SOURCES).map(([k, l]) => `<span class="stats-source" data-source="${k}">${e(l)}</span>`).join("")}</p>
       <div data-stats-out></div>`;
-    // Tabs switch in place, without touching the address (it holds the open section of the Control Center).
-    el.addEventListener("click", (ev) => {
-      const tab = ev.target.closest("[data-stats-tab]");
-      if (tab) pick(el, tab.dataset.statsTab, false);
-    });
-    el.addEventListener("keydown", (ev) => {
-      const tab = ev.target.closest("[data-stats-tab]");
-      const step = { ArrowRight: 1, ArrowLeft: -1 }[ev.key];
-      if (!tab || !step) return;
-      ev.preventDefault();
-      const all = [...el.querySelectorAll("[data-stats-tab]")];
-      pick(el, all[(all.indexOf(tab) + step + all.length) % all.length].dataset.statsTab, true);
+    // Tabs switch in place, without touching the address (it holds the open section of the Control Center); GS.tabs
+    // (js/util.js) wires each drawing's buttons.
+    el.addEventListener("gs:stats-drawn", () => {
+      const btns = [...el.querySelectorAll("[data-stats-tab]")];
+      window.GS.tabs(btns, (i) => pick(el, btns[i].dataset.statsTab));
     });
     el.addEventListener("submit", (ev) => {
       ev.preventDefault();

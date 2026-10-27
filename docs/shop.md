@@ -2,7 +2,7 @@
 title: Shop
 summary: The catalogue: product kinds, products made in the Studio by every creator (the code-based catalog is retired, #176), each product's page at /shop/<id> (#175), and the test fixtures. How selling works is in store.md.
 covers: [data/product-types.js, shop.html, server/shop/, test/support/catalog-fixtures.js]
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Shop
