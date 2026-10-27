@@ -7,6 +7,8 @@
 // subheadings ({ heading: "...", id: "..." }, listed in the article's "On this page"). Text may use [label](/path),
 // **bold** and {contact}, nothing else (scripts/lib/rich-text.js).
 window.GUIDES = {
+  // "Start here" at the top of /guide (owner, 2026-10-22): the guides most people need first, by id.
+  start: ["buying", "your-stacc", "becoming-a-creator"],
   sections: [
     { id: "using", title: "Using AutoStacc", intro: "Buying, Your Stacc, downloads, following projects and refunds, step by step." },
     { id: "creators", title: "Creator manual", intro: "Everything in the Studio: your creator name, your sites, selling, packs, getting paid, your team and your storage." }

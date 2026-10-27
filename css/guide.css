@@ -19,3 +19,8 @@
 .guide-results a:hover, .guide-results a:focus-visible { outline: 1px solid var(--accent); }
 .guide-results span, .guide-empty { color: var(--muted); font-size: .85rem; }
 .guide-empty { padding: 10px 12px; }
+/* "Start here" at the top of /guide: the first guides as large links. */
+.guide-start h2 { margin: 24px 0 8px; }
+.guide-start-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.guide-start-list a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); font-weight: 650; }
+.guide-start-list a:hover { border-color: var(--teal); }
