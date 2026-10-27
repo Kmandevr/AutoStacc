@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/admin/artwork.js, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, server/settings/, data/workspaces.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Control Center
@@ -15,7 +15,7 @@ On Stats, above its sections, the figures and the summary list payment events th
 
 ## Statistics (Overview)
 
-The figures are in tabs on the same page (owner, 2026-10-22, #209): **Sales** (sales, promo codes), **Customers**, **Catalog** (products, downloads), **Creators** and **Traffic** (site activity); the period and live/test choice above apply to all, and the open tab stays while they change.
+The figures are in tabs on the same page (owner, 2026-10-22, #209): **Sales** (sales, promo codes), **Customers**, **Catalog** (products, downloads), **Creators** and **Traffic** (site activity); the period and live/test choice above apply to all, and the open tab stays while they change (tabs wired by the shared `GS.tabs`, `js/util.js`).
 
 `GET /api/admin/stats?days=&mode=live|test`, built from sections in `server/stats/` (sales, customers, products, downloads, promotions, creators, activity); `days` is 1–365 (default 30), `mode` defaults to what the store takes. One section alone: `GET /api/admin/stats/:section`. Each number is labelled with its source, and the page shows that label next to it:
 
