@@ -148,6 +148,8 @@ describe("the visual builder in the browser", () => {
     await page.click("form[data-form=project] button[type=submit]");
     await page.waitForSelector(".bx-bar");
     await page.goto("/studio");
+    // The Studio's Team tab (owner, 2026-10-27, #221).
+    await page.click(".studio-tabs [role=tab]:has-text('Team')");
     await page.waitForSelector("[data-team-invite]");
     const invitee = unique("team-editor");
     await page.fill("[data-team-invite] [name=email]", invitee);

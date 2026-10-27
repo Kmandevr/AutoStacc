@@ -16,3 +16,9 @@
 .product-info .made-by .project-follow:empty { display: none; }
 .product-info .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .coming-soon { border-left: 3px solid var(--amber); padding-left: 10px; }
+/* "What you get" (js/product-view.js; owner, 2026-10-27, #222): download size, licence in one line, where the files go. */
+.product-get, .platform .product-get { margin: 16px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.product-get h2 { margin: 0 0 6px; font-size: 1rem; }
+.product-get ul { margin: 0; padding-left: 1.1rem; }
+.product-get li { margin: 4px 0; line-height: 1.5; }
+.product-get li[hidden] { display: none; }

@@ -82,18 +82,18 @@ The home page has, in order:
 
 On every visit the AutoStacc mark in the sidebar rail (computers) or top bar (phones) plays a short intro: its four bars drop and stack into place, bottom row first, in about a second, then rest (owner, 2026-10-21; `css/cover.css`, home only through `body[data-page="home"]`). It only moves the bars, so content and input are never delayed; under reduced motion it is the still mark.
 
-## Dashboard (your home at `/`)
+## Your home (signed in, at `/`)
 
 Since 2026-10-22 (owner, #208) a signed-in visitor's `/` is this page: `functions/_middleware.js` runs `guardHome` (`server/pages/guard.js`) for `/` only (Pages serves a root `index.html` before an index Function would run, so it has to be the middleware; `scripts/dist.js` keeps `/` routed to the Functions), which checks the session only when a session cookie is sent and then serves `dashboard.html`, no-store and `Vary: Cookie`; everyone else gets the public cover. `/dashboard` sends a signed-in visitor to `/`, keeping its query (signed out, it still goes to login). The page is in tabs (owner, 2026-10-22, #209; `js/dashboard.js` with `GS.tabs`): **Overview** (Your Stacc, new releases, projects you follow, the latest), **Discover** (projects to try), **Community** (your newest notices from the community inbox) and **Account**.
 
-The dashboard has:
+Since 2026-10-27 (owner, #223) it is titled **Home**, has no tabs, and shows only what applies to the person, in four parts:
 
-- a Your Stacc search (`/library?q=`);
-- Your Stacc at a glance and new releases;
-- **Projects you follow** (`data-picks="following"`);
-- the latest from the projects;
-- **Projects to try**;
-- account shortcuts.
+- **Needs your attention** (`js/home-attention.js`, hidden when nothing waits): each creator's count from the Studio's "Needs you" with a link to the Studio, and each community space the person founded or moderates with a Manage link;
+- **Pick up where you left off**: a Your Stacc search (`/library?q=`), Your Stacc at a glance, and the newest community notices when there are any;
+- **New for you**: the latest releases and events, followed projects first (`js/latest.js`), and the projects you follow (`data-picks="following"`);
+- **Quick actions**: Your Stacc, the store, the community and Settings, plus Studio for creators or "Become a creator", and "Start a community" while the community is open.
+
+"Projects to try" and the account panel were dropped: Discover and the account menu do those jobs.
 
 ## Your Stacc
 

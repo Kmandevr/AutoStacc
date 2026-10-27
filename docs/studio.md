@@ -151,3 +151,5 @@ The same shell with these groups: **Store** (Overview, Products, Pacs, Promotion
 7. Team. **Later.**
 8. Insights: **this pass** for the basics; advanced reporting later.
 9. Testing across kinds of product and screen sizes: browser tests at 390px and desktop.
+
+The Studio's product list shows Coming soon as a status and links each product on sale or Coming soon to its store page ("View in store", `.sp-actions` in `css/studio-sections.css`). The product page template (`js/product-view.js`) adds "What you get" on the real page only, never in the Studio's preview.

@@ -65,3 +65,5 @@ Every indexable page below home also has a `BreadcrumbList` (`seo-test.js` check
 Release artwork is the real cover from the distributor, stored as JPEG and WebP at 500 and 1000px and served with `srcset`, explicit size and descriptive alt text. Product artwork is what the creator uploads in the Studio. HAIL's cover still lives in `img/releases/` until the one-time artwork move runs ([admin](admin.md), #179). `img/og.png` (1200x630) is AutoStacc's link preview (placeholder mark and wordmark); a project's pages use its own `image` (Glitches & Stitches: `img/projects/glitches-and-stitches/og.png`, whose glow bands if shrunk further, so it stays as is).
 
 A Coming soon product's page (`/shop/<id>`, owner, 2026-10-27) follows the same rule as any product page (indexable for a trusted creator) but carries no Offer while nothing can be bought, and isn't in `/sitemap-shop.xml` until it's on sale.
+
+The product page also loads `data/licenses.js` for its "What you get" box; it changes nothing in the page's head, canonical or structured data.

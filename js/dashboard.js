@@ -1,6 +1,7 @@
-// The dashboard (/dashboard), the signed-in workspace: a greeting (and a welcome after confirming an email) in
-// [data-dashboard-hello]. Its panels are drop-in modules: Your Stacc at a glance (js/stacc-glance.js), the releases feed
-// (js/release-feed.js) and the projects rack (js/projects.js), in tabs; the Community tab lists your notices. The server only serves this page to a signed-in visitor
+// The signed-in home (served at / for signed-in visitors; owner, 2026-10-27, #223): a greeting (and a welcome after
+// confirming an email) in [data-dashboard-hello], and your newest community notices under "Pick up where you left off".
+// Its other parts are drop-in modules: Your Stacc at a glance (js/stacc-glance.js), the latest releases and events, followed
+// projects first (js/latest.js), the projects you follow (js/project-picks.js) and what needs you (js/home-attention.js); no tabs. The server only serves this page to a signed-in visitor
 // (server/pages/guard.js); if the session ends, this script sends the visitor to log in and back. The greeting is
 // marked busy (GS.skeleton) until the account answers. Needs js/util.js (js/skeleton.js optional).
 (function () {
@@ -25,19 +26,10 @@
     if (joined && joined.ok) hello.textContent += ` You're in the community as ${joined.data.member.displayName}.`;
   })();
 
-  // Tabs (owner, 2026-10-22): Overview (Your Stacc, new releases, who you follow, the latest), Discover, Community
-  // (your notices) and Account; GS.tabs (js/util.js) wires them. Without this script every panel simply shows.
-  const bar = $("[data-home-tabs]");
-  const panels = [...document.querySelectorAll("[data-home-panel]")];
-  if (bar && window.GS.tabs) {
-    const btns = [...bar.querySelectorAll("[data-home-tab]")];
-    const show = (i) => panels.forEach((p) => { p.hidden = p.dataset.homePanel !== btns[i].dataset.homeTab; });
-    bar.hidden = false;
-    window.GS.tabs(btns, show)(0, false);
-    notices();
-  }
+  notices();
 
-  // The Community tab: your newest notices (the community's inbox), as links. Only text, through textContent.
+  // "New in the community": your newest notices (the community's inbox), as links, only when there are any.
+  // Only text, through textContent.
   async function notices() {
     const box = $("[data-home-notices]");
     if (!box || (window.FEATURES || {})["community.forum"] === false) return;
@@ -55,6 +47,7 @@
       if (!x.read) li.className = "is-unread";
       list.append(li);
     });
-    box.replaceChildren(list);
+    box.append(list);
+    box.hidden = false;
   }
 })();

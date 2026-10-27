@@ -8,8 +8,8 @@
 
   const { $, escapeHTML: e, cents, api } = window.GS;
   const KINDS = () => Object.entries(window.PRODUCT_TYPES || {});
-  const status = (p) => (p.deleted ? "Removed" : p.published ? (p.salesPaused ? "Paused" : "On sale") : "Draft");
-  const tone = (p) => (p.deleted ? "danger" : p.published ? (p.salesPaused ? "warn" : "good") : "neutral");
+  const status = (p) => (p.deleted ? "Removed" : p.published ? (p.salesPaused ? "Paused" : "On sale") : p.comingSoonOn ? "Coming soon" : "Draft");
+  const tone = (p) => (p.deleted ? "danger" : p.published ? (p.salesPaused ? "warn" : "good") : p.comingSoonOn ? "warn" : "neutral");
   const open = (id, section) => { location.hash = `product=${encodeURIComponent(id)}&section=${section}`; };
 
   function draw(root, data) {
@@ -20,7 +20,8 @@
           <p class="sp-meta">${e(((window.PRODUCT_TYPES || {})[p.type] || {}).label || p.type || "")} · ${p.priceCents ? e(cents(p.priceCents, p.currency || "USD")) : "Free"}</p>
           <span class="ws-status sp-status" data-tone="${tone(p)}">${status(p)}</span>
         </div>
-        <a class="btn small" href="#product=${encodeURIComponent(p.id)}&amp;section=overview">Open<span class="sr-only"> ${e(p.title)}</span></a>
+        <div class="sp-actions"><a class="btn small" href="#product=${encodeURIComponent(p.id)}&amp;section=overview">Open<span class="sr-only"> ${e(p.title)}</span></a>
+          ${(p.published || p.comingSoonOn) && !p.deleted && p.path ? `<a class="btn ghost small" href="${e(p.path)}" target="_blank" rel="noopener">View in store<span class="sr-only"> ${e(p.title)} (opens in a new tab)</span></a>` : ""}</div>
       </li>`;
     const room = data.limits.used < data.limits.products;
     root.innerHTML = `

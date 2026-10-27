@@ -58,6 +58,7 @@ import { routes as adminSwitches } from "./admin/switches.js";
 import { routes as siteStatus } from "./settings/status.js";
 import { isOpen } from "./settings/settings.js";
 import { routes as studioStorage } from "./studio/storage.js";
+import { routes as studioAttention } from "./studio/attention.js";
 import { routes as reviews } from "./reviews/routes.js";
 import { routes as adminReviews } from "./admin/reviews.js";
 import { routes as adminFiles } from "./admin/files.js";
@@ -75,7 +76,7 @@ import { routes as spotlight } from "./spotlight/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountPhone, accountTwoFactor, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, copyright, adminLibrary, studioProducts, content, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, reviews, adminReviews, adminPayouts, adminFiles, adminArtwork, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, spotlight, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, copyright, adminLibrary, studioProducts, content, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, studioAttention, reviews, adminReviews, adminPayouts, adminFiles, adminArtwork, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, spotlight, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

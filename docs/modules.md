@@ -64,3 +64,5 @@ Store items wear their project's look in the store, the new releases feed (home 
 ## Single-use by nature
 
 The store and app pages keep one root each, because a page has one cart, one checkout and one form: cart (`#cart-app`), checkout (`#checkout-app`), login (`#auth-app`), settings (`#settings-app`), the creators' product page (`#product-app`), Studio (`#studio-app`), admin (`#admin-app`), and the dashboard's greeting (`[data-dashboard-hello]`, `js/dashboard.js`, which also sends an ended session to log in). Their parts (order list, cart lines) can still become modules when another page needs them. Every other feature is a drop-in (#52).
+
+The signed-in home (`dashboard.html`, `js/dashboard.js`) is drop-in parts with no tabs since 2026-10-27 (#223): Your Stacc at a glance, the latest list, the projects you follow, and `js/home-attention.js` for what needs the person ([browse](browse.md)).
