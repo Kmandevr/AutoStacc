@@ -16,9 +16,9 @@ These are layers 3 and 4 of "Read in layers" in `CLAUDE.md`. What each tool cove
    - `.claude/tools/graph.sh path "server/checkout/routes.js::checkout()" "grantStmt()"`: how two pieces connect.
    - `.claude/tools/graph.sh` alone prints the overview report.
    The graph refreshes itself when files are added, edited or deleted, so never rebuild by hand.
-2. **Zoom in (Serena, symbol level).** Once you know the file:
-   - `get_symbols_overview` (`depth: 2` for browser scripts in `js/`, which are wrapped in an IIFE).
-   - `find_symbol` with `include_body: true` to read just one function or CSS rule.
+2. **Zoom in (Serena, symbol level).** Once you know the file. Serena is one tool, `serena_repl` (session id from `initial_instructions`, once per session); the methods below are `s.lsp.<name>(...)`, the edits in step 3 `s.edit.<name>(...)`:
+   - `get_symbols_overview` (`depth=2` for browser scripts in `js/`, which are wrapped in an IIFE).
+   - `find_symbol` with `include_body=True` to read just one function or CSS rule.
    - `find_referencing_symbols` for every caller. For a `GS` helper, use `GS/<function>/<name>[1]` in `js/util.js`.
 3. **Edit.** Whole-function changes: `replace_symbol_body`, `insert_before_symbol` / `insert_after_symbol`. Renames: `rename_symbol`. A few lines inside a function: plain Edit. Data, docs and Markdown: plain Edit.
 4. **Check.** `affected` again if you changed a shared signature, then the usual checks from `CLAUDE.md`.

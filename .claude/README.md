@@ -40,10 +40,11 @@ They answer different questions. Don't use both for the same one.
 | --- | --- | --- |
 | Level | Project and file | Symbol |
 | Use for | "What is in this repo, what depends on what, what breaks if I change this module?" | "Where is `productCard` defined, who calls it, show me just that function, rename it everywhere" |
-| Tools | `.claude/tools/graph.sh` (`query`, `explain`, `affected`, no args for the overview) | `get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, `rename_symbol`, `replace_symbol_body`, `insert_before_symbol`, `insert_after_symbol`, `safe_delete_symbol`, `get_diagnostics_for_file` |
+| Tools | `.claude/tools/graph.sh` (`query`, `explain`, `affected`, no args for the overview) | One tool, `serena_repl`, with the methods `s.lsp.get_symbols_overview`, `find_symbol`, `find_referencing_symbols`, `rename_symbol`, `safe_delete_symbol`, `get_diagnostics_for_file` and `s.edit.replace_symbol_body`, `insert_before_symbol`, `insert_after_symbol` |
 | Not for | Reading or editing code | Orientation, searching docs, plain text edits, shell commands, notes (use the map, Grep, Edit and `docs/`) |
 
 Notes on Serena here:
+- Serena's MCP server exposes two tools: `initial_instructions` (call once; it gives the session id) and `serena_repl`, which runs Python against an object `s`, e.g. `s.lsp.find_symbol("productCard", relative_path="js/shop.js", include_body=True)`. Agents list both in their `tools:`; the older per-method tool names (`mcp__serena__find_symbol` and so on) no longer exist.
 - Covers JavaScript, HTML and CSS: CSS selectors are symbols (`find_symbol ".card"` returns just that rule), HTML gives a structure outline with ids and classes. Markdown and data notes are not indexed.
 - Scripts are wrapped in an IIFE, so symbols appear as `<function>/productCard`. `get_symbols_overview` on a script needs `depth: 2` (the default stops at the wrapper). Searching by the bare name (`productCard`) works.
 - Cross-file references work through `js/jsconfig.json` and `js/globals.d.ts` (editor-only). For a shared helper, ask for references to the exported property: `find_referencing_symbols` with `GS/<function>/escapeHTML[1]` in `js/util.js` lists every script that uses it (`[0]` is the local constant).

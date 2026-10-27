@@ -7,8 +7,8 @@ bad() { echo "FAIL  $1"; fail=1; }
 graph=.claude/tools/graph.sh
 
 command -v uv >/dev/null && ok "uv installed" || bad "uv missing (install from https://docs.astral.sh/uv/)"
-$graph query "checkout" >/dev/null 2>&1 && command -v graphify >/dev/null && ok "graphify installed and answers a query" || bad "graph.sh query failed"
-[ "$($graph query "checkout" 2>/dev/null | grep -c '^NODE')" -gt 0 ] && ok "graph has nodes for 'checkout'" || bad "graph query returned no nodes"
+$graph query "cart checkout" >/dev/null 2>&1 && command -v graphify >/dev/null && ok "graphify installed and answers a query" || bad "graph.sh query failed"
+[ "$($graph query "cart checkout" 2>/dev/null | grep -c '^NODE')" -gt 0 ] && ok "graph has nodes for 'cart checkout'" || bad "graph query returned no nodes"
 
 probe=js/zz-code-nav-probe.js
 trap 'rm -f "$probe"' EXIT
