@@ -30,7 +30,9 @@
   };
 
   let mePromise = null;
-  const me = () => (mePromise = mePromise || GS.api("/api/community/me").then((r) => (r.ok ? r.data : { signedIn: false, features: [] })));
+  // A username picked at sign-up joins first (GS.pendingUsername), so the page then shows the visitor as a member.
+  const me = () => (mePromise = mePromise || (GS.pendingUsername ? GS.pendingUsername.apply() : Promise.resolve())
+    .then(() => GS.api("/api/community/me")).then((r) => (r.ok ? r.data : { signedIn: false, features: [] })));
   const tools = document.querySelector("[data-cm-thread]");
   let minePromise = null;
   const mine = () => (minePromise = minePromise || (tools
@@ -63,7 +65,7 @@
     return b;
   };
 
-  // Signed out, unconfirmed or without a community name: what's needed, in place of the form. then() runs once the
+  // Signed out, unconfirmed or without a username: what's needed, in place of the form. then() runs once the
   // visitor can post.
   function gate(box, who, then) {
     if (!who.signedIn) {
@@ -73,7 +75,7 @@
     if (!who.emailVerified) { box.append(el("p", { class: "cm-small", text: "Confirm your email address to take part." })); return; }
     if (who.member) { then(); return; }
     const msg = status();
-    const name = el("input", { name: "displayName", required: true, minlength: 3, maxlength: 30, autocomplete: "nickname" });
+    const name = el("input", { name: "displayName", required: true, minlength: 3, maxlength: 30, autocomplete: "username" });
     const age = el("input", { type: "checkbox", name: "age", required: true });
     const form = el("form", { class: "cm-form cm-stack-in", on: { submit: async (ev) => {
       ev.preventDefault();
@@ -86,8 +88,8 @@
       then();
     } } },
       el("h2", { text: "One step before your first post" }),
-      el("p", { class: "cm-small", text: "Pick the name people will see on your posts. You do this once, and it's never your email. AutoStacc and creators' names are kept: a space's team posts under those with \"Post as\" once joined." }),
-      el("label", {}, "Community name", name),
+      el("p", { class: "cm-small", text: "Pick a username: the name people see on your posts (never your email). You can change it later in Settings. AutoStacc's and creators' names are kept for their owners, so pick your own here: if you're on a project's team, you'll post as the project by choosing it under \"Post as\"." }),
+      el("label", {}, "Username", name),
       el("label", { class: "cm-check" }, age, " I'm 16 or older, and I'll follow the ", el("a", { href: "/community-rules", text: "community rules" }), "."),
       el("button", { class: "btn", type: "submit", text: "Join and continue" }), msg);
     box.append(form);

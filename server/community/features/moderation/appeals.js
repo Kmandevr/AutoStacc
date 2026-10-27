@@ -38,7 +38,7 @@ async function moderated(app) {
 async function appeal(app) {
   const user = await requireUser(app);
   await limit(app, "community-appeal", 10, 86400, { by: user.id });
-  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your community name first.");
+  if (!(await getMember(app.db, user.id))) fail(403, "not_a_member", "Pick your username first.");
   const body = await readJson(app.request);
   const type = str(body.targetType, "targetType", { max: 10 });
   const target = (type === "thread" || type === "post") && await loadTarget(app.db, type, id(body.targetId, "targetId"));

@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const { $, api, safeNext, skeleton: sk } = window.GS;
+  const { $, api, safeNext, pendingUsername, skeleton: sk } = window.GS;
   const root = $("#auth-app");
   if (!root) return;
   const sound = (name, el) => document.dispatchEvent(new CustomEvent("gs:sound", { detail: { name, el } }));
@@ -38,6 +38,12 @@
         <h2>Create account</h2>${msg()}
         ${field("name", "Name", "text", 'autocomplete="name" maxlength="80"')}
         ${email}${field("password", "Password (10+ characters)", "password", 'autocomplete="new-password" minlength="10" maxlength="128"')}
+        <fieldset class="auth-community" data-community hidden>
+          <legend>Community <span class="small-print">(optional)</span></legend>
+          <p class="small-print">Pick a username to post, ask and reply in the community. It's what people see, never your email, and you can change it in Settings. AutoStacc's and creators' names are kept for their owners: their teams post as them with "Post as".</p>
+          <div class="field"><label for="username">Username</label><input id="username" name="username" type="text" autocomplete="username" maxlength="30" aria-describedby="form-msg"></div>
+          <label class="check"><input type="checkbox" id="cm-age"> I'm 16 or older, and I'll follow the <a href="/community-rules">community rules</a></label>
+        </fieldset>
         <div class="actions"><button class="btn" type="submit">Create account</button></div>
         <p class="small-print">By creating an account you agree to the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a>.</p>
         <p class="small-print">Bought something as a guest? Use the same email: once you confirm it, what you Stacc'd joins this account.</p>
@@ -62,6 +68,9 @@
     if (notice) say(root, notice, kind);
     const first = $("input", root);
     if (first && view !== "signin") first.focus();
+    // The community part of Create account, only while the community is open.
+    const cm = $("[data-community]", root);
+    if (cm) api("/api/community/me").then((r) => { cm.hidden = !r.ok; });
   }
 
   const route = () => {
@@ -106,10 +115,18 @@
       res = await api("/api/auth/sign-in/email", { method: "POST", body: { email: value("email"), password: value("password"), rememberMe: $("#remember", form).checked } });
       // Two-step sign-in on for this account: js/sign-in-code.js asks for the code next.
       if (res.ok && res.data.twoFactorRedirect) { setBusy(form, false); dispatchEvent(new CustomEvent("gs:two-step", { detail: { next } })); return; }
-      if (res.ok) { sound("open"); location.replace(next); return; }
+      if (res.ok) { sound("open"); await pendingUsername.apply(); location.replace(next); return; }
     } else if (kind === "signup") {
+      const username = value("username").trim();
+      if (username) {
+        const age = $("#cm-age", form);
+        if (!age.checked) { setBusy(form, false); age.focus(); return say(form, "Confirm you're 16 or older to join the community, or leave the username empty.", "error"); }
+        const check = await api(`/api/community/names/check?name=${encodeURIComponent(username)}`);
+        if (check.ok && !check.data.ok) { setBusy(form, false); $("#username", form).focus(); return say(form, check.data.message, "error"); }
+      }
       res = await api("/api/auth/sign-up/email", { method: "POST", body: { name: value("name"), email: value("email"), password: value("password"), callbackURL: safeNext(params.get("next"), "/dashboard?welcome=1") } });
       // Same answer whether or not the email already had an account (the owner of that email gets a note instead).
+      if (res.ok && username) pendingUsername.set(username);
       if (res.ok) { setBusy(form, false); show("signin", `Check ${value("email") || "your inbox"} for a link to confirm your email, then log in.`); return; }
     } else if (kind === "forgot") {
       res = await api("/api/auth/request-password-reset", { method: "POST", body: { email: value("email"), redirectTo: "/login" } });

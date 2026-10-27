@@ -37,6 +37,7 @@
 .field .hint { color: var(--muted); font-size: .85rem; }
 .field-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .check { display: flex; gap: 10px; align-items: center; min-height: 44px; color: var(--muted); }
+.check[hidden] { display: none; }
 .check input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--accent); }
 
 /* ---------- messages ---------- */
@@ -73,3 +74,7 @@
   .panel { padding: 20px 16px; box-shadow: 3px -2px 0 color-mix(in srgb, var(--accent-2) 28%, transparent); }
   .actions .btn { flex: 1 1 100%; text-align: center; }
 }
+
+/* Create account's optional community part (js/auth.js). */
+.auth-community { border: 1px solid var(--line); margin: 18px 0 0; padding: 12px 16px 4px; min-width: 0; }
+.auth-community legend { padding: 0 6px; font-weight: 700; color: var(--heading); }

@@ -105,6 +105,23 @@ const GS = (function () {
   // The login page, returning to `next` afterwards; mode "signup" opens Create account.
   const loginPath = (next, mode = "") => `/login?next=${encodeURIComponent(next)}${mode ? "#" + mode : ""}`;
 
+  // A username picked (with the 16+ confirmation) while creating an account, kept in this browser until the account can
+  // join the community (a confirmed email): js/auth.js sets it, and logging in, the dashboard and the community join it.
+  // Dropped once the store answers; if the name couldn't be used after all, the community's join form asks again.
+  const KEY = "gs:pending-username";
+  const pendingUsername = {
+    set: (name) => { try { localStorage.setItem(KEY, name); } catch {} },
+    get: () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } },
+    async apply() {
+      const name = pendingUsername.get();
+      if (!name) return null;
+      const r = await api("/api/community/me", { method: "PUT", body: { displayName: name, ageConfirmed: true } });
+      if (r.status === 0 || r.status === 401 || (r.status === 403 && r.error.code === "email_unverified")) return null;
+      try { localStorage.removeItem(KEY); } catch {}
+      return r;
+    }
+  };
+
   // Privacy-friendly analytics: an event name and a product/release id, counted per day on the server. Skipped when
   // the browser asks not to be tracked. Never blocks or breaks the page.
   const track = (event, subject = "") => {
@@ -217,6 +234,6 @@ const GS = (function () {
     return go;
   };
 
-  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, cart, track, projectPath, currentProject, skipLink, showCartCount, look, moduleProject, wear, shopItemPath, viewSwap, say, tabs };
+  return { $, escapeHTML, money, cents, parseDate, fmtDate, isSet, jsonLd, api, safeNext, loginPath, pendingUsername, cart, track, projectPath, currentProject, skipLink, showCartCount, look, moduleProject, wear, shopItemPath, viewSwap, say, tabs };
 })();
 window.GS = GS;

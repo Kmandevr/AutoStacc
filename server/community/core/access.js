@@ -45,7 +45,7 @@ const active = (until) => !until || Date.parse(until) > Date.now();
 // The member, or a refusal saying what's missing. space: a community_spaces row.
 export async function requirePoster(app, user, space) {
   const member = await getMember(app.db, user.id);
-  if (!member) fail(403, "not_a_member", "Pick your community name and confirm you're 16 or older first.");
+  if (!member) fail(403, "not_a_member", "Pick a username and confirm you're 16 or older first.");
   const suspended = await first(app.db, "SELECT until FROM community_suspensions WHERE user_id = ?", user.id);
   if (suspended && active(suspended.until)) fail(403, "suspended", "Your account can't post in the community right now.");
   const ban = await first(app.db, "SELECT until FROM community_space_bans WHERE space_id = ? AND user_id = ?", space.id, user.id);

@@ -7,7 +7,8 @@ import { json, readJson, id, str, fail } from "../../lib/http.js";
 import { requireFeature } from "../../lib/features.js";
 import { currentUser, requireUser } from "../../auth/session.js";
 import { limit } from "../../lib/ratelimit.js";
-import { getMember, join } from "./members.js";
+import { getMember, join, rename } from "./members.js";
+import { nameProblem, cleanName } from "./names.js";
 import { startThread, reply, getSpace } from "./posting.js";
 import { isTeam, mayPublishUpdate } from "./access.js";
 import { editPost, deletePost } from "./edits.js";
@@ -45,6 +46,27 @@ async function setMe(app) {
   const body = await readJson(app.request);
   const member = await join(app.db, user.id, { displayName: str(body.displayName, "displayName", { max: 60 }), ageConfirmed: body.ageConfirmed });
   return json({ member: { displayName: member.displayName } }, 201);
+}
+
+// A new username: a few changes a month, so a name can't be swapped to dodge reports or to chase someone else's.
+async function renameMe(app) {
+  requireFeature(app, "community.forum");
+  const user = await requireUser(app);
+  const body = await readJson(app.request);
+  const displayName = str(body.displayName, "displayName", { max: 60 });
+  await limit(app, "community-rename", 5, 30 * 86400, { by: user.id });
+  const member = await rename(app.db, user.id, displayName);
+  return json({ member: { displayName: member.displayName } });
+}
+
+// Whether a username may be chosen (for the sign-up form and Settings): { ok } or { ok: false, code, message }.
+async function checkName(app) {
+  requireFeature(app, "community.forum");
+  await limit(app, "community-namecheck", 60, 600);
+  const user = await currentUser(app);
+  const name = cleanName(new URL(app.request.url).searchParams.get("name")).slice(0, 60);
+  const problem = await nameProblem(app.db, name, user ? user.id : "");
+  return json(problem ? { ok: false, ...problem } : { ok: true }, 200, NO_STORE);
 }
 
 // Who a post goes out as: as = "space" or an identity id (core/identities.js); asTeam: true is the older "space".
@@ -116,6 +138,8 @@ export const routes = [
   ["GET", "/api/community/spaces", spaces],
   ["GET", "/api/community/me", me],
   ["PUT", "/api/community/me", setMe],
+  ["PATCH", "/api/community/me", renameMe],
+  ["GET", "/api/community/names/check", checkName],
   ["POST", "/api/community/threads", newThread],
   ["POST", "/api/community/threads/:threadId/posts", newReply],
   ["GET", "/api/community/threads/:threadId/mine", threadMine],

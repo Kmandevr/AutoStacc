@@ -19,6 +19,7 @@ import { routes as accountSettings } from "./account/settings.js";
 import { routes as accountExport } from "./account/export.js";
 import { routes as accountDelete } from "./account/delete.js";
 import { routes as accountEmail } from "./account/email-change.js";
+import { routes as accountPhone } from "./account/phone.js";
 import { routes as accountTwoFactor } from "./account/two-factor.js";
 import { routes as admin } from "./admin/routes.js";
 import { routes as analytics } from "./analytics/routes.js";
@@ -73,7 +74,7 @@ import { routes as maintenance } from "./maintenance/routes.js";
 import { routes as spotlight } from "./spotlight/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
-const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountTwoFactor, admin, analytics, projects, polls,
+const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountPhone, accountTwoFactor, admin, analytics, projects, polls,
   impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, copyright, adminLibrary, studioProducts, content, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, reviews, adminReviews, adminPayouts, adminFiles, adminArtwork, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, spotlight, dev]);
 
 export async function handleApi(request, env, ctx) {

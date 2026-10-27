@@ -17,12 +17,13 @@ import { limit } from "../lib/ratelimit.js";
 import { twoFactorEnabled } from "../auth/two-factor-state.js";
 import { twoFactorOn } from "../auth/two-factor.js";
 import { communityExport } from "../community/core/erase.js";
+import { phoneOf } from "./phone.js";
 
 export async function collect(app, user) {
   const db = app.db;
   const email = String(user.email).toLowerCase();
   // Every section reads only its own tables, so they are read together.
-  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches, reviews, community] = await Promise.all([
+  const [twoStep, emailPreferences, devices, orders, library, follows, pollVotes, creators, emailsSent, wishlist, collections, items, tags, searches, reviews, community, phone] = await Promise.all([
     twoFactorEnabled(db, user.id),
     getPreferences(db, user.id),
     listDevices(db, user.id),
@@ -38,11 +39,12 @@ export async function collect(app, user) {
     tagsOf(db, user.id),
     searchesOf(db, user.id),
     reviewsOfUser(db, user.id),
-    communityExport(db, user.id)
+    communityExport(db, user.id),
+    phoneOf(db, user.id)
   ]);
   return {
     exportedAt: new Date().toISOString(),
-    account: { id: user.id, name: user.name, email, emailVerified: Boolean(user.emailVerified), createdAt: iso(user.createdAt),
+    account: { id: user.id, name: user.name, email, emailVerified: Boolean(user.emailVerified), createdAt: iso(user.createdAt), phone,
       // Whether two-step sign-in is on (only where it exists); never its secret or backup codes (they'd hand over the account).
       ...((twoStep || twoFactorOn(app)) && { twoStepSignIn: twoStep }) },
     emailPreferences,

@@ -20,6 +20,9 @@
     if (!me.ok) return;
     const welcome = new URLSearchParams(location.search).get("welcome");
     hello.textContent = welcome ? "Email confirmed. Welcome in." : `Welcome back, ${me.data.user.name || "you"}.`;
+    // A username picked when creating the account joins the community now that the email is confirmed.
+    const joined = await window.GS.pendingUsername.apply();
+    if (joined && joined.ok) hello.textContent += ` You're in the community as ${joined.data.member.displayName}.`;
   })();
 
   // Tabs (owner, 2026-10-22): Overview (Your Stacc, new releases, who you follow, the latest), Discover, Community
