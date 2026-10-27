@@ -29,7 +29,7 @@ describe("features in the browser", () => {
     await page.goto("/admin/daily");
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
-    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
     for (const path of ["/dashboard", "/library", "/product?p=wallpapers", "/autostacc/glitches-and-stitches"]) {
       await page.goto(path);
       // A product page sets its title once the product arrives; the marker must survive that.
@@ -51,7 +51,7 @@ describe("features in the browser", () => {
     // Ended elsewhere (here: its time limit): the page says so instead of quietly turning back into the admin.
     await page.click('[data-ws-item="customers"]');
     await startImpersonating(page, id);
-    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
     sql(t.stateDir, `UPDATE impersonations SET expires_at = '2000-01-01T00:00:00.000Z' WHERE ended_at IS NULL AND customer_user_id = '${id}'`);
     await page.goto("/library");
     await page.waitForSelector("#impersonation-bar.imp-ended");

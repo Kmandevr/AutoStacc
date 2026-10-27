@@ -2,7 +2,7 @@
 title: Browsing projects and content
 summary: How visitors find projects and what they put out - the projects and creators browsers and their APIs, /explore for releases and events, the /events calendar, the home page hub, the dashboard's sections and Your Stacc search - and what each reads, keeps and sends.
 covers: [discover.html, js/discover.js, css/discover.css, server/projects/creators.js, js/creators-browse.js, css/creators.css, explore.html, index.html, dashboard.html, server/projects/browse.js, server/projects/routes.js, js/projects-browse.js, js/project-card.js, js/follow.js, js/project-picks.js, js/explore-items.js, js/explore-browse.js, js/latest.js, js/daw-stage.js, css/daw-stage.css, css/cover.css, css/projects.css, css/explore.css, css/latest.css, css/home.css, css/dashboard.css, db/migrations/0013_projects_browse.sql, js/project-content.js, server/content/content.js, server/content/calendar.js, server/content/events.js, js/events-calendar.js, css/events.css, js/browse-shelves.js, css/shelves.css, server/spotlight/, server/projects/personality.js, js/studio-personality.js, js/admin-spotlight.js, db/migrations/0065_project_personality.sql, db/migrations/0066_spotlight_picks.sql]
-updated: 2026-10-22
+updated: 2026-10-27
 ---
 
 # Browsing projects and content
@@ -80,7 +80,9 @@ The home page has, in order:
 
 On every visit the AutoStacc mark in the sidebar rail (computers) or top bar (phones) plays a short intro: its four bars drop and stack into place, bottom row first, in about a second, then rest (owner, 2026-10-21; `css/cover.css`, home only through `body[data-page="home"]`). It only moves the bars, so content and input are never delayed; under reduced motion it is the still mark.
 
-## Dashboard
+## Dashboard (your home at `/`)
+
+Since 2026-10-22 (owner, #208) a signed-in visitor's `/` is this page: `functions/index.js` runs `guardHome` (`server/pages/guard.js`), which checks the session only when a session cookie is sent and then serves `dashboard.html`, no-store and `Vary: Cookie`; everyone else gets the public cover. `/dashboard` sends a signed-in visitor to `/` (signed out, it still goes to login).
 
 The dashboard has:
 

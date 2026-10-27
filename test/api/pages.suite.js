@@ -31,7 +31,7 @@ export default (ctx) => describe("pages", () => {
     const home = (await anon.get("/")).data;
     assert.match(home, /href="\/login#signup" data-auth="out"/);
     assert.match(home, /<span data-auth="out">[^<]*<a href="\/login">Log in<\/a>/);
-    assert.match(home, /href="\/dashboard" data-auth="in" hidden/);
+    assert.doesNotMatch(home, /href="\/dashboard"/, "signed in, / itself is your home (server/pages/guard.js guardHome)");
     assert.doesNotMatch(home, /\/js\/(dashboard|account|settings|store)\.js/, "the cover loads no account or ownership script");
   });
 
@@ -82,7 +82,14 @@ export default (ctx) => describe("pages", () => {
 
     const c = new Client(ctx.mock.url);
     const user = await verifiedUser(c, unique("gate-expire"));
-    assert.equal((await c.get("/dashboard")).status, 200);
+    // Signed in: /dashboard sends you to /, and / is your own home (the dashboard page, never cached).
+    const dash = await c.get("/dashboard");
+    assert.deepEqual([dash.status, dash.headers.get("location")], [302, "/"]);
+    const own = await c.get("/");
+    assert.equal(own.status, 200);
+    assert.match(String(own.data), /data-stacc-glance/);
+    assert.equal(own.headers.get("cache-control"), "no-store");
+    assert.doesNotMatch(String((await new Client(ctx.mock.url).get("/")).data), /data-stacc-glance/, "the public cover for everyone else");
     sql(ctx.mock.stateDir, `UPDATE session SET expiresAt = '2000-01-01T00:00:00.000Z' WHERE userId = '${user.id}'`);
     goesToLogin(await c.get("/dashboard"), "/dashboard");
 

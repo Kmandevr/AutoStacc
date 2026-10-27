@@ -81,7 +81,7 @@ export function browserStore({ name, port, vars = {} }) {
     await page.waitForSelector("text=Check");
     const mail = (await outbox(base, email)).find((m) => m.kind === "verify-email");
     await page.goto(new URL(linkIn(mail)).pathname + new URL(linkIn(mail)).search);
-    await page.waitForURL((u) => u.pathname === "/dashboard");
+    await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
   }
 
   // Opens a customer's preview in the Control Center and starts impersonating them. If the button never shows, the error

@@ -263,7 +263,7 @@ describe("store in the browser", () => {
     await tab.fill("#email", email);
     await tab.fill("#password", "browser-pass-123");
     await tab.click("button[type=submit]");
-    await tab.waitForURL(t.base + "/dashboard");
+    await tab.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
 
     await page.goto("/settings/security");
     await page.waitForSelector(".device-here");
@@ -606,7 +606,7 @@ describe("store in the browser", () => {
     await signUp(page, unique("app"));
     await page.waitForSelector("h1:has-text('Dashboard')");
     await page.waitForSelector("[data-stacc-glance] >> text=Nothing in Your Stacc yet.");
-    assert.ok(await page.locator(".side a[href='/dashboard'][aria-current=page]").isVisible(), "the app group in the sidebar");
+    assert.ok(await page.locator(".side a[href='/'][aria-current=page]").isVisible(), "Home is your own home once signed in");
     assert.ok(await page.locator(".side a[href='/library']").isVisible());
     assert.equal(await page.locator(".topbar a[href='/login']").isVisible(), false, "no Log in once signed in");
     // The account menu: closed until asked, then every account destination (no Control Center for a customer).
@@ -614,9 +614,9 @@ describe("store in the browser", () => {
     assert.equal(await menu.isVisible(), false);
     await page.click(".topbar .account-button");
     assert.equal(await page.getAttribute(".topbar .account-button", "aria-expanded"), "true");
-    for (const href of ["/dashboard", "/library", "/studio", "/settings"]) assert.ok(await menu.locator(`a[href='${href}']`).isVisible(), href);
+    for (const href of ["/", "/library", "/studio", "/settings"]) assert.ok(await menu.locator(`a[href='${href}']`).isVisible(), href);
     assert.equal(await menu.locator("a[href='/admin']").count(), 0);
-    assert.ok(await menu.locator("a[href='/dashboard'][aria-current=page]").isVisible(), "the menu marks where you are");
+    assert.ok(await menu.locator("a[href='/'][aria-current=page]").isVisible(), "the menu marks where you are");
     await page.keyboard.press("Escape");
     assert.equal(await menu.isVisible(), false, "Escape closes it");
     assert.equal(await page.evaluate(() => document.activeElement.className), "account-button", "and gives focus back");
@@ -624,8 +624,8 @@ describe("store in the browser", () => {
     await page.click("main h1");
     assert.equal(await menu.isVisible(), false, "a click elsewhere closes it");
     await page.goto("/");
-    assert.ok(await page.locator("main a[href='/dashboard']").first().isVisible(), "the cover offers the dashboard");
-    assert.equal(await page.locator("main a[href='/login#signup']").first().isVisible(), false);
+    await page.waitForSelector("h1:has-text('Dashboard')");
+    assert.equal(await page.locator("main a[href='/login#signup']").count(), 0, "signed in, / is your own home, not the cover");
     for (const [p, ready] of [["/settings/orders", "text=No orders yet."], ["/settings/security", "[data-form=password]"], ["/settings/email", ".switch"],
       ["/settings/privacy", "[data-export-now]"], ["/library", "text=Nothing Stacc'd yet."]]) {
       await page.goto(p);
