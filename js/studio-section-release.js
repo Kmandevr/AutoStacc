@@ -1,12 +1,13 @@
 // Product Studio, Release (GS.studioSections.release, drawn by js/studio-workspace.js): the readiness lists, the final
 // preview (the product page's own template, js/studio-preview.js), the controls (Publish, Back to draft, Pause, Resume,
-// Remove: ctx.release, which the server refuses with the blocking list while something blocks), and the release history
+// Remove, and Coming soon with its day for a draft: ctx.release, which the server refuses with the blocking list while something blocks), and the release history
 // from GET /api/studio/products/:id/activity?limit=50. Rollback isn't available yet. Needs js/util.js and js/studio-kit.js.
 (function () {
   "use strict";
 
   const { $, escapeHTML: e, api } = window.GS;
   const sections = (window.GS.studioSections = window.GS.studioSections || {});
+  const tomorrow = () => new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 
   sections.release = {
     draw(el, ctx) {
@@ -24,6 +25,13 @@
             : blocked ? "A draft. Fix what's listed below, then publish." : "A draft, ready to publish."}</p></div>
         ${K.checkout(data.checkout)}${K.readiness(data.readiness)}
         <div class="sr-controls">${controls.join("")}</div>
+        ${p.deleted || p.published ? "" : `<div class="sr-soon">
+          <h3>Coming soon</h3>
+          <p class="small-print">${p.comingSoonOn ? `Its page shows Coming soon and goes on sale on ${e(p.comingSoonOn)} (UTC) if nothing above blocks it then. If something does, it waits and we email you.`
+            : "Announce it before it's ready: its page and store card show Coming soon with the day, nothing can be bought, and it goes on sale on that day once its files are in."}</p>
+          <div class="sr-soon-row"><label>On sale from <input type="date" data-sr-soon-day value="${e(p.comingSoonOn || "")}" min="${e(tomorrow())}"></label>
+            ${btn("soon", p.comingSoonOn ? "Change the day" : "Announce as Coming soon")}${p.comingSoonOn ? btn("unsoon", "Cancel the announcement") : ""}</div>
+        </div>`}
         <p class="small-print">Publishing puts the product on sale; it doesn't email your followers.${p.priceCents === 0
           ? " A free product goes straight into the libraries of followers who switched on Auto-Stacc, and stays there if you later charge for it." : ""}
           Its files come from the Pac Builder: publish a Pac version there to change what buyers download.</p>

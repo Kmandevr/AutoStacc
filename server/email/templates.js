@@ -149,6 +149,12 @@ export const templates = {
   }),
 
   // To the admins: something in the Control Center is waiting for them.
+  "coming-soon-blocked": ({ title, day, reasons, studioUrl }) => ({
+    subject: `"${title}" couldn't go on sale today`,
+    text: `"${title}" was due to go on sale on ${day}, but something stops it:\n${(reasons || []).map((r) => `- ${r}`).join("\n")}\n\nIt stays Coming soon until you fix it and put it on sale in the Studio:\n${studioUrl}`,
+    html: layout(`"${title}" couldn't go on sale today`, para(`It was due to go on sale on ${day}, but something stops it:`) +
+      `<ul>${(reasons || []).map((r) => `<li style="line-height:1.6">${esc(r)}</li>`).join("")}</ul>` + para("It stays Coming soon until you fix it and put it on sale in the Studio.") + button(studioUrl, "Open the Studio"))
+  }),
   "admin-alert": ({ title, lines, adminUrl }) => ({
     subject: `Store alert: ${title}`,
     text: `${lines.join("\n")}\n\n${adminUrl}`,

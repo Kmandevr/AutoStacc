@@ -6,7 +6,7 @@
 
   const { escapeHTML: e, cents } = window.GS;
 
-  const status = (p = {}) => (p.deleted ? { text: "Removed", tone: "danger" } : p.published ? (p.salesPaused ? { text: "Paused", tone: "warn" } : { text: "On sale", tone: "good" }) : { text: "Draft", tone: "neutral" });
+  const status = (p = {}) => (p.deleted ? { text: "Removed", tone: "danger" } : p.published ? (p.salesPaused ? { text: "Paused", tone: "warn" } : { text: "On sale", tone: "good" }) : p.comingSoonOn ? { text: "Coming soon", tone: "warn" } : { text: "Draft", tone: "neutral" });
   const size = (b = 0) => (b >= 1073741824 ? `${(b / 1073741824).toFixed(1)} GB` : b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
   const when = (iso) => {
     const d = new Date(iso);

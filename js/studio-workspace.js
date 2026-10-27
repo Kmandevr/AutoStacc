@@ -10,7 +10,7 @@
   const { escapeHTML: e, api } = window.GS;
   const K = () => window.GS.studioKit;
   const SPEC = () => (window.WORKSPACES || {}).product || { label: "Product Studio", sections: [] };
-  const BODIES = { publish: { published: true }, draft: { published: false }, pause: { salesPaused: true }, resume: { salesPaused: false }, remove: { deleted: true }, restore: { deleted: false } };
+  const BODIES = { publish: { published: true }, draft: { published: false }, pause: { salesPaused: true }, resume: { salesPaused: false }, remove: { deleted: true }, restore: { deleted: false }, soon: {}, unsoon: { comingSoonOn: null } };
   let leaving = null;
 
   function leave() {
@@ -92,8 +92,8 @@
     }
 
     // Publish, back to draft, pause, resume, remove: the server checks readiness and says what blocks.
-    async function release(act, btn) {
-      const body = BODIES[act];
+    async function release(act, btn, extra = null) {
+      const body = BODIES[act] && { ...BODIES[act], ...(extra || {}) };
       if (!body) return null;
       if (act === "remove" && !confirm("Remove this product from the store? People who already have it keep their files.")) return null;
       if (btn) btn.disabled = true;
@@ -108,7 +108,8 @@
         return res;
       }
       await reload({ redraw: true });
-      note({ publish: "It's on sale.", draft: "Back to draft: buyers can't get it until you publish again.", pause: "Sales paused.", resume: "Sales resumed.", remove: "Removed from the store.", restore: "Restored." }[act]);
+      note({ publish: "It's on sale.", draft: "Back to draft: buyers can't get it until you publish again.", pause: "Sales paused.", resume: "Sales resumed.", remove: "Removed from the store.", restore: "Restored.",
+        soon: "Announced: its page shows Coming soon, and it goes on sale on the day if it's ready.", unsoon: "Back to a plain draft." }[act]);
       return res;
     }
 
@@ -139,7 +140,10 @@
       const go = ev.target.closest("[data-sw-go]");
       if (go) return ctx.go(go.dataset.swGo);
       const rel = ev.target.closest("[data-sw-release]");
-      if (rel) release(rel.dataset.swRelease, rel);
+      // Coming soon sends the day picked beside it.
+      const day = rel && rel.dataset.swRelease === "soon" ? (ws.body.querySelector("[data-sr-soon-day]") || {}).value : null;
+      if (rel && rel.dataset.swRelease === "soon" && !day) return note("Pick the day it goes on sale.", true);
+      if (rel) release(rel.dataset.swRelease, rel, day ? { comingSoonOn: day } : null);
     });
     show(ws.current());
   }

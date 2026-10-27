@@ -6,5 +6,6 @@ import studio from "./studio.suite.js";
 import builder from "./builder.suite.js";
 import team from "./team.suite.js";
 import library from "./library.suite.js";
+import comingSoon, { SWEEP_TOKEN } from "./coming-soon.suite.js";
 
-runGroup({ name: "studio", ports: { mock: 8820 }, stripe: false }, [studio, builder, team, library]);
+runGroup({ name: "studio", ports: { mock: 8820 }, stripe: false, vars: { SWEEP_TOKEN } }, [studio, builder, team, library, comingSoon]);

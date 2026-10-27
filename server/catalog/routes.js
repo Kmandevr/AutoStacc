@@ -1,6 +1,6 @@
 // Public catalog API: published products with live price and availability, plus "owned" for the requester.
 import { json, fail, id } from "../lib/http.js";
-import { listProducts, getProduct, isVisible, publicProduct, sellersOf } from "./products.js";
+import { listProducts, getProduct, isVisible, isComingSoon, publicProduct, sellersOf } from "./products.js";
 import { resolveAccess } from "../entitlements/access.js";
 import { ownedProductIds } from "../entitlements/grants.js";
 import { runningSales } from "../promotions/promotions.js";
@@ -19,7 +19,7 @@ async function list(app) {
 
 async function one(app, { productId }) {
   const [p, sales] = await Promise.all([getProduct(app.db, id(productId, "productId")), runningSales(app.db)]);
-  if (!isVisible(p)) fail(404, "not_found", "No product with that id.");
+  if (!isVisible(p) && !isComingSoon(p)) fail(404, "not_found", "No product with that id.");
   const [sellers, facetRows, contents] = await Promise.all([sellersOf(app.db, [p]), facetsOf(app.db, [p.id]),
     isOn(app, "store.derivedFacets") ? first(app.db, "SELECT bpm_min, bpm_max FROM product_contents WHERE product_id = ?", p.id) : null]);
   // With its store details (labelled), BPM and specs, for the product page.
