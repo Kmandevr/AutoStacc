@@ -28,3 +28,5 @@ The six former placeholder products (`sample-pack-vol1`, `serum-presets`, `stems
 The real catalogue is whatever creators publish in the Studio; it isn't copied here.
 
 **Coming soon** (owner, 2026-10-27, #218): a Studio product announced with a day has its page too, saying "Coming soon. On sale from <day>." with no buy button, and a Coming soon label on its store card; it isn't published, so nothing about buying changes ([studio](studio.md#coming-soon-built-owner-2026-10-27-218)).
+
+**What you get** (owner, 2026-10-27, #222): below a product's buy area, one box says what a buyer gets: the download's size and file count (filled by `js/store.js` from the store's answer, hidden until there are files), the licence for that kind of product in one line from `data/licenses.js` with a link to its section of `/license`, and that the files go to Your Stacc to download again any time. It sits after the status line, so "Added to cart" and its link stay a Tab away.

@@ -78,7 +78,8 @@
       ${p.stacclets.map((s) => `<details class="stacc-stacclet" open><summary><span class="stacc-kind">Stacclet</span> ${e(s.title)} <span class="stacc-count">${items(s.count)}</span></summary>
         ${s.pacs.map((pac) => `<details class="stacc-pac" open><summary><span class="stacc-kind">Pac</span> ${e(pac.title)} <span class="stacc-count">${items(pac.count)}</span>${pac.updated ? ` ${UPDATED}` : ""}</summary>${contents(pac, ctx)}</details>`).join("")}
       </details>`).join("")}
-      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span>${x.updated ? ` ${UPDATED}` : ""}</summary>${contents(x, ctx)}</details>`).join("")}
+      ${p.products.map((x) => `<details class="stacc-stacclet" open><summary>${e(x.title)} <span class="stacc-count">${items(x.count)}</span>${x.updated ? ` ${UPDATED}` : ""}</summary>
+        <p class="stacc-links"><a href="${e(window.GS.shopItemPath({ id: x.id }))}">Product page<span class="sr-only">: ${e(x.title)}</span></a></p>${contents(x, ctx)}</details>`).join("")}
     </section>`).join("");
   }
 

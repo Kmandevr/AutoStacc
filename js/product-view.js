@@ -20,6 +20,20 @@
     return rows.length ? `<h2>Details</h2><dl class="facts">${rows.map(([t, v]) => `<dt>${e(t)}</dt><dd>${e(v)}</dd>`).join("")}</dl>` : "";
   }
 
+  // "What you get" (owner, 2026-10-27, #222): the download's size and file count (js/store.js fills [data-size] from the
+  // store), the licence for this kind of product in one line (data/licenses.js, via data/product-types.js), and where
+  // the files go. Markdown-like marks in a licence summary are dropped; everything is escaped.
+  const plainText = (t) => String(t || "").replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+  function getBox(p) {
+    const key = ((window.PRODUCT_TYPES || {})[p.type] || {}).license;
+    const lic = key && (window.LICENSES || {})[key];
+    return `<section class="product-get" aria-labelledby="get-${e(p.id)}"><h2 id="get-${e(p.id)}">What you get</h2><ul>
+        <li data-size-row hidden><strong>Download:</strong> <span data-size="${e(p.id)}"></span></li>
+        ${lic ? `<li><strong>${e(lic.title)}:</strong> ${e(plainText(lic.summary))} <a href="/license#${e(key)}">Read the licence</a></li>` : ""}
+        <li>${p.comingSoon ? "Once it's on sale, buying it puts the files" : "The files go"} in <a href="/library">Your Stacc</a>, yours to download again any time.</li>
+      </ul></section>`;
+  }
+
   // A Coming soon day ("YYYY-MM-DD", UTC) as people read it.
   const soonDay = (d) => { try { return new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }); } catch { return d; } };
 
@@ -50,6 +64,7 @@
         ${preview ? `<button class="btn ghost wish-btn" type="button"${off}>Save to wishlist</button>`
           : (p.available !== false || p.comingSoon) && !owned ? `<button class="btn ghost wish-btn" type="button" data-wish="${e(p.id)}" aria-pressed="false">Save to wishlist</button>` : ""}
         ${preview ? "" : '<p class="msg" role="status" hidden></p>'}
+        ${preview ? "" : getBox(p)}
         ${!preview && p.creator ? `<section class="made-by" aria-label="Made by">
           <p class="card-type">Made by</p>
           <p><a href="${e(p.projectPath || p.creator.path)}"><strong>${e(p.projectName || p.creator.name)}</strong></a>${p.projectName ? ` · from <a href="${e(p.creator.path)}">${e(p.creator.name)}</a>` : ""}</p>
