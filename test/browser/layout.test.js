@@ -35,12 +35,15 @@ describe("layout in the browser", { concurrency: true }, () => {
     });
   }
 
-  test("sidebar: AutoStacc has Home, Store, Discover, New & upcoming and Community; the footer links Discover and About", async () => {
+  test("sidebar: the four hubs, Home, Store, Discover and Community; New & upcoming is Discover's tab; the footer links Discover and About", async () => {
     const { ctx, page } = await open(DESK);
     await page.goto("/discover?tab=projects");
     const names = (sel) => page.locator(`${sel} a`).evaluateAll((els) => els.map((el) => [el.getAttribute("href"), el.textContent.trim()]));
-    assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/discover", "Discover"], ["/explore", "New & upcoming"], ["/community", "Community"]]);
+    assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/discover", "Discover"], ["/community", "Community"]]);
     assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Discover");
+    await page.goto("/explore");
+    assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Discover", "New & upcoming sits in Discover");
+    assert.equal(await page.locator(".discover-tabs a[aria-current]").textContent(), "New & upcoming");
     assert.ok(await page.locator("#site-footer a[href='/discover']").count(), "the footer links Discover");
     assert.ok(await page.locator("#site-footer a[href='/about']").count(), "the footer links About");
     await page.goto("/community");
@@ -51,7 +54,15 @@ describe("layout in the browser", { concurrency: true }, () => {
 
   test("the signed-in pages fit a phone: no sideways scroll, no tiny buttons, no CSP errors", async () => {
     const { ctx, page } = await open({ viewport: { width: 320, height: 800 }, isMobile: true, hasTouch: true });
+    await page.goto("/shop");
+    const bar = () => page.locator(".tabbar > a:visible, .tabbar > button:visible").evaluateAll((els) => els.map((el) => el.textContent.trim()));
+    assert.deepEqual(await bar(), ["Home", "Store", "Discover", "Community", "Log in"], "signed out");
     await signUp(page, unique("app-phone"));
+    await page.goto("/shop");
+    assert.deepEqual(await bar(), ["Home", "Store", "Discover", "Community", "You"], "signed in");
+    await page.click(".tabbar [data-tab-menu]");
+    assert.ok(await page.locator("#side.open a[href='/library']").isVisible(), "You opens Your Stacc and the rest");
+    assert.equal(await page.locator("#side a[href='/studio']").isVisible(), false, "no Studio for someone who isn't a creator");
     for (const p of ["/dashboard", "/settings", "/settings/security", "/settings/privacy", "/studio", "/library", "/"]) {
       await page.goto(p);
       await settle(page);

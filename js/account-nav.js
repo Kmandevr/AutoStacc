@@ -1,7 +1,7 @@
 // Account navigation on every page: asks the store once whether the visitor is signed in (GET /api/account), shows the
 // matching set of [data-auth="in"] / [data-auth="out"] elements (the frames' links, the home page's actions), fills
-// every [data-account-menu] slot with the account menu (a button with your initial that opens Dashboard, Your Stacc,
-// Studio, Settings, the Control Center for an admin, the theme, and Log out), the bell with unread community notices,
+// every [data-account-menu] slot with the account menu (a button with your initial that opens Home, Your Stacc,
+// Studio (creators; others get "Become a creator"), Settings, the Control Center for an admin, the theme, and Log out), the bell with unread community notices,
 // and handles every [data-signout] button. It only
 // chooses what to show: the account pages are gated on the server (server/pages/guard.js) and every private API checks
 // the session itself. A remembered hint ("this browser was signed in", never who) picks the set before the answer
@@ -20,8 +20,10 @@
     try { return localStorage.getItem(KEY) === "1"; } catch { return false; }
   };
 
-  function show(signedIn) {
+  function show(signedIn, creator = false) {
     document.querySelectorAll("[data-auth]").forEach((el) => { el.hidden = (el.dataset.auth === "in") !== signedIn; });
+    // The Studio's links show only for creators (owner, 2026-10-27); everyone else gets "Become a creator".
+    document.querySelectorAll("[data-creator]").forEach((el) => { (el.closest("li") || el).hidden = !(signedIn && creator); });
   }
 
   // ---------- the account menu: a disclosure (button + list of links), closed by Escape, a click outside or Tab away
@@ -43,9 +45,10 @@
         <div class="account-panel" id="${id}" hidden>
           ${user ? `<p class="account-who"><strong>${e(user.name || "You")}</strong><span>${e(user.email)}</span></p>` : ""}
           <ul>
-            ${link("/", "Home")}${link("/library", "Your Stacc")}${link("/studio", "Studio")}${link("/settings", "Settings")}
+            ${link("/", "Home")}${link("/library", "Your Stacc")}${user && !user.creator ? "" : link("/studio", "Studio")}${link("/settings", "Settings")}
             ${user && user.admin ? link("/admin", "Control Center") : ""}
           </ul>
+          ${user && !user.creator ? '<p class="account-extra"><a href="/studio">Become a creator</a></p>' : ""}
           <button class="account-theme" type="button" data-theme-cycle></button>
           <button class="account-signout" type="button" data-signout>Log out</button>
         </div>`;
@@ -87,7 +90,7 @@
     const user = res.data.user;
     remember(Boolean(user));
     if (user) drawMenus(user);
-    show(Boolean(user));
+    show(Boolean(user), Boolean(user && user.creator));
     if (user) bell();
   });
 

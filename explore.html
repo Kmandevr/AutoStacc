@@ -75,20 +75,24 @@
   <link rel="stylesheet" href="/css/events.css">
   <link rel="stylesheet" href="/css/explore.css">
 </head>
-<body data-page="explore">
+<body data-page="explore" data-section="discover">
   <header id="site-header"></header>
 
   <main id="main" class="platform">
     <div class="page-hero">
       <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><a href="/discover">Discover</a></li><li aria-current="page">New &amp; upcoming</li></ol></nav>
         <h1 class="glitch" data-text="New &amp; upcoming">New &amp; upcoming</h1>
-        <p>Releases and upcoming events from every project on AutoStacc. Looking for the artists themselves? See <a href="/discover">all projects</a>; things to buy are in the <a href="/shop">store</a>.</p>
+        <p>Releases and upcoming events from every project on AutoStacc. Things to buy are in the <a href="/shop">store</a>.</p>
         <p class="actions"><a class="btn" href="/events">Events calendar</a></p>
       </div>
     </div>
 
     <section class="shop-section">
       <div class="wrap">
+        <nav class="discover-tabs shelf-tabs" aria-label="What to discover">
+          <a href="/discover">All</a><a href="/discover?tab=creators">Creators</a><a href="/discover?tab=projects">Projects</a><a href="/discover?tab=communities">Communities</a><a href="/explore" aria-current="page">New &amp; upcoming</a>
+        </nav>
         <div class="browse" data-explore>
           <p class="small-print">Loading releases and events…</p>
         </div>

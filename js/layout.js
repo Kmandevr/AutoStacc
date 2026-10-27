@@ -1,5 +1,5 @@
-// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (AutoStacc: Home, Store, Discover,
-// New & upcoming, Community; You, once signed in: Dashboard and Your Stacc), the top bar (menu button on phones, Log in and
+// AutoStacc's frame on platform pages (the footer: Explore, Help and Legal links, docs/production.md): the sidebar (the four
+// hubs, Home, Store, Discover and Community; You, once signed in: Your Stacc, the Studio for creators, Settings), the top bar (menu button on phones, Log in and
 // Create account, cart count, and the account menu's slot, [data-account-menu], which
 // js/account-nav.js fills with Studio, Settings, Log out and the rest), the footer and the skip link. Signed-in parts
 // carry data-auth="in" and start hidden; js/account-nav.js shows the set that matches the visitor. On a computer the
@@ -14,7 +14,8 @@
   const SITE = window.SITE || {};
   const body = document.body.dataset;
   const KEY = "gs:side";
-  // Phones get a bottom bar instead: Store, Projects, Community, Your Stacc or Log in, and Menu (opens the drawer).
+  // Phones get a bottom bar instead (owner, 2026-10-27): Home, Store, Discover, Community, and You (opens the drawer with
+  // Your Stacc, the Studio and Settings) or Log in. People mostly shop, comment and browse on phones; the rest sits in You.
   const svg = (key, paths) => `<svg class="side-icon side-icon-${key}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
   const ICONS = {
     store: svg("store", '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>'),
@@ -33,15 +34,17 @@
   // Public pages for everyone; the signed-in group only once js/account-nav.js knows the visitor is signed in.
   // Studio, Settings and the rest of the account live in the top bar's account menu (js/account-nav.js).
   // Signed in, / is your own home (the dashboard page; owner, 2026-10-22), so Home stands for it.
-  const YOU = [["/library", "Your Stacc", "library", "stacc"]];
-  // Owner, 2026-10-22: Discover holds creators, projects and communities; New & upcoming (/explore) releases and
-  // events; About lives in the footer.
-  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/discover", "Discover", "discover", "creators"], ["/explore", "New & upcoming", "explore", "explore"], ["/community", "Community", "community", "community"]];
+  // The Studio shows only for creators (data-creator, which js/account-nav.js reveals); others find "Become a creator" in
+  // the account menu and the footer (owner, 2026-10-27).
+  const YOU = [["/library", "Your Stacc", "library", "stacc"], ["/studio", "Studio", "studio", "studio", " data-creator hidden"], ["/settings", "Settings", "settings", "settings"]];
+  // The four hubs (owner, 2026-10-27): Discover holds creators, projects, communities and, as a tab, New & upcoming
+  // (/explore, which marks itself data-section="discover"); About lives in the footer.
+  const PLATFORM = [["/", "Home", "home", "home"], ["/shop", "Store", "shop", "store"], ["/discover", "Discover", "discover", "creators"], ["/community", "Community", "community", "community"]];
   // Pages inside a section (a product) light up their section's link without claiming to be it.
   const current = (key) => (key === body.page || (key === "home" && body.page === "dashboard") ? ' aria-current="page"' : key === body.section ? ' aria-current="true"' : "");
   const MARK = `<svg class="mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="10" y="12" width="36" height="10" rx="3"/><rect x="16" y="27" width="38" height="10" rx="3"/><rect x="10" y="42" width="30" height="10" rx="3"/><rect x="44" y="42" width="10" height="10" rx="3"/></svg>`;
-  const item = (href, label, icon, attrs = "") =>
-    `<li><a href="${e(href)}" title="${e(label)}"${attrs}>${icon}<span class="side-text">${e(label)}</span></a></li>`;
+  const item = (href, label, icon, attrs = "", li = "") =>
+    `<li${li}><a href="${e(href)}" title="${e(label)}"${attrs}>${icon}<span class="side-text">${e(label)}</span></a></li>`;
 
   const main = GS.skipLink();
   const header = $("#site-header");
@@ -60,7 +63,7 @@
           <div data-auth="in" hidden>
             <p class="side-label" id="side-you">You</p>
             <ul aria-labelledby="side-you">
-              ${YOU.map(([href, label, key, icon]) => item(href, label, ICONS[icon], current(key))).join("")}
+              ${YOU.map(([href, label, key, icon, li]) => item(href, label, ICONS[icon], current(key), li || "")).join("")}
             </ul>
           </div>
         </nav>
@@ -68,12 +71,12 @@
       </div>
       <div class="side-scrim" aria-hidden="true"></div>
       <nav class="tabbar" aria-label="Quick links">
+        <a href="/"${current("home")}>${ICONS.home}<span>Home</span></a>
         <a href="/shop"${current("shop")}>${ICONS.store}<span>Store</span></a>
         <a href="/discover"${current("discover")}>${ICONS.creators}<span>Discover</span></a>
         <a href="/community"${current("community")}>${ICONS.community}<span>Community</span></a>
-        <a href="/library" data-auth="in" hidden${current("library")}>${ICONS.stacc}<span>Your Stacc</span></a>
         <a href="/login" data-auth="out"${current("login")}>${ICONS.account}<span>Log in</span></a>
-        <button type="button" data-tab-menu aria-controls="side" aria-expanded="false">${ICONS.settings}<span>Menu</span></button>
+        <button type="button" data-tab-menu data-auth="in" hidden aria-controls="side" aria-expanded="false"${["library", "studio", "settings"].includes(body.page) ? ' aria-current="true"' : ""}>${ICONS.account}<span>You</span></button>
       </nav>
       <div class="topbar">
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="side"><span class="menu-bars" aria-hidden="true"></span><span class="sr-only">Menu</span></button>
@@ -149,7 +152,7 @@
           <a class="brand" href="/">${MARK}<span class="brand-name">Auto<b>Stacc</b></span></a>
           ${SITE.tagline ? `<p>${e(SITE.tagline)}</p>` : ""}
         </div>
-        ${col("Explore", [["/shop", "Store"], ["/discover", "Discover"], ["/explore", "New & upcoming"], ["/events", "Events"], ["/community", "Community"], ["/studio", "Studio"], ["/about", "About"]])}
+        ${col("Explore", [["/shop", "Store"], ["/discover", "Discover"], ["/explore", "New & upcoming"], ["/events", "Events"], ["/community", "Community"], ["/studio", "Become a creator"], ["/about", "About"]])}
         ${col("Help", [["/help", "Help"], ["/guide", "Guides"], ["/contact", "Contact"], ["/security", "Security"]])}
         ${col("Legal", [["/terms", "Terms"], ["/privacy", "Privacy"], ["/refunds", "Refunds"], ["/license", "Licences"], ["/copyright", "Copyright"], ["/community-rules", "Community rules"]])}
         <p class="footer-legal">&copy; ${new Date().getFullYear()} ${e(SITE.name || "")}</p>

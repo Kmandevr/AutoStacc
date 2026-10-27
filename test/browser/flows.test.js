@@ -363,6 +363,7 @@ describe("store in the browser", () => {
 
   test("phone menu: the closed drawer can't be tabbed into; opening moves focus in; Escape closes and returns focus", async () => {
     const { ctx, page } = await open(PHONE);
+    await signUp(page, unique("drawer"));
     await page.goto("/");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert), true);
     await page.click("[data-tab-menu]");
@@ -372,7 +373,7 @@ describe("store in the browser", () => {
     await page.keyboard.press("Tab");
     assert.ok(await page.evaluate(() => Boolean(document.activeElement.closest(".side"))), "Tab stays in the drawer");
     await page.keyboard.press("Escape");
-    assert.equal(await page.evaluate(() => document.activeElement.hasAttribute("data-tab-menu")), true, "focus returns to the Menu button");
+    assert.equal(await page.evaluate(() => document.activeElement.hasAttribute("data-tab-menu")), true, "focus returns to the You button");
     assert.equal(await page.locator(".menu-toggle").isVisible(), false, "no second menu button in the top bar");
     assert.equal(await page.locator(".topbar-brand").isVisible(), true, "the logo is there instead");
     assert.equal(await page.evaluate(() => document.querySelector(".side").inert && !document.querySelector("main").inert), true);
