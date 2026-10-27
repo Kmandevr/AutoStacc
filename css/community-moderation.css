@@ -31,3 +31,4 @@
 .cm-desk-full .cm-desk-part > h3 { margin: 0 0 4px; font-size: 1rem; }
 .cm-desk-slot:empty { display: none; }
 .cm-desk-clear { padding: 10px 0; }
+.cm-desk-count { color: var(--coral); font-weight: 650; }
