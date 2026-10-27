@@ -1,6 +1,7 @@
 #!/bin/bash
 # Repo map in layers, built from each file's own purpose line (so it can't go stale).
 #   tree.sh          compact top level: root files, then one line per directory
+#   tree.sh --brief  shorter top level for the session-start hook: root file names only, directory purposes trimmed
 #   tree.sh <dir>    every file in that directory with its purpose
 #   tree.sh --all    every file in the repo
 # A directory's purpose is the first line of its `.purpose` file.
@@ -42,12 +43,16 @@ show()  { while read -r f; do printf '%-22s %s\n' "$f" "$(purposeOf "$f")"; done
 
 case "${1:-}" in
   --all) files | show ;;
-  "")
-    files | grep -v / | show
+  ""|--brief)
+    if [ "${1:-}" = --brief ]; then
+      echo "Root files (with purposes: .claude/tools/tree.sh):"; files | grep -v / | tr '\n' ' ' | fold -s -w 118 | sed 's/^/  /; s/ *$//'; echo
+    else files | grep -v / | show; fi
     for d in $(git ls-files | grep / | cut -d/ -f1 | sort -u | grep -v '^\.'); do
       n=$(files "$d" | wc -l)
       [ "$n" -gt 0 ] || continue
-      printf '%-22s %s\n' "$d/ ($n files)" "$(head -1 "$d/.purpose" 2>/dev/null)"
+      p=$(head -1 "$d/.purpose" 2>/dev/null || true)
+      [ "${1:-}" = --brief ] && [ ${#p} -gt 100 ] && p="${p:0:97}..."
+      printf '%-22s %s\n' "$d/ ($n files)" "$p"
     done
     echo "Expand a directory: .claude/tools/tree.sh <dir>"
     ;;
