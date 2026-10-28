@@ -13,8 +13,18 @@ import { communityTagCounts } from "../community/index.js";
 export { rules, ruled };
 
 
-// Map tag → how many things carry it, rules applied.
+// Map tag → how many things carry it, rules applied. Kept for a minute per worker (security review, 2026-10-28): the
+// public suggest endpoint would otherwise scan every tag on each keystroke.
+const TTL = 60000;
+let cached = null;
 export async function counts(db) {
+  if (cached && cached.db === db && Date.now() - cached.at < TTL) return cached.map;
+  const map = await countNow(db);
+  cached = { db, at: Date.now(), map };
+  return map;
+}
+
+async function countNow(db) {
   const [map, ...lists] = await Promise.all([rules(db), productTagCounts(db), contentTagCounts(db), creatorTagCounts(db), communityTagCounts(db)]);
   const out = new Map();
   for (const { tag, n } of lists.flat()) {

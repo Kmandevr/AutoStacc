@@ -14,6 +14,7 @@ import { counts, match } from "./tags.js";
 async function suggest(app) {
   await limit(app, "tags-suggest", 600, 600);
   const q = str(new URL(app.request.url).searchParams.get("q") || "", "q", { max: 60 });
+  if (foldTag(q).length < 2) return json({ tags: [] }, 200, { "Cache-Control": "public, max-age=120" });
   const n = Math.min(Math.max(parseInt(new URL(app.request.url).searchParams.get("limit"), 10) || 8, 1), 20);
   return json({ tags: match(await counts(app.db), q, n) }, 200, { "Cache-Control": "public, max-age=120" });
 }
