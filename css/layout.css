@@ -418,3 +418,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
   .has-site-search .topbar-tools { margin-left: auto; }
   .cm-header-tools .cm-bar-button.btn { padding: 4px 8px; font-size: .8rem; }
 }
+/* The header's Filters button opens the page's filters, so the page's own button steps aside with its search box. */
+.site-search-scoped .browse-filter-toggle { display: none; }
+/* On a computer the filters sit beside the results already, so the header's Filters button is only for phones and tablets. */
+@media (min-width: 901px) { .site-search-filters { display: none; } }

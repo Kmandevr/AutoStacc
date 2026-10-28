@@ -18,6 +18,7 @@ const { creatorPage, projectCard } = require("./lib/creator-page");
 const { trustPages } = require("./lib/trust-pages");
 const { guidePages } = require("./lib/guide-pages");
 const { communityPage } = require("./lib/community-page");
+const { searchPage } = require("./lib/search-page");
 
 const check = process.argv.includes("--check");
 const data = loadData();
@@ -105,7 +106,8 @@ for (const file of handPages) {
 const generated = [
   ...data.creators.filter((c) => !c.draft).map((c) => creatorPage(SITE, data, c)),
   ...trustPages(SITE, data),
-  communityPage(SITE)
+  communityPage(SITE),
+  searchPage(SITE)
 ];
 const guides = guidePages(SITE, data);
 generated.push(...guides.pages);

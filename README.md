@@ -21,6 +21,7 @@ The code is published to be read and reviewed, not reused: [LICENSE](LICENSE) (a
 | --- | --- |
 | `index.html` (`/`) | Public home page: the artists, picks from the store, how it works, and following projects for their free releases |
 | `shop.html` (`/shop`) | All products, with search and filters (kind, genre, tempo, key and more; [docs/discovery.md](docs/discovery.md)) |
+| `search.html` (`/search`) | Search everything (store, creators and projects, community, help, tags) from the header's search bar; generated, kept out of search engines ([docs/search.md](docs/search.md)) |
 | `explore.html` (`/explore`) | New releases, news and shows from every project, searchable and filterable |
 | `discover.html` (`/discover`) | Discover: creators, projects and communities in tabs, with a spotlight and rows; follow projects or switch on Auto-Stacc (`/projects` and `/creators` redirect to its tabs) |
 | `about.html` (`/about`) | How buying, downloads and Auto-Stacc work |

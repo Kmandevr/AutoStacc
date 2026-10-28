@@ -187,3 +187,10 @@
 .cm-sw-shown { letter-spacing: normal; color: inherit; }
 .cm-hashtag { font-weight: 600; text-decoration: none; }
 .cm-hashtag:hover { text-decoration: underline; }
+/* No gap above the content: the header holds search and the panels now, so the empty toolbar takes no room. */
+section:has(> .wrap.community-main) { padding-top: 0; }
+.cm-bar:not(:has(.cm-results:not(:empty))) { margin: 0; }
+.cm-sort { gap: 2px; margin: 4px 0 10px; }
+.cm-sort a { padding: 4px 12px; border-color: transparent; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.cm-sort a[aria-current] { border-color: transparent; background: var(--panel-2); color: var(--text); }
+.cm-col > h2 { font-size: 1.1rem; }

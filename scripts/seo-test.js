@@ -41,7 +41,8 @@ const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));
 const metaVal = (head, key) => tags(head, "meta").filter((m) => m.name === key || m.property === key).map((m) => m.content);
 // Account and store pages (cart, login, library...) are private: noindex, out of the sitemap, blocked in robots.txt.
-const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|api|private)(\/|$)/;
+// Search results (/search) change with every query and stay out of search engines too (#230).
+const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|api|private|search)(\/|$)/;
 const EXPECT_NOINDEX = (f) => f === "404.html" || PRIVATE.test(urlPath(f));
 const BAD_HOST = /localhost|127\.0\.0\.1|0\.0\.0\.0|\.pages\.dev|example\.(com|org|net)|\.local\b/i;
 
@@ -240,7 +241,7 @@ const allowed = (p) => {
 };
 for (const u of locs) if (!allowed(u.slice(ORIGIN.length))) add("FAIL", "robots-blocks", `${u} is blocked by robots.txt`);
 for (const p of ["/css/core.css", "/js/util.js", "/data/site.js", "/img/og.png"]) if (!allowed(p)) add("FAIL", "robots-blocks", `${p} is blocked (pages need it to render)`);
-for (const p of ["/dashboard", "/account", "/settings", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
+for (const p of ["/dashboard", "/account", "/settings", "/login", "/library", "/admin", "/checkout", "/cart", "/api/", "/private/", "/search"]) if (allowed(p)) add("FAIL", "robots-private", `${p} is crawlable`);
 // The public directory and every project page stay crawlable whatever is blocked beside them (a rule like
 // "Disallow: /p" or "/projects" would silently hide them).
 for (const p of ["/", "/shop", "/shop/x", "/product", "/events", "/about", "/discover", ...data.projects.filter((x) => !x.draft).map((x) => projectPath(x.id))]) if (!allowed(p)) add("FAIL", "robots-public", `${p} is blocked by robots.txt`);
