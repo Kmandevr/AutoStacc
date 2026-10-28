@@ -24,7 +24,7 @@
           <div class="field"><label for="ss-inc">What's inside <span class="small-print">(one line each, up to 12)</span></label><textarea id="ss-inc" name="includes" rows="4">${e((p.includes || []).join("\n"))}</textarea></div>
           <div class="studio-two">
             <div class="field"><label for="ss-type">Kind</label><select id="ss-type" name="type" data-was="${e(p.type || "")}">${kinds.map(([k, v]) => `<option value="${e(k)}"${k === p.type ? " selected" : ""}>${e(v.label)}</option>`).join("")}</select></div>
-            <div class="field"><label for="ss-tags">Tags <span class="small-print">(up to 8)</span></label><input id="ss-tags" name="tags" maxlength="220" value="${e((p.tags || []).join(", "))}" placeholder="drums, lo-fi, one-shots"></div>
+            <div class="field"><label for="ss-tags">Tags <span class="small-print">(up to 8)</span></label><input id="ss-tags" name="tags" maxlength="400" data-tag-input value="${e((p.tags || []).join(", "))}" placeholder="drums, lo-fi, one-shots"></div>
           </div>
           <div class="field"><label for="ss-art">Cover art</label><select id="ss-art" name="artworkId" data-ss-art><option value="">No cover art</option></select>
             <p class="small-print">Upload images in your project's site editor, then pick one here.</p></div>

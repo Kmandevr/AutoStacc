@@ -9,9 +9,8 @@
   background: linear-gradient(150deg, color-mix(in srgb, var(--amber) 55%, #000), color-mix(in srgb, var(--coral) 45%, #000)); }
 .dcard-space { background: linear-gradient(150deg, color-mix(in srgb, var(--lime) 50%, #000), color-mix(in srgb, var(--teal) 45%, #000)); }
 .dcard-art span { font-size: 2.2rem; font-weight: 800; color: #fff; }
-.dcard-name { margin: 0; font-size: 1.05rem; }
-.dcard-name a { color: inherit; }
-.dcard-sub { margin: 0; font-size: .88rem; color: var(--muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.dcard .ui-card-title { font-size: 1.05rem; }
+.dcard .ui-card-sub { margin: 0; font-size: .88rem; color: var(--muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .fx-lite .dcard, .fx-lite .dspot { background: var(--panel); }
 .dinvite { display: grid; gap: 8px; justify-items: start; margin: 8px 0 24px; padding: 20px; }
 .dinvite h2 { margin: 0; }

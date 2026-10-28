@@ -5,6 +5,7 @@
 // pace, link rules...) and clears the cached pages it changes.
 import { json, readJson, id, str, fail } from "../../lib/http.js";
 import { requireFeature } from "../../lib/features.js";
+import { run } from "../../lib/db.js";
 import { currentUser, requireUser } from "../../auth/session.js";
 import { limit } from "../../lib/ratelimit.js";
 import { getMember, join, rename } from "./members.js";
@@ -35,7 +36,7 @@ async function me(app) {
   const features = featuresOn(app);
   if (!user) return json({ signedIn: false, features }, 200, NO_STORE);
   const member = await getMember(app.db, user.id);
-  return json({ signedIn: true, emailVerified: Boolean(user.emailVerified), member: member && { displayName: member.displayName }, features,
+  return json({ signedIn: true, emailVerified: Boolean(user.emailVerified), member: member && { displayName: member.displayName, wordView: member.wordView || "restricted" }, features,
     identities: await identitiesOf(app, user) }, 200, NO_STORE);
 }
 
@@ -57,6 +58,20 @@ async function renameMe(app) {
   await limit(app, "community-rename", 5, 30 * 86400, { by: user.id });
   const member = await rename(app.db, user.id, displayName);
   return json({ member: { displayName: member.displayName } });
+}
+
+// How strong words in posts show to this reader (owner, 2026-10-27, #230): "none" (as written), "restricted" (softened,
+// the default) or "off" (posts with them fold away). Applied in the browser (js/community-words.js), since pages are shared.
+const VIEWS = ["none", "restricted", "off"];
+async function setWordView(app) {
+  requireFeature(app, "community.forum");
+  const user = await requireUser(app);
+  await limit(app, "community-write", 60, 600);
+  const view = (await readJson(app.request)).view;
+  if (!VIEWS.includes(view)) fail(400, "invalid_field", "Pick None, Restricted or Off.", { field: "view" });
+  const r = await run(app.db, "UPDATE community_members SET word_view = ? WHERE user_id = ?", view, user.id);
+  if (!r.meta.changes) fail(404, "not_found", "Pick a username first.");
+  return json({ wordView: view });
 }
 
 // Whether a username may be chosen (for the sign-up form and Settings): { ok } or { ok: false, code, message }.
@@ -139,6 +154,7 @@ export const routes = [
   ["GET", "/api/community/me", me],
   ["PUT", "/api/community/me", setMe],
   ["PATCH", "/api/community/me", renameMe],
+  ["PUT", "/api/community/me/words", setWordView],
   ["GET", "/api/community/names/check", checkName],
   ["POST", "/api/community/threads", newThread],
   ["POST", "/api/community/threads/:threadId/posts", newReply],

@@ -29,7 +29,7 @@ function shell(SITE, { page, section, styles, scripts, main, project = null, pro
   const sounds = project && project.sounds;
   const loads = LOADS.has(section);
   const css = ["core", "platform", "layout", ...(loads ? ["skeleton"] : []), ...(project ? ["project-frame"] : []), ...styles, ...(lookOf ? [`projects/${lookOf.id}/look`] : []), ...(skin ? [`projects/${project.id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", ...(loads ? ["js/skeleton.js"] : []), project ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
+  const js = ["data/site.js", "data/projects.js", ...scripts.filter((s) => s.startsWith("data/")), "js/util.js", ...(loads ? ["js/card.js", "js/skeleton.js"] : []), ...(project ? ["js/project-frame.js"] : ["js/layout.js", "js/search-sources.js", "js/site-search.js"]), "js/account-nav.js", "js/site-notice.js",
     ...(sounds ? ["js/sound.js"] : []), ...scripts.filter((s) => s.startsWith("js/")), ...(sounds ? ["js/eggs.js", "js/terminal.js"] : []), "js/motion.js", "js/prefetch.js"];
   return `<!doctype html>
 ${GENERATED}

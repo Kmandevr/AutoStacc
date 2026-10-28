@@ -1,6 +1,6 @@
 // Catalog reads: the authoritative product record (price, availability) for every commerce decision.
 // Products are written by the Studio (server/creators/products.js), test fixtures and the admin's sales switch.
-import { all, first, parseJson } from "../lib/db.js";
+import { all, first, parseJson, tagCounts } from "../lib/db.js";
 import { salePrice } from "../promotions/promotions.js";
 
 export const getProduct = (db, id) => first(db, "SELECT * FROM products WHERE id = ?", id);
@@ -90,3 +90,6 @@ export function publicProduct(p, sales = [], seller = null) {
 // Every product that sells a Pac (its `pacs` list names it), for publishing a Pac's contents into each of them.
 export const productsWithPac = (db, pacId) =>
   all(db, "SELECT id, title FROM products WHERE EXISTS (SELECT 1 FROM json_each(products.pacs) j WHERE j.value = ?) ORDER BY title", pacId);
+
+// Tags on products people can see (server/tags/ builds suggestions and search from every module's counts).
+export const productTagCounts = (db) => tagCounts(db, "products", "t.published = 1 AND t.deleted_at IS NULL");

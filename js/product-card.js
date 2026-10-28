@@ -3,7 +3,7 @@
 // shape: a store API product (priceCents, sale, facets with labels, badges) or js/shop.js's short form of one (price in
 // dollars; facets, if any, as values). Shows only what the data says: labels from its facets, "New", a running sale's percent off and
 // a floor of recent confirmed sales. Studio products are marked "Unverified creator" until AutoStacc trusts their
-// creator. Needs js/util.js, data/product-types.js and data/projects.js (data/vocabulary.js for labels of data entries).
+// creator. Needs js/util.js, js/card.js, data/product-types.js and data/projects.js (data/vocabulary.js for labels of data entries).
 (function () {
   "use strict";
 
@@ -54,7 +54,11 @@
     const by = p.projectName || projectOf(project).name || "";
     const href = GS.shopItemPath(p);
     const b = p.badges || {};
-    const badges = [p.comingSoon ? "Coming soon" : "", b.new ? "New" : "", b.percentOff ? `${b.percentOff}% off` : "", b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
+    // Status in the card's corner (js/card.js); the facts that aren't a status stay over the cover.
+    const tag = GS.card.tag;
+    const status = [p.comingSoon ? tag("Coming soon", "soon") : "", b.new ? tag("New", "new") : "", b.percentOff ? tag(`${b.percentOff}% off`, "sale") : "",
+      p.verified === false ? tag("Unverified creator", "unverified", "AutoStacc hasn't verified this creator") : ""].join("");
+    const badges = [b.soldRecently ? `${b.soldRecently}+ bought recently` : "",
       // Buyers' reviews (server/reviews/), only when there are any.
       p.rating ? `★ ${p.rating.average} (${p.rating.count} review${p.rating.count === 1 ? "" : "s"})` : ""].filter(Boolean);
     const art = p.artwork;
@@ -66,14 +70,15 @@
     const facts = [...labels(p).map((l) => `<li class="label-${l.facet}">${e(l.label)}</li>`),
       p.bpm ? `<li class="label-bpm">${p.bpm[0] === p.bpm[1] ? p.bpm[0] : `${p.bpm[0]}–${p.bpm[1]}`} BPM</li>` : ""];
     return `
-      <article class="card${selected ? " selected" : ""}${size} ${GS.look(project)}" data-product="${e(p.id)}">
+      <article class="ui-card card${selected ? " selected" : ""}${size} ${GS.look(project)}" data-product="${e(p.id)}">
+        ${status ? `<span class="card-tags">${status}</span>` : ""}
         <a class="cover tint-${tint(p.hue !== undefined ? p.hue : (p.metadata || {}).hue)}${art ? " has-art" : ""}" href="${e(href)}" data-track="${e((TYPES[p.type] || {}).track || "")}" tabindex="-1" aria-hidden="true">
           ${art ? `<img src="${e(art)}" alt="" loading="lazy" width="400" height="400">` : `<span>${e(p.title.split(" — ")[0])}</span>`}
           ${badges.length ? `<span class="card-badges">${badges.map((x) => `<em>${e(x)}</em>`).join("")}</span>` : ""}
         </a>
         ${wish ? `<button class="card-wish" type="button" data-wish="${e(p.id)}" aria-pressed="false" title="Save to your wishlist"><span class="sr-only">Save ${e(p.title)} to your wishlist</span></button>` : ""}
         <div class="card-body">
-          <span class="tag">${selected ? `${e(kicker)} · ` : ""}${e(label(p))}</span>${p.verified === false ? ' <span class="tag unverified" title="AutoStacc hasn\'t verified this creator">Unverified creator</span>' : ""}
+          <span class="tag">${selected ? `${e(kicker)} · ` : ""}${e(label(p))}</span>
           <h${level}><a href="${e(href)}">${e(p.title)}</a></h${level}>
           ${by ? `<p class="card-by">by ${e(by)}</p>` : ""}
           ${why ? `<p class="card-why">${e(why)}</p>` : ""}

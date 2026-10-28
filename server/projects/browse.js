@@ -86,7 +86,8 @@ export async function projectEntries(db, { userId = null, at = new Date().toISOS
 
 // Filters, counts, sort and the page.
 export function browse(entries, f, { signedIn = false } = {}) {
-  const text = (e) => [e.name, e.tagline || "", e.creator || "", ...e.genres.map((g) => g.label)].join(" ").toLowerCase();
+  // Names, genres and tags (#230): a leading # in the search is the tag itself.
+  const text = (e) => [e.name, e.tagline || "", e.creator || "", ...e.genres.map((g) => g.label), ...(e.tags || []), ...(e.tags || []).map((t) => `#${t}`)].join(" ").toLowerCase();
   const tagged = (e, facet, values) => values.some((v) => e.genres.some((g) => g.facet === facet && g.value === v));
   const pass = (e, skip) => f.words.every((w) => text(e).includes(w))
     && (skip === "genre" || !f.genre.length || tagged(e, "genre", f.genre))

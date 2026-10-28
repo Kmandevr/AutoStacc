@@ -5,7 +5,7 @@ import { first, run, now } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
 import { nameProblem, nameKey, cleanName } from "./names.js";
 
-export const getMember = (db, userId) => first(db, "SELECT user_id AS userId, display_name AS displayName, age_confirmed_at AS ageConfirmedAt FROM community_members WHERE user_id = ?", userId);
+export const getMember = (db, userId) => first(db, "SELECT user_id AS userId, display_name AS displayName, age_confirmed_at AS ageConfirmedAt, word_view AS wordView FROM community_members WHERE user_id = ?", userId);
 
 async function usable(db, userId, displayName) {
   const name = cleanName(displayName);

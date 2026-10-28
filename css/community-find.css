@@ -2,6 +2,6 @@
 .cm-search { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; flex: 1 1 20rem; min-width: 0; }
 .cm-search input[type="search"] { flex: 1 1 8rem; min-width: 0; }
 .cm-results, .cm-tag-results, .cm-similar { margin: .5rem 0; }
-.cm-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0; }
-.cm-tag { margin-left: .4rem; padding: .05rem .5rem; border: 1px solid var(--line, rgba(128,128,128,.4)); border-radius: 999px; background: transparent; color: inherit; font-size: .8em; cursor: pointer; }
+.cm-tags { display: flex; gap: .3rem; flex-wrap: wrap; margin: .4rem 0 0; }
+.cm-tag { position: relative; z-index: 1; padding: .05rem .5rem; border: 1px solid var(--line, rgba(128,128,128,.4)); border-radius: 999px; background: transparent; color: var(--muted); font-size: .78rem; text-decoration: none; text-shadow: none; }
 .cm-tag:hover, .cm-tag:focus-visible { border-color: var(--accent, currentColor); }

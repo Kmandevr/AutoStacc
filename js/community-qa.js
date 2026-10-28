@@ -23,14 +23,14 @@
     const threadId = kit.tools.dataset.cmThread;
     document.querySelectorAll("[data-cm-post]").forEach((post) => {
       if (post.id === kit.tools.dataset.cmOpening) return;
-      const bar = post.querySelector("[data-cm-tools]") || post.appendChild(kit.el("div", { class: "cm-post-tools", "data-cm-tools": post.id }));
+      const bar = kit.row(post);
       if (!own.has(post.id)) {
         const on = qa.helpful.includes(post.id);
-        bar.prepend(kit.action(on ? "Helpful ✓" : "Helpful", { path: `/api/community/posts/${encodeURIComponent(post.id)}/helpful`, method: on ? "DELETE" : "PUT", pressed: on }));
+        bar.prepend(kit.action(on ? "Helpful ✓" : "Helpful", { cls: "cm-act", path: `/api/community/posts/${encodeURIComponent(post.id)}/helpful`, method: on ? "DELETE" : "PUT", pressed: on }));
       }
       if (qa.canPick) {
         const best = post.classList.contains("cm-best");
-        bar.append(kit.action(best ? "Unpick best answer" : "Pick as best answer", {
+        bar.append(kit.action(best ? "Unpick best answer" : "Best answer", { cls: "cm-act", title: best ? null : "Pick as the best answer",
           path: `/api/community/threads/${encodeURIComponent(threadId)}/accepted`, method: "PUT", body: { postId: best ? null : post.id },
           done: () => { try { if (!best) sessionStorage.setItem("cm-best-picked", post.id); } catch { /* no glow */ } location.reload(); }
         }));

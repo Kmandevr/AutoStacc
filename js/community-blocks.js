@@ -23,7 +23,7 @@
     body.before(note);
   }
 
-  const toggle = (name, blocked) => el("button", { class: "btn ghost small", type: "button", text: blocked ? "Unblock" : "Block", on: { click: async (ev) => {
+  const toggle = (name, blocked) => el("button", { type: "button", text: blocked ? "Unblock author" : "Block author", on: { click: async (ev) => {
     if (!blocked && !await window.GS.confirm(`Block ${name}? Their posts fold away for you, and they can't reply under your posts. They aren't notified.`)) return;
     const b = ev.currentTarget;
     press(b, true);
@@ -42,8 +42,7 @@
       const name = nameOf(post);
       if (!name || name === who.member.displayName) return;
       if (names.has(name)) fold(post);
-      const tools = post.querySelector("[data-cm-tools]") || post.appendChild(el("div", { class: "cm-post-tools", "data-cm-tools": post.id }));
-      tools.append(toggle(name, names.has(name)));
+      kit.menu(post).append(toggle(name, names.has(name)));
     });
   })();
 })();

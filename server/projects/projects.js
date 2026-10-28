@@ -2,6 +2,7 @@
 // projects of active creators (server/creators/), the latter marked unverified until AutoStacc trusts their creator.
 // The directory, follows and Auto-Stacc cover both (owner decision, docs/decisions.md 2026-10-09); polls still need a
 // project to opt in through its features, which only data/projects.js sets.
+import { storedTags } from "../lib/tags.js";
 import { all, first, parseJson } from "../lib/db.js";
 
 const FROM = "projects p LEFT JOIN creators c ON c.id = p.creator_id";
@@ -19,5 +20,5 @@ export const projectAddress = (p) => (p.creator_slug ? `/${p.creator_slug}/${p.s
 
 export const publicProject = (p) => ({
   id: p.id, name: p.name, features: parseJson(p.features, []), source: p.source || "catalog", path: projectAddress(p),
-  creator: p.creator_name || null, verified: p.source !== "studio" || Boolean(p.creator_trusted)
+  creator: p.creator_name || null, verified: p.source !== "studio" || Boolean(p.creator_trusted), tags: storedTags(p.tags)
 });

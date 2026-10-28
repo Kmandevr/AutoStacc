@@ -2,7 +2,7 @@
 // js/community-<feature>.js): building elements safely (text only through textContent), status lines, the visitor
 // (/api/community/me, asked once), their state in the open take or space (/mine, asked once), the space team's desk
 // (js/community-desk.js; each feature adds its own part, with a placeholder until it's ready), request
-// buttons with a spinner, and the "join" gate. No feature logic lives here, so each feature script stays independent.
+// buttons with a spinner, a post's action row and ⋯ menu, and the "join" gate. No feature logic lives here, so each feature script stays independent.
 (function () {
   "use strict";
   const GS = window.GS;
@@ -115,6 +115,10 @@
   // other. Opening one closes the others; Escape or a click outside closes it. The box gets "gs:cm-open" when opened.
   const bar = document.querySelector("[data-cm-bar]");
   const barTools = bar && bar.querySelector("[data-cm-bar-tools]");
+  // The panels (Notifications, Saved) live in the site's header beside the account menu (owner, 2026-10-27, #230);
+  // the page keeps only the search results row.
+  const headerTools = document.querySelector("#site-header .topbar-tools");
+  if (barTools && headerTools) { barTools.classList.add("cm-header-tools"); headerTools.prepend(barTools); }
   const panels = {};
   const closeAll = (except) => Object.values(panels).forEach((x) => { if (x !== except) { x.box.hidden = true; x.button.setAttribute("aria-expanded", "false"); } });
   const panel = (key, label) => {
@@ -141,5 +145,12 @@
     });
   }
 
-  GS.communityKit = { bar, panel, asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
+  // A post's action row and its ⋯ menu (js/community-menu.js; without it, everything goes in the row). opening() is the
+  // take's own first post, where the take's actions (Follow, Save, the team's take tools) go.
+  const M = GS.communityMenu;
+  const row = (post) => (M ? M.row(post) : post.querySelector("[data-cm-tools]") || post.appendChild(el("div", { class: "cm-post-tools", "data-cm-tools": post.id })));
+  const menu = (post) => (M ? M.menu(post) : row(post));
+  const opening = () => (tools && tools.dataset.cmOpening ? document.getElementById(tools.dataset.cmOpening) : null);
+
+  GS.communityKit = { row, menu, opening, bar, panel, asPicker, deskFull, el, status, say, busy, press, me, mine, action, gate, tools, desk, space, deskWait, deskPart, notices };
 })();

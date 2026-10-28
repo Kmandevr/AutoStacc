@@ -1,5 +1,5 @@
 // Follow a take (the follows feature, server/community/features/follows/; needs js/community-kit.js): a Follow /
-// Following button in the take's team-and-author tools. Following means replies show in your inbox. Does nothing when
+// Following item in the ⋯ menu of the take's first post. Following means replies show in your inbox. Does nothing when
 // the feature is off or the visitor can't post here.
 (function () {
   "use strict";
@@ -23,7 +23,7 @@
       press(b, false);
       if (r.ok) { following = r.data.following; draw(); } else window.GS.toast(r.error.message, true);
     });
-    kit.tools.hidden = false;
-    kit.tools.append(b);
+    const post = kit.opening();
+    if (post) kit.menu(post).append(b);
   })();
 })();

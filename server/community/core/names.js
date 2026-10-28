@@ -7,6 +7,7 @@
 // Uniqueness is by the folded key.
 import { all, first } from "../../lib/db.js";
 import { RESERVED } from "../../lib/slugs.js";
+import { findWords } from "../../lib/words.js";
 
 // Checked on the name with its accents taken off, so "Zoë" passes and "Glıtches" (dotless ı) doesn't.
 const SHAPE = /^[A-Za-z0-9][A-Za-z0-9 ._-]{2,29}$/;
@@ -32,6 +33,9 @@ async function sharedProblem(db, rawName, userId) {
   if (!SHAPE.test(unaccent(name))) return { code: "name_shape", message: "Use 3 to 30 letters, numbers, spaces, dots, hyphens or underscores, starting with a letter or number." };
   const key = nameKey(name);
   if (key.length < 3) return { code: "name_shape", message: "Use at least 3 letters or numbers." };
+  // Word levels (server/lib/words.js): no strong swear words or slurs in a name.
+  const word = findWords(name)[0];
+  if (word) return { code: "word_not_allowed", message: word.level === "slur" ? "That uses a word AutoStacc doesn't allow anywhere." : "Names can't contain strong swear words." };
   if ([...RESERVED_KEYS].some((r) => variants(key).some((v) => v === r || (r.length >= 6 && v.includes(r))))) {
     return { code: "name_reserved", message: "That name is kept for AutoStacc. Pick another." };
   }

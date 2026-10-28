@@ -32,12 +32,12 @@
       say(msg, "");
       if (!r.data.results.length && !more) out.append(el("p", { class: "cm-small", text: "Nothing found. Try fewer or different words." }));
       r.data.results.forEach((x) => out.append(el("p", { class: "cm-small" }, el("a", { href: x.path, text: x.title }), ` · ${x.space} · ${x.replies} ${x.replies === 1 ? "reply" : "replies"}`)));
-      const old = out.querySelector(".cm-more");
+      const old = out.querySelector(".cm-more-results");
       if (old) old.remove();
-      if (r.data.more) out.append(el("button", { class: "btn ghost small cm-more", type: "button", text: "More results", on: { click: () => { page += 1; run(true); } } }));
+      if (r.data.more) out.append(el("button", { class: "btn ghost small cm-more-results", type: "button", text: "More results", on: { click: () => { page += 1; run(true); } } }));
     };
     const form = el("form", { class: "cm-search", role: "search", on: { submit: (ev) => { ev.preventDefault(); if (q.value.trim()) run(false); } } },
-      q, el("button", { class: "btn small", type: "submit", text: "Search" }), here && el("label", { class: "cm-check" }, here, " Only this space"), msg);
+      q, el("button", { class: "btn small", type: "submit", text: "Search" }), here && el("label", { class: "cm-check" }, here, " This space"), msg);
     kit.bar.prepend(form);
     kit.bar.append(out);
     const asked = new URLSearchParams(location.search).get("q");

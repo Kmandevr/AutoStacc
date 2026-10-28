@@ -21,9 +21,9 @@
       <textarea id="cx-${k}" name="${k}" rows="4" ${attrs}>${e(value ?? "")}</textarea>${hint(h)}</div>`,
     slug: (x, folder) => kit.field("slug", "Address", x.slug, `pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60"${x.published ? " disabled" : ""}`,
       x.published ? "A published page keeps its address." : `The last part of the page's address (…/${folder}/<em>address</em>). Leave it empty to make one from the title.`),
-    // Tags follow the store's rule (server/lib/tags.js): up to 8, lowercase words joined by hyphens.
-    tags: (x) => kit.field("tags", "Tags (optional)", (x.tags || []).join(", "), 'maxlength="220" autocapitalize="off" spellcheck="false"',
-      "Up to 8, separated by commas: lowercase letters, numbers and hyphens (techno, live-set). People find things by them."),
+    // Tags follow the one tag rule (server/lib/tags.js): up to 8, typed with suggestions (js/tag-input.js, data-tag-input).
+    tags: (x) => kit.field("tags", "Tags (optional)", (x.tags || []).join(", "), 'maxlength="400" autocapitalize="off" spellcheck="false" data-tag-input',
+      "Up to 8. Type a tag and pick a suggestion, or press Enter. People find things by them."),
     readTags: (f) => [...new Set((($("[name=tags]", f) || {}).value || "").split(/[,\s]+/).map((t) => t.trim().toLowerCase()).filter(Boolean))],
     value: (f, k) => (($(`[name=${k}]`, f) || {}).value || "").trim(),
     // The slug only when it may change and was typed.

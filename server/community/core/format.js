@@ -7,6 +7,9 @@
 // return HTML (an embed, a store card) instead of the plain link; ext.blocks split the text first and may claim parts
 // of it (a code block), returning HTML for those parts. Extensions build their HTML from parsed, escaped values only.
 
+import { findWords, soften } from "../../lib/words.js";
+import { foldTag } from "../../lib/tags.js";
+
 export const MAX_BODY = 10000;
 
 // Direction controls (LRM, RLM, embeddings, overrides, isolates) can make a label or the shown domain read backwards;
@@ -41,6 +44,28 @@ const anchor = (u, labelHtml, ext = NO_EXT) => {
 const emphasis = (html) => html
   .replace(/\*\*(?=\S)([^*]*\S)\*\*/g, "<strong>$1</strong>")
   .replace(/(^|[^*\w])\*(?=\S)([^*]*\S)\*(?![*\w])/g, "$1<em>$2</em>");
+
+// Plain text between the tokens below (owner, 2026-10-27, #230): a strong word is shown softened (f***, its stars as
+// entities so emphasis can't read them) with the word kept in data-w, for js/community-words.js to show as written or
+// fold the post, by the reader's setting; a #tag links to the site's search for it. Everything else is escaped.
+const HASH = /(^|[^\p{L}\p{N}_&#/])#([\p{L}\p{N}][\p{L}\p{N}-]{0,40})/gu;
+function words(seg) {
+  const hits = findWords(seg).filter((w) => w.level === "strong")
+    .map((w) => ({ at: w.index, end: w.index + w.word.length, html: `<span class="cm-sw" data-w="${esc(w.word)}">${esc(soften(w.word)).replace(/\*/g, "&#42;")}</span>` }));
+  for (const m of seg.matchAll(HASH)) {
+    const tag = foldTag(m[2]);
+    const at = m.index + m[1].length;
+    if (tag) hits.push({ at, end: at + m[2].length + 1, html: `<a class="cm-hashtag" href="/search?q=${encodeURIComponent("#" + tag)}">#${esc(m[2])}</a>` });
+  }
+  hits.sort((a, b) => a.at - b.at);
+  let out = "", last = 0;
+  for (const h of hits) {
+    if (h.at < last) continue;
+    out += esc(seg.slice(last, h.at)) + h.html;
+    last = h.end;
+  }
+  return out + esc(seg.slice(last));
+}
 
 // Code spans, labelled links and bare addresses are found on the raw text, then each piece is escaped on its own.
 const TOKEN = /`([^`\n]+)`|\[([^\]\n]{1,200})\]\(([^)\s]{1,2000})\)|(https?:\/\/[^\s<>"'`]+)/g;
@@ -82,7 +107,7 @@ export function inline(raw, ext = NO_EXT) {
   let out = "";
   let last = 0;
   for (const m of String(raw).matchAll(TOKEN)) {
-    out += emphasis(esc(raw.slice(last, m.index)));
+    out += emphasis(words(raw.slice(last, m.index)));
     last = m.index + m[0].length;
     if (m[1] !== undefined) { out += `<code>${esc(m[1])}</code>`; continue; }
     if (m[2] !== undefined) {
@@ -100,7 +125,7 @@ export function inline(raw, ext = NO_EXT) {
     out += u ? anchor(u, esc(addr), ext) : esc(addr);
     if (trail) out += esc(trail[0]);
   }
-  return out + emphasis(esc(String(raw).slice(last)));
+  return out + emphasis(words(String(raw).slice(last)));
 }
 
 const LIST = { ul: /^\s*[-*]\s+(.*)$/, ol: /^\s*\d{1,3}[.)]\s+(.*)$/ };

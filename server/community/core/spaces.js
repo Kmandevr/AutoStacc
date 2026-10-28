@@ -1,6 +1,6 @@
 // Reading spaces and channels (docs/community.md, "Spaces and channels"). The public pages list open, read-only and
 // archived spaces (archived ones are read-only and still readable); creating and changing them comes with posting.
-import { first, all } from "../../lib/db.js";
+import { first, all, tagCounts } from "../../lib/db.js";
 
 // A project space's canonical address, /<creator>/<project>/community (docs/community.md, "Addresses"); null for others.
 export const CANONICAL = `(SELECT '/' || c.slug || '/' || COALESCE(p.slug, p.id) || '/community' FROM projects p JOIN creators c ON c.id = p.creator_id WHERE p.id = community_spaces.project_id) AS canonical`;
@@ -33,3 +33,8 @@ export const getChannel = (db, spaceId, slug) => first(db, `SELECT id, slug, nam
 export const weeklyActivity = async (db) => new Map((await all(db, `SELECT space_id AS spaceId, COUNT(*) AS n FROM community_threads
   WHERE state = 'visible' AND created_at > ? GROUP BY space_id`, new Date(Date.now() - 7 * 86400000).toISOString())).map((r) => [r.spaceId, r.n]));
 
+// Tags on spaces that show and on their showing takes (server/tags/, through server/community/index.js). A space's team
+// can hide a tag in its space (community_hidden_tags): its takes there don't count.
+export const communityTagCounts = async (db) => [...await tagCounts(db, "community_spaces", `t.state <> 'archived' AND ${SHOWN("t.id")}`),
+  ...await all(db, `SELECT g.tag, COUNT(*) AS n FROM community_thread_tags g JOIN community_threads th ON th.id = g.thread_id AND th.state = 'visible'
+    WHERE ${SHOWN("th.space_id")} AND NOT EXISTS (SELECT 1 FROM community_hidden_tags h WHERE h.space_id = th.space_id AND h.tag = g.tag) GROUP BY g.tag`)];

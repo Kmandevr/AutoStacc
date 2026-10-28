@@ -1,5 +1,6 @@
 // Settings › Profile: your name (Better Auth's /api/auth/update-user), an optional private phone number
-// (/api/account/phone), your community username (/api/community/me, while the community is on) and your email. Changing the email
+// (/api/account/phone), your community username and how strong words in posts show to you (/api/community/me, while
+// the community is on) and your email. Changing the email
 // (/api/account/email) needs the password; the link sent to the new address opens this page with ?confirm=<token>, and
 // pressing Confirm here (signed in as the same account) makes the change (/api/account/email/confirm). Draws into #settings-app when js/settings.js opens this section. Needs js/util.js (js/skeleton.js optional: placeholders and button spinners).
 (function () {
@@ -29,6 +30,9 @@
         <p class="small-print" id="username-note">3 to 30 letters, numbers, spaces, dots, hyphens or underscores. You can change it a few times a month.</p>
         <label class="check" data-age hidden><input type="checkbox" id="username-age"> I'm 16 or older</label>
         <div class="actions"><button class="btn" type="submit">Save username</button></div>
+        <div class="field" data-words hidden><label for="word-view">Strong swear words in posts</label>
+          <select id="word-view" aria-describedby="word-view-note"><option value="restricted">Restricted: softened, like f***</option><option value="none">None: shown as written</option><option value="off">Off: posts with them fold away</option></select></div>
+        <p class="small-print" id="word-view-note" data-words hidden>Only changes what you see. Mild words like "damn" always show; slurs are never allowed.</p>
       </form>
       <form class="panel appear" data-form="email" novalidate>
         <h2>Change email</h2><p class="msg" role="status"></p>
@@ -53,6 +57,18 @@
     form.hidden = false;
     if (member) $("#username", form).value = member.displayName;
     else $("[data-age]", form).hidden = false;
+    // How strong words in posts show to you (owner, 2026-10-27, #230): saved as soon as it's picked.
+    if (member) {
+      const view = $("#word-view", form);
+      view.value = member.wordView || "restricted";
+      form.querySelectorAll("[data-words]").forEach((x) => { x.hidden = false; });
+      view.addEventListener("change", async () => {
+        view.disabled = true;
+        const r = await api("/api/community/me/words", { method: "PUT", body: { view: view.value } });
+        view.disabled = false;
+        if (window.GS.toast) window.GS.toast(r.ok ? "Saved." : r.error.message, !r.ok);
+      });
+    }
   }
 
   // The link's token names the new address (it was mailed there); the store checks everything else.

@@ -2,7 +2,7 @@
 // (?tab=all|creators|projects|communities); this script runs before the projects and creators browsers and removes the
 // panels that aren't open, so only the open tab's browser loads. All: a spotlight (the admins' picks, then a fair
 // daily rotation) and rows (active this month, new on AutoStacc, one per genre, communities), each card saying what it
-// is, above the built A-Z list of every creator and project (links that work without the store or JavaScript). Communities: every space's card. Needs js/util.js, js/browse-shelves.js and js/project-card.js.
+// is, above the built A-Z list of every creator and project (links that work without the store or JavaScript). Communities: every space's card. Needs js/util.js, js/card.js, js/browse-shelves.js and js/project-card.js.
 (function () {
   "use strict";
   const GS = window.GS;
@@ -17,18 +17,15 @@
   document.querySelectorAll("[data-discover-panel]").forEach((p) => (p.dataset.discoverPanel === tab ? (p.hidden = false) : p.remove()));
 
   const initials = (name) => name.split(/\s+/).filter((w) => /\w/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
-  const creatorCard = (c) => `<article class="dcard" data-kind="creator">
-      <a class="dcard-art" href="${e(c.path)}" tabindex="-1" aria-hidden="true">${c.banner || c.avatar ? `<img src="${e(c.banner || c.avatar)}" alt="" width="240" height="240" loading="lazy">` : `<span>${e(initials(c.name))}</span>`}</a>
-      <p class="card-type">Creator${c.verified ? "" : " · unverified"}</p>
-      <h3 class="dcard-name"><a href="${e(c.path)}">${e(c.name)}</a></h3>
-      <p class="dcard-sub">${c.bio ? e(c.bio) : `${c.projects.length} project${c.projects.length === 1 ? "" : "s"}`}</p>
-    </article>`;
-  const spaceCard = (s) => `<article class="dcard" data-kind="community">
-      <a class="dcard-art dcard-space" href="${e(s.path)}" tabindex="-1" aria-hidden="true"><span>${e(initials(s.name))}</span></a>
-      <p class="card-type">Community${s.official ? " · official" : ""}</p>
-      <h3 class="dcard-name"><a href="${e(s.path)}">${e(s.name)}</a></h3>
-      <p class="dcard-sub">${s.description ? e(s.description) : s.kind === "project" ? "A project's own space" : "Questions, answers and talk"}</p>
-    </article>`;
+  // Cards (js/card.js): what it is on top, status in the corner.
+  const creatorCard = (c) => GS.card({ cls: "dcard", attrs: { "data-kind": "creator" }, href: c.path, title: c.name, eyebrow: "Creator",
+    img: c.banner || c.avatar, initials: initials(c.name), artCls: "dcard-art",
+    tags: c.verified ? [] : [{ label: "Unverified", tone: "unverified", title: "AutoStacc hasn't verified this creator" }],
+    sub: c.bio || `${c.projects.length} project${c.projects.length === 1 ? "" : "s"}` });
+  const spaceCard = (s) => GS.card({ cls: "dcard", attrs: { "data-kind": "community" }, href: s.path, title: s.name, eyebrow: "Community",
+    initials: initials(s.name), artCls: "dcard-art dcard-space",
+    tags: [s.kind === "community" && !s.official ? { label: "Unofficial", tone: "unofficial" } : { label: "Official", tone: "official" }],
+    sub: s.description || (s.kind === "project" ? "A project's own space" : "Questions, answers and talk") });
   const projectCard = (p) => GS.projectCard(p, { compact: true });
 
   // The spotlight's big slide: art, what it is, the name, one line and one link.

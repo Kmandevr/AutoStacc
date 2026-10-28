@@ -5,8 +5,9 @@
 // data/projects.js) are read here too, but only the deploy's sync writes their rows; their members may manage their
 // products and content in the Studio (owner, 2026-10-21) when a route opts in with { allowCatalog: true }, and their
 // owner comes from the FIRST_PARTY_OWNERS secret (assignFirstPartyOwner).
-import { all, first, stmt, newId, now } from "../lib/db.js";
+import { all, first, run, stmt, newId, now, tagCounts } from "../lib/db.js";
 import { fail } from "../lib/http.js";
+import { storedTags } from "../lib/tags.js";
 import { slugProblem } from "../lib/slugs.js";
 import { LIMITS } from "./policy.js";
 import { ROLES } from "./roles.js";
@@ -164,8 +165,8 @@ export const paidStorageStmt = (db, creatorId, bytes, whilePlan = null) => while
   ? stmt(db, "UPDATE creators SET storage_paid_bytes = ? WHERE id = ? AND EXISTS (SELECT 1 FROM storage_plans WHERE creator_id = ? AND status = ?)", bytes, creatorId, creatorId, whilePlan)
   : stmt(db, "UPDATE creators SET storage_paid_bytes = ? WHERE id = ?", bytes, creatorId);
 
-export const publicCreator = (c) => ({ id: c.id, slug: c.slug, name: c.name, status: c.status, trusted: Boolean(c.trusted), source: c.source });
-export const publicProject = (p) => ({ id: p.id, slug: p.slug, name: p.name, published: Boolean(p.published), source: p.source });
+export const publicCreator = (c) => ({ id: c.id, slug: c.slug, name: c.name, status: c.status, trusted: Boolean(c.trusted), source: c.source, tags: storedTags(c.tags) });
+export const publicProject = (p) => ({ id: p.id, slug: p.slug, name: p.name, published: Boolean(p.published), source: p.source, tags: storedTags(p.tags) });
 
 // Account deletion: the account leaves every creator it belongs to. Callers refuse first if it still owns a live one.
 export const leaveAllCreatorsStmts = (db, userId, email) => [
@@ -173,3 +174,9 @@ export const leaveAllCreatorsStmts = (db, userId, email) => [
   stmt(db, "DELETE FROM creator_members WHERE user_id = ?", userId),
   stmt(db, "DELETE FROM creator_invites WHERE email = ? AND accepted_at IS NULL", String(email || "").toLowerCase())
 ];
+
+// Tags on live creators and their published projects (server/tags/), and setting them (the Studio, server/studio/creators.js).
+export const creatorTagCounts = async (db) => [...await tagCounts(db, "creators", "t.deleted_at IS NULL AND t.status = 'active'"),
+  ...await tagCounts(db, "projects", "t.deleted_at IS NULL AND t.published = 1")];
+export const setCreatorTags = (db, creatorId, tags) => run(db, "UPDATE creators SET tags = ?, updated_at = ? WHERE id = ?", JSON.stringify(tags), now(), creatorId);
+export const setProjectTags = (db, projectId, tags) => run(db, "UPDATE projects SET tags = ?, updated_at = ? WHERE id = ?", JSON.stringify(tags), now(), projectId);

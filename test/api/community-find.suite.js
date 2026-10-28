@@ -1,7 +1,8 @@
 // Finding on the switched-on store (test/api/community.test.js; features search, tags, similar): search needs all the
-// words, finds words in showing replies only, never a hidden or removed take, and takes no wildcard; tags come only from
-// the list (AutoStacc's starter plus the space's own), at most three, set by the author for 24 hours or the team, and
-// a tag lists only showing takes; similar suggests only visible questions.
+// words, finds words in showing replies only, never a hidden or removed take, and takes no wildcard; tags are typed and
+// folded, eight at most, no strong words, set by the author for 24 hours or the team, hidden by a space's team or by
+// AutoStacc's admins, and a tag lists only showing takes; word levels in titles, names and posts; similar suggests only
+// visible questions.
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Client, verifiedUser, sqlAll, unique } from "../support/client.js";
@@ -48,7 +49,7 @@ export default (ctx) => describe("community finding (switched on)", () => {
     assert.equal((await find(anon, word, "&space=spc_other")).data.results.length, 0);
   });
 
-  test("tags: only from the list, three at most, the author for 24 hours or the team; a tag lists only showing takes", async () => {
+  test("tags: typed freely and folded, eight at most, no strong words, the author for 24 hours or the team; hidden here or site-wide", async () => {
     const a = await person();
     const b = await person();
     const team = await freshAdmin(ctx.mock.url);
@@ -56,38 +57,88 @@ export default (ctx) => describe("community finding (switched on)", () => {
     const t = await take(a.c, `Tagged take ${++n}`, "words");
     const path = `/api/community/threads/${t.id}/tags`;
     const starter = (await a.c.get("/api/community/tags")).data.starter;
-    assert.ok(starter.some((x) => x.key === "house") && starter.some((x) => x.key === "serum") && starter.some((x) => x.key === "ableton-live"));
-    assert.equal((await a.c.req("PUT", path, { body: { tags: ["house", "serum"] } })).status, 200);
+    assert.ok(starter.some((x) => x.key === "house") && starter.some((x) => x.key === "serum"), "the starter list still feeds suggestions");
+    // Typed freely: folded to one form, duplicates dropped.
+    const set = await a.c.req("PUT", path, { body: { tags: ["House", "#serum", "SERUM", "Lo Fi", "made-up-tag"] } });
+    assert.equal(set.status, 200);
+    assert.deepEqual(set.data.tags, ["house", "serum", "lo-fi", "made-up-tag"]);
     assert.equal((await b.c.req("PUT", path, { body: { tags: ["house"] } })).status, 403, "not the author, not the team");
-    assert.equal((await a.c.req("PUT", path, { body: { tags: ["house", "serum", "techno", "trance"] } })).status, 400, "three at most");
-    assert.equal((await a.c.req("PUT", path, { body: { tags: ["made-up-tag"] } })).status, 400, "from the list only");
+    assert.equal((await a.c.req("PUT", path, { body: { tags: ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"] } })).status, 400, "eight at most");
+    const rude = await a.c.req("PUT", path, { body: { tags: ["fucking-loud"] } });
+    assert.equal(rude.status, 400, "no strong words in tags");
+    assert.equal(rude.data.error.code, "word_not_allowed");
+    assert.equal((await a.c.req("PUT", path, { body: { tags: ["not a list"] } })).status, 200, "a typed string is still one tag");
+    assert.equal((await a.c.req("PUT", path, { body: { tags: "house" } })).status, 400, "a list, not a string");
     assert.equal((await new Client(ctx.mock.url).req("PUT", path, { body: { tags: [] } })).status, 401);
+    assert.equal((await a.c.req("PUT", path, { body: { tags: ["house", "serum"] } })).status, 200);
     const shown = (await a.c.get(`/api/community/tags/for?threads=${t.id}`)).data.tags[t.id];
     assert.deepEqual(shown.map((x) => x.key).sort(), ["house", "serum"]);
-    assert.deepEqual((await a.c.get("/api/community/tagged?tag=house")).data.results.some((x) => x.id === t.id), true);
-    // A space's own tag: team only, then usable.
+    assert.ok((await a.c.get("/api/community/tagged?tag=%23House")).data.results.some((x) => x.id === t.id), "found by #Tag in any case");
+    // A space's suggested tags and hidden tags: team only.
     assert.equal((await a.c.post(`/api/community/spaces/${SPACE}/tags`, { label: "Mixing help" })).status, 404);
     assert.equal((await team.post(`/api/community/spaces/${SPACE}/tags`, { label: "House" })).status, 409, "the starter list has it");
     assert.equal((await team.post(`/api/community/spaces/${SPACE}/tags`, { label: "Mixing help" })).status, 201);
-    assert.equal((await a.c.req("PUT", path, { body: { tags: ["mixing-help"] } })).status, 200);
-    assert.equal((await team.req("PUT", path, { body: { tags: ["house"] } })).status, 200, "the team can set tags too");
+    assert.equal((await a.c.req("PUT", `/api/community/spaces/${SPACE}/hidden-tags`, { body: { tag: "serum" } })).status, 404, "only the team hides a tag");
+    assert.equal((await team.req("PUT", `/api/community/spaces/${SPACE}/hidden-tags`, { body: { tag: "Serum" } })).status, 200);
+    assert.deepEqual((await a.c.get(`/api/community/tags/for?threads=${t.id}`)).data.tags[t.id].map((x) => x.key), ["house"], "hidden in its space");
+    assert.equal((await a.c.get("/api/community/tagged?tag=serum")).data.results.some((x) => x.id === t.id), false);
+    assert.equal((await team.req("DELETE", `/api/community/spaces/${SPACE}/hidden-tags`, { body: { tag: "serum" } })).status, 200);
+    // Site-wide rules: an admin hides or renames a tag everywhere; nothing tagged is rewritten.
+    assert.equal((await a.c.req("PUT", "/api/admin/tags", { body: { tag: "house", action: "hide" } })).status, 404, "admins only");
+    assert.equal((await team.req("PUT", "/api/admin/tags", { body: { tag: "serum", action: "rename", renameTo: "serum-synth" } })).status, 200);
+    assert.deepEqual((await a.c.get(`/api/community/tags/for?threads=${t.id}`)).data.tags[t.id].map((x) => x.key).sort(), ["house", "serum-synth"]);
+    assert.ok((await a.c.get("/api/community/tagged?tag=serum-synth")).data.results.some((x) => x.id === t.id), "the new name finds the old tag");
+    assert.equal((await team.req("PUT", "/api/admin/tags", { body: { tag: "house", action: "hide" } })).status, 200);
+    assert.equal((await a.c.get("/api/community/tagged?tag=house")).data.results.length, 0, "a hidden tag finds nothing");
+    assert.equal((await team.req("PUT", "/api/admin/tags", { body: { tag: "x1", action: "rename", renameTo: "fuck" } })).status, 400, "no strong words as a new name");
+    assert.equal(one(`SELECT COUNT(*) FROM community_thread_tags WHERE thread_id = '${t.id}' AND tag IN ('house', 'serum')`), 2, "nothing tagged was rewritten");
+    for (const tag of ["house", "serum"]) assert.equal((await team.req("DELETE", "/api/admin/tags", { body: { tag } })).status, 200);
     // After 24 hours only the team may.
     db(`UPDATE community_threads SET created_at = '2020-01-01T00:00:00.000Z' WHERE id = '${t.id}'`);
     assert.equal((await a.c.req("PUT", path, { body: { tags: ["house"] } })).status, 403);
     assert.equal((await team.req("PUT", path, { body: { tags: ["house", "techno"] } })).status, 200);
-    // Removing the space tag clears it from takes; hiding a take hides its tags.
-    assert.equal((await team.req("DELETE", `/api/community/spaces/${SPACE}/tags`, { body: { key: "mixing-help" } })).status, 200);
+    // Hiding a take hides its tags.
     db(`UPDATE community_threads SET state = 'hidden' WHERE id = '${t.id}'`);
     assert.equal((await a.c.get("/api/community/tagged?tag=house")).data.results.some((x) => x.id === t.id), false);
     assert.deepEqual((await a.c.get(`/api/community/tags/for?threads=${t.id}`)).data.tags, {});
-    assert.equal((await a.c.get("/api/community/tagged?tag=Bad Tag!")).status, 400);
-    assert.equal((await a.c.get("/api/community/tagged?tag=mixing-help")).status, 400, "a space's own tag needs its space");
+    assert.equal((await a.c.get("/api/community/tagged?tag=!!!")).status, 400);
     assert.equal((await find(new Client(ctx.mock.url), "ab")).status, 400, "two-letter words aren't searched");
     // A banned author can't retag their take.
     const c = await person();
     const t3 = await take(c.c, `Ban retag ${++n}`, "words here");
     db(`INSERT INTO community_space_bans (space_id, user_id, reason, created_at) VALUES ('${SPACE}', '${c.user.id}', 'test', '2026-10-22T00:00:00.000Z')`);
     assert.equal((await c.c.req("PUT", `/api/community/threads/${t3.id}/tags`, { body: { tags: ["house"] } })).status, 403);
+  });
+
+  test("word levels: no strong words or slurs in titles and names; strong words softened in posts, by the reader's setting; a clean space refuses them", async () => {
+    const a = await person();
+    const team = await freshAdmin(ctx.mock.url);
+    await team.req("PUT", "/api/community/me", { body: { displayName: `Clean Admin ${++n} ${Date.now().toString(36).slice(-4)}`, ageConfirmed: true } });
+    const start = (c, title, body) => { clearPace(); return c.post("/api/community/threads", { channelId: HELP, type: "discussion", title, body }); };
+    assert.equal((await start(a.c, "This fucking compressor", "help")).data.error.code, "word_not_allowed", "no strong words in a title");
+    assert.equal((await start(a.c, "A living hell of a mix", "help")).status, 201, "mild words are fine");
+    const ok = await start(a.c, `Loud ${++n} mix question`, "this drop is fucking loud #LoFi");
+    assert.equal(ok.status, 201);
+    assert.equal((await start(a.c, `Slur ${++n} here`, "you f4ggot")).status, 403, "slurs never");
+    const html = await (await fetch(`${ctx.mock.url}${ok.data.thread.path}`)).text();
+    assert.match(html, /class="cm-sw" data-w="fucking">f&#42;/, "softened in the page, the word kept for the reader's setting");
+    assert.match(html, /class="cm-hashtag" href="\/search\?q=%23lofi"/);
+    // The reader's setting.
+    assert.equal((await a.c.get("/api/community/me")).data.member.wordView, "restricted", "softened by default");
+    assert.equal((await a.c.req("PUT", "/api/community/me/words", { body: { view: "loud" } })).status, 400);
+    assert.equal((await a.c.req("PUT", "/api/community/me/words", { body: { view: "none" } })).status, 200);
+    assert.equal((await a.c.get("/api/community/me")).data.member.wordView, "none");
+    assert.equal((await new Client(ctx.mock.url).req("PUT", "/api/community/me/words", { body: { view: "off" } })).status, 401);
+    // Usernames.
+    const c = new Client(ctx.mock.url);
+    await verifiedUser(c, unique("cmw"));
+    assert.equal((await c.req("PUT", "/api/community/me", { body: { displayName: "Bitch Please", ageConfirmed: true } })).data.error.code, "word_not_allowed");
+    // A clean space: team only, and only ever stricter.
+    assert.equal((await a.c.req("PUT", `/api/community/spaces/${SPACE}/clean-words`, { body: { clean: true } })).status, 404);
+    assert.equal((await team.req("PUT", `/api/community/spaces/${SPACE}/clean-words`, { body: { clean: true } })).status, 200);
+    assert.equal((await start(a.c, `Clean ${++n} space test`, "a fucking good loop")).status, 403);
+    assert.equal((await start(a.c, `Clean ${++n} space test`, "a damn good loop")).status, 201, "mild words still pass");
+    assert.equal((await team.req("PUT", `/api/community/spaces/${SPACE}/clean-words`, { body: { clean: false } })).status, 200);
   });
 
   test("similar: visible questions that share the words, best first; nothing for other kinds or hidden takes", async () => {

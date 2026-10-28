@@ -7,6 +7,7 @@
 import { identitiesOf } from "./identities.js";
 import { first, stmt, newId, now } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
+import { checkName, checkPost } from "../../lib/words.js";
 import { MAX_BODY } from "./format.js";
 import { isTeam, requirePoster, mayPublishUpdate } from "./access.js";
 import { check, emit } from "./hooks.js";
@@ -23,14 +24,14 @@ export const slugify = (title) => String(title).normalize("NFKD").replace(/[Ì€-Í
 export function cleanTitle(raw) {
   const t = String(raw || "").replace(BIDI, "").replace(/\s+/g, " ").trim();
   if (t.length < TITLE.min || t.length > TITLE.max) fail(400, "invalid_field", `A title is ${TITLE.min} to ${TITLE.max} characters.`, { field: "title" });
-  return t;
+  return checkName(t, "title"); // word levels (server/lib/words.js): no strong words or slurs in a title
 }
 
 export function cleanBody(raw) {
   const b = String(raw || "").replace(BIDI, "").replace(/\r\n?/g, "\n").trim();
   if (!b) fail(400, "invalid_field", "Write something first.", { field: "body" });
   if (b.length > MAX_BODY) fail(400, "invalid_field", `Keep it under ${MAX_BODY.toLocaleString("en-US")} characters.`, { field: "body" });
-  return b;
+  return checkPost(b); // slurs refused; strong words pass, softened for readers by their setting
 }
 
 export const getSpace = (db, id) => first(db, `SELECT *, ${CANONICAL} FROM community_spaces WHERE id = ?`, id);

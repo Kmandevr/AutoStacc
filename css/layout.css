@@ -136,7 +136,9 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
   gap: 12px;
   height: var(--topbar);
   padding: 0 20px;
-  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  /* frosted but dense: browsers may skip the blur for text, so a page's big title scrolling under a thinner bar read
+     through it (owner, 2026-10-27); colour still glows through */
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
   -webkit-backdrop-filter: var(--blur-bar, blur(20px));
   backdrop-filter: var(--blur-bar, blur(20px));
   border-bottom: 1px solid var(--glass-edge, var(--line));
@@ -376,3 +378,43 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 
 /* The account menu's "Become a creator" line for people without a creator (js/account-nav.js). */
 .account-extra { margin: 6px 0 0; padding: 6px 0 0; border-top: 1px solid var(--line); font-size: .9rem; }
+
+/* ---------- the site-wide search in the top bar (js/site-search.js; owner, 2026-10-27, #230) ----------
+   One slim bar in the middle of the header; on phones a full-width row under the logo and tools. Scoped to a page
+   with its own search, it stands in for that page's search box, which hides. */
+.site-search { position: relative; display: flex; align-items: center; flex: 1 1 auto; max-width: 640px; min-width: 0; height: 40px;
+  margin-inline: auto 8px; padding: 0 4px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, var(--panel)); }
+.site-search:focus-within { border-color: var(--accent); }
+.site-search-input { flex: 1; min-width: 0; height: 100%; padding: 0 10px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: .95rem; outline: none; }
+.site-search-input::-webkit-search-cancel-button { display: none; }
+.site-search-scope { flex: none; min-height: 30px; margin-left: 2px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--panel-2);
+  color: var(--text); font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.site-search-scope[aria-pressed="false"] { background: transparent; color: var(--muted); border: 1px dashed var(--line); }
+.site-search-filters { flex: none; min-height: 30px; padding: 0 10px; border: 0; border-left: 1px solid var(--line); background: transparent;
+  color: var(--muted); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
+.site-search-filters:hover { color: var(--text); }
+.site-search-filters[hidden] { display: none; }
+.site-search-go { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.site-search-go:hover { color: var(--text); background: var(--panel-2); }
+.site-search-list { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; right: 0; max-height: min(70vh, 520px); overflow: auto; padding: 6px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); text-shadow: none; }
+.site-search-list[hidden] { display: none; }
+.site-search-group > p { margin: 8px 10px 2px; font-family: var(--mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.site-search-opt { display: grid; gap: 1px; padding: 7px 10px; border-radius: 8px; color: var(--text); text-decoration: none; }
+.site-search-opt small { color: var(--muted); font-size: .78rem; }
+.site-search-opt:hover, .site-search-opt[aria-selected="true"] { background: var(--panel-2); }
+.site-search-list > .site-search-opt { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--accent); }
+/* Scoped: the page's own search box steps aside (its filters, results and address stay). */
+.site-search-scoped :is(form[data-search-form], form.cm-search) { display: none; }
+/* The community's panels sit in the header (js/community-kit.js); its Notifications replaces the plain bell there. */
+.topbar-tools:has([data-panel="inbox"]) .bell-link { display: none; }
+.cm-header-tools { display: flex; gap: 2px; }
+.cm-header-tools .cm-bar-button.btn { min-height: 40px; padding: 4px 10px; border: 0; background: transparent; color: var(--muted); font-size: .86rem; width: auto; }
+.cm-header-tools .cm-bar-button[aria-expanded="true"], .cm-header-tools .cm-bar-button.btn:hover { background: var(--panel-2); color: var(--text); }
+@media (max-width: 900px) {
+  :root { --topbar: 106px; } /* set before the header is drawn, so the page doesn't jump when the search row appears */
+  .has-site-search .topbar { flex-wrap: wrap; height: auto; min-height: var(--topbar); padding-block: 6px 8px; row-gap: 6px; }
+  .has-site-search .site-search { order: 3; flex: 1 0 100%; max-width: none; margin: 0; }
+  .has-site-search .topbar-tools { margin-left: auto; }
+  .cm-header-tools .cm-bar-button.btn { padding: 4px 8px; font-size: .8rem; }
+}

@@ -19,6 +19,10 @@
   const size = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`);
   const slugify = (s) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
+  // Tags (owner, 2026-10-27, #230): a tag box (js/tag-input.js) so people find the creator or project by them.
+  const tagField = (id, tags = []) => `<div class="field"><label for="${id}">Tags <span class="small-print">(up to 8)</span></label>
+    <input id="${id}" name="tags" data-tag-input value="${e((tags || []).join(", "))}" placeholder="techno, live-set"></div>`;
+  const tagsOf = (f) => (f.tags ? f.tags.value.split(/[,\s]+/).filter(Boolean) : undefined);
   const nameFields = (prefix, name = "", slug = "", hint = "") => `
     <div class="field"><label for="${prefix}-name">Name</label><input id="${prefix}-name" name="name" required maxlength="60" value="${e(name)}"></div>
     <div class="field"><label for="${prefix}-slug">Address</label><input id="${prefix}-slug" name="slug" required minlength="3" maxlength="40" pattern="${SLUG}" value="${e(slug)}">
@@ -80,6 +84,7 @@
           ${own(c) && may(c, "projects") ? `<details class="studio-project-more"><summary>Community and card look</summary><div class="studio-community" data-community="${e(p.id)}"></div><div class="studio-personality-slot" data-personality="${e(p.id)}"></div></details>` : ""}
           ${own(c) && may(c, "projects") ? `<details><summary>Rename or delete</summary>
             <form data-form="project-edit" data-id="${e(p.id)}">${nameFields(`pe-${e(p.id)}`, p.name, p.slug, "Changing the address keeps the old one redirecting for 90 days. ")}
+              ${tagField(`pt-${e(p.id)}`, p.tags)}
               <button class="btn ghost small" type="submit">Save</button></form>
             <form class="studio-danger" data-form="project-delete" data-id="${e(p.id)}"><div class="field"><label for="pd-${e(p.id)}">Type ${e(p.slug)} to delete</label><input id="pd-${e(p.id)}" name="confirm" required autocomplete="off"></div>
               <button class="btn ghost small danger" type="submit">Delete project</button></form>
@@ -89,6 +94,7 @@
           ${nameFields("ce", c.name, c.slug, "Changing your address keeps the old one redirecting for 90 days. ")}
           <div class="field"><label for="ce-bio-${e(c.id)}">Short bio</label><textarea id="ce-bio-${e(c.id)}" name="bio" rows="2" maxlength="160">${e(c.bio || "")}</textarea>
             <p class="small-print">One or two lines on your card in the creators directory. Plain text, up to 160 characters.</p></div>
+          ${tagField(`ct-${e(c.id)}`, c.tags)}
           <div class="studio-creator-images" data-creator-images="${e(c.id)}" data-avatar="${e(c.avatar || "")}" data-banner="${e(c.banner || "")}"></div>
           <button class="btn ghost small" type="submit">Save</button></form></details>` : ""}
         </div>
@@ -134,9 +140,9 @@
 
   const SEND = {
     creator: (f) => api("/api/studio/creators", { method: "POST", body: { name: f.name.value, slug: f.slug.value } }),
-    "creator-edit": (f) => api(`/api/studio/creators/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value, bio: f.bio ? f.bio.value : undefined } }),
+    "creator-edit": (f) => api(`/api/studio/creators/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value, bio: f.bio ? f.bio.value : undefined, tags: tagsOf(f) } }),
     project: (f) => api(`/api/studio/creators/${encodeURIComponent(f.dataset.creator)}/projects`, { method: "POST", body: { name: f.name.value, slug: f.slug.value } }),
-    "project-edit": (f) => api(`/api/studio/projects/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value, bio: f.bio ? f.bio.value : undefined } }),
+    "project-edit": (f) => api(`/api/studio/projects/${encodeURIComponent(f.dataset.id)}`, { method: "PATCH", body: { name: f.name.value, slug: f.slug.value, bio: f.bio ? f.bio.value : undefined, tags: tagsOf(f) } }),
     "project-delete": (f) => api(`/api/studio/projects/${encodeURIComponent(f.dataset.id)}`, { method: "DELETE", body: { confirm: f.confirm.value } })
   };
 

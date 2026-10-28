@@ -4,6 +4,7 @@
 // management page. At most community_space_cap (default 3) open or read-only communities per account, checked inside
 // the write so two at once can't pass it. Names follow the username rules (reserved words, creators' and projects'
 // names unless they're your own team's) and are unique among spaces; the address is made from the name and permanent.
+import { checkName } from "../../../lib/words.js";
 import { fail } from "../../../lib/http.js";
 import { first, stmt, now, newId, guardStmt, isGuardFailure } from "../../../lib/db.js";
 import { RESERVED } from "../../../lib/slugs.js";
@@ -29,6 +30,7 @@ function channelNames(v) {
   if (!Array.isArray(v) || v.length > MAX_START_CHANNELS) fail(400, "invalid_field", `Up to ${MAX_START_CHANNELS} channels to start with.`, { field: "channels" });
   const names = v.map((n) => (typeof n === "string" ? n.replace(/\s+/g, " ").trim() : ""));
   if (names.some((n) => n.length < 2 || n.length > 40)) fail(400, "invalid_field", "Each channel name is 2 to 40 characters.", { field: "channels" });
+  names.forEach((n) => checkName(n, "channels", "Channel names"));
   const slugs = names.map(slugify);
   if (new Set(slugs).size !== slugs.length) fail(400, "invalid_field", "Two channels have the same name.", { field: "channels" });
   if (slugs.some((s) => TAKEN.has(s))) fail(400, "invalid_field", "A channel can't be called that. Pick another name.", { field: "channels" });

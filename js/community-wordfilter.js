@@ -1,5 +1,6 @@
 // A space's filtered words on its team desk (the wordfilter feature; needs js/community-kit.js): add a word or phrase
-// that holds a post for the team or refuses it, and remove one. AutoStacc's own list is always on and isn't shown here.
+// that holds a post for the team or refuses it, and remove one; and keep the space clean (strong swear words refused in
+// posts). AutoStacc's own word levels are always on and aren't shown here.
 // Does nothing when the feature is off or for anyone not on the team.
 (function () {
   "use strict";
@@ -18,6 +19,15 @@
     const r = await api(path);
     if (!r.ok) return;
     const part = kit.deskPart(`Filtered words (${r.data.words.length})`, null, "words");
+    // A clean space (owner, 2026-10-27, #230): strong swear words refused in posts too. Only ever stricter than AutoStacc.
+    const clean = el("input", { type: "checkbox", checked: r.data.clean });
+    clean.addEventListener("change", async () => {
+      clean.disabled = true;
+      const res = await api(`/api/community/spaces/${enc(kit.desk.dataset.cmSpace)}/clean-words`, { method: "PUT", body: { clean: clean.checked } });
+      clean.disabled = false;
+      if (!res.ok) { clean.checked = !clean.checked; window.GS.toast(res.error.message, true); } else window.GS.toast(clean.checked ? "Strong swear words are now refused here." : "Strong swear words are allowed again, softened for readers.");
+    });
+    part.append(el("label", { class: "cm-check cm-desk-row" }, clean, " Keep this space clean: refuse strong swear words in posts"));
     r.data.words.forEach((w) => part.append(el("p", { class: "cm-desk-row" }, `${w.phrase}: ${w.action === "hold" ? "held for the team" : "refused"} `, el("button", { class: "btn ghost small", type: "button", text: "Remove", on: { click: async (ev) => {
       const b = ev.currentTarget;
       press(b, true);
