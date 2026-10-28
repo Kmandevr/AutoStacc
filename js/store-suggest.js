@@ -7,9 +7,10 @@
 
   const GS = window.GS;
   const { escapeHTML: e, api } = GS;
-  const input = document.querySelector("[data-browse] [data-suggest]");
+  // The box may already sit in the header's search bar (js/site-search.js moves a page's own search box there).
+  const browse = document.querySelector("[data-browse]");
+  const input = browse && document.querySelector("[data-suggest]");
   if (!input) return;
-  const browse = input.closest("[data-browse]");
   const list = document.createElement("ul");
   list.id = "store-suggestions";
   list.className = "suggest";

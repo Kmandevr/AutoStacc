@@ -50,7 +50,7 @@ export default (ctx) => describe("selling", () => {
     assert.equal((await anon.get(`/api/products/${p.id}`)).status, 404);
 
     for (const bad of [{ priceCents: 50 }, { priceCents: 99 }, { priceCents: 50001 }, { priceCents: 19.99 }, { priceCents: "20" }, { priceCents: -1 }, { priceCents: null },
-      { type: "malware" }, { type: "" }, { title: "ab" }, { title: "x".repeat(81) }, { tags: ["fucking-loud"] }, { tags: Array(9).fill("a") },
+      { type: "malware" }, { type: "" }, { title: "ab" }, { title: "x".repeat(81) }, { tags: ["fucking-loud"] }, { tags: ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"] },
       { includes: Array(13).fill("x") }, { includes: [""] }, { description: "y".repeat(2001) }, { published: true }, { deleted: true }, { salesPaused: true }]) {
       const r = await make(s, bad);
       assert.equal(r.status, 400, JSON.stringify(bad));

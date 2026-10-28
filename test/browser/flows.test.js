@@ -459,12 +459,14 @@ describe("store in the browser", () => {
     assert.ok(await page.locator(".browse-empty .chip").count() >= 2, "each filter is offered for removal");
     await page.click(".browse-empty .chip >> nth=0");
     await page.waitForSelector(".browse-grid .card");
-    await page.click("[data-open-filters]");
+    // On a phone the header's search bar holds Filters (#230); it opens the store's drawer and shows its count.
+    assert.match(await page.locator(".site-search-filters").innerText(), /^Filters/);
+    await page.click(".site-search-filters");
     await page.waitForFunction(() => document.querySelector("[data-browse]").classList.contains("filters-open"));
     assert.equal(await page.evaluate(() => document.activeElement.id), "browse-filters", "focus moves into the drawer");
     await page.keyboard.press("Escape");
     await page.waitForFunction(() => !document.querySelector("[data-browse]").classList.contains("filters-open"));
-    assert.ok(await page.evaluate(() => document.activeElement.matches("[data-open-filters]")), "and back to its button");
+    await page.waitForFunction(() => document.activeElement.matches(".site-search-filters"));
     assert.deepEqual(page.errors, []);
     await ctx.close();
   });

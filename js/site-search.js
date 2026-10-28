@@ -68,8 +68,8 @@
   // The page's filters button appears after its script draws the page.
   if (scopeName) {
     adopt();
-    new MutationObserver(() => { adopt(); filters.hidden = !(scoped && document.querySelector("[data-open-filters]")); })
-      .observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(() => { adopt(); label(); filters.hidden = !(scoped && pageToggle()); })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
   }
   if (chip) chip.addEventListener("click", () => {
     const was = scoped && adopted ? adopted.value : input.value;
@@ -80,7 +80,21 @@
     box.value = was;
     box.focus();
   });
-  filters.addEventListener("click", () => { const b = document.querySelector("[data-open-filters]"); if (b) b.click(); });
+  // Filters opens the page's own drawer through its own (hidden) button, shows its count ("Filters (2)"), and takes the
+  // focus back when the drawer closes, since the page would return it to its hidden button.
+  const pageToggle = () => document.querySelector("[data-open-filters]");
+  filters.addEventListener("click", () => {
+    const b = pageToggle();
+    if (!b) return;
+    b.click();
+    const watch = new MutationObserver(() => {
+      if (b.getAttribute("aria-expanded") !== "false") return;
+      watch.disconnect();
+      filters.focus();
+    });
+    watch.observe(b, { attributes: true, attributeFilter: ["aria-expanded"] });
+  });
+  const label = () => { const b = pageToggle(); if (b && filters.textContent !== b.textContent) filters.textContent = b.textContent; };
 
   // ---------- the dropdown (All) ----------
   let active = -1, timer = null, turn = 0;
