@@ -1,7 +1,7 @@
 // Account navigation on every page: asks the store once whether the visitor is signed in (GET /api/account), shows the
 // matching set of [data-auth="in"] / [data-auth="out"] elements (the frames' links, the home page's actions), fills
 // every [data-account-menu] slot with the account menu (a button with your initial that opens Home, Your Stacc,
-// Studio (creators; others get "Become a creator"), Settings, the Control Center for an admin, the theme, and Log out), the bell with unread community notices,
+// Studio (creators; others get "Become a creator"), Settings, the Control Center for an admin, the theme, and Log out), loads the bell (js/account-bell.js),
 // and handles every [data-signout] button. It only
 // chooses what to show: the account pages are gated on the server (server/pages/guard.js) and every private API checks
 // the session itself. A remembered hint ("this browser was signed in", never who) picks the set before the answer
@@ -91,19 +91,17 @@
     remember(Boolean(user));
     if (user) drawMenus(user);
     show(Boolean(user), Boolean(user && user.creator));
-    if (user) bell();
+    if (user) bell(user);
   });
 
-  // The bell (owner, 2026-10-22): signed in, a top-bar link with the number of unread community notices, to the
-  // community, where the inbox opens. Nothing when the community is off or the person hasn't joined it.
-  async function bell() {
-    if ((window.FEATURES || {})["community.forum"] === false || document.querySelector(".bell-link")) return;
-    const r = await api("/api/community/inbox");
-    const slot = document.querySelector("[data-account-menu]");
-    if (!r.ok || !slot) return;
-    const n = r.data.unread || 0;
-    slot.insertAdjacentHTML("beforebegin", `<a class="tool-link bell-link" href="/community" aria-label="Notifications${n ? `: ${n} unread` : ""}">
-      <svg class="bell-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>${n ? `<span class="bell-count">${n > 99 ? "99+" : n}</span>` : ""}</a>`);
+  // The bell (js/account-bell.js): what waits on you, from the community and the Studio. Loaded once, signed in.
+  function bell(user) {
+    if (document.querySelector("script[data-bell]")) return;
+    const s = document.createElement("script");
+    s.src = "/js/account-bell.js";
+    s.dataset.bell = "";
+    if (user.creator) s.dataset.creator = "1";
+    document.body.append(s);
   }
 
   // The banner's own files, once per page. They come only when the store says this browser is impersonating.

@@ -40,7 +40,9 @@ const htmlUnder = (dir) => (fs.existsSync(path.join(ROOT, dir)) ? fs.readdirSync
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
 
 const creatorDirs = data.creators.map((c) => c.id);
-const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...creatorDirs.flatMap(htmlUnder)].filter((f) => !read(f).includes(P.GENERATED))
+// Hub folders: hand-written pages under a platform page (discover/explore.html is /discover/explore, its tab).
+const HUB_DIRS = ["discover"];
+const handPages = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...[...HUB_DIRS, ...creatorDirs].flatMap(htmlUnder)].filter((f) => !read(f).includes(P.GENERATED))
   .sort((a, b) => (a === "index.html" ? -1 : b === "index.html" ? 1 : a.localeCompare(b)));
 const pages = []; // every page with its metadata, for the sitemap
 // First-party creators with a published project, for /discover's ItemList and its built list (js/creators-browse.js
@@ -48,6 +50,11 @@ const pages = []; // every page with its metadata, for the sitemap
 const listedCreators = data.creators.filter((c) => !c.draft && data.projects.some((x) => !x.draft && x.creator === c.id));
 const creatorLinks = listedCreators.map((c) => `<li class="ccard-static"><h3><a href="/${H.esc(c.id)}">${H.esc(c.name)}</a></h3>${c.summary ? `<p>${H.esc(c.summary)}</p>` : ""}</li>`).join("");
 const projectById = new Map(data.projects.map((x) => [x.id, x]));
+// A hub page's own crumb (Discover for discover/explore.html), named by the hub page's title.
+const hubCrumb = (file) => {
+  const hub = HUB_DIRS.find((d) => file.startsWith(d + "/"));
+  return hub ? [[decode((strip(read(hub + ".html")).match(/<title>([^<]*)<\/title>/) || [])[1] || hub).split(" · ")[0], "/" + hub]] : [];
+};
 
 for (const file of handPages) {
   const html = read(file);
@@ -79,7 +86,7 @@ for (const file of handPages) {
   } else if (page.index) {
     const crumbs = project
       ? [["Home", "/"], ...P.ownerCrumb(data, project), ...(projectHome ? [] : [[project.name, projectPath(project.id)]]), [projectHome ? project.name : name, p]]
-      : [["Home", "/"], [name, p]];
+      : [["Home", "/"], ...hubCrumb(file), [name, p]];
     // An ItemList of what a list page shows, when data/ holds it (products, releases and events are in the store database).
     const lists = {
       discover: [...listedCreators.map((c) => [c.name, "/" + c.id]), ...data.projects.filter((x) => !x.draft).map((x) => [x.name, projectPath(x.id)])]

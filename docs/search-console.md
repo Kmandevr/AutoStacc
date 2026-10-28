@@ -54,7 +54,7 @@ Do the same (paste the address, Request indexing if needed) for:
 - https://autostacc.com/autostacc/glitches-and-stitches/news
 - https://autostacc.com/shop
 - https://autostacc.com/projects
-- https://autostacc.com/explore
+- https://autostacc.com/discover/explore (was /explore, 301 since 2026-10-27)
 
 When a new release or real product goes live, inspect its page (`/autostacc/glitches-and-stitches/music/<name>` or `/shop/<name>`) the same way. Google allows a limited number of requests per day; only request the pages that matter.
 

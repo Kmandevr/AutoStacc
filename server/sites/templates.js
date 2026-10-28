@@ -28,7 +28,7 @@ const artist = {
       section(20, [
         heading("Your artist name", box(0, 5, 9, 4), 1, { style: { size: "xxl" }, effect: "rise" }),
         text("One line about your sound. Make it yours.", box(0, 10, 7, 3), { effect: "fade" }),
-        button("Listen now", "/explore", box(0, 14, 3, 2))
+        button("Listen now", "/discover/explore", box(0, 14, 3, 2))
       ], { full: true, background: { color: "#14112a" } }),
       section(14, [
         heading("Latest release", box(0, 1, 12, 3)),

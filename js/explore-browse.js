@@ -1,7 +1,7 @@
-// The /explore browser ([data-explore]): releases and upcoming events from every project on AutoStacc, with search,
+// The /discover/explore browser (New & upcoming, Discover's tab; /explore redirects here) ([data-explore]): releases and upcoming events from every project on AutoStacc, with search,
 // filters (project, type, year, city, month), removable chips and pages; the events view links to the /events calendar.
 // Real data only (published content from the content API through js/project-content.js). The address holds the state
-// (/explore?view=events&q=&project=&type=&year=&city=&month=&page=; the old view=shows opens events). Searches and
+// (/discover/explore?view=events&q=&project=&type=&year=&city=&month=&page=; the old view=shows opens events). Searches and
 // filters feed the on-device history (gs:taste) like the store's. Needs js/util.js, js/project-content.js,
 // js/explore-items.js, js/project-events.js (event cards) and data/projects.js; js/skeleton.js for placeholders.
 (function () {

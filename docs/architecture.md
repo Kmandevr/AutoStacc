@@ -2,7 +2,7 @@
 title: Architecture
 summary: AutoStacc as a platform: projects, the Project → Stacclet → Pac → Asset hierarchy, products, Your Stacc, Auto-Stacc, polls and relationships, and where each lives in the code.
 covers: [data/site.js, data/creators.js, data/projects.js, data/content-types.js, data/product-types.js, data/polls.js, data/relationships.js, scripts/lib/platform.js, scripts/lib/platform-catalog.js, scripts/lib/relations.js, db/migrations/0003_platform.sql, server/projects/, server/polls/, server/entitlements/autostacc.js, server/app.js, js/stacc-model.js, js/projects.js, js/polls.js]
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Architecture
@@ -68,7 +68,7 @@ The library page (`/library`) is "Your Stacc": every asset the customer can use,
 ## Auto
 
 - **Purchase → Stacc:** already true; a paid order grants entitlements and the library reads them.
-- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory (`GET /api/projects/browse`, [browse](browse.md)) and the creators directory (`GET /api/creators`, `server/projects/creators.js`: active, published creators with at least one visible project, only name, address, verified and project links, cached publicly a minute), follows and Auto-Stacc cover published Studio projects of active creators too; polls need a feature only `data/projects.js` sets. Followed projects' published products surface in Your Stacc under "New from projects you follow".
+- **Following a project:** `PUT /api/follows/:projectId` (signed-in, verified). The directory (`GET /api/projects/browse`, [browse](browse.md)) and the creators directory (`GET /api/creators`, `server/projects/creators.js`: active, published creators with at least one visible project, only name, address, verified, tags and project links, cached publicly a minute; creators and projects carry tags under the one tag rule, [search](search.md)), follows and Auto-Stacc cover published Studio projects of active creators too; polls need a feature only `data/projects.js` sets. Followed projects' published products surface in Your Stacc under "New from projects you follow".
 - **Auto-Stacc:** a follow with `autoStacc: true` grants every free, published product of that project (source `free`, the same idempotent grant as claiming it by hand), now and whenever the library is opened, so free releases added later arrive by themselves; it skips a creator space whose selling is paused by copyright strikes ([copyright](copyright.md)). Paid products are never granted by following; they appear as available until bought.
 - **Automatic organization:** assets are placed by their Pac, kind and format with no per-customer work.
 

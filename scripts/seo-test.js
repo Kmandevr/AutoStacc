@@ -35,7 +35,7 @@ const buildCheck = new Promise((resolve) =>
 // ---------- pages ----------
 const htmlUnder = (dir) => (exists(dir) ? fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }) : [])
   .flatMap((d) => (d.isDirectory() ? htmlUnder(`${dir}/${d.name}`) : d.name.endsWith(".html") ? [`${dir}/${d.name}`] : []));
-const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("guide"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
+const pageFiles = [...fs.readdirSync(ROOT).filter((f) => f.endsWith(".html")), ...htmlUnder("guide"), ...htmlUnder("discover"), ...data.creators.flatMap((c) => htmlUnder(c.id))];
 const urlPath = (f) => (f === "index.html" ? "/" : "/" + f.replace(/\.html$/, ""));
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], decode(m[2])]));
 const tags = (html, name) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))].map((m) => attrs(m[0]));

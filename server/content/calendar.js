@@ -71,7 +71,7 @@ export async function renderCalendar(app, params, today) {
   const filtered = Boolean(f.city || f.country || f.host || params.toString());
   const title = `Events calendar · ${SITE_NAME}`;
   const description = clip("What's happening where and when: concerts, shows and events by creators on AutoStacc, by date, city, country and host, each with an \"Add to calendar\" link.");
-  const crumbs = [["Home", "/"], ["Explore", "/explore"], ["Events", PATH]];
+  const crumbs = [["Home", "/"], ["Discover", "/discover"], ["Events", PATH]];
   const page = { path: PATH, title, description, index: !filtered, ogType: "website",
     schema: [webPage(siteUrl, { path: PATH, title, description }, abs(siteUrl, PATH) + "#events", crumbs),
       { "@type": "ItemList", "@id": abs(siteUrl, PATH) + "#events", itemListElement: events.slice(0, 50).map((e, i) => ({ "@type": "ListItem", position: i + 1, url: abs(siteUrl, e.path), name: e.title })) }] };

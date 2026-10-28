@@ -372,8 +372,11 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .side-nav a:active, .tabbar a:active, .tabbar button:active, .account-panel a:active, .account-signout:active { background: var(--panel-2); }
 /* Lighter effects (html.fx-lite): the frame's bars are nearly solid instead of frosted. */
 .fx-lite :is(.topbar, .side, .tabbar) { background: color-mix(in srgb, var(--panel) 96%, transparent); }
-/* The bell (js/account-nav.js): unread community notices, beside the account menu. */
+/* The bell (js/account-bell.js): what waits on you, beside the account menu; its list reuses the account panel. */
+.bell { position: relative; }
 .bell-link { gap: 4px; }
+.bell-panel a { justify-content: space-between; gap: 10px; }
+.bell-panel .small-print { margin: 0; padding: 8px 10px; }
 .bell-count { min-width: 1.4em; padding: 0 5px; border-radius: 999px; background: var(--coral); color: #fff; font-family: var(--mono); font-size: .72rem; font-weight: 700; text-align: center; }
 
 /* The account menu's "Become a creator" line for people without a creator (js/account-nav.js). */
@@ -409,8 +412,7 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .site-search-scoped :is(form[data-search-form], form.cm-search) { display: none; }
 .site-search-input[hidden] { display: none; }
 .site-search .suggest { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; right: 0; }
-/* The community's panels sit in the header (js/community-kit.js); its Notifications replaces the plain bell there. */
-.topbar-tools:has([data-panel="inbox"]) .bell-link { display: none; }
+/* The community's panels sit in the header (js/community-kit.js), beside the bell (js/account-bell.js). */
 .cm-header-tools { display: flex; gap: 2px; }
 .cm-header-tools .cm-bar-button.btn { min-height: 40px; padding: 4px 10px; border: 0; background: transparent; color: var(--muted); font-size: .86rem; width: auto; }
 .cm-header-tools .cm-bar-button[aria-expanded="true"], .cm-header-tools .cm-bar-button.btn:hover { background: var(--panel-2); color: var(--text); }

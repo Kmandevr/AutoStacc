@@ -1,7 +1,7 @@
 ---
 title: Search and tags
 summary: The site-wide search bar in the header, the /search results page, hashtags on anything (one tag rule, typo-tolerant suggestions, team and admin rules) and AutoStacc's word levels for names, tags and posts.
-covers: [js/site-search.js, js/search-sources.js, js/search-page.js, css/search.css, scripts/lib/search-page.js, search.html, server/tags/, server/lib/tags.js, server/lib/words.js, server/lib/word-lists.js, js/tag-input.js, css/tag-input.css, js/admin-tags.js, js/community-words.js, db/migrations/0071_tags_and_words.sql, test/unit/words-and-tags.test.js]
+covers: [js/site-search.js, js/search-sources.js, js/search-page.js, css/search.css, scripts/lib/search-page.js, search.html, server/tags/, server/lib/tags.js, server/lib/words.js, server/lib/word-lists.js, js/tag-input.js, css/tag-input.css, js/admin-tags.js, js/community-words.js, db/migrations/0072_tags_and_words.sql, test/unit/words-and-tags.test.js]
 updated: 2026-10-28
 ---
 

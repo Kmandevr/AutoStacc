@@ -41,7 +41,7 @@ describe("layout in the browser", { concurrency: true }, () => {
     const names = (sel) => page.locator(`${sel} a`).evaluateAll((els) => els.map((el) => [el.getAttribute("href"), el.textContent.trim()]));
     assert.deepEqual(await names("[aria-labelledby=side-platform]"), [["/", "Home"], ["/shop", "Store"], ["/discover", "Discover"], ["/community", "Community"]]);
     assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Discover");
-    await page.goto("/explore");
+    await page.goto("/discover/explore");
     assert.equal(await page.locator(".side-nav a[aria-current]").textContent(), "Discover", "New & upcoming sits in Discover");
     assert.equal(await page.locator(".discover-tabs a[aria-current]").textContent(), "New & upcoming");
     assert.ok(await page.locator("#site-footer a[href='/discover']").count(), "the footer links Discover");

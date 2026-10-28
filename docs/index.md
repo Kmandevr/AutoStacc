@@ -21,7 +21,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Artist](artist.md): confirmed facts and what is still unknown
 - [Brand](brand.md): the Glitches & Stitches skin: logo, colours, fonts, motion, sound, easter eggs and tone
 - [Shop](shop.md): product kinds, products made in the Studio by every creator (the code-based catalog is retired), product pages at `/shop/<id>`, test fixtures
-- [Browsing projects and content](browse.md): the projects browser, /explore, the /events calendar, the home hub, dashboard sections, Your Stacc search
+- [Browsing projects and content](browse.md): the projects browser, New & upcoming (/discover/explore), the /events calendar, the home hub, dashboard sections, Your Stacc search
 - [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
 - [Search and tags](search.md): the header search bar and /search, hashtags on anything, word levels for names, tags and posts
 - [Processing engine](engine.md): the Rust engine (engine/): safe ZIP reading, hashes, formats, header facts, suggestions and native audio analysis (tempo, key, waveform), in a Cloudflare Container behind the engine Worker and as WebAssembly in the Pack Builder; CI and benchmarks

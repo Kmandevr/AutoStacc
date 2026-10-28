@@ -22,11 +22,19 @@ The owner found the community clunky: buttons too big (especially on phones), a 
 - **Connectors kept:** GitHub, Google Drive, Stripe, Brevo and Cloudflare, for viewing and changing settings when needed. The rest (Gmail, Google Calendar, the data and engineering plugins) are switched off by the owner in claude.ai settings; they are account settings, not repository files.
 - **Old handoff removed:** `.claude/handoff.md` described another branch's finished work, failed its own check and was printed into every session.
 
+## 2026-10-27: Four hubs leftovers (owner)
+
+Asked which of the plan's leftovers to build, the owner chose all three:
+- **The bell lists what waits on you**, not only community notices: a creator's Studio items that need them (refused files, failed or checked Pac versions; not drafts or reviews, which only need patience) and each space you help run with its held posts and open reports, each with a link. One button with a short list; nothing when nothing applies.
+- **Per-account exceptions to the communities cap**, set by an admin by username in Settings › Switches, up or down, audited; lowering one never closes running communities.
+- **New & upcoming moves to `/discover/explore`**; `/explore` redirects there with its query.
+Still not built: follower release emails (#131) and the inactive-team takeover (#139).
+
 ## 2026-10-27: Four hubs, community ownership without a creator, Coming soon (owner)
 
 The owner's brief "Platform cohesion, four-hub architecture and UX", answered one question at a time in chat. Tracked as #214, with a child issue per batch (#215–#223). Where this entry and the 2026-10-22 entry below disagree, this one wins.
 - **Four hubs:** **Studio** (Hub 1, the creator dashboard; the name and `/studio` stay), **Store** (what can be bought), **Discover** (creators, projects, communities and, as a tab, releases and events) and **Community**. Your Stacc is the personal library and download hub for everyone, creator or not, and stays separate from the Store.
-- **New & upcoming folds into Discover** as a tab. Built keeping its address `/explore` (Claude, #217): pages are hand-written root files, so moving it under `/discover/` would change its address and its search head for no gain to the visitor; it shows Discover's tabs, crumbs and highlight instead. Owner may still ask for the redirect. The Store's and Discover's search and filters are out of scope (the excluded "Priority 1") and keep working as they do; community search and the events filters may be fixed.
+- **New & upcoming folds into Discover** as a tab. Built keeping its address `/explore` (Claude, #217): pages are hand-written root files, so moving it under `/discover/` would change its address and its search head for no gain to the visitor; it shows Discover's tabs, crumbs and highlight instead. Owner, later the same day: move it, so it's `/discover/explore` and `/explore` answers a 301 that keeps its query (built with the leftovers below). The Store's and Discover's search and filters are out of scope (the excluded "Priority 1") and keep working as they do; community search and the events filters may be fixed.
 - **Navigation:** sidebar Home, Store, Discover, Community, then You. Phones' bar: Home, Store, Discover, Community, You (Your Stacc, Studio for creators, Settings). On phones people mostly shop, comment and browse rather than download or do creator work, so those sit under You: everything stays possible on a phone, just not in the way.
 - **Studio for non-creators:** no Studio item in the main navigation, only a quiet "Become a creator" link (account menu, footer). Creators see "Studio · N waiting". The Studio gets one overview of what needs attention and clearer project ↔ product ↔ public page links, after an audit whose findings come back first.
 - **Signed-in home:** one simple page, not another dashboard: pick up where you left off, what's new for you, what needs your attention, quick actions. Each part shows only when it applies to that person; no bloat.

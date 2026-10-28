@@ -20,15 +20,10 @@
   const action = (href, label) => actions && actions.insertAdjacentHTML("beforeend", `<li><a class="btn ghost small" href="${e(href)}">${e(label)}</a></li>`);
 
   async function studio() {
-    const r = await api("/api/studio");
-    const creators = r.ok ? r.data.creators || [] : [];
-    action("/studio", creators.length ? "Studio" : "Become a creator");
-    for (const c of creators) {
-      if (!(c.capabilities || []).includes("products")) continue;
-      const a = await api(`/api/studio/creators/${encodeURIComponent(c.id)}/attention`);
-      const n = a.ok ? a.data.items.length : 0;
-      if (n) add("/studio", `${c.name}: ${n} waiting in the Studio`, "Drafts, Coming soon, files and Pac versions waiting on someone.");
-    }
+    const r = await api("/api/studio/attention");
+    const creators = r.ok ? r.data.creators : [];
+    action("/studio", r.ok && r.data.member ? "Studio" : "Become a creator");
+    creators.forEach((c) => c.waiting && add("/studio", `${c.name}: ${c.waiting} waiting in the Studio`, "Drafts, Coming soon, files and Pac versions waiting on someone."));
   }
 
   async function spaces() {
@@ -37,7 +32,7 @@
     if (r.status === 404) return; // the community or its spaces feature is off
     action("/community", "Start a community");
     if (!r.ok) return;
-    r.data.spaces.forEach((s) => add(s.manage, `Manage ${s.name}`, s.role === "founder" ? "You founded it: reports, members, settings and rules." : "You moderate it: reports, approvals and bans."));
+    r.data.spaces.forEach((s) => add(s.manage, `Manage ${s.name}${s.waiting ? `: ${s.waiting} waiting` : ""}`, s.role === "founder" ? "You founded it: reports, members, settings and rules." : "You moderate it: reports, approvals and bans."));
   }
 
   studio();
