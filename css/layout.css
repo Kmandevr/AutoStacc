@@ -396,14 +396,14 @@ body:not([data-project]) > main.platform { min-height: calc(100svh - var(--topba
 .site-search-filters[hidden] { display: none; }
 .site-search-go { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
 .site-search-go:hover { color: var(--text); background: var(--panel-2); }
-.site-search-list { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; right: 0; max-height: min(70vh, 520px); overflow: auto; padding: 6px;
+.site-search-suggest { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; right: 0; max-height: min(70vh, 520px); overflow: auto; padding: 6px;
   border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); text-shadow: none; }
-.site-search-list[hidden] { display: none; }
+.site-search-suggest[hidden] { display: none; }
 .site-search-group > p { margin: 8px 10px 2px; font-family: var(--mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .site-search-opt { display: grid; gap: 1px; padding: 7px 10px; border-radius: 8px; color: var(--text); text-decoration: none; }
 .site-search-opt small { color: var(--muted); font-size: .78rem; }
 .site-search-opt:hover, .site-search-opt[aria-selected="true"] { background: var(--panel-2); }
-.site-search-list > .site-search-opt { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--accent); }
+.site-search-suggest > .site-search-opt { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; color: var(--accent); }
 /* Scoped: the page's own search box sits in the bar (js/site-search.js); what's left of its form steps aside, and its
    suggestion list drops below the bar. */
 .site-search-scoped :is(form[data-search-form], form.cm-search) { display: none; }

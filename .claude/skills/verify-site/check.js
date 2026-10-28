@@ -21,7 +21,7 @@ const allPages = [...fs.readdirSync(root).filter((f) => f.endsWith(".html")), ..
 const pages = process.argv.length > 2 ? process.argv.slice(2) : allPages;
 const urlOf = (f) => (f === "index.html" ? "/" : f === "404.html" ? "/this-address-does-not-exist" : "/" + f.replace(/\.html$/, ""));
 // Account and store pages are private: noindex, no canonical (same list as scripts/seo-test.js and robots.txt).
-const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart)(\/|$)/;
+const PRIVATE = /^\/(dashboard|account|settings|studio|login|library|admin|checkout|cart|search)(\/|$)/;
 const out = [];
 const line = (level, check, detail, file) => `${level} ${check} - ${detail}${file ? ` (${file})` : ""}`;
 // Products, releases and events are Studio content from the store API, not data files, so they have no entry here.

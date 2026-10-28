@@ -25,16 +25,16 @@
   form.innerHTML = `
     ${scopeName ? `<button class="site-search-scope" type="button" aria-pressed="true" title="Search ${e(scopeName)} only, or all of AutoStacc">${e(scopeName)}</button>` : ""}
     <input class="site-search-input" type="search" name="q" maxlength="80" autocomplete="off" enterkeyhint="search" spellcheck="false"
-      role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-list" aria-label="Search">
+      role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-suggest" aria-label="Search">
     <button class="site-search-filters" type="button" hidden>Filters</button>
     <button class="site-search-go" type="submit"><span class="sr-only">Search</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-    <div class="site-search-list" id="site-search-list" role="listbox" aria-label="Suggestions" hidden></div>`;
+    <div class="site-search-suggest" id="site-search-suggest" role="listbox" aria-label="Suggestions" hidden></div>`;
   const brand = bar.querySelector(".topbar-brand");
   (brand || bar.firstElementChild).after(form);
   document.documentElement.classList.add("has-site-search");
 
   const input = form.querySelector(".site-search-input");
-  const list = form.querySelector(".site-search-list");
+  const list = form.querySelector(".site-search-suggest");
   const chip = form.querySelector(".site-search-scope");
   const filters = form.querySelector(".site-search-filters");
   let scoped = Boolean(scopeName);

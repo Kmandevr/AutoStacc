@@ -173,7 +173,6 @@
 .cm-bar:has(.cm-results:not(:empty)) { flex-wrap: wrap; }
 .cm-bar .cm-results { flex: 1 0 100%; }
 .cm-bar .cm-results:empty { display: none; }
-}
 
 /* A compact landing (owner, 2026-10-27): a short banner, then the spaces and the takes; nothing big in the way. */
 .platform .community-hero.page-hero { padding: 20px 0 14px; border-bottom: 1px solid var(--line); }
