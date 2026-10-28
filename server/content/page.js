@@ -73,7 +73,7 @@ export function shell(siteUrl, ctx, { page, section, styles, main, scripts = [],
   // Pages with feature scripts load content from the store, so they get the loading placeholders (js/skeleton.js).
   const loads = scripts.length > 0;
   const css = ["core", "platform", "layout", ...(loads ? ["skeleton"] : []), ...(frame ? ["project-frame"] : []), ...styles, ...(skin ? [`projects/${id}/skin`] : []), ...(sounds ? ["eggs"] : [])];
-  const js = ["data/site.js", "data/projects.js", "js/util.js", ...(loads ? ["js/skeleton.js"] : []), frame ? "js/project-frame.js" : "js/layout.js", "js/account-nav.js", "js/site-notice.js",
+  const js = ["data/site.js", "data/projects.js", "js/util.js", ...(loads ? ["js/card.js", "js/skeleton.js"] : []), ...(frame ? ["js/project-frame.js"] : ["js/layout.js", "js/search-sources.js", "js/site-search.js"]), "js/account-nav.js", "js/site-notice.js",
     ...(sounds ? ["js/sound.js", "js/eggs.js", "js/terminal.js"] : []), "js/motion.js", ...scripts, "js/prefetch.js"];
   const projectAttrs = frame ? ` data-project="${esc(id)}" data-project-page="${esc(section)}"` : "";
   return `<!doctype html>

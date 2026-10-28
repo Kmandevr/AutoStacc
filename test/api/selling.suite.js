@@ -50,7 +50,7 @@ export default (ctx) => describe("selling", () => {
     assert.equal((await anon.get(`/api/products/${p.id}`)).status, 404);
 
     for (const bad of [{ priceCents: 50 }, { priceCents: 99 }, { priceCents: 50001 }, { priceCents: 19.99 }, { priceCents: "20" }, { priceCents: -1 }, { priceCents: null },
-      { type: "malware" }, { type: "" }, { title: "ab" }, { title: "x".repeat(81) }, { tags: ["Has Spaces"] }, { tags: Array(9).fill("a") },
+      { type: "malware" }, { type: "" }, { title: "ab" }, { title: "x".repeat(81) }, { tags: ["fucking-loud"] }, { tags: ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"] },
       { includes: Array(13).fill("x") }, { includes: [""] }, { description: "y".repeat(2001) }, { published: true }, { deleted: true }, { salesPaused: true }]) {
       const r = await make(s, bad);
       assert.equal(r.status, 400, JSON.stringify(bad));
@@ -92,7 +92,10 @@ export default (ctx) => describe("selling", () => {
 
     // Tags, and a preview clip: audio only, contents must match, only the owner, replaced cleanly, removable.
     assert.equal((await patch(s.c, { tags: ["lo-fi", "drums"] })).status, 200);
-    assert.equal((await patch(s.c, { tags: ["Not OK!"] })).status, 400);
+    // Tags are typed freely and folded (#230); strong words are refused.
+    const folded = await patch(s.c, { tags: ["Not OK!", "#Lo Fi"] });
+    assert.equal(folded.status, 200);
+    assert.equal((await patch(s.c, { tags: ["cunt"] })).status, 400);
     const pv = (client, name, raw) => put(client, `/api/studio/products/${p.id}/preview?filename=${encodeURIComponent(name)}`, raw);
     assert.equal((await pv(s.c, "clip.zip", ZIP)).status, 415);
     assert.equal((await pv(s.c, "clip.mp3", ZIP)).status, 415, "not really audio");

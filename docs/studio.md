@@ -2,7 +2,7 @@
 title: Product Studio and the workspace shell
 summary: How creators work on one product (Overview, Pac Builder, Store Page, Pricing, Insights, Release) in a shared workspace shell that the Control Center also uses; names, data ownership, API contracts, and what is built versus planned.
 covers: [server/creators/coming-soon.js, db/migrations/0070_coming_soon.sql, test/api/coming-soon.suite.js, data/workspaces.js, js/workspace.js, css/workspace.css, js/studio-workspace.js, js/studio-section-*.js, js/studio-kit.js, js/studio-preview.js, js/studio-store-media.js, js/product-view.js, css/studio-sections.css, server/studio/workspace.js, server/studio/pricing.js, server/studio/insights.js, server/studio/insights-data.js, server/creators/readiness.js, server/creators/events.js, server/creators/product-history.js, server/promotions/creator-sales.js, server/settings/, server/payments/creator-sales.js, server/admin/creator-sales.js, db/migrations/0017_product_studio.sql]
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Product Studio and the workspace shell
@@ -83,7 +83,7 @@ Only the product's owners and editors can use it; anyone else gets a 404. With t
 
 ### Store Page (Built)
 
-The product's title, description, highlights ("What's inside" lines), kind, tags, store details (`js/studio-details.js`), cover art (one of the creator's images), the preview clip, and a read-only licence line (AutoStacc's standard licence; licence choices are an open question in [vision](vision.md)). Alongside sits a **live preview** drawn by the same renderer as the real product page (`js/product-view.js`, shared with `js/product-page.js`), so the creator sees what buyers will see. Edits autosave about two seconds after typing stops, and the header shows the save status.
+The product's title, description, highlights ("What's inside" lines), kind, tags (the tag box, `js/tag-input.js`: typed with suggestions from all of AutoStacc, [search](search.md)), store details (`js/studio-details.js`), cover art (one of the creator's images), the preview clip, and a read-only licence line (AutoStacc's standard licence; licence choices are an open question in [vision](vision.md)). Alongside sits a **live preview** drawn by the same renderer as the real product page (`js/product-view.js`, shared with `js/product-page.js`), so the creator sees what buyers will see. Edits autosave about two seconds after typing stops, and the header shows the save status.
 
 Not in this pass: screenshots and promotional galleries, product-type-specific layouts beyond the store-details schema.
 

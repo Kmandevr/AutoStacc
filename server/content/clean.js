@@ -6,6 +6,7 @@
 // the request leaves them unchanged.
 import { fail, str, int } from "../lib/http.js";
 import { cleanTags } from "../lib/tags.js";
+import { checkName } from "../lib/words.js";
 import { safeUrl } from "../sites/text.js";
 import { embedFor } from "../sites/embeds.js";
 import { ownImages } from "../sites/images.js";
@@ -86,7 +87,7 @@ const FIELDS = {
   releases: {
     required: ["title", "type", "date"],
     slug: (b) => slugOf(b.slug),
-    title: (b) => str(b.title, "title", { max: 200 }),
+    title: (b) => checkName(str(b.title, "title", { max: 200 }), "title"),
     type: (b) => (["Single", "EP", "Album"].includes(b.type) ? b.type : bad("type", "type is Single, EP or Album.")),
     date: (b) => date(b.date),
     upc: (b) => optional(b.upc, "upc", 14, /^\d{12,14}$/),
@@ -104,7 +105,7 @@ const FIELDS = {
   events: {
     required: ["title", "date", "city"],
     slug: (b) => slugOf(b.slug),
-    title: (b) => str(b.title, "title", { max: 200 }),
+    title: (b) => checkName(str(b.title, "title", { max: 200 }), "title"),
     date: (b) => date(b.date),
     time: (b) => optional(b.time, "time", 5, TIME),
     endDate: (b, old) => endDate(b, old),

@@ -5,7 +5,8 @@
 // The card is AutoStacc's glass with the project's personality (owner, 2026-10-22): its art tile wears the project's own
 // look, and an accent and a small signature animation come from the Studio's presets (p.personality), else the
 // project's data (data/projects.js `personality`), else the defaults (css/projects.css). `compact` is the poster
-// card for rows (art on top, name, one link). Every card says it's a project. Needs js/util.js and data/product-types.js.
+// card for rows (art on top, name, one link). Every card says it's a project. Needs js/util.js, js/card.js and
+// data/product-types.js.
 (function () {
   "use strict";
 
@@ -42,14 +43,14 @@
     const look = personality(p);
     const initials = p.name.split(/\s+/).filter((w) => /\w/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
     const facts = [p.releases ? plural(p.releases, "release") : "", p.items ? plural(p.items, "store item") : ""].filter(Boolean);
-    return `<article class="pcard${compact ? " pcard-poster" : ""}${p.recent ? " is-recent" : ""}" data-project="${e(p.id)}"${look.accent ? ` data-accent="${look.accent}"` : ""} data-motion="${look.motion}">
-      <a class="pcard-art ${GS.look(p.id)}" href="${e(p.path)}" tabindex="-1" aria-hidden="true">
-        ${p.image ? `<img src="${e(p.image)}" alt="" width="96" height="96" loading="lazy">` : `<span>${e(initials || "?")}</span>`}
-      </a>
-      <div class="pcard-body">
-        <p class="card-type">Project</p>
-        <h${level} class="pcard-name"><a href="${e(p.path)}">${e(p.name)}</a></h${level}>
-        <p class="pcard-by">${p.creator && p.creator !== p.name ? `by ${e(p.creator)}` : ""}${p.verified ? "" : `${p.creator && p.creator !== p.name ? " · " : ""}<span class="tag unverified" title="AutoStacc hasn't verified this creator">Unverified creator</span>`}</p>
+    const by = p.creator && p.creator !== p.name ? `by ${e(p.creator)}` : "";
+    return GS.card({ cls: `pcard${compact ? " pcard-poster" : ""}${p.recent ? " is-recent" : ""}`,
+      attrs: { "data-project": p.id, "data-accent": look.accent || null, "data-motion": look.motion },
+      href: p.path, title: p.name, level, eyebrow: "Project", titleCls: "pcard-name", bodyCls: "pcard-body",
+      img: p.image, initials: initials || "?", artCls: `pcard-art ${GS.look(p.id)}`,
+      tags: p.verified ? [] : [{ label: "Unverified", tone: "unverified", title: "AutoStacc hasn't verified this creator" }],
+      body: `
+        ${by ? `<p class="pcard-by">${by}</p>` : ""}
         ${p.tagline && !compact ? `<p class="pcard-tagline">${e(p.tagline)}</p>` : ""}
         ${p.genres.length ? `<ul class="pcard-tags" aria-label="Genres and styles">${p.genres.slice(0, 4).map((g) => `<li>${e(g.label)}</li>`).join("")}</ul>` : ""}
         ${p.makes.length && !compact ? `<p class="pcard-makes"><span class="sr-only">Makes: </span>${[...new Set(p.makes)].map((m) => `<span class="tag">${e(makesLabel(m))}</span>`).join(" ")}</p>` : ""}
@@ -59,9 +60,7 @@
           <a class="btn small" href="${e(p.path)}">Visit<span class="sr-only"> ${e(p.name)}</span></a>
           ${p.items && !compact ? `<a class="btn ghost small" href="/shop?creator=${encodeURIComponent(p.id)}">Store items<span class="sr-only"> from ${e(p.name)}</span></a>` : ""}
         </div>
-        ${compact ? "" : `<div class="project-follow" data-follow-slot="${e(p.id)}" data-name="${e(p.name)}"></div>`}
-      </div>
-    </article>`;
+        ${compact ? "" : `<div class="project-follow" data-follow-slot="${e(p.id)}" data-name="${e(p.name)}"></div>`}` });
   }
 
   projectCard.makesLabel = makesLabel;

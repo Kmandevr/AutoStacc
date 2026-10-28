@@ -2,7 +2,7 @@
 title: Development
 summary: Running the site and store locally in test mode, environment variables, the three test suites, and how to extend the store (product types, providers, emails, routes).
 covers: [package.json, scripts/dev.js, scripts/dist.js, scripts/serve.js, wrangler.toml, server/lib/config.js, db/migrations/, test/, .github/workflows/store.yml, server/payments/index.js, server/email/, server/app.js, server/dev/, scripts/docs-test.js, .github/workflows/clear-status-on-close.yml, .github/workflows/codeql.yml, .github/dependabot.yml, SECURITY.md, LICENSE]
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Development

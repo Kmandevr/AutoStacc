@@ -16,8 +16,6 @@
 .cm-meta a { color: inherit; text-decoration: underline; }
 .cm-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; border: 1px solid var(--line); color: var(--muted); vertical-align: 1px; }
 .cm-badge-team { border-color: var(--teal); color: var(--teal); }
-.cm-official { border-color: var(--accent); color: var(--accent); }
-.cm-unofficial { border-style: dashed; }
 .cm-answered { border-color: var(--accent); color: var(--accent); }
 .cm-small { color: var(--muted); }
 .cm-small { font-size: .86rem; }
@@ -36,6 +34,10 @@
 .cm-post { padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); margin-bottom: 10px; scroll-margin-top: calc(var(--topbar, 58px) + 16px); }
 .cm-opening { border-width: 2px; }
 .cm-post-gone { background: transparent; border-style: dashed; }
+/* Replies read like a conversation, not a stack of boxes (owner, 2026-10-27): no frame, the thread line does the work. */
+.cm-replies .cm-post { margin: 0; padding: 8px 4px 4px; border: 0; border-radius: 0; background: transparent; }
+.cm-replies .cm-post-gone { padding-block: 6px; }
+.cm-replies > li + li { margin-top: 4px; }
 .cm-body { line-height: 1.65; overflow-wrap: anywhere; }
 .cm-body blockquote { margin: 8px 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); }
 .cm-body code { padding: 1px 5px; border-radius: 5px; background: var(--panel-2); font-family: var(--mono); font-size: .9em; }
@@ -58,21 +60,68 @@
 .cm-form .cm-check { display: flex; gap: 8px; align-items: center; }
 .cm-form .cm-check input { width: 20px; height: 20px; }
 .cm-form button { justify-self: start; }
-.cm-post-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.cm-post-tools .btn, .cm-thread-tools .btn { min-height: 36px; }
+/* A post's action row (js/community-menu.js): small and quiet, like Reddit's (owner, 2026-10-27). Boost, Reply and
+   Helpful stay in view; the rest is in the ⋯ menu at the end. Targets stay at least 32px for thumbs. */
+.cm-post-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 6px 0 0 -8px; }
+.cm-thread-tools .btn { min-height: 36px; }
+.cm-act, .cm-post-tools > .btn, .cm-more-button { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 2px 8px;
+  border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: .84rem; font-weight: 600;
+  text-shadow: none; cursor: pointer; width: auto; }
+.cm-act:hover, .cm-post-tools > .btn:hover, .cm-more-button:hover, .cm-more-button[aria-expanded=true] { background: var(--panel-2); color: var(--text); }
+.cm-act[aria-pressed=true] { color: var(--accent); }
+.cm-act:disabled { opacity: .55; cursor: default; }
+.cm-postmenu { position: relative; order: 99; }
+.cm-more-button { min-width: 32px; justify-content: center; font-size: 1.1rem; letter-spacing: .05em; }
+.cm-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; display: grid; min-width: 190px; max-width: calc(100vw - 48px); padding: 6px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+.cm-menu > button, .cm-menu > a { display: flex; align-items: center; width: 100%; min-height: 40px; padding: 6px 12px; border: 0;
+  border-radius: 8px; background: transparent; color: var(--text); font: inherit; font-size: .92rem; text-align: left; text-shadow: none; cursor: pointer; }
+.cm-menu > button:hover, .cm-menu > button:focus-visible { background: var(--panel-2); }
+.cm-menu > button[aria-pressed=true]::after { content: "✓"; margin-left: auto; color: var(--accent); }
+.cm-menu[hidden], .cm-extras[hidden] { display: none; }
+.cm-menu-label { margin: 6px 12px 2px; font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
+.cm-menu-label:first-child { margin-top: 2px; }
+
+/* The reply box: one line until tapped, then the text box with Cancel and Reply; Aa shows formatting and preview. */
+.cm-reply-box { display: grid; gap: 6px; margin: 10px 0 4px; padding: 6px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+.cm-reply-box:focus-within { border-color: var(--accent); }
+.cm-reply-box textarea { width: 100%; min-height: 36px; padding: 6px 10px; border: 0; background: transparent; color: var(--text); font: inherit; resize: none; outline: none; }
+.cm-reply-box.is-open textarea { resize: vertical; }
+.cm-reply-box > label { display: grid; gap: 4px; padding: 0 10px; font-size: .86rem; }
+.cm-reply-box select { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; }
+.cm-reply-box:not(.is-open) > :not(.cm-composer):not(.msg), .cm-reply-box:not(.is-open) .cm-extras { display: none; }
+.cm-reply-foot { display: flex; align-items: center; gap: 6px; }
+.cm-reply-foot .btn.small { min-height: 34px; padding: 4px 16px; width: auto; }
+.cm-grow { flex: 1; }
+.cm-aa { min-height: 32px; min-width: 36px; padding: 2px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
+.cm-aa[aria-expanded=true] { background: var(--panel-2); color: var(--text); }
+.cm-extras { display: grid; gap: 6px; padding: 0 4px; }
+.cm-replies .cm-reply-box { margin-left: 4px; }
+.cm-reply-gate { margin: 10px 0; }
 
 /* ---------- the look (owner, 2026-10-20): channel strips, mixer, nested replies, composer, charm ---------- */
 .cm-strips, .cm-mixer, .cm-aside ul, .cm-replies, .cm-box ul { list-style: none; margin: 0; padding: 0; }
-.cm-strips { display: grid; gap: 8px; }
-.cm-strip { display: flex; gap: 12px; align-items: center; padding: 10px 14px 10px 16px; border: 1px solid var(--line); border-left: 4px solid var(--track, var(--teal)); border-radius: var(--radius); background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+.cm-strips { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+/* A take as a Reddit-like row: Boost's count on the left, the title, one small line. The title's link covers the row;
+   the other links in it sit above that cover. */
+.cm-strip { position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px 10px 10px; border-left: 3px solid var(--track, var(--teal)); }
+.cm-strip + .cm-strip { border-top: 1px solid var(--line); }
+.cm-strip:hover { background: var(--panel-2); }
 .cm-strip-main { flex: 1; min-width: 0; }
-.cm-strip-title { display: block; font-weight: 600; color: var(--text); text-shadow: none; overflow-wrap: anywhere; }
-.cm-strip-meters { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
-.cm-replies { color: var(--muted); }
-.cm-strip-meters .cm-replies::before { content: ""; display: inline-block; width: 12px; height: 10px; margin-right: 4px; border: 1.5px solid currentColor; border-radius: 3px 3px 3px 0; vertical-align: -1px; }
+.cm-strip-title { display: block; font-weight: 600; line-height: 1.3; color: var(--text); text-shadow: none; overflow-wrap: anywhere; }
+.cm-strip-title::after { content: ""; position: absolute; inset: 0; }
+.cm-strip .cm-meta { margin-top: 2px; font-size: .8rem; }
+.cm-strip .cm-meta a, .cm-strip .cm-name { position: relative; z-index: 1; }
+.cm-strip-space { font-weight: 600; color: var(--text); text-decoration: none; }
+.cm-strip-meters { display: grid; justify-items: center; gap: 2px; min-width: 32px; padding-top: 2px; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.cm-strip-meters .cm-mini-boost { flex-direction: column-reverse; gap: 2px; }
 
 .cm-mixer { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 200px); justify-content: start; gap: 10px; overflow-x: auto; padding: 4px 2px 12px; margin-bottom: 8px; scroll-snap-type: x proximity; }
-.cm-channel a { display: grid; gap: 6px; justify-items: start; height: 100%; padding: 12px; border: 1px solid var(--line); border-top: 4px solid var(--track, var(--teal)); border-radius: var(--radius); background: var(--panel); color: var(--text); text-shadow: none; scroll-snap-align: start; }
+.cm-channel { display: grid; gap: 6px; align-content: start; justify-items: start; padding: 12px; border: 1px solid var(--line); border-top: 4px solid var(--track, var(--teal)); border-radius: var(--radius); background: var(--panel); color: var(--text); text-shadow: none; scroll-snap-align: start; }
+.cm-channel .ui-card-title { font-size: 1rem; padding-right: 64px; }
+.cm-channel .ui-card-title a { text-shadow: none; }
+.cm-channel .ui-card-title a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; } /* the whole card opens the space */
+.cm-channel .ui-card-sub { font-size: .86rem; }
 .cm-channel-meter { display: grid; gap: 2px; width: 10px; }
 .cm-channel-meter i { display: block; height: 4px; border-radius: 2px; background: var(--line); }
 .cm-channel-meter i.on { background: var(--track, var(--teal)); }
@@ -99,32 +148,48 @@
 .cm-toolbar { display: flex; flex-wrap: wrap; gap: 4px; }
 .cm-tool { min-height: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--text); font: inherit; font-size: .82rem; }
 .cm-preview { min-height: 120px; padding: 10px; border: 1px dashed var(--line); border-radius: 8px; }
-.cm-reply-form { margin-left: 18px; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .cm-strip, .cm-channel a { transition: transform .18s ease, box-shadow .18s ease; }
-  .cm-strip:hover, .cm-channel a:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .cm-channel { transition: transform .18s ease, box-shadow .18s ease; }
+  .cm-channel:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
   @keyframes cm-stack-in { from { opacity: 0; transform: translateY(-14px); } 60% { opacity: 1; transform: translateY(2px); } to { transform: none; } }
   .cm-stack-in { animation: cm-stack-in .32s cubic-bezier(.2, .8, .3, 1.2); }
 }
 
 /* The toolbar (owner, 2026-10-27, #220; server barHook, js/community-kit.js panel()): search on the left, the
    visitor's panels (Notifications, Saved) on the right; search results drop below the row. */
-.cm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 0 0 20px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.cm-bar input[type="search"] { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--text); font: inherit; }
-.cm-bar-tools { display: flex; gap: 8px; margin-left: auto; }
+.cm-bar { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0 0 14px; }
+.cm-bar input[type="search"] { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--text); font: inherit; }
+.cm-bar .cm-search .btn { display: none; } /* Enter searches; the button stays for no-JS forms only */
+.cm-bar-tools { display: flex; gap: 2px; margin-left: auto; flex: none; }
 .cm-bar-tools:empty { display: none; }
 .cm-bar-item { position: relative; }
 .cm-bar-item[data-panel="inbox"] { order: 1; }
 .cm-bar-item[data-panel="saved"] { order: 2; }
-.cm-bar-button { min-height: 44px; }
+.cm-bar .cm-bar-button.btn { min-height: 40px; padding: 4px 12px; border: 0; background: transparent; color: var(--muted); font-size: .86rem; width: auto; }
+.cm-bar .cm-bar-button.btn:hover, .cm-bar .cm-bar-button[aria-expanded=true] { background: var(--panel-2); color: var(--text); }
 .cm-bar-panel { position: absolute; z-index: 30; right: 0; top: calc(100% + 6px); width: min(22rem, calc(100vw - 32px)); max-height: 60vh; overflow: auto; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); }
 .cm-bar-setting { display: flex; gap: 6px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.cm-bar:has(.cm-results:not(:empty)) { flex-wrap: wrap; }
 .cm-bar .cm-results { flex: 1 0 100%; }
 .cm-bar .cm-results:empty { display: none; }
-@media (max-width: 560px) {
-  .cm-bar-tools { margin-left: 0; width: 100%; }
-  .cm-bar-item { flex: 1; }
-  .cm-bar-button { width: 100%; }
-  .cm-bar-item:last-child .cm-bar-panel, .cm-bar-item .cm-bar-panel { right: auto; left: 0; }
-}
+
+/* A compact landing (owner, 2026-10-27): a short banner, then the spaces and the takes; nothing big in the way. */
+.platform .community-hero.page-hero { padding: 20px 0 14px; border-bottom: 1px solid var(--line); }
+.platform .community-hero h1 { font-size: clamp(1.4rem, 4vw, 2.1rem); margin-bottom: 4px; }
+.community-hero p { font-size: .95rem; }
+.community-hero .detail-kicker { margin-bottom: 2px; }
+.community-main { padding-top: 14px; }
+
+/* Strong words (server/community/core/format.js, js/community-words.js): softened by default, a hashtag links to search. */
+.cm-sw { letter-spacing: .04em; color: var(--muted); }
+.cm-sw-shown { letter-spacing: normal; color: inherit; }
+.cm-hashtag { font-weight: 600; text-decoration: none; }
+.cm-hashtag:hover { text-decoration: underline; }
+/* No gap above the content: the header holds search and the panels now, so the empty toolbar takes no room. */
+section:has(> .wrap.community-main) { padding-top: 0; }
+.cm-bar:not(:has(.cm-results:not(:empty))) { margin: 0; }
+.cm-sort { gap: 2px; margin: 4px 0 10px; }
+.cm-sort a { padding: 4px 12px; border-color: transparent; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.cm-sort a[aria-current] { border-color: transparent; background: var(--panel-2); color: var(--text); }
+.cm-col > h2 { font-size: 1.1rem; }

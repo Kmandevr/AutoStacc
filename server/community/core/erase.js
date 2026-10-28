@@ -34,7 +34,7 @@ export const eraseCommunityStmts = (db, userId) => [
 
 export async function communityExport(db, userId) {
   const [member, threads, posts, votes] = await Promise.all([
-    all(db, "SELECT display_name AS displayName, age_confirmed_at AS ageConfirmedAt, created_at AS joinedAt FROM community_members WHERE user_id = ?", userId),
+    all(db, "SELECT display_name AS displayName, age_confirmed_at AS ageConfirmedAt, created_at AS joinedAt, word_view AS wordView FROM community_members WHERE user_id = ?", userId),
     all(db, "SELECT id, title, type, state, created_at AS createdAt FROM community_threads WHERE author_user_id = ? ORDER BY created_at", userId),
     all(db, "SELECT id, thread_id AS threadId, body, state, created_at AS createdAt, edited_at AS editedAt FROM community_posts WHERE author_user_id = ? ORDER BY created_at", userId),
     all(db, "SELECT target_type AS targetType, target_id AS targetId, kind, created_at AS createdAt FROM community_votes WHERE user_id = ? ORDER BY created_at", userId)

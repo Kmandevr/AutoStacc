@@ -44,11 +44,11 @@
     document.querySelectorAll("[data-cm-post]").forEach((post) => {
       if (own.has(post.id)) return;
       const opening = post.id === kit.tools.dataset.cmOpening;
-      const tools = post.querySelector("[data-cm-tools]") || post.appendChild(el("div", { class: "cm-post-tools", "data-cm-tools": post.id }));
-      const b = el("button", { class: "btn ghost small cm-report-btn", type: "button", text: "Report", on: { click: () => {
-        if (!post.querySelector(".cm-report")) reportForm(opening ? "thread" : "post", opening ? threadId : post.id, tools);
+      // In the post's ⋯ menu; the form opens under the post's action row.
+      const b = el("button", { class: "cm-report-btn", type: "button", text: "Report", on: { click: () => {
+        if (!post.querySelector(".cm-report")) reportForm(opening ? "thread" : "post", opening ? threadId : post.id, kit.row(post));
       } } });
-      tools.append(b);
+      kit.menu(post).append(b);
     });
   }
 

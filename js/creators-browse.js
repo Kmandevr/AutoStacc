@@ -2,7 +2,7 @@
 // creators', with their projects and a link to /<creator>. Search and sort with pages, answered by GET /api/creators;
 // the address holds the state (/discover?tab=creators&q=&sort=&page=). A short bio shows from the Studio (and for AutoStacc's own creators from their
 // summary in data/creators.js). Placeholders while loading (GS.skeleton); offline, the page keeps its built list.
-// Needs js/util.js; js/skeleton.js is optional.
+// Needs js/util.js and js/card.js; js/skeleton.js is optional.
 (function () {
   "use strict";
 
@@ -40,16 +40,13 @@
   const initial = (name) => (name.match(/[\p{L}\p{N}]/u) || ["?"])[0].toUpperCase();
   function card(c) {
     const bio = c.firstParty ? BIO.get(c.slug) || c.bio : c.bio;
-    return `<li class="ccard">
-      <a class="ccard-avatar" href="${e(c.path)}" tabindex="-1" aria-hidden="true">${c.avatar ? `<img src="${e(c.avatar)}" alt="" width="64" height="64" loading="lazy">` : `<span>${e(initial(c.name))}</span>`}</a>
-      <div class="ccard-body">
-        <h3 class="ccard-name"><a href="${e(c.path)}">${e(c.name)}</a></h3>
-        ${c.verified ? "" : `<p class="ccard-by"><span class="tag unverified" title="AutoStacc hasn't verified this creator">Unverified creator</span></p>`}
+    return GS.card({ as: "li", cls: "ccard", href: c.path, title: c.name, titleCls: "ccard-name", bodyCls: "ccard-body",
+      img: c.avatar, initials: initial(c.name), artCls: "ccard-avatar",
+      tags: c.verified ? [] : [{ label: "Unverified", tone: "unverified", title: "AutoStacc hasn't verified this creator" }],
+      body: `
         ${bio ? `<p class="ccard-bio">${e(bio)}</p>` : ""}
         <ul class="ccard-projects" aria-label="Projects by ${e(c.name)}">${c.projects.map((p) => `<li><a href="${e(p.path)}">${e(p.name)}</a></li>`).join("")}</ul>
-        <p class="ccard-actions"><a class="btn small" href="${e(c.path)}">Visit<span class="sr-only"> ${e(c.name)}</span></a></p>
-      </div>
-    </li>`;
+        <p class="ccard-actions"><a class="btn small" href="${e(c.path)}">Visit<span class="sr-only"> ${e(c.name)}</span></a></p>` });
   }
 
   function render(d) {

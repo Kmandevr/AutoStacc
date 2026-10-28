@@ -4,6 +4,7 @@
 // the formatter. Features add their parts through the kit's slots (hooks.js renderKit), so nothing here knows them.
 // The HTML is the same for every visitor (it's cached at the edge); per-visitor controls come from the browser script.
 import { format } from "./format.js";
+import card from "../../../js/card.js";
 import { esc, spacePath, channelPath, threadPath, BARE, day, who, plural } from "./render-parts.js";
 
 export { esc, spacePath, channelPath, threadPath, BARE, day, who, plural };
@@ -14,7 +15,8 @@ export const TYPE_LABEL = { discussion: "Discussion", question: "Question", upda
 const TRACKS = ["teal", "amber", "coral", "lime", "violet"];
 export const track = (position) => TRACKS[Math.abs(Number(position) || 0) % TRACKS.length];
 const STATE_NOTE = { read_only: "This space is read-only for now.", archived: "This space is archived: you can read it, but nothing new can be posted." };
-const badge = (space) => (space.kind === "community" && !space.official ? '<span class="cm-badge cm-unofficial">Unofficial</span>' : '<span class="cm-badge cm-official">Official</span>');
+// A space's corner tag on its card (js/card.js): a community nobody official runs says so.
+export const spaceTag = (space) => (space.kind === "community" && !space.official ? { label: "Unofficial", tone: "unofficial" } : { label: "Official", tone: "official" });
 
 export const hero = (crumbs, kicker, title, sub = "") => `<nav class="crumbs" aria-label="Breadcrumb"><ol>${crumbs.map(([label, href], i) =>
   i === crumbs.length - 1 ? `<li><span aria-current="page">${esc(label)}</span></li>` : `<li><a href="${esc(href)}">${esc(label)}</a></li>`).join("")}</ol></nav>
@@ -27,16 +29,20 @@ export const emptyState = (line) => `<div class="cm-empty"><svg class="cm-empty-
             <rect x="6" y="26" width="36" height="10" rx="3"/><rect x="11" y="14" width="26" height="10" rx="3"/><rect x="17" y="2" width="14" height="10" rx="3"/></svg>
           <p>${esc(line)}</p></div>`;
 
-// A take in a list: a channel strip with its channel's track colour, its title, and small meters from the features.
+// A take in a list, like a Reddit row (owner, 2026-10-27): the features' meters (Boost's count) on the left, then the
+// title and one small line (space, kind, channel, who, when, replies) in its channel's track colour. The title's link
+// covers the row.
 function strip(t, kit, { showSpace = null } = {}) {
-  const meta = [TYPE_LABEL[t.type] || "Discussion", ...(t.channelName ? [esc(t.channelName)] : []), `by ${who(t.author, kit, Boolean(t.asTeam))}`, day(t.lastPostAt)];
-  if (showSpace) meta.unshift(`<a href="${esc(spacePath(showSpace))}">${esc(showSpace.name)}</a>`);
+  const replies = `<span class="cm-replies">${plural(t.replyCount, "reply", "replies")}</span>`;
+  const meta = [TYPE_LABEL[t.type] || "Discussion", ...(t.channelName ? [esc(t.channelName)] : []), `by ${who(t.author, kit, Boolean(t.asTeam))}`, day(t.lastPostAt), replies];
+  if (showSpace) meta.unshift(`<a class="cm-strip-space" href="${esc(spacePath(showSpace))}">${esc(showSpace.name)}</a>`);
+  const meters = kit.slot("listMeters", { thread: t });
   return `<li class="cm-strip${t.pinned ? " cm-pinned" : ""}" data-track="${track(t.channelPosition)}" data-space="${esc(t.spaceId)}">
+            ${meters ? `<div class="cm-strip-meters">${meters}</div>` : ""}
             <div class="cm-strip-main">
               <a class="cm-strip-title" href="${esc(threadPath(t))}">${t.pinned ? '<span class="cm-badge">Pinned</span> ' : ""}${kit.slot("listBadges", { thread: t })}${esc(t.title)}</a>
               <p class="cm-meta">${meta.join(" · ")}</p>
             </div>
-            <div class="cm-strip-meters">${kit.slot("listMeters", { thread: t })}<span class="cm-replies" title="${plural(t.replyCount, "reply", "replies")}" aria-label="${plural(t.replyCount, "reply", "replies")}">${t.replyCount}</span></div>
           </li>`;
 }
 
@@ -60,10 +66,9 @@ export function mixer(spaces, activity) {
   return `<ul class="cm-mixer" aria-label="Spaces">${spaces.map((s, i) => {
     const n = activity.get(s.id) || 0;
     const level = Math.round((n / top) * 8);
-    return `<li class="cm-channel" data-track="${track(i)}"><a href="${esc(spacePath(s))}">
-              <span class="cm-channel-meter" aria-hidden="true">${Array.from({ length: 8 }, (_, k) => `<i${k < level ? ' class="on"' : ""}></i>`).reverse().join("")}</span>
-              <strong>${esc(s.name)}</strong>${badge(s)}
-              <span class="cm-small">${plural(n, "take", "takes")} this week</span></a></li>`;
+    return card({ as: "li", cls: "cm-channel", attrs: { "data-track": track(i) }, href: spacePath(s), title: s.name, tags: [spaceTag(s)],
+      art: `<span class="cm-channel-meter">${Array.from({ length: 8 }, (_, k) => `<i${k < level ? ' class="on"' : ""}></i>`).reverse().join("")}</span>`,
+      artCls: "cm-channel-art", sub: `${plural(n, "take", "takes")} this week` });
   }).join("")}</ul>`;
 }
 

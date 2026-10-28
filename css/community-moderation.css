@@ -13,8 +13,6 @@
 .cm-log { margin: 0; padding-left: 18px; font-size: .88rem; color: var(--muted); }
 .cm-log li { margin: 4px 0; overflow-wrap: anywhere; }
 .cm-log time { font-family: var(--mono); }
-.cm-mod-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; padding: 8px 10px; border: 1px dashed var(--teal); border-radius: var(--radius); }
-.cm-mod-bar .btn { min-height: 36px; }
 .cm-report { margin-top: 10px; }
 .cm-report select { max-width: 100%; }
 .cm-notices { margin: 0 0 18px; }

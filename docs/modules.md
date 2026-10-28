@@ -1,7 +1,7 @@
 ---
 title: Modules
 summary: Drop-in features: how a feature is placed on any page by attributes, each module's options, project looks, and the single-use app roots.
-covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/project-events.js, js/events-calendar.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, js/project-content.js, js/skeleton.js, css/skeleton.css, js/prefetch.js, js/creators-browse.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
+covers: [js/shop.js, js/product-card.js, js/store.js, js/projects.js, js/polls.js, js/release-feed.js, js/account-nav.js, js/layout.js, js/project-frame.js, js/util.js, js/project-events.js, js/events-calendar.js, js/releases.js, js/music.js, js/newsletter.js, js/press.js, js/profiles.js, js/stacc-glance.js, js/library.js, js/dashboard.js, js/project-content.js, js/skeleton.js, css/skeleton.css, js/prefetch.js, js/creators-browse.js, js/card.js, css/projects/, scripts/lib/data.js, scripts/lib/pages.js]
 updated: 2026-10-27
 ---
 
@@ -13,6 +13,7 @@ The owner's rule: every feature is modular, so it can be used anywhere on the si
 
 - One script finds every `[data-<feature>]` element and mounts on each (several per page are fine). Its options are attributes on that element; its header comment lists them.
 - Templates that a module renders live in their own file and set one namespace on `GS` (e.g. `js/product-card.js` → `GS.productCard`).
+- **One card** (owner, 2026-10-27, #230): every card is drawn through `js/card.js` (`GS.card` in the browser, `module.exports` for the server and build scripts; load it after `js/util.js`). It gives the shell (`.ui-card`: art or a generated tile, the "what it is" line, title, short line, then the area's own body and footer) and `card.tag(label, tone)`, the status chip that sits in the card's top-right corner (Official, Unofficial, Unverified, Pinned, New, % off, Coming soon...; styles in `css/core.css`). Each area keeps its class and `data-*` attributes (`cls`, `attrs`, `titleCls`, `bodyCls`) so its sheet and tests stay. Used by the community's space cards, Discover, creators, project cards, the three event cards and the product card (its corner tags; its own cover and buy layout stay). The skinned release list and the guide links are not cards.
 - Project styling travels with the item: `GS.look(projectId)` returns `look-<id>` and loads `css/projects/<id>/look.css` (the project's colours, type, buttons and tiles). Inside a project's own pages the same rules apply through `.skin-<id>`. A project with `skin: true` ships both `look.css` (portable) and `skin.css` (page effects).
 - A module's project is its `data-project`, else the open project's (`GS.moduleProject(el)`); `GS.wear(el, projectId)` puts that project's look on the module when it sits outside the project's own pages.
 - Links between modules are shared helpers in `js/util.js` (`GS.shopItemPath`: a product's own page; `GS.projectPath`) and the same addresses in the generator (`projectPath` in `scripts/lib/data.js`, `shopItemPath` in `scripts/lib/pages.js`).

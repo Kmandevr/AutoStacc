@@ -8,6 +8,9 @@
   if (!kit || !box) return;
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const LEVELS = 6;
+  // Boost sits first in the take's own action row, small, like Reddit's votes (owner, 2026-10-27).
+  const opening = kit.opening();
+  if (opening) { box.classList.add("cm-boost-inline"); kit.row(opening).prepend(box); }
   const level = (n) => Math.min(LEVELS, n <= 0 ? 0 : Math.ceil(Math.log2(n + 1)));
   (async () => {
     const who = await kit.me();

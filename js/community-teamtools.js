@@ -1,5 +1,5 @@
 // A team's space settings on its team desk (the teamtools feature, server/community/features/teamtools/; needs
-// js/community-kit.js): the description and rules text, and the channels (add, rename, who may start, kinds, archive).
+// js/community-kit.js): the description, rules and tags, and the channels (add, rename, who may start, kinds, archive).
 // Does nothing when the feature is off or for anyone not on the team.
 (function () {
   "use strict";
@@ -23,13 +23,15 @@
     description.value = r.data.description;
     const rules = el("textarea", { rows: 6, maxlength: 4000, "aria-label": "This space's rules" });
     rules.value = r.data.rules;
+    // The space's tags (owner, 2026-10-27, #230): a tag box (js/tag-input.js) so people find the space by them.
+    const tags = el("input", { name: "tags", "data-tag-input": "", value: (r.data.tags || []).join(", "), "aria-label": "Tags" });
     part.append(el("form", { class: "cm-form", on: { submit: async (ev) => {
       ev.preventDefault();
       busy(ev.currentTarget, true);
-      const res = await api(`${base}/text`, { method: "PUT", body: { description: description.value, rules: rules.value } });
+      const res = await api(`${base}/text`, { method: "PUT", body: { description: description.value, rules: rules.value, tags: tags.value.split(/[,\s]+/).filter(Boolean) } });
       busy(ev.currentTarget, false);
       say(msg, res.ok ? "Saved." : res.error.message, res.ok);
-    } } }, el("label", {}, "Description", description), el("label", {}, "Rules (stricter than AutoStacc's, never looser)", rules),
+    } } }, el("label", {}, "Description", description), el("label", {}, "Rules (stricter than AutoStacc's, never looser)", rules), el("label", {}, "Tags (up to 8)", tags),
     el("button", { class: "btn small", type: "submit", text: "Save" }), msg));
     part.append(el("h3", { text: "Channels" }));
     const change = (b, body) => async () => {

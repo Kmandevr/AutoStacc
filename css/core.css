@@ -146,6 +146,23 @@ section { padding: 80px 0; }
 
 /* A Studio creator AutoStacc hasn't verified: on cards and product pages, in a warning colour on every look. */
 .tag.unverified { padding: 1px 6px; color: var(--coral, #e0645c); border: 1px solid currentColor; text-shadow: none; }
+
+/* The one card (js/card.js): every area's card is .ui-card plus its own class. Status tags sit as small chips in the
+   top-right corner, never on a line of their own; the area's sheet styles everything else. */
+.ui-card { position: relative; min-width: 0; }
+.ui-card-title { margin: 0; overflow-wrap: anywhere; }
+.ui-card-title a { color: inherit; }
+.ui-card-sub { margin: 0; color: var(--muted); }
+.card-tags { position: absolute; top: 8px; right: 8px; z-index: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px;
+  max-width: calc(100% - 16px); pointer-events: none; }
+.card-tags .tag { padding: 1px 7px; font-size: .64rem; font-weight: 700; letter-spacing: .06em; line-height: 1.6; border-radius: 999px;
+  border: 1px solid currentColor; background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--muted); text-shadow: none; }
+.card-tags .tag-official, .card-tags .tag-verified { color: var(--accent); }
+.card-tags .tag-unofficial { border-style: dashed; }
+.card-tags .tag-pinned, .card-tags .tag-team { color: var(--teal, var(--accent)); }
+.card-tags .tag-new, .card-tags .tag-soon { color: var(--amber, var(--accent)); }
+.card-tags .tag-sale { color: var(--on-accent, #000); background: var(--accent); border-color: var(--accent); }
+.card-tags .tag.unverified { color: var(--coral, #e0645c); }
 .unverified-note { border-left: 3px solid var(--coral, #e0645c); padding-left: 10px; }
 
 /* STACC'D stamp: product cards, product pages and the library */

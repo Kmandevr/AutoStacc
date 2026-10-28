@@ -3,15 +3,19 @@
 // those core tables are written for the team tools feature. The caller has already checked the person is on the team.
 import { first, all, run, now, newId } from "../../lib/db.js";
 import { fail } from "../../lib/http.js";
+import { checkName } from "../../lib/words.js";
+import { cleanTags } from "../../lib/tags.js";
 import { slugify } from "./posting.js";
 
 export const MAX_CHANNELS = 15;
 const KINDS = ["discussion", "question", "update"];
 
-export async function setSpaceText(db, space, { description, rules }) {
+export async function setSpaceText(db, space, { description, rules, tags }) {
   if (typeof description !== "string" || description.length > 500) fail(400, "invalid_field", "A description of up to 500 characters.", { field: "description" });
   if (typeof rules !== "string" || rules.length > 4000) fail(400, "invalid_field", "Rules of up to 4,000 characters.", { field: "rules" });
-  await run(db, "UPDATE community_spaces SET description = ?, rules = ? WHERE id = ?", description.trim(), rules.trim(), space.id);
+  // Tags (owner, 2026-10-27, #230): the one tag rule; left as they are when not sent.
+  const list = tags === undefined ? null : JSON.stringify(cleanTags(tags));
+  await run(db, "UPDATE community_spaces SET description = ?, rules = ?, tags = COALESCE(?, tags) WHERE id = ?", description.trim(), rules.trim(), list, space.id);
 }
 
 const types = (v) => {
@@ -22,7 +26,7 @@ const types = (v) => {
 const who = (v) => (v === "everyone" || v === "team" ? v : fail(400, "invalid_field", "Everyone or the team.", { field: "whoMayStart" }));
 const nameOf = (v) => {
   const n = typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
-  return n.length >= 2 && n.length <= 40 ? n : fail(400, "invalid_field", "A channel name of 2 to 40 characters.", { field: "name" });
+  return n.length >= 2 && n.length <= 40 ? checkName(n, "name", "Channel names") : fail(400, "invalid_field", "A channel name of 2 to 40 characters.", { field: "name" });
 };
 
 export async function addChannel(db, space, { name, whoMayStart, postTypes }) {

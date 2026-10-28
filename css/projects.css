@@ -35,6 +35,7 @@
 .pcard-name a { color: inherit; display: inline-block; padding-block: 2px; }
 .pcard-by, .pcard-tagline, .pcard-activity { margin: 0; font-size: .9rem; color: var(--muted); }
 .pcard-by:empty { display: none; }
+.pcard:has(> .card-tags) .pcard-body > :first-child { padding-right: 5.5rem; } /* room for the corner tag (js/card.js) */
 .pcard-tagline { color: var(--text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .pcard.is-recent .pcard-activity::before { content: "● "; color: var(--accent); }
 .pcard-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }

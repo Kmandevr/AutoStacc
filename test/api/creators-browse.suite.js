@@ -23,7 +23,7 @@ export default (ctx) => describe("creators browser", () => {
     assert.doesNotMatch(r.headers.get("cache-control"), /no-store|private/);
     const as = r.data.creators.find((c) => c.slug === "autostacc");
     assert.ok(as, "the first creator is listed");
-    assert.deepEqual(Object.keys(as).sort(), ["avatar", "banner", "bio", "firstParty", "name", "path", "projects", "slug", "verified"]);
+    assert.deepEqual(Object.keys(as).sort(), ["avatar", "banner", "bio", "firstParty", "name", "path", "projects", "slug", "tags", "verified"]);
     assert.equal(as.path, "/autostacc");
     assert.equal(as.verified, true);
     assert.equal(as.firstParty, true);
@@ -58,7 +58,7 @@ export default (ctx) => describe("creators browser", () => {
     const [listed, ...rest] = await find(name);
     assert.equal(rest.length, 0);
     assert.deepEqual(listed, { slug: creator.slug, name, path: `/${creator.slug}`, firstParty: false, verified: false, bio: "", avatar: "", banner: "",
-      projects: [{ name: "Seen Work", path: `/${creator.slug}/seen-work` }] });
+      projects: [{ name: "Seen Work", path: `/${creator.slug}/seen-work` }], tags: [] });
     assert.equal((await find("seen work")).filter((x) => x.slug === creator.slug).length, 1, "search covers project names");
 
     const admin = await adminClient(ctx.mock.url);

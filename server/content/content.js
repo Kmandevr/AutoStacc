@@ -5,7 +5,7 @@
 // through getPublished, select and PUBLISHED. News (project_news) is off until each creator's community opens (#174): its
 // rows are kept as they are and nothing here reads them. releasesWithLocalArtwork and swapReleaseArtwork move artwork
 // migrated from data/ into the creator's own images (#179).
-import { all, first, stmt, newId, now, parseJson } from "../lib/db.js";
+import { all, first, stmt, newId, now, parseJson, tagCounts } from "../lib/db.js";
 import { fail } from "../lib/http.js";
 import { storedTags } from "../lib/tags.js";
 import { VISIBLE, projectAddress, getVisibleProject } from "../projects/projects.js";
@@ -156,3 +156,7 @@ export async function updateItem(db, kind, row, values) {
 // Soft delete: off the site at once, its slug free again.
 export const deleteItem = (db, kind, row) =>
   stmt(db, `UPDATE ${KIND[kind].table} SET published = 0, deleted_at = ?, updated_at = ? WHERE id = ?`, now(), now(), row.id).run();
+
+// Tags on published releases and events (server/tags/).
+export const contentTagCounts = async (db) => [...await tagCounts(db, "project_releases", "t.published = 1 AND t.deleted_at IS NULL"),
+  ...await tagCounts(db, "project_events", "t.published = 1 AND t.deleted_at IS NULL")];

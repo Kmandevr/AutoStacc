@@ -6,19 +6,22 @@
 // profile site); their owner is the verified account the FIRST_PARTY_OWNERS secret names (#172).
 import { json, readJson, str, fail } from "../lib/http.js";
 import { run } from "../lib/db.js";
+import { checkName } from "../lib/words.js";
+import { cleanTags } from "../lib/tags.js";
 import { isOpen } from "../settings/settings.js";
 import { requireUser } from "../auth/session.js";
 import { audit } from "../audit/log.js";
 import { limit } from "../lib/ratelimit.js";
 import { LIMITS, quotaOf } from "../creators/policy.js";
 import { rolesFor, capabilitiesOf } from "../creators/roles.js";
-import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, updateCreator, publicCreator, publicProject, assignFirstPartyOwner } from "../creators/creators.js";
+import { creatorsOfUser, projectsOf, requireCreator, cleanSlug, createCreator, updateCreator, publicCreator, publicProject, assignFirstPartyOwner, setCreatorTags, setProjectTags } from "../creators/creators.js";
 import { requireProject, createProject, updateProject, deleteProject } from "../creators/projects.js";
 import { republishCreator } from "../sites/publish.js";
 import { storageUsed } from "../creators/storage.js";
 import { imageSrc, ownImage } from "../sites/images.js";
 
-const name = (v, field = "name") => str(v, field, { max: 60 });
+// Word levels (server/lib/words.js): no strong swear words or slurs in a creator's or project's name.
+const name = (v, field = "name") => checkName(str(v, field, { max: 60 }), field, "Names");
 
 // What a member of a first-party creator may do here: its products and its projects' content only (the server refuses
 // the rest for catalog creators anyway; this keeps the browser from offering it).
@@ -77,6 +80,8 @@ async function editCreator(app, { creatorId }) {
     await run(app.db, `UPDATE creators SET ${col} = ? WHERE id = ?`, pick || null, creator.id);
     updated[col] = pick || null;
   }
+  // Tags (owner, 2026-10-27, #230): the one tag rule, so people find the creator by them.
+  if (body.tags !== undefined) { updated.tags = JSON.stringify(cleanTags(body.tags)); await setCreatorTags(app.db, creator.id, JSON.parse(updated.tags)); }
   // Published pages carry the creator's address and name, so they are rendered again.
   if (updated.slug !== creator.slug || updated.name !== creator.name) await republishCreator(app, creator.id);
   return json({ creator: { ...publicCreator(updated), path: `/${updated.slug}` } });
@@ -98,6 +103,7 @@ async function editProject(app, { projectId }) {
   const body = await readJson(app.request);
   const slug = body.slug !== undefined ? cleanSlug(body.slug) : undefined;
   const updated = await updateProject(app.db, project, { slug, name: body.name !== undefined ? name(body.name) : undefined });
+  if (body.tags !== undefined) { updated.tags = JSON.stringify(cleanTags(body.tags)); await setProjectTags(app.db, project.id, JSON.parse(updated.tags)); }
   if (updated.published && (updated.slug !== project.slug || updated.name !== project.name)) await republishCreator(app, creator.id);
   return json({ project: { ...publicProject(updated), path: `/${creator.slug}/${updated.slug}` } });
 }

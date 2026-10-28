@@ -5,6 +5,8 @@
 // change is written to its release history (server/creators/product-history.js).
 import { all, first, run, randomToken, now, parseJson } from "../lib/db.js";
 import { fail, str } from "../lib/http.js";
+import { cleanTags } from "../lib/tags.js";
+import { checkName } from "../lib/words.js";
 import { LIMITS, SELLING, limitOf } from "./policy.js";
 import { requireProject } from "./projects.js";
 import { getProject } from "./creators.js";
@@ -19,7 +21,6 @@ import { changeEvents, recordChanges } from "./product-history.js";
 import { rolesFor } from "./roles.js";
 import { cleanComingSoon, requireAnnounceable } from "./coming-soon.js";
 
-const WORD = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export { productPath };
 
 const slugify = (s) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50) || "product";
@@ -28,7 +29,7 @@ const slugify = (s) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, 
 export function cleanProductInput(body, { requireAll = false } = {}) {
   const out = {};
   const has = (k) => body[k] !== undefined;
-  if (requireAll || has("title")) out.title = str(body.title, "title", { min: 3, max: 80 }).trim();
+  if (requireAll || has("title")) out.title = checkName(str(body.title, "title", { min: 3, max: 80 }).trim(), "title");
   if (has("description")) out.description = typeof body.description === "string" && body.description.length <= 2000 ? body.description.trim() : fail(400, "invalid_field", "The description can be up to 2,000 characters.", { field: "description" });
   if (requireAll || has("type")) out.type = SELLING.kinds.includes(body.type) ? body.type : fail(400, "invalid_field", "Pick one of the product kinds.", { field: "type" });
   if (requireAll || has("priceCents")) {
@@ -38,12 +39,7 @@ export function cleanProductInput(body, { requireAll = false } = {}) {
     }
     out.priceCents = c;
   }
-  if (has("tags")) {
-    if (!Array.isArray(body.tags) || body.tags.length > 8 || body.tags.some((t) => typeof t !== "string" || !WORD.test(t) || t.length > 24)) {
-      fail(400, "invalid_field", "Up to 8 tags, each lowercase letters, numbers and hyphens.", { field: "tags" });
-    }
-    out.tags = body.tags;
-  }
+  if (has("tags")) out.tags = cleanTags(body.tags); // the one tag rule: folded, up to 8, no strong words
   if (has("includes")) {
     if (!Array.isArray(body.includes) || body.includes.length > 12 || body.includes.some((t) => typeof t !== "string" || !t.trim() || t.length > 100)) {
       fail(400, "invalid_field", "Up to 12 lines of what's inside, each under 100 characters.", { field: "includes" });

@@ -136,6 +136,7 @@ a.cover:hover { color: #fff; }
 /* the wishlist heart: top right of the cover; filled when saved (aria-pressed says it to everyone) */
 .card-wish { position: absolute; top: 10px; right: 10px; z-index: 3; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
   background: color-mix(in srgb, var(--panel) 88%, transparent); cursor: pointer; display: grid; place-items: center; transition: transform .15s var(--snap); }
+.card:has(> .card-wish) > .card-tags { top: 16px; right: 62px; } /* the corner tags (js/card.js) sit beside the heart */
 .card-wish::before { content: "♡"; font-size: 1.3rem; line-height: 1; color: var(--text); }
 .card-wish[aria-pressed="true"]::before { content: "♥"; color: var(--coral); }
 .card-wish:hover { transform: scale(1.08); }

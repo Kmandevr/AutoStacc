@@ -14,7 +14,7 @@
     let saved = state.features.saved.saved;
     const path = `/api/community/threads/${encodeURIComponent(kit.tools.dataset.cmThread)}/save`;
     const b = el("button", { class: "btn ghost small", type: "button" });
-    const draw = () => { b.textContent = saved ? "Saved" : "Save for later"; b.setAttribute("aria-pressed", String(saved)); };
+    const draw = () => { b.textContent = saved ? "Saved" : "Save"; b.setAttribute("aria-pressed", String(saved)); };
     draw();
     b.addEventListener("click", async () => {
       press(b, true);
@@ -22,8 +22,8 @@
       press(b, false);
       if (r.ok) { saved = r.data.saved; draw(); } else window.GS.toast(r.error.message, true);
     });
-    kit.tools.hidden = false;
-    kit.tools.append(b);
+    const post = kit.opening();
+    if (post) kit.menu(post).append(b);
   }
 
   async function list() {

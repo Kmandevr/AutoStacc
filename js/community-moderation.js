@@ -17,7 +17,7 @@
     const r = window.prompt(question);
     return r === null ? null : r.trim();
   };
-  const modButton = (label, path, payload, ask) => el("button", { class: "btn ghost small", type: "button", text: label, on: { click: async (ev) => {
+  const modButton = (label, path, payload, ask) => el("button", { type: "button", text: label, on: { click: async (ev) => {
     const reason = ask ? why(ask) : "";
     if (reason === null) return;
     const b = ev.currentTarget;
@@ -31,26 +31,27 @@
     const threadId = kit.tools.dataset.cmThread;
     const m = state.features.moderation || {};
     const path = `/api/community/mod/threads/${enc(threadId)}`;
-    const bar = el("div", { class: "cm-mod-bar", role: "group", "aria-label": "Team tools for this take" },
-      el("span", { class: "cm-small", text: "Team:" }),
-      modButton(m.pinned ? "Unpin" : "Pin", path, { action: m.pinned ? "unpin" : "pin" }),
-      modButton(m.locked ? "Unlock" : "Lock", path, { action: m.locked ? "unlock" : "lock" }),
+    // The team's tools sit in each post's ⋯ menu under a "Team" label (owner, 2026-10-27); the manage page stays the
+    // place to work through what's waiting.
+    const label = () => el("p", { class: "cm-menu-label", text: "Team" });
+    const opening = kit.opening();
+    if (opening) kit.menu(opening).append(label(),
+      modButton(m.pinned ? "Unpin take" : "Pin take", path, { action: m.pinned ? "unpin" : "pin" }),
+      modButton(m.locked ? "Unlock take" : "Lock take", path, { action: m.locked ? "unlock" : "lock" }),
       modButton("Hide take", path, { action: "hide" }, "Why hide this take? The author is told."),
       modButton("Remove take", path, { action: "remove" }, "Why remove this take under the space's rules? The author is told."));
-    kit.tools.hidden = false;
-    kit.tools.append(bar);
     document.querySelectorAll("[data-cm-post]").forEach((post) => {
       if (post.id === kit.tools.dataset.cmOpening) return;
-      const tools = post.querySelector("[data-cm-tools]") || post.appendChild(el("div", { class: "cm-post-tools", "data-cm-tools": post.id }));
+      const list = kit.menu(post);
       const p = `/api/community/mod/posts/${enc(post.id)}`;
-      tools.append(modButton("Hide", p, { action: "hide" }, "Why hide this reply? The author is told."),
+      list.append(label(), modButton("Hide", p, { action: "hide" }, "Why hide this reply? The author is told."),
         modButton("Remove", p, { action: "remove" }, "Why remove this reply under the space's rules? The author is told."));
       const name = post.querySelector(".cm-meta .cm-name");
-      if (name && !state.ownPosts.some((o) => o.id === post.id)) tools.append(banButton(m.spaceId, name.textContent));
+      if (name && !state.ownPosts.some((o) => o.id === post.id)) list.append(banButton(m.spaceId, name.textContent));
     });
   }
 
-  const banButton = (spaceId, name) => el("button", { class: "btn ghost small", type: "button", text: "Ban", on: { click: async (ev) => {
+  const banButton = (spaceId, name) => el("button", { type: "button", text: "Ban", on: { click: async (ev) => {
     const btn = ev.currentTarget;
     const reason = why(`Why ban ${name} from this space? They're told.`);
     if (reason === null) return;

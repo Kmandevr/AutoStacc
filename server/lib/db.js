@@ -40,3 +40,8 @@ export const parseJson = (text, fallback) => {
 // `condition` (trusted SQL with ? params) holds. isGuardFailure tells that failure from any other.
 export const guardStmt = (db, condition, ...params) => stmt(db, `INSERT INTO batch_guard (ok) SELECT 0 WHERE NOT (${condition})`, ...params);
 export const isGuardFailure = (e) => /CHECK constraint failed/i.test(String((e && e.message) || e));
+
+// How many live rows carry each tag in a JSON tags column (server/tags/): [{ tag, n }]. `where` is the caller's own
+// visibility rule for its table, written in code, never from input.
+export const tagCounts = (db, table, where) =>
+  all(db, `SELECT j.value AS tag, COUNT(*) AS n FROM ${table} t, json_each(t.tags) j WHERE ${where} AND json_valid(t.tags) GROUP BY j.value`);

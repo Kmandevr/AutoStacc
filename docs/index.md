@@ -23,6 +23,7 @@ Project memory for the AutoStacc platform and its first project, Glitches & Stit
 - [Shop](shop.md): product kinds, products made in the Studio by every creator (the code-based catalog is retired), product pages at `/shop/<id>`, test fixtures
 - [Browsing projects and content](browse.md): the projects browser, New & upcoming (/discover/explore), the /events calendar, the home hub, dashboard sections, Your Stacc search
 - [Store discovery](discovery.md): search, filters, metadata vocabulary, recommendation scoring and its privacy rules, wishlists
+- [Search and tags](search.md): the header search bar and /search, hashtags on anything, word levels for names, tags and posts
 - [Processing engine](engine.md): the Rust engine (engine/): safe ZIP reading, hashes, formats, header facts, suggestions and native audio analysis (tempo, key, waveform), in a Cloudflare Container behind the engine Worker and as WebAssembly in the Pack Builder; CI and benchmarks
 - [Pack Builder and processing engine](packs.md): BUILT (Phases 0–9 and the Pac editor; Phase 10 optional): packs as folders of verified assets with versions and provenance, the Rust engine in a Cloudflare Container, selective downloads, contents-derived facets, staying inside the Workers Paid plan
 - [Visual builder](builder.md): phases 1–6 BUILT, roles and the community library planned: one Wix-like editor for creator profiles and project sites (free grid, templates, checked CSS, trusted interactive library, community library, roles, history, scheduling) and its build order

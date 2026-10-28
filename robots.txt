@@ -18,6 +18,7 @@ Disallow: /checkout
 Disallow: /cart
 Disallow: /api/
 Disallow: /private/
+Disallow: /search
 
 Sitemap: https://autostacc.com/sitemap.xml
 Sitemap: https://autostacc.com/sitemap-content.xml

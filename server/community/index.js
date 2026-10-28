@@ -4,6 +4,7 @@
 import "./features/index.js";
 export { routes } from "./core/routes.js";
 export { onCommunityRequest } from "./core/entry.js";
+export { communityTagCounts } from "./core/spaces.js";
 import { communityRetention } from "./core/retention.js";
 import { sweepFeatures } from "./core/hooks.js";
 

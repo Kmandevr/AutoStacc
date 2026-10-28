@@ -73,10 +73,11 @@ import { routes as packEditor } from "./packs/editor-routes.js";
 import { routes as packPreviews } from "./packs/previews.js";
 import { routes as maintenance } from "./maintenance/routes.js";
 import { routes as spotlight } from "./spotlight/routes.js";
+import { routes as tags } from "./tags/routes.js";
 import { impersonationGate, auditImpersonated } from "./impersonation/policy.js";
 
 const router = createRouter([catalog, cart, checkout, orders, payments, library, downloads, account, accountSettings, accountExport, accountDelete, accountEmail, accountPhone, accountTwoFactor, admin, analytics, projects, polls,
-  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, copyright, adminLibrary, studioProducts, content, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, studioAttention, reviews, adminReviews, adminPayouts, adminFiles, adminArtwork, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, spotlight, dev]);
+  impersonation, testPurchases, customerPreview, audit, stats, promotions, studioCreators, studioSites, studioSiteFiles, studioMembers, communityLibrary, community, copyright, adminLibrary, studioProducts, content, studioProductFiles, studioEarnings, studioWorkspace, studioPricing, studioInsights, studioPayoutAccount, adminCreators, adminCreatorSales, adminUsage, adminStorageBilling, adminSwitches, siteStatus, studioStorage, studioAttention, reviews, adminReviews, adminPayouts, adminFiles, adminArtwork, adminNews, newsletter, discovery, wishlist, collections, packs, packEditor, packPreviews, maintenance, spotlight, tags, dev]);
 
 export async function handleApi(request, env, ctx) {
   const path = new URL(request.url).pathname;

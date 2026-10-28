@@ -2,7 +2,7 @@
 title: Store
 summary: How the store works: architecture, product and release model, accounts, cart, checkout, payments, orders, entitlements, downloads, email, admin, analytics and the security model.
 covers: [server/app.js, server/content/, server/auth/, server/account/, server/pages/, server/catalog/, server/cart/, server/checkout/, server/payments/, server/orders/, server/entitlements/, server/downloads/, server/files/, server/storage/, server/email/, server/admin/, server/analytics/, server/revenue/, server/newsletter/, server/lib/, server/settings/, server/collections/, server/billing/, server/reviews/, server/shop/, js/product-reviews.js, functions/, db/migrations/, scripts/lib/catalog.js, _headers, wrangler.toml, js/store.js, js/cart.js, js/checkout.js, js/library.js, js/settings*.js, js/admin*.js, js/impersonation.js, data/product-types.js]
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Store
@@ -32,6 +32,7 @@ Each folder owns one area and exports its own route table; `server/app.js` only 
 | `catalog/` | reading products (price, availability; `state` with `ids` also gives each product's download size from its published files; `:id` adds its store details) | `GET /api/products`, `/api/products/state`, `/api/products/:id` |
 | `discovery/` | store search, filters and counts, autocomplete, similar products, recommendations; the metadata vocabulary ([discovery](discovery.md)) | `GET /api/store/search`, `/api/store/suggest`, `/api/store/similar/:id`, `/api/products/:id/contents` (What's inside), `POST /api/store/recommendations` |
 | `wishlist/` | a signed-in person's saved products | `GET /api/wishlist`, `PUT`/`DELETE /api/wishlist/:id` |
+| `tags/` | every tag on AutoStacc in one place: counts from each module, typo-tolerant suggestions, admins' site-wide hide and rename rules; the one tag rule and the word levels are in `lib/tags.js` and `lib/words.js` ([search](search.md)) | `GET /api/tags/suggest`, `GET`/`PUT`/`DELETE /api/admin/tags` |
 | `collections/` | Your Stacc's personal organization: collections of owned files, tags on files, saved searches ([library](library.md); switch `library.collections`) | `GET`/`POST /api/collections`, `PATCH`/`DELETE /api/collections/:id`, `POST …/:id/items` (+ `/remove`), `POST /api/tags` (+ `/remove`), `POST /api/saved-searches`, `DELETE /api/saved-searches/:id` |
 | `cart/` | pricing a cart from the database | `POST /api/cart/price` |
 | `checkout/` | cart → pending order → hosted payment page (if the provider refuses: 503 `payment_unavailable`, with its reason in the logs, and in the answer only outside production) | `POST /api/checkout` |

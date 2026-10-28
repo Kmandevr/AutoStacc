@@ -1,7 +1,8 @@
 // The community core's forms (docs/community.md, "Look and words"; needs js/community-kit.js): the composer (Write and
 // Preview tabs, formatting buttons, drafts kept in this browser), "New take" on spaces and channels, and on a take the
-// reply box, Reply under each post (nested), and Edit and Delete on the visitor's own posts within 24 hours. Features
-// add their own buttons from their own scripts. The API checks everything again.
+// one-line reply box above the replies (it grows when tapped; "Aa" shows formatting), a quiet Reply under each post
+// (nested), Share link for everyone and Edit and Delete on the visitor's own posts (within 24 hours) in each post's ⋯
+// menu (js/community-menu.js). Features add their own buttons from their own scripts. The API checks everything again.
 (function () {
   "use strict";
   const kit = window.GS && window.GS.communityKit;
@@ -20,9 +21,10 @@
   const WRAP = { Bold: ["**", "**"], Italic: ["*", "*"], Code: ["`", "`"], Link: ["[", "](https://)"] };
   const LINE = { List: "- ", Quote: "> " };
 
-  // A text box with formatting buttons and, when the preview feature is on, Write / Preview tabs.
-  function composer({ label, value = "", draftKey = null, preview }) {
-    const box = el("textarea", { rows: 6, maxlength: 10000, required: true, "aria-label": label });
+  // A text box with formatting buttons and, when the preview feature is on, Write / Preview tabs. tucked: the buttons
+  // and tabs wait behind a small "Aa" toggle (owner, 2026-10-27: the reply box stays out of the way).
+  function composer({ label, value = "", draftKey = null, preview, tucked = false, rows = 6, placeholder = null }) {
+    const box = el("textarea", { rows, maxlength: 10000, required: true, "aria-label": label, placeholder });
     box.value = value || (draftKey ? draft.get(draftKey) : "");
     if (draftKey) box.addEventListener("input", () => draft.set(draftKey, box.value));
     const insert = (before, after = "") => {
@@ -53,8 +55,20 @@
       });
       tabs = el("div", { class: "cm-tabs", role: "tablist", "aria-label": "Write or preview" }, write, look);
     }
+    let aa = null;
+    if (tucked) {
+      const extras = el("div", { class: "cm-extras", hidden: true }, tabs, bar);
+      tabs = null;
+      aa = el("button", { type: "button", class: "cm-aa", "aria-expanded": "false", title: "Formatting and preview", text: "Aa", on: { click: () => {
+        extras.hidden = !extras.hidden;
+        aa.setAttribute("aria-expanded", String(!extras.hidden));
+      } } });
+      aa.append(el("span", { class: "sr-only", text: " formatting and preview" }));
+      const wrap = el("div", { class: "cm-composer" }, extras, box, shown);
+      return { wrap, box, aa, clear: () => { box.value = ""; if (draftKey) draft.set(draftKey, ""); } };
+    }
     const wrap = el("div", { class: "cm-composer" }, tabs, bar, box, shown);
-    return { wrap, box, clear: () => { box.value = ""; if (draftKey) draft.set(draftKey, ""); } };
+    return { wrap, box, aa, clear: () => { box.value = ""; if (draftKey) draft.set(draftKey, ""); } };
   }
 
   const TYPE = { discussion: "Discussion", question: "Question", update: "Update" };
@@ -91,12 +105,17 @@
     box.append(open);
   }
 
-  // A reply form under the take, or under one post (parentId) for a nested reply.
-  function replyForm(threadId, { parentId = null, label, preview, who, teamName }) {
+  // The reply box (owner, 2026-10-27, like Reddit): a one-line box that grows on tap into the text box with Cancel and
+  // Reply; "Aa" shows the formatting buttons and preview, and "Post as" shows only for a team. Under the take (top) it
+  // starts folded; under one post (parentId, a nested reply) it opens ready to type, and Cancel removes it.
+  function replyForm(threadId, { parentId = null, label, preview, who, teamName, open = false, onCancel = null }) {
     const msg = status();
     const as = asPicker(who, teamName);
-    const text = composer({ label, draftKey: `reply:${threadId}:${parentId || "top"}`, preview });
-    const form = el("form", { class: "cm-form cm-reply-form cm-stack-in", on: { submit: async (ev) => {
+    const text = composer({ label, draftKey: `reply:${threadId}:${parentId || "top"}`, preview, tucked: true, rows: 1, placeholder: parentId ? "Your reply" : `Add ${label.toLowerCase()}…` });
+    const cancel = el("button", { class: "cm-act", type: "button", text: "Cancel" });
+    const send = el("button", { class: "btn small", type: "submit", text: "Reply" });
+    const foot = el("div", { class: "cm-reply-foot" }, text.aa, el("span", { class: "cm-grow" }), cancel, send);
+    const form = el("form", { class: "cm-reply-box", "aria-label": label, on: { submit: async (ev) => {
       ev.preventDefault();
       busy(form, true);
       const r = await api(`/api/community/threads/${encodeURIComponent(threadId)}/posts`, { method: "POST", body: { body: text.box.value, parentId, as: as ? as.as() : null } });
@@ -113,7 +132,17 @@
       }
       busy(form, false);
       say(msg, r.error.message);
-    } } }, el("h2", { text: label }), as && as.wrap, text.wrap, el("button", { class: "btn", type: "submit", text: "Post reply" }), msg);
+    } } }, text.wrap, as && as.wrap, foot, msg);
+    const grow = () => { form.classList.add("is-open"); text.box.rows = 4; };
+    const fold = () => { form.classList.remove("is-open"); text.box.rows = 1; say(msg, ""); };
+    text.box.addEventListener("focus", grow);
+    cancel.addEventListener("click", () => {
+      if (onCancel) return onCancel(form);
+      text.clear();
+      fold();
+      text.box.blur();
+    });
+    if (open || text.box.value) grow();
     return form;
   }
 
@@ -133,29 +162,45 @@
   }
 
   async function setupThread(who) {
-    tools.hidden = false;
     const preview = who.features.includes("preview");
     const threadId = tools.dataset.cmThread;
     const question = tools.dataset.cmType === "question";
-    if (!who.signedIn || !who.emailVerified || !who.member) { gate(tools, who, () => location.reload()); return; }
+    const title = (document.querySelector("h1") || {}).textContent || document.title;
+    // Share link, for everyone, in every post's ⋯ menu.
+    if (kit.menu && window.GS.communityMenu) document.querySelectorAll("[data-cm-post]").forEach((post) => kit.menu(post).append(window.GS.communityMenu.share(post, title)));
+    // Where the reply box goes: under the take, above the replies.
+    const spot = document.querySelector(".cm-replies-title");
+    const place = (node) => (spot ? spot.before(node) : document.querySelector(".cm-thread-page").append(node));
+    if (!who.signedIn || !who.emailVerified || !who.member) {
+      const box = el("div", { class: "cm-reply-gate" });
+      place(box);
+      gate(box, who, () => location.reload());
+      return;
+    }
     const state = await mine();
     if (!state) return;
     const own = new Map(state.ownPosts.map((p) => [p.id, p]));
     document.querySelectorAll("[data-cm-post]").forEach((post) => {
-      // One toolbar per post, shared with the features' scripts (whichever runs first makes it).
-      const bar = post.querySelector("[data-cm-tools]") || el("div", { class: "cm-post-tools", "data-cm-tools": post.id });
+      // The post's action row and ⋯ menu, shared with the features' scripts (kit.row, kit.menu).
+      const bar = kit.row(post);
+      const opening = post.id === tools.dataset.cmOpening;
       if (state.canReply) {
-        bar.append(el("button", { class: "btn ghost small", type: "button", text: "Reply", on: { click: (ev) => {
-          const f = replyForm(threadId, { parentId: post.id === tools.dataset.cmOpening ? null : post.id, label: "Your reply", preview, who, teamName: state.teamName });
-          ev.currentTarget.disabled = true;
-          post.after(f);
+        // Reply is a quiet text link; on the take itself it jumps to the reply box above the replies.
+        const reply = el("button", { class: "cm-act cm-reply-link", type: "button", text: "Reply", on: { click: () => {
+          if (opening) { const top = document.querySelector(".cm-reply-box textarea"); if (top) top.focus(); return; }
+          reply.disabled = true;
+          const f = replyForm(threadId, { parentId: post.id, label: "Your reply", preview, who, teamName: state.teamName, open: true,
+            onCancel: (form) => { form.remove(); reply.disabled = false; reply.focus(); } });
+          bar.after(f);
           f.querySelector("textarea").focus();
-        } } }));
+        } } });
+        bar.append(reply);
       }
       const mineHere = own.get(post.id);
       if (mineHere) {
-        if (Date.now() - Date.parse(mineHere.createdAt) < EDIT_MS) bar.append(el("button", { class: "btn ghost small", type: "button", text: "Edit", on: { click: () => editForm(post, bar, mineHere.body, preview) } }));
-        bar.append(el("button", { class: "btn ghost small", type: "button", text: "Delete", on: { click: async (ev) => {
+        const list = kit.menu(post);
+        if (Date.now() - Date.parse(mineHere.createdAt) < EDIT_MS) list.append(el("button", { type: "button", text: "Edit", on: { click: () => editForm(post, bar, mineHere.body, preview) } }));
+        list.append(el("button", { type: "button", text: "Delete", on: { click: async (ev) => {
           if (!await window.GS.confirm("Delete this post?")) return;
           ev.currentTarget.disabled = true;
           const r = await api(`/api/community/posts/${encodeURIComponent(post.id)}`, { method: "DELETE" });
@@ -164,9 +209,8 @@
           window.GS.toast(r.error.message, true);
         } } }));
       }
-      if (bar.childElementCount && !bar.isConnected) post.append(bar);
     });
-    if (state.canReply) document.querySelector(".cm-thread-page").append(replyForm(threadId, { label: question ? "Your answer" : "Reply", preview, who, teamName: state.teamName }));
+    if (state.canReply) place(replyForm(threadId, { label: question ? "An answer" : "A reply", preview, who, teamName: state.teamName }));
   }
 
   // A post just written settles in like a block stacking (owner: charm), once.

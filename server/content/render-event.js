@@ -3,6 +3,7 @@
 // Graph and JSON-LD (WebPage + BreadcrumbList, Event with its place and organizer), "Add to calendar" (the .ics file
 // and a Google Calendar link, ics.js), and the event card the calendar (calendar.js) and js/events-calendar.js share.
 import { esc } from "../sites/text.js";
+import card from "../../js/card.js";
 import { SITE_NAME, SITE_IMAGE, abs, webPage, shell, hero, local, clip, fmtDate, crumbsFor, byline, artistRef, tagList } from "./page.js";
 import { eventTimes, googleCalendarUrl, placeOf, countryName } from "./ics.js";
 
@@ -13,17 +14,14 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export function eventCard(e, { heading = 3, host = true } = {}) {
   const [, m, d] = String(e.date).split("-");
   const by = [e.projectName, e.creatorName && e.creatorName !== e.projectName ? e.creatorName : ""].filter(Boolean).join(" · ");
-  return `<article class="ecard">
-        <a class="ecard-date" href="${esc(e.path)}" tabindex="-1" aria-hidden="true"><span>${MONTHS[Number(m) - 1] || ""}</span><strong>${Number(d) || ""}</strong></a>
-        <div class="ecard-body">
-          <h${heading} class="ecard-name"><a href="${esc(e.path)}">${esc(e.title)}</a></h${heading}>
+  return card({ cls: "ecard", href: e.path, title: e.title, level: heading, titleCls: "ecard-name", bodyCls: "ecard-body",
+    art: `<span>${MONTHS[Number(m) - 1] || ""}</span><strong>${Number(d) || ""}</strong>`, artCls: "ecard-date",
+    body: `
           <p class="ecard-when">${when(e)}</p>
           <p class="ecard-where">${esc(placeOf(e))}</p>
           ${host && by ? `<p class="ecard-by">by ${esc(by)}</p>` : ""}
           ${tagList(e.tags)}
-          <div class="ecard-actions"><a class="btn small" href="${esc(e.path)}">Details<span class="sr-only"> of ${esc(e.title)}</span></a>${e.ticketUrl ? `<a class="btn ghost small" href="${esc(e.ticketUrl)}" target="_blank" rel="noopener">Tickets<span class="sr-only"> for ${esc(e.title)}</span></a>` : ""}</div>
-        </div>
-      </article>`;
+          <div class="ecard-actions"><a class="btn small" href="${esc(e.path)}">Details<span class="sr-only"> of ${esc(e.title)}</span></a>${e.ticketUrl ? `<a class="btn ghost small" href="${esc(e.ticketUrl)}" target="_blank" rel="noopener">Tickets<span class="sr-only"> for ${esc(e.title)}</span></a>` : ""}</div>` });
 }
 
 export const eventCards = (events, opts) => `<ul class="ecards">${events.map((e) => `<li>${eventCard(e, opts)}</li>`).join("")}</ul>`;

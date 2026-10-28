@@ -1,7 +1,7 @@
 // The events calendar at /events (server/content/calendar.js renders it; this only enhances it): arrow keys move
 // between the days of the month table (Enter goes to a day's first event), and a signed-in visitor gets a Following
 // filter that shows only events of the projects they follow (GET /api/events?following=1, never cached). Without
-// JavaScript, or signed out, the server's page works as it is.
+// JavaScript, or signed out, the server's page works as it is. Needs js/util.js and js/card.js.
 (() => {
   const root = document.querySelector("[data-events-calendar]");
   if (!root || !window.GS) return;
@@ -48,16 +48,13 @@
     const [, m, d] = String(x.date).split("-");
     const by = [x.projectName, x.creatorName && x.creatorName !== x.projectName ? x.creatorName : ""].filter(Boolean).join(" · ");
     const where = [x.venue, x.city, x.country].filter(Boolean).join(", ");
-    return `<li><article class="ecard">
-      <a class="ecard-date" href="${e(x.path)}" tabindex="-1" aria-hidden="true"><span>${MONTHS[Number(m) - 1] || ""}</span><strong>${Number(d) || ""}</strong></a>
-      <div class="ecard-body">
-        <h3 class="ecard-name"><a href="${e(x.path)}">${e(x.title)}</a></h3>
+    return `<li>${GS.card({ cls: "ecard", href: x.path, title: x.title, titleCls: "ecard-name", bodyCls: "ecard-body",
+      art: `<span>${MONTHS[Number(m) - 1] || ""}</span><strong>${Number(d) || ""}</strong>`, artCls: "ecard-date",
+      body: `
         <p class="ecard-when"><time datetime="${e(x.date)}">${e(x.date)}</time>${x.endDate ? ` – <time datetime="${e(x.endDate)}">${e(x.endDate)}</time>` : ""}${x.time ? `, ${e(x.time)}` : ""}</p>
         <p class="ecard-where">${e(where)}</p>
         ${by ? `<p class="ecard-by">by ${e(by)}</p>` : ""}
-        <div class="ecard-actions"><a class="btn small" href="${e(x.path)}">Details<span class="sr-only"> of ${e(x.title)}</span></a></div>
-      </div>
-    </article></li>`;
+        <div class="ecard-actions"><a class="btn small" href="${e(x.path)}">Details<span class="sr-only"> of ${e(x.title)}</span></a></div>` })}</li>`;
   };
 
   // Hide the month's links to events of projects not followed (or show them all again).
