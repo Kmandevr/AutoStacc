@@ -2,7 +2,7 @@
 title: Creators and the Studio
 summary: Creators own projects; addresses /<creator>/<project>; the Studio's free sites and profiles (the visual builder) and selling, how they stay safe and cheap, and the store foundations under them (seller per order line, fees, file lifecycle, quotas, connected accounts).
 covers: [data/creators.js, server/creators/, server/studio/, server/sites/, server/revenue/, server/files/, server/integrations/providers.js, server/lib/slugs.js, functions/[[path]].js, server/content/, js/project-content.js, db/migrations/0040_project_content.sql, db/migrations/0041_events.sql, db/migrations/0043_first_party_owners.sql, server/lib/tags.js, functions/media/sites/, functions/studio.js, studio.html, js/studio*.js, js/product-page.js, css/studio.css, css/creator-site.css, scripts/dist.js, scripts/lib/creator-page.js, db/migrations/0006_creators.sql, db/migrations/0009_creator_selling.sql, db/migrations/0011_marketplace_payouts.sql, server/billing/, server/revenue/deductions.js, server/payments/refund-amount.js, server/studio/storage.js, server/admin/storage-billing.js, js/studio-storage.js, js/admin-storage-billing.js, db/migrations/0029_storage_billing.sql, db/migrations/0044_storage_cards.sql, server/payments/stripe-cards.js]
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Creators and the Studio
@@ -62,7 +62,8 @@ Every creator, first-party included, keeps each project's releases and events in
   - Links are https only.
   - The player is a link `js/site-embeds.js` knows.
   - Artwork is one of the creator's own uploaded site images, with alt text.
-  - Tags follow the store's one rule (`server/lib/tags.js`: up to 8, lowercase words joined by hyphens, 24 characters each).
+  - Tags follow the one tag rule (`server/lib/tags.js`: up to 8 of 24 characters, typed freely in the tag box and folded, so "#Lo Fi" is `lo-fi`; a tag with a strong word or a slur is refused). Creators and projects carry tags too, set in the Studio (owner, 2026-10-27, #230; [search](search.md)).
+  - Titles and names (creator, project, product, release, event) are checked against the word levels: no strong swear words or slurs (`server/lib/words.js`).
   - An event's time zone is an IANA name, and its country is a two-letter code.
   - Values migrated from `data/` that these rules would refuse (HAIL's `/img/releases/` artwork until it is moved, [admin](admin.md); a Deezer widget) are kept only while left unchanged.
 - **Roles:** writing a draft needs `site.edit`; publishing, unpublishing, changing a live item and deleting need `site.publish` (`server/content/routes.js`; existing capabilities, no new roles).

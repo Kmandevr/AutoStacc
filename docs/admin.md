@@ -2,7 +2,7 @@
 title: Control Center
 summary: The owner's admin (/admin): statistics and where each number comes from, sales and promo codes, customer preview, support impersonation, test purchases and the audit log, with their safety rules.
 covers: [admin.html, js/admin*.js, js/impersonation.js, functions/admin.js, server/admin/, server/admin/artwork.js, server/stats/, server/promotions/, server/cart/pricing.js, server/impersonation/, server/audit/, server/files/, server/revenue/payouts.js, server/payments/connect.js, server/settings/, data/workspaces.js, db/migrations/0004_admin_ops.sql]
-updated: 2026-10-27
+updated: 2026-10-28
 ---
 
 # Control Center
@@ -114,6 +114,10 @@ Buyers' reviews (`GET /api/admin/reviews`, `POST …/:id/hide` with a note, `…
 ## Community reports
 
 AutoStacc's queue in the community (`GET /api/admin/community/reports`, `POST …/reports/resolve`, `GET /api/admin/community/suspensions`, `DELETE …/suspensions/:userId`; `server/community/features/legal/`, `js/admin-community.js`, Daily › Community reports, shown only while `community.forum` is on): only reports routed to AutoStacc (illegal content, copyright, impersonation, under 16), oldest first, with the text, the space, the author and each reporter's community name and note. **Remove** is a legal removal (the author is told why, a space's team can't undo it, retention keeps it), optionally suspending the author from the community for some days or until lifted; **Dismiss** settles AutoStacc's reports only; **Under 16** empties and removes the account's community activity, erases its community data and suspends it for good. Suspensions are listed with Lift. Every decision is audited (`community.report_removed`, `_dismissed`, `_underage`, `community.suspension_lifted`). Formal copyright notices and strikes have their own section, Daily › Copyright ([copyright](copyright.md)): notices from the public form and from email, each showing where it came from and whether the claimant owns the work or acts for the owner. Accepting names what to take down (`kind:id`: product files, community takes and posts); each notice shows its takedowns and any counter-notice, and **Claimant went to court** keeps the content down after a counter-notice.
+## Tags
+
+Under Community (`js/admin-tags.js`, owner, 2026-10-27, #230): the most-used tags on AutoStacc and the site-wide rules. **Hide** keeps a tag from being shown, suggested or searched anywhere; **Rename** shows and finds everything tagged with it under a new name; **Lift** removes a rule. Nothing tagged is rewritten. Each change is audited (`tags.rule`, `tags.rule_lifted`; `GET`/`PUT`/`DELETE /api/admin/tags`, [search](search.md)).
+
 ## Payouts
 
 Creators' payout requests (`GET`/`PATCH /api/admin/payouts`, `server/admin/payouts.js`), each with the amount and how the creator wants to be paid. A request from a creator with a connected Stripe account shows **Send via Stripe**: one Connect transfer from the marketplace account, keyed by the request so a retry never pays twice; if Stripe refuses, nothing is marked paid, the request stays open, its reason is shown (a 503, since Cloudflare hides a Function's 502) and the attempt is audited as `payout.failed` (Stripe's reason, scrubbed). If the transfer went out but the request was settled another way at the same moment (a Decline in another tab), the answer is a 409 naming the Stripe transfer and the audit log keeps `payout.transfer_orphaned` with its id: check Stripe before doing anything else. Without one, pay by hand and press **Mark paid**. **Decline** closes it (the API takes an optional note). Settling happens once and is audited (`payout.paid`, `payout.declined`). Setup: [payouts-setup](payouts-setup.md).
