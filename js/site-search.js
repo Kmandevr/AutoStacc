@@ -1,9 +1,9 @@
 // The search bar in the header of every AutoStacc page (owner, 2026-10-27, #230; docs/search.md). Like a browser's
 // address bar: as you type, a dropdown lists a few matches per group (Tags, Store, Creators & projects, Community,
 // Help; js/search-sources.js), and Enter opens the full results page (/search). On a page with its own search (the
-// store, Discover, New & upcoming, the community) the bar is scoped to it: it reads "Search Store", a chip switches
-// it to All, Enter runs that page's own search (its form, hidden while the bar stands in for it), and Filters opens
-// the page's own filters. Only one search bar is ever on screen. A full-width row on phones. Needs js/util.js,
+// store, Discover, New & upcoming, the community) the bar is scoped to it: the page's own search box moves into the
+// bar (still tied to its form by the form attribute, so the page's suggestions, Enter and address work as before), a
+// chip switches the bar to All, and Filters opens the page's own filters. Only one search bar is ever on screen. A full-width row on phones. Needs js/util.js,
 // js/search-sources.js and the frame's top bar (js/layout.js).
 (function () {
   "use strict";
@@ -41,7 +41,24 @@
   const asked = new URLSearchParams(location.search).get("q");
   if (asked) input.value = asked.slice(0, 80);
 
+  // The page's own search box, once its script has drawn it: moved into the bar beside ours, shown while scoped.
+  let adopted = null;
+  const adopt = () => {
+    const f = own();
+    const box = f && f.querySelector("input[type=search], input[name=q]");
+    if (!box || adopted) return;
+    if (!f.id) f.id = `page-search-${Math.random().toString(36).slice(2, 8)}`;
+    box.setAttribute("form", f.id);
+    box.classList.add("site-search-input", "site-search-own");
+    if (!box.placeholder) box.placeholder = `Search ${scopeName}`;
+    const extra = box.nextElementSibling && box.nextElementSibling.matches(".suggest") ? box.nextElementSibling : null;
+    input.after(box);
+    if (extra) box.after(extra);
+    adopted = box;
+    draw();
+  };
   const draw = () => {
+    if (adopted) { adopted.hidden = !scoped; input.hidden = scoped; }
     input.placeholder = scoped ? `Search ${scopeName}` : "Search AutoStacc";
     if (chip) { chip.setAttribute("aria-pressed", String(scoped)); chip.textContent = scoped ? scopeName : "All"; }
     document.documentElement.classList.toggle("site-search-scoped", scoped);
@@ -49,9 +66,20 @@
   };
   draw();
   // The page's filters button appears after its script draws the page.
-  new MutationObserver(() => { filters.hidden = !(scoped && document.querySelector("[data-open-filters]")); })
-    .observe(document.body, { childList: true, subtree: true });
-  if (chip) chip.addEventListener("click", () => { scoped = !scoped; draw(); close(); input.focus(); });
+  if (scopeName) {
+    adopt();
+    new MutationObserver(() => { adopt(); filters.hidden = !(scoped && document.querySelector("[data-open-filters]")); })
+      .observe(document.body, { childList: true, subtree: true });
+  }
+  if (chip) chip.addEventListener("click", () => {
+    const was = scoped && adopted ? adopted.value : input.value;
+    scoped = !scoped;
+    draw();
+    close();
+    const box = scoped && adopted ? adopted : input;
+    box.value = was;
+    box.focus();
+  });
   filters.addEventListener("click", () => { const b = document.querySelector("[data-open-filters]"); if (b) b.click(); });
 
   // ---------- the dropdown (All) ----------
@@ -91,14 +119,13 @@
 
   // ---------- Enter ----------
   form.addEventListener("submit", (ev) => {
-    const q = input.value.trim();
+    const q = (scoped && adopted ? adopted.value : input.value).trim();
     ev.preventDefault();
     if (!q) return;
     const f = scoped && own();
     if (f) {
-      // The page's own search runs it, with its own results, filters and address.
-      const box = f.querySelector("input[type=search], input[name=q]");
-      if (box) box.value = q;
+      // The page's own search runs it (the magnifier pressed while scoped), with its own results, filters and address.
+      if (adopted && !adopted.value.trim()) adopted.value = q;
       if (f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event("submit", { cancelable: true }));
       close();
       return;

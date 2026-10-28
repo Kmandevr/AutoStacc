@@ -91,7 +91,7 @@ export default (ctx) => describe("community finding (switched on)", () => {
     assert.equal((await team.req("PUT", "/api/admin/tags", { body: { tag: "house", action: "hide" } })).status, 200);
     assert.equal((await a.c.get("/api/community/tagged?tag=house")).data.results.length, 0, "a hidden tag finds nothing");
     assert.equal((await team.req("PUT", "/api/admin/tags", { body: { tag: "x1", action: "rename", renameTo: "fuck" } })).status, 400, "no strong words as a new name");
-    assert.equal(one(`SELECT COUNT(*) FROM community_thread_tags WHERE thread_id = '${t.id}' AND tag IN ('house', 'serum')`), 2, "nothing tagged was rewritten");
+    assert.equal(Object.values(one(`SELECT COUNT(*) FROM community_thread_tags WHERE thread_id = '${t.id}' AND tag IN ('house', 'serum')`))[0], 2, "nothing tagged was rewritten");
     for (const tag of ["house", "serum"]) assert.equal((await team.req("DELETE", "/api/admin/tags", { body: { tag } })).status, 200);
     // After 24 hours only the team may.
     db(`UPDATE community_threads SET created_at = '2020-01-01T00:00:00.000Z' WHERE id = '${t.id}'`);

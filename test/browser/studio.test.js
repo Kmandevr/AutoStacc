@@ -17,7 +17,7 @@ async function logIn(page) {
   await page.goto("/login");
   await page.fill("#email", account);
   await page.fill("#password", "browser-pass-123");
-  await page.click("button[type=submit]");
+  await page.click("main button[type=submit]");
   await page.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
 }
 

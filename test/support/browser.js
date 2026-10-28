@@ -79,7 +79,7 @@ export function browserStore({ name, port, vars = {} }) {
     await page.fill("#name", "Tester");
     await page.fill("#email", email);
     await page.fill("#password", password);
-    await page.click("button[type=submit]");
+    await page.click("main button[type=submit]");
     await page.waitForSelector("text=Check");
     const mail = (await outbox(base, email)).find((m) => m.kind === "verify-email");
     await page.goto(new URL(linkIn(mail)).pathname + new URL(linkIn(mail)).search);

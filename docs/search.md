@@ -14,7 +14,7 @@ Decided by the owner on 2026-10-27 (#230, [decisions](decisions.md)).
 Every AutoStacc page (not a project's own pages, which keep their own frame) has one search bar in the header (`js/site-search.js`), a full-width row on phones.
 
 - **Everywhere else (All):** typing shows a dropdown like a browser's address bar, a few matches per group: Tags, Store, Creators & projects, Community, Help. Enter opens `/search?q=`.
-- **On a page with its own search** (the store, Discover, New & upcoming, the community) the bar is scoped: it reads "Search Store", a chip switches it to All, Enter runs that page's own search (its own box hides while the bar stands in for it) and **Filters** opens that page's filters. Only one search bar is ever on screen.
+- **On a page with its own search** (the store, Discover, New & upcoming, the community) the bar is scoped: the page's own search box moves into the bar (tied to its form by the `form` attribute, so the page's suggestions, Enter and address keep working; the rest of the page's form hides), a chip switches the bar to All, and **Filters** (phones and tablets; on a computer the filters sit beside the results) opens that page's filters. Only one search bar is ever on screen.
 - The community's Notifications and Saved panels sit in the header beside the account menu.
 
 `js/search-sources.js` asks each area through its own public API at once (`/api/tags/suggest`, `/api/store/search`, `/api/projects/browse`, `/api/creators`, `/api/community/search` or `/tagged`) and searches the help and guides in the browser from `data/guide-index.js`; one area being down never empties the rest. A query starting with `#` is a tag: creators and projects match their tags, the community lists the takes tagged with it.

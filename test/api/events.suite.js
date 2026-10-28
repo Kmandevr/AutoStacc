@@ -42,7 +42,7 @@ export default (ctx) => describe("events", () => {
     for (const [body, field] of [[{ ticketUrl: "http://tickets.example.org/" }, /ticketUrl/], [{ ticketUrl: "javascript:alert(1)" }, /ticketUrl/],
       [{ timeZone: "Mars/Olympus" }, /timeZone/], [{ timeZone: "../etc" }, /timeZone/], [{ endDate: `${MONTH}-13` }, /endDate/], [{ endDate: "2099-02-30" }, /endDate/],
       [{ time: "25:00" }, /time/], [{ time: "9pm" }, /time/], [{ country: "de" }, /country/], [{ country: "DEU" }, /country/],
-      [{ tags: ["Bad Tag"] }, /tags/], [{ tags: ["a", "b", "c", "d", "e", "f", "g", "h", "i"] }, /tags/], [{ title: undefined }, /title/], [{ city: undefined }, /city/],
+      [{ tags: ["bitch-fest"] }, /tags/], [{ tags: ["a", "b", "c", "d", "e", "f", "g", "h", "i"] }, /tags/], [{ title: undefined }, /title/], [{ city: undefined }, /city/],
       [{ date: "soon" }, /date/], [{ published: true }, /published/]]) {
       const r = await s.c.post(api(s.project.id), full(body));
       assert.equal(r.status, 400, JSON.stringify(body));

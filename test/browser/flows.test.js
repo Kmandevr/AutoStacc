@@ -262,7 +262,7 @@ describe("store in the browser", () => {
     await tab.goto("/login");
     await tab.fill("#email", email);
     await tab.fill("#password", "browser-pass-123");
-    await tab.click("button[type=submit]");
+    await tab.click("main button[type=submit]");
     await tab.waitForURL((u) => u.pathname === "/" || u.pathname === "/dashboard");
 
     await page.goto("/settings/security");
@@ -595,7 +595,7 @@ describe("store in the browser", () => {
     await page.waitForURL(/\/login\?next=%2Fsettings%2Fsecurity$/);
     await page.fill("#email", email);
     await page.fill("#password", "browser-pass-123");
-    await page.click("button[type=submit]");
+    await page.click("main button[type=submit]");
     await page.waitForURL(t.base + "/settings/security");
     await page.waitForSelector("[data-form=password]");
     assert.deepEqual(page.errors, []);

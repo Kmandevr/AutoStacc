@@ -276,7 +276,7 @@ export default (ctx) => describe("content", () => {
     for (const v of [{ type: "Mixtape" }, { date: "2026-02-30" }, { date: "tomorrow" }, { slug: "Not A Slug" }, { slug: "../x" }, { upc: "12ab" },
       { tracks: [{ title: "x", isrc: "nope" }] }, { tracks: "x" }, { featured: "yes" }, { title: "" }])
       await bad("releases", release(v));
-    for (const tags of [["Not Ok"], ["a".repeat(25)], "ambient", ["1", "2", "3", "4", "5", "6", "7", "8", "9"], [7]]) await bad("releases", release({ tags }), /tags/);
+    for (const tags of [["fucking-loud"], ["a".repeat(101)], "ambient", ["1", "2", "3", "4", "5", "6", "7", "8", "9"], [7]]) await bad("releases", release({ tags }), /tags/);
     assert.equal((await s.c.post(kindApi(s.project.id, "releases"), { raw: "x" })).status, 400);
     // Artwork is one of the creator's own images; someone else's, or a made-up one, is refused.
     const other = await maker("ct-art-other");
